@@ -23,7 +23,6 @@ import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { Textarea } from "@deco/ui/components/textarea.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
 import { AgentAvatar } from "../common/Avatar.tsx";
 import { Integration } from "./integrations/index.tsx";
 
@@ -239,7 +238,11 @@ function App({ agentId }: { agentId: string }) {
           {/* Avatar Section */}
           <div className="flex justify-center">
             <div className="h-20 w-20">
-              <AgentAvatar agent={agent} variant="xl" />
+              <AgentAvatar
+                name={agent.name}
+                avatar={agent.avatar}
+                className="rounded-lg"
+              />
             </div>
           </div>
 
@@ -404,14 +407,4 @@ function App({ agentId }: { agentId: string }) {
   );
 }
 
-function Wrapper() {
-  const { id: agentId } = useParams();
-
-  if (!agentId) {
-    return <div>No agent ID provided</div>;
-  }
-
-  return <App agentId={agentId} />;
-}
-
-export default Wrapper;
+export default App;

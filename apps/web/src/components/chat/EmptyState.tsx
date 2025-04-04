@@ -7,7 +7,7 @@ export function Welcome({ agent }: { agent?: Agent }) {
       <div className="flex flex-col items-center justify-center max-w-[800px] mx-auto p-4 duration-300 transition-all">
         <div className="flex flex-col items-center gap-4 mb-6">
           <div className="w-12 h-12 flex items-center justify-center ">
-            <AgentAvatar agent={agent} variant="xl" />
+            <AgentAvatar name={agent?.name} avatar={agent?.avatar} className="rounded-xl" />
           </div>
           <div className="flex flex-col items-center gap-2">
             <h2 className="text-2xl font-medium text-slate-800">

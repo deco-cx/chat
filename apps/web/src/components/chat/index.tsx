@@ -3,10 +3,9 @@ import { createAgent } from "@deco/sdk/crud";
 import { useAgent } from "@deco/sdk/hooks";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
 import { stub } from "../../utils/stub.ts";
-import { Chat } from "./Chat.tsx";
 import { useAgentRoot } from "../agents/hooks.ts";
+import { Chat } from "./Chat.tsx";
 
 // Extended agent type with locator
 const useMessages = (
@@ -69,15 +68,15 @@ When a user describes a goal that depends on third-party systems, check the plat
 
 <user_goal_handling>
 Users can have two types of goals:
-<one_time_task>When the user wants to do something once, help them complete the task directly. Do not suggest creating a chat unless the user implies the need for reuse.</one_time_task>
-<repeatable_workflow>When the user wants to set up a solution that can be used repeatedly or by others (e.g., sending emails, analyzing data from spreadsheets), propose creating a specialized chat focused on that purpose. Only proceed after receiving explicit confirmation from the user.</repeatable_workflow>
+<one_time_task>When the user wants to do something once, help them complete the task directly. Do not suggest creating an agent unless the user implies the need for reuse.</one_time_task>
+<repeatable_workflow>When the user wants to set up a solution that can be used repeatedly or by others (e.g., sending emails, analyzing data from spreadsheets), propose creating a specialized agent focused on that purpose. Only proceed after receiving explicit confirmation from the user.</repeatable_workflow>
 
 If the user’s intent is unclear, default to handling the request as a one-time task.
 NEVER perform actions without the user's explicit permission. Do not write/install/enable/create anything without the user's explicit permission.
 </user_goal_handling>
 
 <user_assumptions>
-Assume users are non-technical and unfamiliar with the tools or systems needed to complete their goals. Avoid technical jargon such as “agent”—use the word “chat” instead. Ask simple, clarifying questions before suggesting a solution to ensure it fits the user’s actual need.
+Assume users are non-technical and unfamiliar with the tools or systems needed to complete their goals. Avoid technical jargon. Ask simple, clarifying questions before suggesting a solution to ensure it fits the user’s actual need.
 </user_assumptions>
 
 <interaction_guidelines>
@@ -85,7 +84,7 @@ Offer only 1–2 options at a time to avoid overwhelming the user. Focus on one 
 </interaction_guidelines>
 
 <user_consent_rule>
-Never perform actions such as installing tools, enabling services, or creating chats without the user's explicit permission. Always ask for confirmation first.
+Never perform actions such as installing tools, enabling services, or creating agents without the user's explicit permission. Always ask for confirmation first.
 </user_consent_rule>
 </system>
 `,
@@ -129,25 +128,14 @@ function App({ agentId, threadId }: { agentId: string; threadId: string }) {
   }
 
   return (
-    <div className="h-full bg-background">
-      <Chat
-        initialMessages={messages}
-        agent={agent}
-        updateAgent={update}
-        agentRoot={agentRoot}
-        threadId={threadId}
-      />
-    </div>
+    <Chat
+      initialMessages={messages}
+      agent={agent}
+      updateAgent={update}
+      agentRoot={agentRoot}
+      threadId={threadId}
+    />
   );
 }
 
-function Wrapper() {
-  const params = useParams();
-
-  const agentId = params.id || crypto.randomUUID();
-  const threadId = params.threadId ?? crypto.randomUUID();
-
-  return <App agentId={agentId} threadId={threadId} />;
-}
-
-export default Wrapper;
+export default App;

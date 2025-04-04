@@ -18,7 +18,8 @@
   "workspace": [
     "./apps/web",
     "./packages/ui",
-    "./packages/sdk"
+    "./packages/sdk",
+    "./packages/store"
   ],
   "compilerOptions": {
     "lib": [

@@ -1,0 +1,26 @@
+*:not(:first-child) {
+  --dv-paneview-active-outline-color: var(--color-ring);
+  --dv-tabs-and-actions-container-font-size: 0.875rem; /* text-sm */
+  --dv-tabs-and-actions-container-height: 0px;
+  --dv-tab-close-icon: var(--color-foreground);
+  --dv-drag-over-background-color: var(--color-accent);
+  --dv-drag-over-border-color: var(--color-border);
+  --dv-tabs-container-scrollbar-color: var(--color-muted);
+  --dv-group-view-background-color: var(--color-background);
+  --dv-tabs-and-actions-container-background-color: var(--color-background);
+  --dv-activegroup-visiblepanel-tab-background-color: var(--color-accent);
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--color-muted);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--color-muted);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--color-muted);
+  --dv-tab-divider-color: var(--color-border);
+  --dv-activegroup-visiblepanel-tab-color: var(--color-accent-foreground);
+  --dv-activegroup-hiddenpanel-tab-color: var(--color-muted-foreground);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--color-muted-foreground);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--color-muted-foreground);
+  --dv-separator-border: var(--color-border);
+  --dv-paneview-header-border-color: var(--color-border);
+  --dv-icon-hover-background-color: var(--color-accent);
+  --dv-floating-box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --dv-active-sash-color: var(--color-ring);
+  --dv-background-color: var(--color-background);
+} 

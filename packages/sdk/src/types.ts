@@ -1,5 +1,4 @@
 import type { AddPanelOptions } from "dockview-react";
-import type { ComponentProps, ComponentType } from "react";
 import type { MCPConnection } from "./models/mcp.ts";
 
 // Sidebar item link.
@@ -7,27 +6,13 @@ export interface SidebarItemLink {
   // Label of the item
   label: string;
   // Icon of the item
-  icon: string | ComponentType;
+  icon: string;
   // Link to the item
   href: string;
 }
 
-// Sidebar item button.
-export interface SidebarItemButton {
-  // Link to the item
-  href?: string;
-  // Label of the item
-  label: string;
-  // Icon of the item
-  icon: string | ComponentType;
-  // On click handler
-  onClick: () => void;
-  // Component to render as
-  as?: ComponentType<ComponentProps<"a">>;
-}
-
 // Sidebar item.
-export type NavItem = SidebarItemLink | SidebarItemButton;
+export type NavItem = SidebarItemLink;
 
 // Storage for the sidebar.
 export interface SidebarStorage {

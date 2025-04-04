@@ -1,0 +1,15 @@
+{
+  "name": "@deco/store",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "react": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0"
+  },
+  "exports": {
+    ".": "./src/index.tsx"
+  }
+}

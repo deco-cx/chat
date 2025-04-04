@@ -1,8 +1,8 @@
-import { SDK } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import { useEffect, useState } from "react";
+import { togglePanel } from "../../agent/index.tsx";
 
 interface PreviewProps {
   type: "url" | "html";
@@ -102,18 +102,13 @@ export function Preview({ type, content, title, className }: PreviewProps) {
     : { srcDoc: wrapHtmlContent(content) };
 
   const handleExpand = () => {
-    SDK.layout.addPanel({
+    togglePanel({
       id: `preview-${title?.toLowerCase().replace(/\s+/g, "-")}`,
       component: "preview",
       title: title || "Preview",
-      params: {
-        content,
-        type,
-      },
+      params: iframeProps,
+      position: { direction: "right" },
       initialWidth: 400,
-      position: {
-        direction: "right",
-      },
     });
   };
 

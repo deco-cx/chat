@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "peerDependencies": {
-    "react": ">=18"
-  },
   "dependencies": {
     "dockview-react": "^4.2.1",
     "react": "^19.1.0",
     "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0"
   },
   "exports": {
     ".": "./src/index.ts",

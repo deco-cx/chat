@@ -75,18 +75,19 @@ function IntegrationMiniature({ toolSetId }: { toolSetId: string }) {
     return null;
   }
 
-  console.log({ integration });
-
   const icon = integration.icon || "icon://conversion_path";
 
   return (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
-        <TooltipTrigger onClick={(e) => {
-          e.stopPropagation();
+        <TooltipTrigger
+          onClick={(e) => {
+            e.stopPropagation();
 
-          navigate(`/integration/${integration.id}`);
-        }} asChild>
+            navigate(`/integration/${integration.id}`);
+          }}
+          asChild
+        >
           <div className="w-8 h-8 flex items-center justify-center border border-input rounded-lg p-1">
             {icon.startsWith("icon://")
               ? (
@@ -99,7 +100,6 @@ function IntegrationMiniature({ toolSetId }: { toolSetId: string }) {
                 <Avatar
                   url={icon}
                   fallback={integration.name.substring(0, 2)}
-                  size="sm"
                   className="h-full w-full rounded-none"
                 />
               )}
@@ -165,7 +165,7 @@ function AgentCard({ agentId, filter }: { agentId: string; filter: string }) {
     return null;
   }
 
-  const agentPinned = isPinned(agent.id);
+  const agentPinned = isPinned(agentId);
 
   // Handle pin/unpin agent to sidebar
   const handlePinToggle = (e: React.MouseEvent) => {
@@ -178,7 +178,7 @@ function AgentCard({ agentId, filter }: { agentId: string; filter: string }) {
       <Card
         className="shadow-sm group cursor-pointer hover:shadow-md transition-shadow flex flex-col rounded-2xl"
         onClick={() => {
-          focusAgent(agent.id, agent);
+          focusAgent(agentId, agent);
         }}
       >
         <CardContent className="p-4 gap-4 flex flex-col justify-start flex-grow">
@@ -192,8 +192,7 @@ function AgentCard({ agentId, filter }: { agentId: string; filter: string }) {
                     !/^(data:)|(https?:)/.test(agent.avatar)
                   ? agent.avatar
                   : agent.name.substring(0, 2)}
-                size="lg"
-                className="h-full w-full"
+                className="h-full w-full rounded-xl"
               />
             </div>
             <DropdownMenu>

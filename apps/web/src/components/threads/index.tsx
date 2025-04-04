@@ -2,9 +2,9 @@ import { Agent } from "@deco/sdk";
 import { useAgent } from "@deco/sdk/hooks";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
-import { useAgentRoot, useFocusAgent } from "../agents/hooks.ts";
 import { stub } from "../../utils/stub.ts";
+import { useAgentRoot, useFocusAgent } from "../agents/hooks.ts";
+import { useGlobalState } from "../../stores/global.tsx";
 
 interface Thread {
   id: string;
@@ -55,12 +55,13 @@ const groupThreadsByDate = (threads: Thread[]): GroupedThreads => {
 function ThreadItem(
   { agentId, agent, thread }: { agentId: string; agent: Agent; thread: Thread },
 ) {
+  const { state: { user } } = useGlobalState();
   const navigate = useFocusAgent();
   return (
     <button
       type="button"
-      onClick={() => navigate(agentId, agent, thread.id)}
-      key={thread.id}
+      onClick={() =>
+        navigate(agentId, agent, thread.id.replace(`${user?.id ?? ""}-`, ""))}
       className="w-full text-left p-3 hover:bg-slate-100 rounded-lg transition-colors"
     >
       <h2 className="text-sm">{thread.title}</h2>
@@ -72,7 +73,8 @@ const useThreads = (
   agentId: string,
   agentRoot: string | null,
 ) => {
-  const [threads, setThreads] = useState<Thread[] | null>(null);
+  const [data, setThreads] = useState<Thread[] | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     let cancel = false;
@@ -81,6 +83,8 @@ const useThreads = (
 
     const init = async () => {
       try {
+        setLoading(true);
+
         // TODO: I guess we can improve this and have proper typings
         // deno-lint-ignore no-explicit-any
         const agentStub = stub<any>("AIAgent")
@@ -96,6 +100,8 @@ const useThreads = (
 
         console.error(err);
         setThreads([]);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -106,15 +112,18 @@ const useThreads = (
     };
   }, [agentId, agentRoot]);
 
-  return threads;
+  return { data, loading };
 };
 
 function App({ agentId }: { agentId: string }) {
   const { data: agent, error, loading } = useAgent(agentId);
   const agentRoot = useAgentRoot(agentId);
-  const threads = useThreads(agentId, agentRoot);
+  const {
+    data: threads,
+    loading: threadsLoading,
+  } = useThreads(agentId, agentRoot);
 
-  if (loading || !agent) {
+  if (loading || !agent || threadsLoading) {
     return (
       <div className="h-full bg-background flex flex-col items-center justify-center">
         <div className="relative">
@@ -211,14 +220,4 @@ function App({ agentId }: { agentId: string }) {
   );
 }
 
-function Wrapper() {
-  const { id: agentId } = useParams();
-
-  if (!agentId) {
-    return <div>No agent ID provided</div>;
-  }
-
-  return <App agentId={agentId} />;
-}
-
-export default Wrapper;
+export default App;

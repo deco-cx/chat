@@ -1,4 +1,5 @@
 @import "@deco/ui/styles/global.css";
+@import "dockview-react/dist/styles/dockview.css";
 
 /* include the ui package */
 @source "../../packages/ui";
@@ -10,5 +11,40 @@
     float: left;
     height: 0;
     pointer-events: none;
+  }
+
+  * {
+    --dv-paneview-active-outline-color: var(--color-ring);
+    --dv-tabs-and-actions-container-font-size: 0.875rem;
+    --dv-tabs-and-actions-container-height: auto;
+    --dv-tab-close-icon: var(--color-foreground);
+    --dv-drag-over-background-color: var(--color-accent);
+    --dv-drag-over-border-color: var(--color-border);
+    --dv-tabs-container-scrollbar-color: var(--color-muted);
+    --dv-group-view-background-color: var(--color-background);
+    --dv-tabs-and-actions-container-background-color: var(--color-background);
+    --dv-activegroup-visiblepanel-tab-background-color: var(--color-background);
+    --dv-activegroup-hiddenpanel-tab-background-color: var(--color-muted);
+    --dv-inactivegroup-visiblepanel-tab-background-color: var(--color-muted);
+    --dv-inactivegroup-hiddenpanel-tab-background-color: var(--color-muted);
+    --dv-tab-divider-color: var(--color-border);
+    --dv-activegroup-visiblepanel-tab-color: var(--color-accent-foreground);
+    --dv-activegroup-hiddenpanel-tab-color: var(--color-muted-foreground);
+    --dv-inactivegroup-visiblepanel-tab-color: var(--color-muted-foreground);
+    --dv-inactivegroup-hiddenpanel-tab-color: var(--color-muted-foreground);
+    --dv-separator-border: var(--color-border);
+    --dv-paneview-header-border-color: var(--color-border);
+    --dv-icon-hover-background-color: var(--color-accent);
+    --dv-floating-box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --dv-active-sash-color: var(--color-ring);
+    --dv-background-color: var(--color-background);
+
+    :not(:first-child).dv-view {
+      @apply border border-input rounded-2xl;
+    }
+
+    :not(:first-child).dv-view .dv-tabs-and-actions-container {
+      @apply border-b border-input;
+    }
   }
 }
