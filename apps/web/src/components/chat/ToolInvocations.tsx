@@ -50,7 +50,7 @@ function ToolStatus(
 
   const getToolName = () => {
     if (tool.toolName.startsWith(HANDOFF_TOOL)) {
-      return `Calling ${parseHandoffTool(tool.toolName)}`;
+      return `Handing off ${parseHandoffTool(tool.toolName)}`;
     }
     return tool.toolName;
   };
