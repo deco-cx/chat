@@ -5,6 +5,9 @@ import { useState } from "react";
 import { Picker } from "./Picker.tsx";
 import { AgentCard } from "./tools/AgentCard.tsx";
 import { Preview } from "./tools/Preview.tsx";
+import { parseHandoffTool } from "./utils/parse.ts";
+
+const HANDOFF_TOOL = "HANDOFF_";
 
 interface ToolInvocationsProps {
   toolInvocations?: Message["toolInvocations"];
@@ -45,6 +48,13 @@ function ToolStatus(
     }
   };
 
+  const getToolName = () => {
+    if (tool.toolName.startsWith(HANDOFF_TOOL)) {
+      return `Handing off ${parseHandoffTool(tool.toolName)}`;
+    }
+    return tool.toolName;
+  };
+
   return (
     <div className="flex flex-col gap-1">
       <button
@@ -58,7 +68,7 @@ function ToolStatus(
             : getIcon(tool.state)}
         </span>
         <span className="font-medium">
-          {tool.toolName}
+          {getToolName()}
         </span>
         <span className="text-xs opacity-70">
           {getStatusText(tool.state)}

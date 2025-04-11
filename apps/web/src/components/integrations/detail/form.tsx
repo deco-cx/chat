@@ -85,6 +85,11 @@ export function DetailForm({ integration: editIntegration }: DetailProps) {
             ? ec.url || "wss://example.com/ws"
             : "wss://example.com/ws",
         }
+        : value === "AGENT"
+        ? {
+          type: "AGENT",
+          agentId: ec?.type === "AGENT" ? ec.agentId || "agent-id" : "agent-id",
+        }
         : {
           type: "Deco",
           tenant: ec?.type === "Deco" ? ec.tenant || "tenant-id" : "tenant-id",
@@ -277,6 +282,7 @@ export function DetailForm({ integration: editIntegration }: DetailProps) {
                             <SelectItem value="Websocket">WebSocket</SelectItem>
                             <SelectItem value="Deco">Deco</SelectItem>
                             <SelectItem value="HTTP">HTTP</SelectItem>
+                            <SelectItem value="AGENT">Agent</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -372,6 +378,21 @@ export function DetailForm({ integration: editIntegration }: DetailProps) {
                         )}
                       />
                     </>
+                  )}
+
+                  {connection.type === "AGENT" && (
+                    <FormField
+                      control={form.control}
+                      name="connection.agentId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Agent ID</FormLabel>
+                          <FormControl>
+                            <Input placeholder="agent-id" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
                   )}
                 </div>
               </div>
