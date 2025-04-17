@@ -41,6 +41,7 @@ import { EmptyState } from "../common/EmptyState.tsx";
 import { PageLayout } from "../pageLayout.tsx";
 import { useFocusAgent } from "./hooks.ts";
 import { trackEvent } from "../../hooks/analytics.ts";
+import { useCreateAdminDecoAgent } from "../../hooks/useDecoSiteAgent.ts";
 
 export const useDuplicateAgent = (agent: Agent | null) => {
   const [duplicating, setDuplicating] = useState(false);
@@ -331,6 +332,7 @@ export default function List() {
   const [creating, setCreating] = useState(false);
   const createAgent = useCreateAgent();
   const { data: agents } = useAgents();
+  useCreateAdminDecoAgent({ agents });
 
   // Filter agents based on the filter string
   const filteredAgents = agents?.filter((agent) =>
