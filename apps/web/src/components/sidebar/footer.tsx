@@ -1,11 +1,11 @@
 import { AUTH_URL } from "@deco/sdk";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@deco/ui/components/dropdown-menu.tsx";
+  ResponsiveDropdown,
+  ResponsiveDropdownContent,
+  ResponsiveDropdownItem,
+  ResponsiveDropdownSeparator,
+  ResponsiveDropdownTrigger,
+} from "@deco/ui/components/responsive-dropdown.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import {
   SidebarFooter as SidebarFooterInner,
@@ -49,8 +49,8 @@ function LoggedUser() {
     : null;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <ResponsiveDropdown>
+      <ResponsiveDropdownTrigger asChild>
         <SidebarMenuButton className="cursor-pointer gap-2">
           <Avatar
             url={userAvatarURL}
@@ -59,29 +59,29 @@ function LoggedUser() {
           />
           <span className="text-xs">{user.metadata?.full_name}</span>
         </SidebarMenuButton>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
+      </ResponsiveDropdownTrigger>
+      <ResponsiveDropdownContent
         side="top"
         align="start"
-        className="w-[200px] text-slate-700"
+        className="md:w-[200px] text-slate-700"
       >
-        <DropdownMenuItem asChild>
+        <ResponsiveDropdownItem asChild>
           <Link
             to="/wallet"
-            className="leading-7 text-xs"
+            className="flex items-center gap-2 leading-7 text-sm sm:text-xs"
             onClick={handleWalletClick}
           >
             <Icon name="wallet" />
             Wallet
           </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
+        </ResponsiveDropdownItem>
+        <ResponsiveDropdownSeparator />
+        <ResponsiveDropdownItem asChild>
           <a
             href="https://github.com/deco-cx/chat"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 leading-relaxed text-xs"
+            className="flex items-center gap-2 leading-relaxed text-sm sm:text-xs"
           >
             <img src="/img/github.svg" alt="GitHub" className="w-4 h-4" />
             deco-cx/chat
@@ -91,21 +91,21 @@ function LoggedUser() {
               </span>
             )}
           </a>
-        </DropdownMenuItem>
+        </ResponsiveDropdownItem>
 
-        <DropdownMenuSeparator />
+        <ResponsiveDropdownSeparator />
 
-        <DropdownMenuItem asChild>
+        <ResponsiveDropdownItem asChild>
           <a
             href={logoutUrl}
-            className="flex items-center gap-2 leading-relaxed text-xs"
+            className="flex items-center gap-2 leading-relaxed text-sm sm:text-xs"
           >
             <Icon name="logout" size={16} />
             Log out
           </a>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </ResponsiveDropdownItem>
+      </ResponsiveDropdownContent>
+    </ResponsiveDropdown>
   );
 }
 
