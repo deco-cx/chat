@@ -75,7 +75,7 @@ function CapabilityBadge(
 
 function ModelItemContent({ model }: { model: typeof MODELS[0] }) {
   return (
-    <div className="p-2 w-[400px] flex items-center justify-between gap-4">
+    <div className="p-2 md:w-[400px] flex items-center justify-between gap-4">
       <div className="flex items-center gap-2">
         <img src={model.logo} className="w-5 h-5" />
         <span className="text-normal">{model.name}</span>

@@ -89,17 +89,13 @@ const ResponsiveSelectItem = ({
   ...props
 }: React.ComponentProps<typeof select.SelectItem>) => {
   const { isMobile, setValue } = useResponsiveSelectContext();
-  const { className, onClick, ...restProps } = props;
+  const { className, ...restProps } = props;
 
   return isMobile
     ? (
       <div
         {...restProps}
-        onClick={(e) => {
-          e.preventDefault();
-          setValue(props.value);
-          console.log("clicked", props.value);
-        }}
+        onClick={() => setValue(props.value)}
         className={cn(className)}
       >
         {children}
