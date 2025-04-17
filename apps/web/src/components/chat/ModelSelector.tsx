@@ -1,28 +1,19 @@
 import { Icon } from "@deco/ui/components/icon.tsx";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@deco/ui/components/select.tsx";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@deco/ui/components/drawer.tsx";
-import { Button } from "@deco/ui/components/button.tsx";
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@deco/ui/components/tooltip.tsx";
+import {
+  ResponsiveSelect,
+  ResponsiveSelectContent,
+  ResponsiveSelectItem,
+  ResponsiveSelectTrigger,
+  ResponsiveSelectValue,
+} from "@deco/ui/components/responsive-select.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import { DEFAULT_REASONING_MODEL, MODELS } from "@deco/sdk";
 import { useState } from "react";
-import { useIsMobile } from "@deco/ui/hooks/use-mobile.ts";
 
 const mapLegacyModelId = (modelId: string): string => {
   const model = MODELS.find((m) => m.legacyId === modelId);
@@ -117,7 +108,6 @@ export function ModelSelector({
   onModelChange,
 }: ModelSelectorProps) {
   const [open, setOpen] = useState(false);
-  const isMobile = useIsMobile();
   const selectedModel = MODELS.find((m) => m.id === model) || MODELS[0];
 
   const handleModelChange = (model: string) => {
@@ -127,62 +117,21 @@ export function ModelSelector({
     }
   };
 
-  const triggerClassName = cn(
-    "!h-8 text-xs border hover:bg-slate-100 py-0 rounded-full px-2 shadow-none",
-  );
-
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={setOpen}>
-        <DrawerTrigger asChild>
-          <Button variant="outline" className={triggerClassName}>
-            <SelectedModelDisplay
-              model={selectedModel}
-            />
-          </Button>
-        </DrawerTrigger>
-        <DrawerContent>
-          <DrawerHeader className="hidden">
-            <DrawerTitle className="text-center">
-              Select agent model
-            </DrawerTitle>
-          </DrawerHeader>
-          <div className="flex flex-col gap-2 p-2 py-4">
-            {MODELS.map((model) => (
-              <Button
-                key={model.id}
-                variant="ghost"
-                className={cn(
-                  "p-0 focus:bg-slate-100 focus:text-foreground",
-                  model.id === selectedModel?.id && "bg-slate-50",
-                )}
-                onClick={() => handleModelChange(model.id)}
-              >
-                <ModelItemContent model={model} />
-              </Button>
-            ))}
-          </div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Select
+    <ResponsiveSelect
       open={open}
       onOpenChange={setOpen}
       value={mapLegacyModelId(model)}
       onValueChange={(value) => handleModelChange(value)}
     >
-      <SelectTrigger className={triggerClassName}>
-        <SelectValue placeholder="Select model">
+      <ResponsiveSelectTrigger className="!h-8 text-xs border hover:bg-slate-100 py-0 rounded-full px-2 shadow-none">
+        <ResponsiveSelectValue placeholder="Select model">
           <SelectedModelDisplay model={selectedModel} />
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent className="min-w-[400px]">
+        </ResponsiveSelectValue>
+      </ResponsiveSelectTrigger>
+      <ResponsiveSelectContent title="Select model">
         {MODELS.map((model) => (
-          <SelectItem
-            hideCheck
+          <ResponsiveSelectItem
             key={model.id}
             value={model.id}
             className={cn(
@@ -191,9 +140,9 @@ export function ModelSelector({
             )}
           >
             <ModelItemContent model={model} />
-          </SelectItem>
+          </ResponsiveSelectItem>
         ))}
-      </SelectContent>
-    </Select>
+      </ResponsiveSelectContent>
+    </ResponsiveSelect>
   );
 }
