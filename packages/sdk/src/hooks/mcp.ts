@@ -1,5 +1,6 @@
 import {
   useMutation,
+  useQuery,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
@@ -171,7 +172,7 @@ export const useFetchIntegration = () => {
 export const useIntegrations = () => {
   const { context } = useSDK();
 
-  const data = useSuspenseQuery({
+  const data = useQuery({
     queryKey: getKeyFor(context),
     queryFn: () => listIntegrations(context).then((r) => r.items),
   });

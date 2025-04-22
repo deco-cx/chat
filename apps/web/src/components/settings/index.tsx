@@ -174,7 +174,7 @@ function SettingsTab() {
           <div className="flex-1">
             <div className="flex flex-col gap-4">
               {installedIntegrations
-                .filter((i) => i.id !== agent.id)
+                ?.filter((i) => i.id !== agent.id)
                 .map((integration) => (
                   <Integration
                     key={integration.id}
