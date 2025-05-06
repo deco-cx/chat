@@ -1,33 +1,27 @@
+import { type Integration, useIntegrations } from "@deco/sdk";
 import { cn } from "@deco/ui/lib/utils.ts";
 import Placeholder from "@tiptap/extension-placeholder";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect } from "react";
 import { Markdown } from "tiptap-markdown";
+import {
+  Mention,
+  type MentionItem,
+  useMentionSuggestion,
+} from "./extensions/Mention.ts";
 import { NoNewLine } from "./extensions/NoNewLine.ts";
-
-export interface Mention {
-  id: string;
-  type: string;
-  content?: string;
-  label?: string;
-  title?: string;
-  models?: Array<{
-    model: string;
-    instructions: string;
-  }>;
-  selectedModel?: string;
-}
 
 interface RichTextAreaProps {
   value: string;
-  onChange: (markdown: string) => void;
+  onChange: (markdown: string, mentions?: MentionItem[]) => void;
   onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   onKeyUp?: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   onPaste?: (event: React.ClipboardEvent) => void;
   disabled?: boolean;
   placeholder?: string;
   className?: string;
+  integrations?: Integration[];
 }
 
 export function RichTextArea({
@@ -40,6 +34,9 @@ export function RichTextArea({
   placeholder,
   className,
 }: RichTextAreaProps) {
+  const { data: integrations } = useIntegrations();
+  const suggestion = useMentionSuggestion({ integrations });
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -47,6 +44,7 @@ export function RichTextArea({
         html: true,
       }),
       NoNewLine,
+      Mention(suggestion),
       Placeholder.configure({
         placeholder: placeholder ?? "Type a message...",
       }),
@@ -58,7 +56,12 @@ export function RichTextArea({
         html: true,
       });
 
-      onChange(markdown);
+      const mentions = editor.getJSON().content?.flatMap((node) =>
+        node.content?.filter((child) => child.type === "mention")
+          .map((child) => child.attrs) || []
+      ).filter(Boolean) as MentionItem[];
+
+      onChange(markdown, mentions);
     },
     editorProps: {
       attributes: {

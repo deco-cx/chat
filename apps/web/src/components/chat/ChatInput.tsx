@@ -1,6 +1,7 @@
 import {
   AgentNotFoundError,
   LEGACY_API_SERVER_URL,
+  listTools,
   MODELS,
   useAgent,
   useWriteFile,
@@ -12,6 +13,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { ErrorBoundary } from "../../ErrorBoundary.tsx";
 import { useUserPreferences } from "../../hooks/useUserPreferences.ts";
 import { useChatContext } from "./context.tsx";
+import type { MentionItem } from "./extensions/Mention.ts";
 import { ModelSelector } from "./ModelSelector.tsx";
 import { RichTextArea } from "./RichText.tsx";
 import ToolsButton from "./ToolsButton.tsx";
@@ -44,6 +46,7 @@ ChatInput.UI = (
   const {
     agentRoot,
     chat: { stop, input, handleInputChange, handleSubmit, status },
+    setStreamTools,
   } = useChatContext();
   const [isUploading, setIsUploading] = useState(false);
   const [files, setFiles] = useState<FileList | undefined>(undefined);
@@ -69,10 +72,35 @@ ChatInput.UI = (
 
   const writeFileMutation = useWriteFile();
 
-  const handleRichTextChange = (markdown: string) => {
+  const handleRichTextChange = async (
+    markdown: string,
+    mentions?: MentionItem[],
+  ) => {
     handleInputChange(
       { target: { value: markdown } } as React.ChangeEvent<HTMLTextAreaElement>,
     );
+
+    if (mentions?.length) {
+      const tools = await mentions.reduce(async (promise, mention) => {
+        const acc = await promise;
+        const integrationTools = await listTools(mention.connection);
+        if (integrationTools.tools.length > 0) {
+          const integrationId = mention.id;
+          acc[integrationId] = integrationTools.tools.map((tool) => tool.name);
+        }
+        return acc;
+      }, Promise.resolve({} as Record<string, string[]>));
+
+      // Only update stream tools if we have actual tools
+      if (Object.keys(tools).length > 0) {
+        setStreamTools(tools);
+      } else {
+        setStreamTools(null);
+      }
+    } else {
+      // If no mentions, remove the tools
+      setStreamTools(null);
+    }
   };
 
   // Auto-focus when loading state changes from true to false

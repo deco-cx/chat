@@ -13,6 +13,7 @@ import {
   useContext,
   useEffect,
   useRef,
+  useState,
 } from "react";
 import { trackEvent } from "../../hooks/analytics.ts";
 import { getAgentOverrides } from "../../hooks/useAgentOverrides.ts";
@@ -51,6 +52,7 @@ type IContext = {
   isAutoScrollEnabled: (e: HTMLDivElement | null) => boolean;
   retry: (context?: string[]) => void;
   select: (toolCallId: string, selectedValue: string) => Promise<void>;
+  setStreamTools: (tools: Record<string, string[]> | null) => void;
 };
 
 const Context = createContext<IContext | null>(null);
@@ -85,6 +87,9 @@ export function ChatProvider({
 }: PropsWithChildren<Props>) {
   const agentRoot = useAgentRoot(agentId);
   const invalidateAll = useInvalidateAll();
+  const [streamTools, setStreamTools] = useState<
+    Record<string, string[]> | null
+  >(null);
   const {
     addOptimisticThread,
   } = useAddOptimisticThread();
@@ -141,6 +146,7 @@ export function ChatProvider({
             delayInMs: 20,
             chunk: "word",
           },
+          tools: streamTools,
         }],
         metadata: { threadId: threadId ?? agentId },
       };
@@ -260,6 +266,7 @@ export function ChatProvider({
         isAutoScrollEnabled,
         retry: handleRetry,
         select: handlePickerSelect,
+        setStreamTools,
       }}
     >
       {children}

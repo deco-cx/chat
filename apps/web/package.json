@@ -18,6 +18,8 @@
     "@hookform/resolvers": "^5.0.1",
     "@tanstack/react-query": "^5.72.0",
     "@tiptap/extension-placeholder": "^2.11.7",
+    "@tiptap/extension-mention": "^2.11.7",
+    "tippy.js": "^6.3.7",
     "@tiptap/react": "^2.11.7",
     "@tiptap/starter-kit": "^2.11.7",
     "date-fns": "^4.1.0",
