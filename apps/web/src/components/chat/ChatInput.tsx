@@ -1,7 +1,6 @@
 import {
   AgentNotFoundError,
   LEGACY_API_SERVER_URL,
-  listTools,
   MODELS,
   useAgent,
   useWriteFile,
@@ -46,7 +45,7 @@ ChatInput.UI = (
   const {
     agentRoot,
     chat: { stop, input, handleInputChange, handleSubmit, status },
-    setStreamTools,
+    setMentions,
   } = useChatContext();
   const [isUploading, setIsUploading] = useState(false);
   const [files, setFiles] = useState<FileList | undefined>(undefined);
@@ -72,35 +71,14 @@ ChatInput.UI = (
 
   const writeFileMutation = useWriteFile();
 
-  const handleRichTextChange = async (
+  const handleRichTextChange = (
     markdown: string,
-    mentions?: MentionItem[],
+    mentions: MentionItem[] | null,
   ) => {
     handleInputChange(
       { target: { value: markdown } } as React.ChangeEvent<HTMLTextAreaElement>,
     );
-
-    if (mentions?.length) {
-      const tools = await mentions.reduce(async (promise, mention) => {
-        const acc = await promise;
-        const integrationTools = await listTools(mention.connection);
-        if (integrationTools.tools.length > 0) {
-          const integrationId = mention.id;
-          acc[integrationId] = integrationTools.tools.map((tool) => tool.name);
-        }
-        return acc;
-      }, Promise.resolve({} as Record<string, string[]>));
-
-      // Only update stream tools if we have actual tools
-      if (Object.keys(tools).length > 0) {
-        setStreamTools(tools);
-      } else {
-        setStreamTools(null);
-      }
-    } else {
-      // If no mentions, remove the tools
-      setStreamTools(null);
-    }
+    setMentions(mentions);
   };
 
   // Auto-focus when loading state changes from true to false

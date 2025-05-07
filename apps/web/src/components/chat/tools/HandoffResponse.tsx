@@ -30,8 +30,8 @@ export function HandoffResponse({ agentId, threadId }: HandoffResponseProps) {
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div className="rounded-xl border border-slate-200 overflow-hidden">
           {/* Agent Header */}
-          <CollapsibleTrigger asChild>
-            <button className="w-full bg-slate-50 p-4 flex items-center gap-3 border-b border-slate-200 hover:bg-slate-100 transition-colors">
+          <CollapsibleTrigger className="cursor-pointer">
+            <div className="w-full bg-slate-50 p-4 flex items-center gap-3 border-b border-slate-200 hover:bg-slate-100 transition-colors">
               <Avatar className="h-8 w-8">
                 <AvatarImage
                   src={agent?.avatar}
@@ -54,14 +54,14 @@ export function HandoffResponse({ agentId, threadId }: HandoffResponseProps) {
                   isOpen && "rotate-90",
                 )}
               />
-            </button>
+            </div>
           </CollapsibleTrigger>
 
           {/* Delegated Messages */}
           <CollapsibleContent>
-            <div className="bg-white/50 backdrop-blur-sm p-4">
+            <div className="bg-white/50 backdrop-blur-sm">
               <ChatProvider agentId={agentId} threadId={threadId}>
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-96 overflow-y-auto p-4">
                   <ChatMessages />
                 </div>
               </ChatProvider>

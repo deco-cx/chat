@@ -14,7 +14,7 @@ import { NoNewLine } from "./extensions/NoNewLine.ts";
 
 interface RichTextAreaProps {
   value: string;
-  onChange: (markdown: string, mentions?: MentionItem[]) => void;
+  onChange: (markdown: string, mentions: MentionItem[] | null) => void;
   onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   onKeyUp?: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   onPaste?: (event: React.ClipboardEvent) => void;
