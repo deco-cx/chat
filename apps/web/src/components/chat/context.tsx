@@ -13,10 +13,12 @@ import {
   useContext,
   useEffect,
   useRef,
+  useState,
 } from "react";
 import { trackEvent } from "../../hooks/analytics.ts";
 import { getAgentOverrides } from "../../hooks/useAgentOverrides.ts";
 import { useUserPreferences } from "../../hooks/useUserPreferences.ts";
+import { MentionItem } from "./extensions/Mention.ts";
 import { IMAGE_REGEXP, openPreviewPanel } from "./utils/preview.ts";
 
 const LAST_MESSAGES_COUNT = 10;
@@ -51,6 +53,7 @@ type IContext = {
   isAutoScrollEnabled: (e: HTMLDivElement | null) => boolean;
   retry: (context?: string[]) => void;
   select: (toolCallId: string, selectedValue: string) => Promise<void>;
+  setMentions: (tools: MentionItem[] | null) => void;
 };
 
 const Context = createContext<IContext | null>(null);
@@ -85,6 +88,7 @@ export function ChatProvider({
 }: PropsWithChildren<Props>) {
   const agentRoot = useAgentRoot(agentId);
   const invalidateAll = useInvalidateAll();
+  const [mentions, setMentions] = useState<MentionItem[] | null>(null);
   const {
     addOptimisticThread,
   } = useAddOptimisticThread();
@@ -129,6 +133,8 @@ export function ChatProvider({
       }
       const bypassOpenRouter = !preferences.useOpenRouter;
 
+      const integrations = mentions?.map((tool) => tool.id);
+
       const overrides = getAgentOverrides(agentId);
       return {
         args: [allMessages, {
@@ -137,6 +143,7 @@ export function ChatProvider({
           bypassOpenRouter,
           lastMessages: 0,
           sendReasoning: true,
+          integrations,
           smoothStream: {
             delayInMs: 20,
             chunk: "word",
@@ -260,6 +267,7 @@ export function ChatProvider({
         isAutoScrollEnabled,
         retry: handleRetry,
         select: handlePickerSelect,
+        setMentions,
       }}
     >
       {children}

@@ -12,6 +12,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { ErrorBoundary } from "../../ErrorBoundary.tsx";
 import { useUserPreferences } from "../../hooks/useUserPreferences.ts";
 import { useChatContext } from "./context.tsx";
+import type { MentionItem } from "./extensions/Mention.ts";
 import { ModelSelector } from "./ModelSelector.tsx";
 import { RichTextArea } from "./RichText.tsx";
 import ToolsButton from "./ToolsButton.tsx";
@@ -44,6 +45,7 @@ ChatInput.UI = (
   const {
     agentRoot,
     chat: { stop, input, handleInputChange, handleSubmit, status },
+    setMentions,
   } = useChatContext();
   const [isUploading, setIsUploading] = useState(false);
   const [files, setFiles] = useState<FileList | undefined>(undefined);
@@ -69,10 +71,14 @@ ChatInput.UI = (
 
   const writeFileMutation = useWriteFile();
 
-  const handleRichTextChange = (markdown: string) => {
+  const handleRichTextChange = (
+    markdown: string,
+    mentions: MentionItem[] | null,
+  ) => {
     handleInputChange(
       { target: { value: markdown } } as React.ChangeEvent<HTMLTextAreaElement>,
     );
+    setMentions(mentions);
   };
 
   // Auto-focus when loading state changes from true to false

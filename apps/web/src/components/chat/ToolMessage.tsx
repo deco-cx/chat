@@ -3,11 +3,11 @@ import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
-import { useEffect, useRef, useState } from "react";
-import { openPanel } from "../dock/index.tsx";
+import { useRef, useState } from "react";
 import { useChatContext } from "./context.tsx";
 import { Picker } from "./Picker.tsx";
 import { AgentCard } from "./tools/AgentCard.tsx";
+import { HandoffResponse } from "./tools/HandoffResponse.tsx";
 import { Preview } from "./tools/Preview.tsx";
 import { parseHandoffTool } from "./utils/parse.ts";
 
@@ -28,6 +28,7 @@ const CUSTOM_UI_TOOLS = [
   "CONFIRM",
   "CONFIGURE",
   "AGENT_CREATE",
+  "HANDOFF_",
 ] as const;
 type CustomUITool = typeof CUSTOM_UI_TOOLS[number];
 
@@ -43,7 +44,7 @@ interface ToolInvocation {
 }
 
 function isCustomUITool(toolName: string): toolName is CustomUITool {
-  return CUSTOM_UI_TOOLS.includes(toolName as CustomUITool);
+  return CUSTOM_UI_TOOLS.some((tool) => toolName.startsWith(tool));
 }
 
 function ToolStatus({
@@ -88,32 +89,6 @@ function ToolStatus({
       2,
     ).replace(/"(\w+)":/g, '"$1":');
   };
-
-  useEffect(() => {
-    if (
-      tool.state === "result" &&
-      tool.result?.data &&
-      tool.toolName.startsWith("HANDOFF_")
-    ) {
-      const { threadId, agentId } = tool.result.data as {
-        threadId: string;
-        agentId: string;
-      };
-
-      const panelId = `chat-${threadId}`;
-
-      openPanel({
-        id: panelId,
-        component: "chatView",
-        title: parseHandoffTool(tool.toolName),
-        params: {
-          threadId,
-          agentId,
-          key: `${panelId}-${Date.now()}`,
-        },
-      });
-    }
-  }, [tool.state]);
 
   const onClick = () => {
     setIsExpanded((prev) => {
@@ -224,8 +199,16 @@ function CustomToolUI({ tool, isLastMessage }: {
 }) {
   const { select } = useChatContext();
 
-  if (tool.state !== "result" || !tool.result?.data) return null;
+  if (tool.toolName.startsWith("HANDOFF_") && tool.state !== "result") {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground p-4 border border-slate-200 rounded-2xl">
+        <Spinner size="xs" variant="default" />
+        <span>Delegating to {parseHandoffTool(tool.toolName)}</span>
+      </div>
+    );
+  }
 
+  if (tool.state !== "result" || !tool.result?.data) return null;
   switch (tool.toolName) {
     case "RENDER": {
       return (
@@ -268,6 +251,13 @@ function CustomToolUI({ tool, isLastMessage }: {
       );
     }
     default: {
+      if (tool.toolName.startsWith("HANDOFF_")) {
+        const { threadId, agentId } = tool.result.data as {
+          threadId: string;
+          agentId: string;
+        };
+        return <HandoffResponse agentId={agentId} threadId={threadId} />;
+      }
       return null;
     }
   }
