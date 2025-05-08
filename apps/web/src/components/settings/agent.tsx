@@ -114,7 +114,7 @@ function SettingsTab({ formId }: SettingsTabProps) {
                 <FormLabel>Name</FormLabel>
                 <FormControl>
                   <Input
-                    className="rounded-md"
+                    className="rounded-md border-slate-200"
                     placeholder="Enter agent name"
                     {...field}
                   />
@@ -132,7 +132,7 @@ function SettingsTab({ formId }: SettingsTabProps) {
                 <FormControl>
                   <Textarea
                     placeholder="Enter the agent's system prompt"
-                    className="min-h-36"
+                    className="min-h-36 border-slate-200"
                     {...field}
                   />
                 </FormControl>
@@ -146,14 +146,14 @@ function SettingsTab({ formId }: SettingsTabProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>About this agent</FormLabel>
-                <FormDescription>
+                <FormDescription className="text-xs text-slate-400">
                   Used only for organization and search, it does not affect the
                   agent's behaviour
                 </FormDescription>
                 <FormControl>
                   <Textarea
                     placeholder="Describe your agent's purpose"
-                    className="min-h-18"
+                    className="min-h-18 border-slate-200"
                     {...field}
                   />
                 </FormControl>
@@ -170,7 +170,7 @@ function SettingsTab({ formId }: SettingsTabProps) {
                 <FormControl>
                   <Input
                     type="number"
-                    className="rounded-md"
+                    className="rounded-md border-slate-200"
                     min={ANTHROPIC_MIN_MAX_TOKENS}
                     max={ANTHROPIC_MAX_MAX_TOKENS}
                     {...field}
@@ -184,23 +184,30 @@ function SettingsTab({ formId }: SettingsTabProps) {
 
           {/* Tools Section */}
           <div className="space-y-2 mb-8">
-            <FormLabel className="text-lg font-medium">
-              Integrations
-            </FormLabel>
-            <FormDescription>
-              Enable or disable integrations to customize your agent's
-              capabilities
-            </FormDescription>
+            <div className="space-y-1">
+              <FormLabel>
+                Tools
+              </FormLabel>
+              <FormDescription className="text-xs text-slate-400">
+                Extensions that expand the agent's abilities.
+              </FormDescription>
+            </div>
             <div className="flex-1">
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
                 {installedIntegrations
                   .filter((i) => !i.id.includes(agentId))
+                  .filter((integration) =>
+                    Array.isArray(agent?.tools_set?.[integration.id]) ||
+                    (toolsSet[integration.id] &&
+                      toolsSet[integration.id].length > 0)
+                  )
                   .map((integration) => (
                     <Integration
                       key={integration.id}
                       integration={integration}
                       setIntegrationTools={setIntegrationTools}
                       enabledTools={toolsSet[integration.id] || []}
+                      savedTools={agent?.tools_set?.[integration.id] || []}
                     />
                   ))}
               </div>
