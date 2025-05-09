@@ -1,0 +1,10 @@
+// needed by shadcn, oh whell
+{
+  "compilerOptions": {
+    "paths": {
+      "@deco/ui/*": [
+        "src/*"
+      ]
+    }
+  }
+}

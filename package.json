@@ -22,7 +22,8 @@
     "./apps/web",
     "./apps/api",
     "./packages/ui",
-    "./packages/sdk"
+    "./packages/sdk",
+    "./packages/ai"
   ],
   "compilerOptions": {
     "lib": [

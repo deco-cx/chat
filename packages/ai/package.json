@@ -1,0 +1,48 @@
+{
+  "name": "@deco/ai",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@ai-sdk/anthropic": "^1.1.17",
+    "@ai-sdk/google": "^1.1.25",
+    "@ai-sdk/openai": "^1.2.5",
+    "@ai-sdk/provider": "^1.0.11",
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.49.0",
+    "@openrouter/ai-sdk-provider": "0.4.5",
+    "@mastra/core": "0.9.0",
+    "@mastra/mcp": "0.4.0",
+    "@mastra/memory": "0.3.0",
+    "@modelcontextprotocol/sdk": "^1.7.0",
+    "ai": "^4.1.61",
+    "zod": "^3.24.2",
+    "zod-to-json-schema": "^3.24.4",
+    "@deco/actors": "npm:@jsr/deco__actors@0.32.9",
+    "@ai-sdk/provider-utils": "^2.0.5",
+    "nanoid": "^5.1.4",
+    "secure-json-parse": "^4.0.0",
+    "eventsource-parser": "^3.0.0",
+    "@tursodatabase/api": "^1.9.0",
+    "@libsql/client": "^0.15.0",
+    "uuid": "^11.1.0",
+    "croner": "^9.0.0",
+    "diff": "7.0.0",
+    "hono": "^4.7.9"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250319.0"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./actors": "./src/actors.ts",
+    "./mcp": "./src/mcp.ts",
+    "./tools": "./src/tools.ts",
+    "./memory": "./src/memory/memory.ts",
+    "./storage": "./src/storage/index.ts",
+    "./storage/fs": "./src/storage/options/fsStorage.ts",
+    "./storage/supabase": "./src/storage/options/supabaseStorage.ts",
+    "./agent": "./src/agent.ts",
+    "./integrations": "./src/models/integrations.ts",
+    "./triggers": "./src/triggers/services.ts"
+  }
+}

@@ -9,13 +9,36 @@
     "@zenfs/core": "^2.0.0",
     "ai": "^4.3.13",
     "dockview-react": "^4.2.1",
+    "jwt-decode": "^4.0.0",
+    "lru-cache": "^11.1.0",
     "react": "^19.1.0",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "@supabase/supabase-js": "^2.49.4",
+    "@supabase/ssr": "^0.6.1",
+    "@microlabs/otel-cf-workers": "^1.0.0-rc.49",
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/core": "^1.26.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.200.0",
+    "@opentelemetry/resources": "^1.26.0",
+    "@opentelemetry/sdk-trace-base": "^1.26.0",
+    "@opentelemetry/sdk-trace-node": "^1.26.0",
+    "@opentelemetry/semantic-conventions": "^1.21.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.53.0",
+    "@opentelemetry/otlp-exporter-base": "^0.53.0",
+    "@opentelemetry/otlp-transformer": "^0.53.0"
   },
   "devDependencies": {
     "@types/react": "^19.1.0"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./observability": "./src/observability/index.ts",
+    "./actors": "./src/actors/index.ts",
+    "./cache": "./src/cache/index.ts",
+    "./common": "./src/common/index.ts",
+    "./hosts": "./src/hosts.ts",
+    "./path": "./src/path.ts",
+    "./auth": "./src/auth/index.ts",
+    "./timings": "./src/timings.ts"
   }
 }
