@@ -18,6 +18,7 @@ import { useUser } from "../../hooks/data/useUser.ts";
 import { useWorkspaceLink } from "../../hooks/useNavigateWorkspace.ts";
 import { Avatar } from "../common/Avatar.tsx";
 import { CreateTeamDialog } from "./CreateTeamDialog.tsx";
+import { InviteTeamMembersDialog } from "../common/InviteTeamMembersDialog.tsx";
 
 interface CurrentTeam {
   avatarUrl: string | undefined;
@@ -107,7 +108,7 @@ function CurrentTeamDropdownTrigger() {
 
 function CurrentTeamDropdownOptions() {
   const buildWorkspaceLink = useWorkspaceLink();
-  const { avatarUrl, slug, label } = useCurrentTeam();
+  const { avatarUrl, slug, label, id: teamId } = useCurrentTeam();
   const url = slug ? `/${slug}` : "/";
 
   return (
@@ -140,17 +141,25 @@ function CurrentTeamDropdownOptions() {
           </span>
         </Link>
       </ResponsiveDropdownItem>
-      <ResponsiveDropdownItem
-        className="gap-4 cursor-pointer aria-disabled:opacity-50 aria-disabled:cursor-default aria-disabled:pointer-events-none"
-        aria-disabled
-      >
-        <span className="grid place-items-center p-1">
-          <Icon name="person_add" size={18} />
-        </span>
-        <span className="md:text-xs flex-grow justify-self-start">
-          Add team member
-        </span>
-      </ResponsiveDropdownItem>
+      <InviteTeamMembersDialog
+        teamId={typeof teamId === "number" ? teamId : undefined}
+        trigger={
+          <ResponsiveDropdownItem
+            className="gap-4 cursor-pointer"
+            onClick={(e) => {
+              // Prevent event from bubbling up to parent elements
+              e.stopPropagation();
+            }}
+          >
+            <span className="grid place-items-center p-1">
+              <Icon name="person_add" size={18} />
+            </span>
+            <span className="md:text-xs flex-grow justify-self-start">
+              Add team member
+            </span>
+          </ResponsiveDropdownItem>
+        }
+      />
     </>
   );
 }

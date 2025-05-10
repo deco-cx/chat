@@ -176,6 +176,7 @@ appAuth.all("/callback/oauth", async (ctx: AppContext) => {
     const { error } = await db.auth.exchangeCodeForSession(code);
 
     if (error) {
+      console.log(error);
       throw new Error("Failed to finish login flow");
     }
 
@@ -215,6 +216,7 @@ appAuth.all("/callback/magiclink", async (ctx: AppContext) => {
     });
 
     if (error) {
+      console.log(error);
       throw new Error("Failed to finish login flow");
     }
 

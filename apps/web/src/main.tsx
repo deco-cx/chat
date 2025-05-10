@@ -106,6 +106,10 @@ const UsageSettings = lazy(() =>
   wrapWithUILoadingFallback(import("./components/settings/usage.tsx"))
 );
 
+const InvitesList = lazy(() =>
+  wrapWithUILoadingFallback(import("./components/invites/index.tsx"))
+);
+
 function NotFound() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -170,6 +174,10 @@ function Router() {
       <Route path="login/magiclink" element={<MagicLink />} />
 
       <Route path="about" element={<About />} />
+
+      <Route path="invites" element={<Layout />}>
+        <Route index element={<InvitesList />} />
+      </Route>
 
       <Route path="/:teamSlug?/settings" element={<WorkspaceSettingsLayout />}>
         <Route index element={<GeneralSettings />} />

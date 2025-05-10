@@ -39,6 +39,9 @@ export const listIntegrations = createApiHandler({
     const root = c.req.param("root");
     const slug = c.req.param("slug");
     const workspace = `${root}/${slug}`;
+    const host = c.req.raw.headers.get("host") || "deco.chat";
+    const protocol = host.includes("localhost") ? "http" : "https";
+    const baseUrl = `${protocol}://${host}`;
 
     const [
       _assertions,
@@ -62,10 +65,40 @@ export const listIntegrations = createApiHandler({
       throw new Error(error.message || "Failed to list integrations");
     }
 
+    // Create a virtual User Management integration
+    const userManagementIntegration = {
+      id: formatId("i", "user-management"),
+      name: "User Management",
+      description: "Manage your teams, invites and profile",
+      connection: {
+        type: "HTTP",
+        url: `${baseUrl}/mcp`,
+      },
+      icon: "https://i.imgur.com/GD4o7vx.png",
+      workspace: `${root}/${slug}`,
+      created_at: new Date().toISOString(),
+    };
+
+    // Create a virtual Workspace Management integration
+    const workspaceManagementIntegration = {
+      id: formatId("i", "workspace-management"),
+      name: "Workspace Management",
+      description: "Manage your agents, integrations and threads",
+      connection: {
+        type: "HTTP",
+        url: `${baseUrl}/${root}/${slug}/mcp`,
+      },
+      icon: "https://assets.webdraw.app/uploads/deco-avocado-light.png",
+      workspace: `${root}/${slug}`,
+      created_at: new Date().toISOString(),
+    };
+
+    // TODO: Make Actor Backend able to handle these two virtual integrations
+
     return [
-      ...integrations.data.map((
-        item,
-      ) => ({
+      userManagementIntegration,
+      workspaceManagementIntegration,
+      ...integrations.data.map((item) => ({
         ...item,
         id: formatId("i", item.id),
       })),

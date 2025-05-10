@@ -45,7 +45,7 @@ export const createIntegration = async (
     name: "New Integration",
     description: "A new multi-channel platform integration",
     icon: "",
-    connection: { type: "SSE", url: "https://example.com/sse" },
+    connection: { type: "HTTP", url: "https://example.com/mcp" },
     ...template,
   };
 

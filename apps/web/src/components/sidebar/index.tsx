@@ -1,4 +1,10 @@
-import { Thread, useAgents, useIntegrations, useThreads } from "@deco/sdk";
+import {
+  Thread,
+  useAgents,
+  useIntegrations,
+  useInvites,
+  useThreads,
+} from "@deco/sdk";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import {
   Sidebar,
@@ -165,6 +171,48 @@ function PrefetchAgents() {
   return null;
 }
 
+function _InvitesLinkErrorFallback() {
+  // Return null on error to ensure the sidebar doesn't break
+  return null;
+}
+
+function InvitesLink() {
+  const { data: invites = [] } = useInvites();
+  const href = "/invites";
+  const match = useMatch(href);
+
+  console.log({ invites });
+  // If no invites, don't show the link
+  if (!invites.length) {
+    return null;
+  }
+
+  const handleClick = () => {
+    trackEvent("sidebar_navigation_click", {
+      item: "Invites",
+    });
+  };
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        asChild
+        isActive={!!match}
+        tooltip="Invites"
+        className="h-9 relative"
+      >
+        <Link to={href} onClick={handleClick}>
+          <Icon name="mail" filled={!!match} />
+          <span className="truncate">Invites</span>
+          <span className="absolute right-2 top-1/2 -mt-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
+            {invites.length}
+          </span>
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+}
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -220,6 +268,7 @@ export function AppSidebar() {
                       </SidebarMenuItem>
                     );
                   })}
+                  <InvitesLink />
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

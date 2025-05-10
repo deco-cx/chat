@@ -7,7 +7,6 @@ import {
 } from "react";
 import {
   type Member,
-  useAddTeamMember,
   useRemoveTeamMember,
   useTeam,
   useTeamMembers,
@@ -20,14 +19,6 @@ import {
   TableHeader,
   TableRow,
 } from "@deco/ui/components/table.tsx";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@deco/ui/components/dialog.tsx";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Input } from "@deco/ui/components/input.tsx";
 import {
@@ -37,17 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@deco/ui/components/dropdown-menu.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@deco/ui/components/form.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { useIsMobile } from "@deco/ui/hooks/use-mobile.ts";
 
@@ -56,13 +37,21 @@ import { timeAgo } from "../../utils/timeAgo.ts";
 import { useCurrentTeam } from "../sidebar/TeamSelector.tsx";
 import { SettingsMobileHeader } from "./SettingsMobileHeader.tsx";
 import { cn } from "../../../../../packages/ui/src/lib/utils.ts";
+import { InviteTeamMembersDialog } from "../common/InviteTeamMembersDialog.tsx";
 
 // Form validation schema
-const addMemberSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
+const inviteMemberSchema = z.object({
+  invitees: z.array(
+    z.object({
+      email: z.string().email({
+        message: "Please enter a valid email address",
+      }),
+      roleId: z.string().min(1, { message: "Please select a role" }),
+    }),
+  ).min(1),
 });
 
-type AddMemberFormData = z.infer<typeof addMemberSchema>;
+type InviteMemberFormData = z.infer<typeof inviteMemberSchema>;
 
 function MemberTitle() {
   return (
@@ -104,92 +93,16 @@ function MembersViewLoading() {
 }
 
 function AddTeamMemberButton({ teamId }: { teamId?: number }) {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const addMemberMutation = useAddTeamMember();
-
-  const form = useForm<AddMemberFormData>({
-    resolver: zodResolver(addMemberSchema),
-    defaultValues: {
-      email: "",
-    },
-  });
-
-  // Add new member
-  const handleAddMember = async (data: AddMemberFormData) => {
-    if (!teamId) return;
-    try {
-      await addMemberMutation.mutateAsync({
-        teamId,
-        ...data,
-      });
-
-      // Reset form and close dialog
-      form.reset();
-      setIsAddDialogOpen(false);
-    } catch (error) {
-      console.error("Failed to add team member:", error);
-    }
-  };
   return (
-    <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-      <DialogTrigger asChild>
+    <InviteTeamMembersDialog
+      teamId={teamId}
+      trigger={
         <Button variant="ghost" size="icon">
-          <span className="sr-only">close add member dialog</span>
+          <span className="sr-only">Invite team members</span>
           <Icon name="add" />
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add New Team Member</DialogTitle>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleAddMember)}
-            className="space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter email address"
-                      {...field}
-                      autoComplete="email"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  form.reset();
-                  setIsAddDialogOpen(false);
-                }}
-                type="button"
-                disabled={addMemberMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={addMemberMutation.isPending ||
-                  !form.formState.isValid}
-              >
-                {addMemberMutation.isPending ? "Adding..." : "Add Member"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+      }
+    />
   );
 }
 

@@ -37,6 +37,10 @@ export const KEYS = {
   TEAM_MEMBERS: (
     slugOrId: string | number,
   ) => ["taem", slugOrId, "members"],
+  TEAM_ROLES: (
+    teamId: number,
+  ) => ["team", teamId, "roles"],
+  MY_INVITES: () => ["my_invites"],
   TRIGGERS: (workspace: Workspace, agentId = "") => [
     "triggers",
     workspace,
