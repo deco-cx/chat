@@ -5,10 +5,12 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.d.ts";
 import { type User as SupaUser } from "@supabase/supabase-js";
 import Cloudflare from "cloudflare";
 import { Context } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { env as honoEnv } from "hono/adapter";
 import type { TimingVariables } from "hono/timing";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { z } from "zod";
+import { AuthorizationClient, PolicyClient } from "../auth/policy.ts";
 
 export type AppEnv = {
   Variables: {
@@ -16,6 +18,8 @@ export type AppEnv = {
     user: SupaUser;
     cf: Cloudflare;
     immutableRes?: boolean;
+    policy: PolicyClient;
+    authorization: AuthorizationClient;
     stub: <
       Constructor extends
         | ActorConstructor<Trigger>
@@ -129,11 +133,25 @@ export const createApiHandler = <
   name: string;
   description: string;
   schema: T;
+  canAccess: (props: z.infer<T>, c: AppContext) => Promise<boolean> | boolean;
   handler: (props: z.infer<T>, c: AppContext) => Promise<R> | R;
 }) => ({
   ...definition,
-  handler: (props: z.infer<T>): Promise<R> | R =>
-    definition.handler(props, State.getStore()),
+  handler: async (props: z.infer<T>): Promise<R> => {
+    const context = State.getStore();
+
+    // Check if canAccess function is provided and the user has access
+    if (definition.canAccess) {
+      const hasAccess = await definition.canAccess(props, context);
+      if (!hasAccess) {
+        throw new HTTPException(403, {
+          message: `User cannot access this tool ${definition.name}`,
+        });
+      }
+    }
+
+    return definition.handler(props, context);
+  },
 });
 
 export type ApiHandler = ReturnType<typeof createApiHandler>;
