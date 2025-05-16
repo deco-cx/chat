@@ -273,8 +273,8 @@ export interface WalletAPI {
 }
 
 // for local dev
-// const WALLET_API_URL = "http://localhost:8001";
-const WALLET_API_URL = "https://wallet.webdraw.com";
+const WALLET_API_URL = "http://localhost:8001";
+// const WALLET_API_URL = "https://wallet.webdraw.com";
 
 export function createWalletClient(
   apiKey: string,

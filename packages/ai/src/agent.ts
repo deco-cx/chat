@@ -736,17 +736,13 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     const agent = this.withAgentOverrides(options);
     agentOverridesTiming.end();
 
-    // if no wallet was initialized, let the stream proceed.
-    // we can change this later to be more restrictive.
     const wallet = this.wallet;
-    const userId = this.metadata?.principal?.id;
-    if (userId) {
-      const walletTiming = timings.start("init-wallet");
-      const hasBalance = await wallet.canProceed(userId);
-      walletTiming.end();
-      if (!hasBalance) {
-        throw new Error("Insufficient funds");
-      }
+    const walletTiming = timings.start("init-wallet");
+    const hasBalance = await wallet.canProceed();
+    walletTiming.end();
+
+    if (!hasBalance) {
+      throw new Error("Insufficient funds");
     }
 
     const ttfbSpan = tracer.startSpan("stream-ttfb", {
@@ -814,15 +810,13 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
         // TODO(@mcandeia): add error tracking with posthog
       },
       onFinish: (result) => {
-        if (userId) {
-          wallet.computeLLMUsage({
-            userId,
-            usage: result.usage,
-            threadId: this.thread.threadId,
-            model: this._configuration?.model ?? DEFAULT_MODEL,
-            agentName: this._configuration?.name ?? ANONYMOUS_NAME,
-          });
-        }
+        wallet.computeLLMUsage({
+          userId: this.metadata?.principal?.id,
+          usage: result.usage,
+          threadId: this.thread.threadId,
+          model: this._configuration?.model ?? DEFAULT_MODEL,
+          agentName: this._configuration?.name ?? ANONYMOUS_NAME,
+        });
       },
     });
     streamTiming.end();

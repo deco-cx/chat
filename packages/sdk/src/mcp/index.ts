@@ -9,6 +9,7 @@ import * as profilesAPI from "./profiles/api.ts";
 import * as teamsAPI from "./teams/api.ts";
 import * as threadsAPI from "./threads/api.ts";
 import * as triggersAPI from "./triggers/api.ts";
+import * as walletAPI from "./wallet/api.ts";
 
 // Register tools for each API handler
 export const GLOBAL_TOOLS = [
@@ -57,6 +58,7 @@ export const WORKSPACE_TOOLS = [
   triggersAPI.createWebhookTrigger,
   triggersAPI.deleteTrigger,
   triggersAPI.getWebhookTriggerUrl,
+  walletAPI.getWalletAccount,
 ] as const;
 
 export type WorkspaceTools = typeof WORKSPACE_TOOLS;

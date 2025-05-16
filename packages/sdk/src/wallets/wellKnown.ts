@@ -11,20 +11,18 @@ export const WellKnownWallets = {
     const [discriminator, type] = discriminatorAndCategory.split("@");
     return { type, discriminator, category };
   },
-  user: {
-    genCredits: (
-      userId: string,
-    ) =>
-      [
-        "user" as const,
-        `gen-credits-${userId}`,
-        "liability" as const,
-      ] as const,
-  },
+  workspace: (
+    workspaceId: string,
+  ) =>
+    [
+      "workspace" as const,
+      `gen-credits-${workspaceId}`,
+      "liability" as const,
+    ] as const,
 } as const;
 
 export const WellKnownTransactions = {
   freeTwoDollars: (
-    userId: string,
-  ) => `free-two-dollars-${userId}`,
+    workspaceId: string,
+  ) => `free-two-dollars-${workspaceId}`,
 } as const;

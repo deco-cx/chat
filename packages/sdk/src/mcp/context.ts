@@ -19,6 +19,7 @@ export interface Vars {
   db: Client;
   user: SupaUser;
   cf: Cloudflare;
+  walletBinding?: { fetch: typeof fetch }
   immutableRes?: boolean;
   stub: <
     Constructor extends
@@ -40,6 +41,8 @@ export interface EnvVars {
   CF_ACCOUNT_ID: string;
   CF_API_TOKEN: string;
   CF_DISPATCH_NAMESPACE: string;
+  WALLET_API_KEY: string;
+  STRIPE_SECRET_KEY: string;
 }
 
 export type AppContext = Vars & { envVars: EnvVars };
@@ -63,44 +66,28 @@ export const serializeError = (error: unknown): string => {
   }
 };
 
-export const getEnv = (ctx: AppContext) => {
-  const {
-    CF_DISPATCH_NAMESPACE,
-    CF_ACCOUNT_ID,
-    CF_API_TOKEN,
-    VITE_USE_LOCAL_BACKEND,
-    SUPABASE_URL,
-    SUPABASE_SERVER_TOKEN,
-    TURSO_GROUP_DATABASE_TOKEN,
-    TURSO_ORGANIZATION,
-    RESEND_API_KEY,
-    OPENROUTER_API_KEY,
-  } = ctx.envVars;
+const REQUIRED_LOCAL_ENV_VARS = [
+  "OPENROUTER_API_KEY",
+  "CF_ACCOUNT_ID",
+  "SUPABASE_URL",
+  "SUPABASE_SERVER_TOKEN",
+  "CF_API_TOKEN",
+  "CF_DISPATCH_NAMESPACE",
+  "TURSO_GROUP_DATABASE_TOKEN",
+  "TURSO_ORGANIZATION",
+] as const;
 
+export const getEnv = (ctx: AppContext) => {
   if (
-    typeof OPENROUTER_API_KEY !== "string" ||
-    typeof CF_ACCOUNT_ID !== "string" ||
-    typeof SUPABASE_URL !== "string" ||
-    typeof SUPABASE_SERVER_TOKEN !== "string" ||
-    typeof CF_API_TOKEN !== "string" ||
-    typeof CF_DISPATCH_NAMESPACE !== "string" ||
-    typeof TURSO_GROUP_DATABASE_TOKEN !== "string" ||
-    typeof TURSO_ORGANIZATION !== "string"
+    !REQUIRED_LOCAL_ENV_VARS.every((v) => typeof ctx.envVars[v] === "string")
   ) {
-    throw new Error("Missing environment variables");
+    const missing = REQUIRED_LOCAL_ENV_VARS.filter(
+      (v) => typeof ctx.envVars[v] !== "string",
+    );
+    throw new Error(`Missing environment variables: ${missing.join(", ")}`);
   }
 
-  return {
-    CF_ACCOUNT_ID,
-    CF_API_TOKEN,
-    CF_DISPATCH_NAMESPACE,
-    VITE_USE_LOCAL_BACKEND,
-    SUPABASE_URL,
-    SUPABASE_SERVER_TOKEN,
-    TURSO_GROUP_DATABASE_TOKEN,
-    TURSO_ORGANIZATION,
-    RESEND_API_KEY,
-  };
+  return ctx.envVars;
 };
 
 export const AUTH_URL = (ctx: AppContext) =>

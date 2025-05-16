@@ -63,18 +63,6 @@ function parseCurrency(value: string) {
   return value.replace(/\D/g, "");
 }
 
-function AccountValue() {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["wallet"],
-    queryFn: () => getWalletAccount(),
-  });
-
-  if (isLoading) return <Skeleton className="w-24 h-8" />;
-  if (error) return <p>Error loading wallet</p>;
-
-  return <p className="text-4xl font-bold">{data?.balance}</p>;
-}
-
 function Activity() {
   const [cursor, setCursor] = useState("");
   const { data: statements, isLoading, error, isFetching } = useQuery({

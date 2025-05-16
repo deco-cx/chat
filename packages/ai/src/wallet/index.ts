@@ -17,7 +17,7 @@ export interface AgentWalletConfig {
 }
 
 export interface ComputeAgentUsageOpts {
-  userId: string;
+  userId?: string;
   usage: LanguageModelUsage;
   threadId: string;
   model: string;
@@ -37,23 +37,23 @@ export class AgentWallet {
   private rewardPromise: Map<string, Promise<void>> = new Map();
   constructor(private config: AgentWalletConfig) {}
 
-  async updateBalanceCache(userId: string) {
-    const hasBalance = await this.hasBalance(userId);
-    this.hasBalanceCache.set(userId, hasBalance);
+  async updateBalanceCache() {
+    const hasBalance = await this.hasBalance();
+    this.hasBalanceCache.set(this.config.workspace, hasBalance);
     return hasBalance;
   }
 
-  async canProceed(userId: string) {
-    const hasBalance = await this.hasBalanceCache.get(userId);
+  async canProceed() {
+    const hasBalance = await this.hasBalanceCache.get(this.config.workspace);
     if (typeof hasBalance === "boolean") {
       if (!hasBalance) {
-        return this.updateBalanceCache(userId); // lazy update
+        return this.updateBalanceCache(); // lazy update
       }
       return hasBalance;
     }
 
     // TODO (@mcandeia) this can cause users using their wallet without credit for few times.
-    this.updateBalanceCache(userId); // update in background
+    this.updateBalanceCache(); // update in background
     return true;
   }
 
@@ -61,11 +61,11 @@ export class AgentWallet {
     return this.config.wallet;
   }
 
-  async hasBalance(userId: string) {
-    await this.rewardUserIfNeeded(userId);
+  async hasBalance() {
+    await this.rewardFreeCreditsIfNeeded();
 
     const walletId = WellKnownWallets.build(
-      ...WellKnownWallets.user.genCredits(userId),
+      ...WellKnownWallets.workspace(this.config.workspace),
     );
     const response = await this.config.wallet["GET /accounts/:id"]({
       id: walletId,
@@ -101,11 +101,11 @@ export class AgentWallet {
     };
     const vendor = {
       type: "vendor",
-      id: userId, // TODO: this should be the agent's vendor id, once we have a way to sell agents
+      id: this.config.workspace, // TODO: this should be the agent's vendor id, once we have a way to sell agents
     };
     const generatedBy = {
       type: "user",
-      id: userId,
+      id: userId || "unknown",
     };
 
     const operation = {
@@ -132,16 +132,16 @@ export class AgentWallet {
       // TODO(@mcandeia): add error tracking with posthog
     }
 
-    this.updateBalanceCache(userId);
+    this.updateBalanceCache();
   }
 
-  ensureCreditRewards(userId: string): Promise<void> {
+  ensureCreditRewards(): Promise<void> {
     if (this.checkedUserCreditReward) {
       return Promise.resolve();
     }
 
-    if (this.rewardPromise.has(userId)) {
-      return this.rewardPromise.get(userId) ?? Promise.resolve();
+    if (this.rewardPromise.has(this.config.workspace)) {
+      return this.rewardPromise.get(this.config.workspace) ?? Promise.resolve();
     }
 
     const promise = (async () => {
@@ -149,8 +149,11 @@ export class AgentWallet {
         {
           type: "GenCreditsReward" as const,
           amount: "2_000000",
-          userId,
-          transactionId: WellKnownTransactions.freeTwoDollars(userId),
+          // todo(@camudo): update this name to workspaceId on the wallet service
+          userId: this.config.workspace,
+          transactionId: WellKnownTransactions.freeTwoDollars(
+            this.config.workspace,
+          ),
         },
       ];
 
@@ -171,24 +174,26 @@ export class AgentWallet {
       );
 
       this.checkedUserCreditReward = true;
-      this.rewardPromise.delete(userId);
+      this.rewardPromise.delete(this.config.workspace);
     })();
 
-    this.rewardPromise.set(userId, promise);
+    this.rewardPromise.set(this.config.workspace, promise);
     return promise;
   }
 
-  async rewardUserIfNeeded(userId: string) {
-    const wasRewarded = await this.userCreditsRegardsCache.get(userId);
+  async rewardFreeCreditsIfNeeded() {
+    const wasRewarded = await this.userCreditsRegardsCache.get(
+      this.config.workspace,
+    );
 
     if (wasRewarded) {
       // User was already rewarded, skip
       return;
     }
 
-    await this.ensureCreditRewards(userId);
+    await this.ensureCreditRewards();
 
     // Mark as rewarded
-    await this.userCreditsRegardsCache.set(userId, true);
+    await this.userCreditsRegardsCache.set(this.config.workspace, true);
   }
 }
