@@ -1,7 +1,12 @@
 import { Suspense, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "@deco/ui/components/sonner.tsx";
-import { type Invite, useAcceptInvite, useInvites, useRejectInvite } from "@deco/sdk";
+import {
+  type Invite,
+  useAcceptInvite,
+  useInvites,
+  useRejectInvite,
+} from "@deco/sdk";
 import {
   Table,
   TableBody,
@@ -67,8 +72,8 @@ function InvitesViewEmpty() {
 }
 
 function InviteItem(
-  { invite, onAccept, onReject }: { 
-    invite: Invite; 
+  { invite, onAccept, onReject }: {
+    invite: Invite;
     onAccept: (id: string) => void;
     onReject: (id: string) => void;
   },
