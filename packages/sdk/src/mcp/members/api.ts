@@ -653,7 +653,7 @@ export const teamRolesList = createApiHandler({
 });
 
 export const updateMemberRole = createApiHandler({
-  name: "UPDATE_MEMBER_ROLE",
+  name: "TEAM_MEMBERS_UPDATE_ROLE",
   description: "Update a member's role in a team",
   schema: z.object({
     teamId: z.number(),

@@ -182,7 +182,7 @@ export const updateMemberRole = async (
   roleId: number,
   action: "grant" | "revoke",
 ): Promise<{ success: boolean }> => {
-  const { data, error, ok } = await MCPClient.UPDATE_MEMBER_ROLE({
+  const { data, error, ok } = await MCPClient.TEAM_MEMBERS_UPDATE_ROLE({
     teamId,
     userId,
     roleId,

@@ -149,9 +149,21 @@ export const useUpdateMemberRole = () => {
       roleId: number;
       action: "grant" | "revoke";
     }) => updateMemberRole(teamId, userId, roleId, action),
-    onSuccess: (_, { teamId }) => {
+    onSuccess: (_, { teamId, userId, roleId, action }) => {
       const membersKey = KEYS.TEAM_MEMBERS(teamId);
-      queryClient.invalidateQueries({ queryKey: membersKey });
+      const membersData = queryClient.getQueryData<Member[]>(membersKey);
+
+      if (!membersData) return;
+
+      const membersWithChangedRole = membersData.map((member) => {
+        if (member.user_id !== userId) return member;
+
+        const newRoles = action === "grant"
+          ? [...member.roles, { id: roleId, name: "" }]
+          : member.roles.filter((r) => r.id !== roleId);
+        return { ...member, roles: newRoles };
+      });
+      queryClient.setQueryData(membersKey, membersWithChangedRole);
     },
   });
 };
