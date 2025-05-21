@@ -1,7 +1,7 @@
 import { Suspense, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "@deco/ui/components/sonner.tsx";
-import { type Invite, useAcceptInvite, useInvites } from "@deco/sdk";
+import { type Invite, useAcceptInvite, useInvites, useRejectInvite } from "@deco/sdk";
 import {
   Table,
   TableBody,
@@ -48,14 +48,14 @@ function InvitesViewEmpty() {
   return (
     <div className="p-6 flex flex-col gap-6">
       <InvitesTitle />
-      <Card className="w-full">
+      <Card className="w-sm md:w-xl p-6">
         <CardHeader>
           <CardTitle>No Invitations</CardTitle>
           <CardDescription>
             You don't have any pending team invitations.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex justify-end">
           <Button onClick={() => navigate("/")} className="mt-2">
             <Icon name="home" className="mr-2" />
             Return to Home
@@ -67,16 +67,30 @@ function InvitesViewEmpty() {
 }
 
 function InviteItem(
-  { invite, onAccept }: { invite: Invite; onAccept: (id: string) => void },
+  { invite, onAccept, onReject }: { 
+    invite: Invite; 
+    onAccept: (id: string) => void;
+    onReject: (id: string) => void;
+  },
 ) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isAcceptLoading, setIsAcceptLoading] = useState(false);
+  const [isRejectLoading, setIsRejectLoading] = useState(false);
 
   const handleAccept = async () => {
-    setIsLoading(true);
+    setIsAcceptLoading(true);
     try {
       await onAccept(invite.id);
     } finally {
-      setIsLoading(false);
+      setIsAcceptLoading(false);
+    }
+  };
+
+  const handleReject = async () => {
+    setIsRejectLoading(true);
+    try {
+      await onReject(invite.id);
+    } finally {
+      setIsRejectLoading(false);
     }
   };
 
@@ -92,16 +106,27 @@ function InviteItem(
         ).join(", ")}
       </TableCell>
       <TableCell>{timeAgo(invite.createdAt)}</TableCell>
-      <TableCell className="text-center">
+      <TableCell className="text-center space-x-2">
         <Button
           onClick={handleAccept}
-          disabled={isLoading}
+          disabled={isAcceptLoading || isRejectLoading}
           size="sm"
         >
-          {isLoading
+          {isAcceptLoading
             ? <Spinner size="xs" />
             : <Icon name="check" className="mr-2" />}
-          Accept Invitation
+          Accept
+        </Button>
+        <Button
+          onClick={handleReject}
+          disabled={isRejectLoading || isAcceptLoading}
+          variant="outline"
+          size="sm"
+        >
+          {isRejectLoading
+            ? <Spinner size="xs" />
+            : <Icon name="close" className="mr-2" />}
+          Reject
         </Button>
       </TableCell>
     </TableRow>
@@ -111,6 +136,7 @@ function InviteItem(
 function InvitesViewContent() {
   const { data: invites = [] } = useInvites();
   const acceptInviteMutation = useAcceptInvite();
+  const rejectInviteMutation = useRejectInvite();
   const navigate = useNavigate();
 
   if (!invites.length) {
@@ -141,6 +167,17 @@ function InvitesViewContent() {
     }
   };
 
+  const handleReject = async (inviteId: string) => {
+    try {
+      // Reject the invitation
+      await rejectInviteMutation.mutateAsync(inviteId);
+      toast.success("Invitation rejected");
+    } catch (error) {
+      console.error("Reject invitation error:", error);
+      toast.error("Failed to reject invitation");
+    }
+  };
+
   return (
     <div className="p-6 flex flex-col gap-6">
       <InvitesTitle />
@@ -163,6 +200,7 @@ function InvitesViewContent() {
                   key={invite.id}
                   invite={invite}
                   onAccept={handleAccept}
+                  onReject={handleReject}
                 />
               ))}
             </TableBody>

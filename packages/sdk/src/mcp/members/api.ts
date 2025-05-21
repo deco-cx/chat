@@ -624,7 +624,18 @@ export const deleteInvite = createTool({
   inputSchema: z.object({
     id: z.string(),
   }),
-  canAccess: bypass,
+  canAccess: async (name, props, c) => {
+   const [{data: invite, error}, {data: profile}] = await Promise.all([c.db.from("invites").select("team_id, invited_email").eq("id", props.id).single(),
+
+    c.db.from("profiles").select("email").eq("user_id", c.user.id).single()
+   ])
+
+   if (error || !invite || !profile) return false;
+
+   if (invite?.invited_email && profile?.email && invite.invited_email === profile.email) {return true}
+
+   return await canAccessTeamResource(name, invite.team_id, c)
+  },
   handler: async (props, c) => {
     const { id } = props;
     const db = c.db;

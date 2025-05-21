@@ -13,6 +13,7 @@ import {
   inviteTeamMembers,
   type Member,
   registerActivity,
+  rejectInvite,
   removeTeamMember,
   type Role as _Role,
 } from "../crud/members.ts";
@@ -70,6 +71,21 @@ export const useAcceptInvite = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: KEYS.MY_INVITES() });
       queryClient.invalidateQueries({ queryKey: KEYS.TEAMS() });
+    },
+  });
+};
+
+/**
+ * Hook to reject an invite
+ * @returns Mutation function for rejecting an invite
+ */
+export const useRejectInvite = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (inviteId: string) => rejectInvite(inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: KEYS.MY_INVITES() });
     },
   });
 };
