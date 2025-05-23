@@ -172,10 +172,10 @@ function InvitesViewContent() {
     }
   };
 
-  const handleReject = async (inviteId: string) => {
+  const handleReject = async (id: string) => {
     try {
       // Reject the invitation
-      await rejectInviteMutation.mutateAsync(inviteId);
+      await rejectInviteMutation.mutateAsync({ id });
       toast.success("Invitation rejected");
     } catch (error) {
       console.error("Reject invitation error:", error);

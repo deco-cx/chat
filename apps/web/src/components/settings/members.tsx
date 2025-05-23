@@ -1,5 +1,6 @@
 import {
   type Member,
+  useRejectInvite,
   useRemoveTeamMember,
   useTeam,
   useTeamMembers,
@@ -185,10 +186,11 @@ function MembersViewContent() {
   const { slug } = useCurrentTeam();
   const { data: team } = useTeam(slug);
   const teamId = team?.id;
-  const { data: members } = useTeamMembers(teamId ?? null, {
+  const { data: { members, invites } } = useTeamMembers(teamId ?? null, {
     withActivity: true,
   });
   const removeMemberMutation = useRemoveTeamMember();
+  const rejectInvite = useRejectInvite();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("name_asc");
   const deferredQuery = useDeferredValue(query);
@@ -284,74 +286,145 @@ function MembersViewContent() {
                 </TableRow>
               )
               : (
-                sortMembers.map((member) => (
-                  <TableRow key={member.id} className="px-4 py-1.5">
-                    <TableCell>
-                      <span className="flex gap-2 items-center w-43 md:w-56">
-                        <span>
-                          <Avatar
-                            url={member.profiles.metadata.avatar_url}
-                            fallback={member.profiles.metadata.full_name}
-                            className="w-8 h-8"
-                          />
-                        </span>
-
-                        <span className="flex flex-col gap-1 min-w-0">
-                          <span className="font-semibold text-xs truncate">
-                            {getMemberName(member)}
-                          </span>
-                          <span className="text-[10px] leading-3.5 text-slate-500 truncate">
-                            {member.profiles.email || "N/A"}
-                          </span>
-                        </span>
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="inline-flex gap-2">
-                        {member.roles.map((role) => (
-                          <Badge variant="outline" key={role.id}>
-                            {role.name}
-                          </Badge>
-                        ))}
-                      </span>
-                    </TableCell>
-                    {!isMobile && (
+                <>
+                  {invites.map((invite) => (
+                    <TableRow key={invite.id} className="px-4 py-1.5">
+                      {/* Profile */}
                       <TableCell>
-                        {member.lastActivity
-                          ? timeAgo(member.lastActivity)
-                          : "N/A"}
+                        <span className="flex gap-2 items-center w-43 md:w-56">
+                          <span className="flex flex-col gap-1 min-w-0">
+                            <span className="font-semibold text-xs truncate">
+                              {invite.email}
+                            </span>
+                            <span className="text-[10px] leading-3.5 text-slate-500 truncate">
+                              Pending
+                            </span>
+                          </span>
+                        </span>
                       </TableCell>
-                    )}
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                          >
-                            <span className="sr-only">Open menu</span>
-                            <Icon name="more_horiz" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() =>
-                              handleRemoveMember(member.id)}
-                            disabled={removeMemberMutation.isPending}
-                          >
-                            <Icon name="delete" />
-                            {removeMemberMutation.isPending &&
-                                removeMemberMutation.variables?.memberId ===
-                                  member.id
-                              ? "Removing..."
-                              : "Remove Member"}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
+                      {/* Roles */}
+                      <TableCell>
+                        <span className="inline-flex gap-2">
+                          {invite.roles.map((role) => (
+                            <Badge variant="outline" key={role.id}>
+                              {role.name}
+                            </Badge>
+                          ))}
+                        </span>
+                      </TableCell>
+
+                      {!isMobile && <TableCell></TableCell>}
+
+                      {/* Menu */}
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                            >
+                              <span className="sr-only">Open menu</span>
+                              <Icon name="more_horiz" />
+                            </Button>
+                          </DropdownMenuTrigger>
+
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={() =>
+                                rejectInvite.mutateAsync({
+                                  id: invite.id,
+                                  teamId,
+                                })}
+                              disabled={removeMemberMutation.isPending}
+                            >
+                              <Icon name="delete" />
+                              {rejectInvite.isPending &&
+                                  rejectInvite.variables.id ===
+                                    invite.id
+                                ? "Removing..."
+                                : "Remove invite"}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {sortMembers.map((member) => (
+                    <TableRow key={member.id} className="px-4 py-1.5">
+                      {/* Profile */}
+                      <TableCell>
+                        <span className="flex gap-2 items-center w-43 md:w-56">
+                          <span>
+                            <Avatar
+                              url={member.profiles.metadata.avatar_url}
+                              fallback={member.profiles.metadata.full_name}
+                              className="w-8 h-8"
+                            />
+                          </span>
+
+                          <span className="flex flex-col gap-1 min-w-0">
+                            <span className="font-semibold text-xs truncate">
+                              {getMemberName(member)}
+                            </span>
+                            <span className="text-[10px] leading-3.5 text-slate-500 truncate">
+                              {member.profiles.email || "N/A"}
+                            </span>
+                          </span>
+                        </span>
+                      </TableCell>
+                      {/* Roles */}
+                      <TableCell>
+                        <span className="inline-flex gap-2">
+                          {member.roles.map((role) => (
+                            <Badge variant="outline" key={role.id}>
+                              {role.name}
+                            </Badge>
+                          ))}
+                        </span>
+                      </TableCell>
+
+                      {/* Last Activity */}
+                      {!isMobile && (
+                        <TableCell>
+                          {member.lastActivity
+                            ? timeAgo(member.lastActivity)
+                            : "N/A"}
+                        </TableCell>
+                      )}
+
+                      {/* Menu */}
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                            >
+                              <span className="sr-only">Open menu</span>
+                              <Icon name="more_horiz" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={() =>
+                                handleRemoveMember(member.id)}
+                              disabled={removeMemberMutation.isPending}
+                            >
+                              <Icon name="delete" />
+                              {removeMemberMutation.isPending &&
+                                  removeMemberMutation.variables?.memberId ===
+                                    member.id
+                                ? "Removing..."
+                                : "Remove Member"}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </>
               )}
           </TableBody>
         </Table>

@@ -32,7 +32,7 @@ export const useTeamMembers = (
     queryFn: ({ signal }) =>
       typeof teamId === "number"
         ? getTeamMembers({ teamId, withActivity }, signal)
-        : [],
+        : ([] as unknown as Awaited<ReturnType<typeof getTeamMembers>>),
   });
 };
 
@@ -83,9 +83,17 @@ export const useRejectInvite = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (inviteId: string) => rejectInvite(inviteId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: KEYS.MY_INVITES() });
+    mutationFn: (
+      { id: id }: { id: string; teamId?: number },
+    ) => rejectInvite(id),
+    onSuccess: (_, variables) => {
+      variables.teamId === undefined &&
+        queryClient.invalidateQueries({ queryKey: KEYS.MY_INVITES() });
+
+      variables.teamId !== undefined &&
+        queryClient.invalidateQueries({
+          queryKey: KEYS.TEAM_MEMBERS(variables.teamId ?? -1),
+        });
     },
   });
 };
