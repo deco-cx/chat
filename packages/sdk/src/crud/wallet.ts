@@ -1,40 +1,68 @@
-// deno-lint-ignore-file no-explicit-any
-import { fetchAPI } from "../fetcher.ts";
+import { MCPClient } from "../fetcher.ts";
 
-export const getWalletAccount = async () => {
-  const response = await fetchAPI({
-    segments: ["wallet", "account"],
-  });
-  return response.json<any>();
-};
+export const getWalletAccount = (workspace: string) =>
+  MCPClient.forWorkspace(workspace)
+    .GET_WALLET_ACCOUNT({});
 
-interface WalletStatement {
-  id: string;
-  timestamp: string;
-  title: string;
-  amount: string;
-  amountExact: string;
-  description?: string;
-  type: "credit" | "debit";
-  icon?: string;
-  metadata?: Record<string, string>;
-}
+export const getThreadsUsage = (
+  workspace: string,
+  range: "day" | "week" | "month",
+) => 
+  MCPClient.forWorkspace(workspace)
+    .GET_THREADS_USAGE({
+      range,
+    });
 
-export const getWalletStatements = async (cursor?: string) => {
-  const response = await fetchAPI({
-    path: `/wallet/statements${cursor ? `?cursor=${cursor}` : ""}`,
-  });
-  return response.json() as Promise<{
-    items: WalletStatement[];
-    nextCursor: string;
-  }>;
-};
+export const getAgentsUsage = (
+  workspace: string,
+  range: "day" | "week" | "month",
+) => 
+  MCPClient.forWorkspace(workspace)
+    .GET_AGENTS_USAGE({
+      range,
+    });
 
-export const createWalletCheckoutSession = async (amountInCents: number) => {
-  const response = await fetchAPI({
-    segments: ["wallet", "checkout"],
-    method: "POST",
-    body: JSON.stringify({ amountInCents }),
-  });
-  return response.json() as Promise<{ checkoutUrl: string }>;
-};
+export const createWalletCheckoutSession = ({
+  workspace,
+  amountUSDCents,
+  successUrl,
+  cancelUrl,
+}: {
+  workspace: string;
+  amountUSDCents: number;
+  successUrl: string;
+  cancelUrl: string;
+}) => 
+  MCPClient.forWorkspace(workspace)
+    .CREATE_CHECKOUT_SESSION({
+      amountUSDCents,
+      successUrl,
+      cancelUrl,
+    });
+
+
+export const redeemWalletVoucher = ({
+  workspace,
+  voucher,
+}: {
+  workspace: string;
+  voucher: string;
+}) => 
+  MCPClient.forWorkspace(workspace)
+    .REDEEM_VOUCHER({
+      voucher,
+    });
+
+export const createWalletVoucher = ({
+  workspace,
+  amount,
+}: {
+  workspace: string;
+  amount: number;
+}) => 
+  MCPClient.forWorkspace(workspace)
+    .CREATE_VOUCHER({
+      amount,
+    });
+
+

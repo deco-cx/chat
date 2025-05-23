@@ -10,3 +10,4 @@ export * from "./trigger.ts";
 export * from "./agent.ts";
 export * from "./audit.ts";
 export * from "./fs.ts";
+export * from "./wallet.ts";

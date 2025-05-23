@@ -1,4 +1,4 @@
-import { createHttpClient } from "../http.ts";
+import { createHttpClient } from "../../http.ts";
 import { MicroDollar } from "./microdollar.ts";
 
 export interface DoubleEntry {
@@ -10,6 +10,12 @@ export interface DoubleEntry {
 export interface TransactionOperation {
   type: string;
   timestamp: Date;
+}
+
+export interface WorkspaceCashIn extends TransactionOperation {
+  type: "WorkspaceCashIn";
+  amount: number | string;
+  workspace: string;
 }
 
 export interface CashIn extends TransactionOperation {
@@ -102,6 +108,12 @@ export interface GenCreditsReward extends TransactionOperation {
   userId: string;
 }
 
+export interface WorkspaceGenCreditReward extends TransactionOperation {
+  type: "WorkspaceGenCreditReward";
+  amount: number | string;
+  workspace: string;
+}
+
 interface BaseGeneration extends TransactionOperation {
   generatedBy: User;
   payer?: Payer;
@@ -143,9 +155,13 @@ export type Transaction =
   | Generation
   | AgentGeneration
   | CashIn
+  | WorkspaceCashIn
   | CashOut
   | Wiretransfer
   | GenCreditsReward
+  | WorkspaceGenCreditReward
+  | WorkspaceCreateVoucher
+  | WorkspaceRedeemVoucher
   | PreAuthorization
   | CommitPreAuthorized;
 
@@ -157,6 +173,20 @@ export interface Wiretransfer extends TransactionOperation {
   from: string;
   to: string;
   description?: string;
+}
+
+export interface WorkspaceCreateVoucher extends TransactionOperation {
+  type: "WorkspaceCreateVoucher";
+  amount: number | string;
+  voucherId: string;
+  workspace: string;
+}
+
+export interface WorkspaceRedeemVoucher extends TransactionOperation {
+  type: "WorkspaceRedeemVoucher";
+  amount: number | string;
+  voucherId: string;
+  workspace: string;
 }
 
 export interface GeneratedFact {
@@ -239,19 +269,6 @@ export interface WalletAPI {
       nextCursor?: string;
     };
   };
-  "GET /insights/generations": {
-    searchParams: {
-      userId: string;
-    };
-    response: {
-      total: string;
-      dataPoints: {
-        app: string;
-        day: string;
-        amount: string;
-      }[];
-    };
-  };
   "POST /transactions/:id/commit": {
     body: {
       mcpId: string;
@@ -268,6 +285,40 @@ export interface WalletAPI {
     };
     response: {
       id: string;
+    };
+  };
+  "GET /usage/agents": {
+    searchParams: {
+      workspace: string;
+      range: "day" | "week" | "month";
+    };
+    response: {
+      total: string;
+      items: {
+        id: string;
+        label: string;
+        total: string;
+      }[];
+    };
+  };
+  "GET /usage/threads": {
+    searchParams: {
+      workspace: string;
+      range: "day" | "week" | "month";
+    };
+    response: {
+      total: string;
+      items: {
+        id: string;
+        total: string;
+        agentId: string;
+        generatedBy: string;
+        tokens: {
+          totalTokens: number;
+          promptTokens: number;
+          completionTokens: number;
+        };
+      }[];
     };
   };
 }

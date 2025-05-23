@@ -3,7 +3,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   acceptInvite,
   getMyInvites,
@@ -17,6 +17,7 @@ import {
   type Role as _Role,
 } from "../crud/members.ts";
 import { KEYS } from "./api.ts";
+import { useTeams } from "./teams.ts";
 
 /**
  * Hook to fetch team members
@@ -33,6 +34,19 @@ export const useTeamMembers = (
         ? getTeamMembers({ teamId, withActivity }, signal)
         : [],
   });
+};
+
+/**
+ * Hook to fetch team members for the current team
+ * @param currentTeamSlug - The slug of the current team
+ */
+export const useTeamMembersBySlug = (currentTeamSlug: string | null) => {
+  const { data: teams } = useTeams();
+  const teamId = useMemo(
+    () => teams?.find((t) => t.slug === currentTeamSlug)?.id ?? null,
+    [teams, currentTeamSlug],
+  );
+  return useTeamMembers(teamId);
 };
 
 /**

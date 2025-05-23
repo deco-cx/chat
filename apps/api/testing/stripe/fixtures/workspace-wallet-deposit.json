@@ -1,0 +1,47 @@
+{
+  "_meta": {
+    "template_version": 0
+  },
+  "fixtures": [
+    {
+      "name": "customer",
+      "path": "/v1/customers",
+      "method": "post",
+      "params": {
+        "name": "Viktor Marinho",
+        "email": "viktor@deco.cx",
+        "metadata": {
+          "product": "deco.chat",
+          "workspace": "/users/c40e818c-9a67-4dc6-ac3b-2bb6361663c2"
+        }
+      }
+    },
+    {
+      "name": "payment_intent",
+      "path": "/v1/payment_intents",
+      "method": "post",
+      "params": {
+        "amount": 1418,
+        "confirm": "true",
+        "metadata": {
+          "test": "123"
+        },
+        "customer": "${customer:id}",
+        "currency": "brl",
+        "description": "(created by Stripe CLI)",
+        "payment_method": "pm_card_visa",
+        "payment_method_types": ["card"],
+        "shipping": {
+          "name": "Jenny Rosen",
+          "address": {
+            "line1": "510 Townsend St",
+            "postal_code": "94103",
+            "city": "San Francisco",
+            "state": "CA",
+            "country": "US"
+          }
+        }
+      }
+    }
+  ]
+}

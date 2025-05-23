@@ -59,4 +59,15 @@ export const KEYS = {
     threadId: string,
   ) => ["thread-tools", workspace, threadId],
   PROFILE: () => ["profile"],
+  WALLET: (
+    workspace: Workspace,
+  ) => ["wallet", workspace],
+  WALLET_USAGE_AGENTS: (
+    workspace: Workspace,
+    range: "day" | "week" | "month",
+  ) => ["wallet-usage-agents", workspace, range],
+  WALLET_USAGE_THREADS: (
+    workspace: Workspace,
+    range: "day" | "week" | "month",
+  ) => ["wallet-usage-threads", workspace, range],
 };

@@ -11,13 +11,22 @@ export const WellKnownWallets = {
     const [discriminator, type] = discriminatorAndCategory.split("@");
     return { type, discriminator, category };
   },
-  user: {
+  workspace: {
     genCredits: (
-      userId: string,
+      workspace: string,
     ) =>
       [
         "user" as const,
-        `gen-credits-${userId}`,
+        `workspace-gen-credits-${workspace}`,
+        "liability" as const,
+      ] as const,
+    voucher: (
+      id: string,
+      amount: string,
+    ) =>
+      [
+        "user" as const,
+        `deco-chat-voucher-${id}-${amount}`,
         "liability" as const,
       ] as const,
   },
@@ -25,6 +34,6 @@ export const WellKnownWallets = {
 
 export const WellKnownTransactions = {
   freeTwoDollars: (
-    userId: string,
-  ) => `free-two-dollars-${userId}`,
+    workspaceId: string,
+  ) => `free-two-dollars-${workspaceId}`,
 } as const;

@@ -10,7 +10,10 @@ import { default as app } from "./src/app.ts";
 const instrumentedApp = getRuntimeKey() === "deno" ? app : instrument(app);
 
 // Domains we consider "self"
-const SELF_DOMAINS: string[] = [Hosts.API, "localhost"];
+const SELF_DOMAINS: string[] = [
+  Hosts.API,
+  `localhost:${Deno.env.get("PORT") || 3001}`,
+];
 
 // Patch fetch globally
 const originalFetch = globalThis.fetch;
@@ -43,7 +46,7 @@ globalThis.fetch = async function patchedFetch(
 
   const context = contextStorage.getStore();
 
-  if (SELF_DOMAINS.includes(url.hostname)) {
+  if (SELF_DOMAINS.includes(url.host)) {
     if (!context) {
       throw new Error("Missing context for internal self-invocation");
     }

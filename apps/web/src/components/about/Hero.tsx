@@ -52,7 +52,6 @@ export function Hero({
   };
 
   const handleSecondaryButtonClick = () => {
-    console.log("secondary button clicked");
     trackEvent("deco_chat_landing_learn_more_click", {
       buttonText: secondaryButtonText,
       buttonLink: secondaryButtonLink,

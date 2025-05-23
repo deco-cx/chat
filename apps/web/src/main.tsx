@@ -88,10 +88,6 @@ const PublicChats = lazy(
   () => wrapWithUILoadingFallback(import("./components/agent/chats.tsx")),
 );
 
-const Wallet = lazy(
-  () => wrapWithUILoadingFallback(import("./components/wallet/index.tsx")),
-);
-
 const AuditList = lazy(
   () => wrapWithUILoadingFallback(import("./components/audit/list.tsx")),
 );
@@ -261,10 +257,6 @@ function Router() {
           }
         />
 
-        <Route
-          path="wallet"
-          element={<Wallet />}
-        />
         <Route
           path="agents"
           element={<AgentList />}

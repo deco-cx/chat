@@ -39,7 +39,7 @@ import {
   createServerTimings,
   type ServerTimingsBuilder,
 } from "@deco/sdk/timings";
-import { createWalletClient } from "@deco/sdk/wallet";
+import { createWalletClient } from "../../sdk/src/mcp/wallet/index.ts";
 import type { StorageThreadType } from "@mastra/core";
 import type { ToolsetsInput, ToolsInput } from "@mastra/core/agent";
 import { Agent } from "@mastra/core/agent";
@@ -543,6 +543,14 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     await this.initAgent(config);
   }
 
+  // todo(@camudo): change this to a nice algorithm someday
+  private inferBestModel(model: string) {
+    if (model === "auto") {
+      return "openai:gpt-4.1-mini";
+    }
+    return model;
+  }
+
   private createLLM(
     { model, bypassGateway, bypassOpenRouter }: {
       model: string;
@@ -550,11 +558,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
       bypassOpenRouter?: boolean;
     },
   ): { llm: LanguageModelV1; tokenLimit: number } {
-    // todo(@camudo): change this to a nice algorithm someday
-    if (model === "auto") {
-      model = "openai:gpt-4.1-mini";
-    }
-
+    model = this.inferBestModel(model);
     const [provider, ...rest] = model.split(":");
     const providerModel = rest.join(":");
     const accountId = this.env?.ACCOUNT_ID ?? DEFAULT_ACCOUNT_ID;
@@ -834,17 +838,13 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     const agent = this.withAgentOverrides(options);
     agentOverridesTiming.end();
 
-    // if no wallet was initialized, let the stream proceed.
-    // we can change this later to be more restrictive.
     const wallet = this.wallet;
-    const userId = this.metadata?.user?.id;
-    if (userId) {
-      const walletTiming = timings.start("init-wallet");
-      const hasBalance = await wallet.canProceed(userId);
-      walletTiming.end();
-      if (!hasBalance) {
-        throw new Error("Insufficient funds");
-      }
+    const walletTiming = timings.start("init-wallet");
+    const hasBalance = await wallet.canProceed();
+    walletTiming.end();
+
+    if (!hasBalance) {
+      throw new Error("Insufficient funds");
     }
 
     const ttfbSpan = tracer.startSpan("stream-ttfb", {
@@ -912,15 +912,16 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
         // TODO(@mcandeia): add error tracking with posthog
       },
       onFinish: (result) => {
-        if (userId) {
-          wallet.computeLLMUsage({
-            userId,
-            usage: result.usage,
-            threadId: this.thread.threadId,
-            model: this._configuration?.model ?? DEFAULT_MODEL,
-            agentName: this._configuration?.name ?? ANONYMOUS_NAME,
-          });
-        }
+        const model = this.inferBestModel(
+          this._configuration?.model ?? DEFAULT_MODEL,
+        );
+        wallet.computeLLMUsage({
+          userId: this.metadata?.user?.id,
+          usage: result.usage,
+          threadId: this.thread.threadId,
+          model,
+          agentName: this._configuration?.name ?? ANONYMOUS_NAME,
+        });
       },
     });
     streamTiming.end();

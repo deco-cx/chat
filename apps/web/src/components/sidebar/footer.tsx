@@ -37,7 +37,6 @@ import { Suspense, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useLocation } from "react-router";
 import { ErrorBoundary } from "../../ErrorBoundary.tsx";
-import { trackEvent } from "../../hooks/analytics.ts";
 import { useUser } from "../../hooks/data/useUser.ts";
 import { useGitHubStars } from "../../hooks/useGitHubStars.ts";
 import { useUserPreferences } from "../../hooks/useUserPreferences.ts";
@@ -155,12 +154,6 @@ function LoggedUser() {
     return url.href;
   }, [location.pathname]);
 
-  const handleWalletClick = () => {
-    trackEvent("sidebar_wallet_click", {
-      userId: user?.id,
-    });
-  };
-
   const userAvatarURL = user?.metadata?.avatar_url ?? undefined;
   const userName = user?.metadata?.full_name || user?.email;
   const formattedStars = stars
@@ -184,17 +177,6 @@ function LoggedUser() {
         align="start"
         className="md:w-[200px] text-slate-700"
       >
-        <ResponsiveDropdownItem className="p-0 md:px-2 md:py-1.5" asChild>
-          <Link
-            to="/wallet"
-            className="flex items-center gap-2 leading-relaxed text-sm sm:text-xs"
-            onClick={handleWalletClick}
-          >
-            <Icon name="wallet" />
-            Wallet
-          </Link>
-        </ResponsiveDropdownItem>
-        <ResponsiveDropdownSeparator />
         <ResponsiveDropdownItem className="p-0 md:px-2 md:py-1.5" asChild>
           <a
             href="https://github.com/deco-cx/chat"

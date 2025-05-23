@@ -1,6 +1,7 @@
 export * from "../errors.ts";
 export * from "./assertions.ts";
 export * from "./context.ts";
+export * from "./wallet/stripe/webhook.ts";
 import * as agentsAPI from "./agents/api.ts";
 import { AppContext, State } from "./context.ts";
 import * as fsAPI from "./fs/api.ts";
@@ -13,6 +14,7 @@ import { CreateStubHandlerOptions, MCPClientStub } from "./stub.ts";
 import * as teamsAPI from "./teams/api.ts";
 import * as threadsAPI from "./threads/api.ts";
 import * as triggersAPI from "./triggers/api.ts";
+import * as walletAPI from "./wallet/api.ts";
 
 // Register tools for each API handler
 export const GLOBAL_TOOLS = [
@@ -66,6 +68,12 @@ export const WORKSPACE_TOOLS = [
   triggersAPI.createWebhookTrigger,
   triggersAPI.deleteTrigger,
   triggersAPI.getWebhookTriggerUrl,
+  walletAPI.getWalletAccount,
+  walletAPI.getThreadsUsage,
+  walletAPI.getAgentsUsage,
+  walletAPI.createCheckoutSession,
+  walletAPI.redeemWalletVoucher,
+  walletAPI.createWalletVoucher,
   triggersAPI.activateTrigger,
   triggersAPI.deactivateTrigger,
   knowledgeAPI.createBase,
@@ -142,7 +150,6 @@ export function createMCPToolsStub<TDefinition extends ToolLike>(
           return State.run(
             options?.context ?? State.getStore(),
             async (args) => {
-              // @ts-expect-error this should be fine
               const result = await tool.handler(args);
 
               if (result.isError) {

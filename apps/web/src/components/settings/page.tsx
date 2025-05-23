@@ -19,6 +19,7 @@ const TABS: Record<string, Tab> = {
   billing: {
     title: "Billing",
     Component: BillingSettings,
+    initialOpen: true,
   },
   usage: {
     title: "Usage",

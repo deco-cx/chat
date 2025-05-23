@@ -71,7 +71,6 @@ export function InviteTeamMembersDialog({
   const openDialog = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("Opening dialog manually");
     setTimeout(() => {
       setIsOpen(true);
     }, 50);

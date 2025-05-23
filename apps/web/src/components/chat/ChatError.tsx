@@ -10,12 +10,14 @@ import {
   TooltipTrigger,
 } from "@deco/ui/components/tooltip.tsx";
 import { useState } from "react";
+import { useWorkspaceLink } from "../../hooks/useNavigateWorkspace.ts";
 
 const WELL_KNOWN_ERROR_MESSAGES = {
   InsufficientFunds: "Insufficient funds",
 };
 
 export function ChatError() {
+  const workspaceLink = useWorkspaceLink();
   const { chat: { error }, retry, correlationIdRef } = useChatContext();
   const insufficientFunds = error?.message.includes(
     WELL_KNOWN_ERROR_MESSAGES.InsufficientFunds,
@@ -50,9 +52,9 @@ export function ChatError() {
               className="bg-background hover:bg-background/80 shadow-none border border-input py-3 px-4 h-10"
               asChild
             >
-              <Link to="/wallet">
+              <Link to={workspaceLink("/settings")}>
                 <Icon name="wallet" className="mr-2" />
-                Add funds to your wallet
+                Add funds to the workspace wallet
               </Link>
             </Button>
           </div>
