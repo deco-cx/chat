@@ -2,7 +2,7 @@ export * from "../errors.ts";
 export * from "./assertions.ts";
 export * from "./context.ts";
 import * as agentsAPI from "./agents/api.ts";
-import { AppContext, State } from "./context.ts";
+import { AppContext, State, Tool } from "./context.ts";
 import * as fsAPI from "./fs/api.ts";
 import * as hostingAPI from "./hosting/api.ts";
 import * as integrationsAPI from "./integrations/api.ts";
@@ -82,7 +82,12 @@ export const WORKSPACE_TOOLS = [
 
 export type GlobalTools = typeof GLOBAL_TOOLS;
 export type WorkspaceTools = typeof WORKSPACE_TOOLS;
-export type ToolLike = GlobalTools | WorkspaceTools;
+export type ToolLike<
+  TName extends string = string,
+  // deno-lint-ignore no-explicit-any
+  TInput = any,
+  TReturn extends object | null | boolean = object,
+> = Tool<TName, TInput, TReturn>;
 
 const global = createMCPToolsStub({
   tools: GLOBAL_TOOLS,
@@ -121,7 +126,7 @@ export const MCPClient = new Proxy(
 
 export { Entrypoint } from "./hosting/api.ts";
 
-export function createMCPToolsStub<TDefinition extends ToolLike>(
+export function createMCPToolsStub<TDefinition extends readonly ToolLike[]>(
   options: CreateStubHandlerOptions<TDefinition>,
 ): MCPClientStub<TDefinition> {
   return new Proxy<MCPClientStub<TDefinition>>(
@@ -131,7 +136,7 @@ export function createMCPToolsStub<TDefinition extends ToolLike>(
         if (typeof name !== "string") {
           throw new Error("Name must be a string");
         }
-        const toolMap = new Map<string, ToolLike[number]>(
+        const toolMap = new Map<string, TDefinition[number]>(
           options.tools.map((h) => [h.name, h]),
         );
         return (props: unknown) => {
@@ -142,8 +147,8 @@ export function createMCPToolsStub<TDefinition extends ToolLike>(
           return State.run(
             options?.context ?? State.getStore(),
             async (args) => {
-              // @ts-expect-error this should be fine
-              const result = await tool.handler(args);
+              // deno-lint-ignore no-explicit-any
+              const result = await tool.handler(args as any);
 
               if (result.isError) {
                 throw result.structuredContent;

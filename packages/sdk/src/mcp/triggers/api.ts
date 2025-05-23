@@ -338,6 +338,7 @@ export const deleteTrigger = createTool({
   name: "TRIGGERS_DELETE",
   description: "Delete a trigger",
   inputSchema: z.object({ triggerId: z.string(), agentId: z.string() }),
+
   canAccess: canAccessWorkspaceResource,
   handler: async (
     { triggerId, agentId },
@@ -363,6 +364,10 @@ export const deleteTrigger = createTool({
     if (error) {
       throw new InternalServerError(error.message);
     }
+    return {
+      triggerId,
+      agentId,
+    };
   },
 });
 
@@ -407,7 +412,7 @@ export const getTrigger = createTool({
   handler: async (
     { id: triggerId },
     c,
-  ): Promise<z.infer<typeof CreateTriggerOutputSchema> | null> => {
+  ): Promise<z.infer<typeof CreateTriggerOutputSchema>> => {
     assertHasWorkspace(c);
     const db = c.db;
     const workspace = c.workspace.value;
@@ -423,7 +428,7 @@ export const getTrigger = createTool({
     }
 
     if (!trigger) {
-      return null;
+      throw new NotFoundError("Trigger not found");
     }
 
     const agents = await getAgentsByIds([trigger.agent_id], c);

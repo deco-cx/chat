@@ -55,6 +55,7 @@ export interface TriggerMetadata {
   reqUrl?: string | null;
   internalCall?: boolean;
 }
+
 function mapTriggerToTriggerData(
   trigger: Awaited<
     ReturnType<MCPClientStub<WorkspaceTools>["TRIGGERS_GET"]>

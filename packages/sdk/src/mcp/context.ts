@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { ActorConstructor, StubFactory } from "@deco/actors";
 import { AIAgent, Trigger } from "@deco/ai/actors";
 import { Client } from "@deco/sdk/storage";
@@ -112,39 +113,39 @@ type ToolCallResult<T> = {
 export interface ToolDefinition<
   TAppContext extends AppContext = AppContext,
   TName extends string = string,
-  TInputSchema extends z.ZodType = z.ZodType,
+  TInput = any,
   TReturn extends object | null | boolean = object,
 > {
   annotations?: ToolAnnotations;
   group?: string;
   name: TName;
   description: string;
-  inputSchema: TInputSchema;
+  inputSchema: z.ZodType<TInput>;
   outputSchema?: z.ZodType<TReturn>;
   handler: (
-    props: z.infer<TInputSchema>,
+    props: TInput,
     c: TAppContext,
   ) => Promise<TReturn> | TReturn;
   canAccess: (
     name: TName,
-    props: z.infer<TInputSchema>,
+    props: TInput,
     c: AppContext,
   ) => Promise<boolean>;
 }
 
 export interface Tool<
   TName extends string = string,
-  TInputSchema extends z.ZodType = z.ZodType,
+  TInput = any,
   TReturn extends object | null | boolean = object,
 > {
   annotations?: ToolAnnotations;
   group?: string;
   name: TName;
   description: string;
-  inputSchema: TInputSchema;
+  inputSchema: z.ZodType<TInput>;
   outputSchema?: z.ZodType<TReturn>;
   handler: (
-    props: z.infer<TInputSchema>,
+    props: TInput,
   ) => Promise<ToolCallResult<TReturn>> | ToolCallResult<TReturn>;
 }
 
@@ -153,15 +154,15 @@ export const createToolFactory = <
 >(contextFactory: (c: AppContext) => TAppContext, group?: string) =>
 <
   TName extends string = string,
-  TInputSchema extends z.ZodType = z.ZodType,
+  TInput = any,
   TReturn extends object | null | boolean = object,
 >(
-  def: ToolDefinition<TAppContext, TName, TInputSchema, TReturn>,
-): Tool<TName, TInputSchema, TReturn> => ({
+  def: ToolDefinition<TAppContext, TName, TInput, TReturn>,
+): Tool<TName, TInput, TReturn> => ({
   group,
   ...def,
   handler: async (
-    props: z.infer<TInputSchema>,
+    props: TInput,
   ): Promise<ToolCallResult<TReturn>> => {
     try {
       const context = contextFactory(State.getStore());

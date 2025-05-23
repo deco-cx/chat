@@ -95,7 +95,10 @@ export const DeleteTriggerInputSchema = z.object({
 /**
  * Output schema for trigger deletion results
  */
-export const DeleteTriggerOutputSchema = z.void();
+export const DeleteTriggerOutputSchema = z.object({
+  triggerId: z.string().describe("The trigger ID"),
+  agentId: z.string().describe("The agent ID"),
+});
 
 export const TriggerSchema = z.union([
   CreateCronTriggerInputSchema,

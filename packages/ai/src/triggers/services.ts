@@ -270,7 +270,7 @@ export const deleteTrigger = async ({
     throw new Error(`Failed to delete trigger: ${result}`);
   }
 
-  await mcpClient.TRIGGERS_DELETE({
+  return await mcpClient.TRIGGERS_DELETE({
     agentId,
     triggerId,
   });
