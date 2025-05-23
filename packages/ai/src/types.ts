@@ -80,11 +80,13 @@ export interface AIAgent extends Actor {
    * Generates an object based on the provided input
    * @param payload - Input content as string, string array, or CoreMessage array
    * @param jsonSchema - JSON schema defining the expected output format
+   * @param options - Optional generation options
    * @returns Promise containing the generated object result
    */
   generateObject<TObject = any>(
     payload: Message[],
     jsonSchema: JSONSchema7,
+    options?: GenerateOptions,
   ): Promise<GenerateObjectResult<TObject>>;
 
   /**

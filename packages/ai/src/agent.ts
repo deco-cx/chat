@@ -662,8 +662,11 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
   async generateObject<TObject = any>(
     payload: AIMessage[],
     jsonSchema: JSONSchema7,
+    options?: GenerateOptions,
   ): Promise<GenerateObjectResult<TObject>> {
-    const result = await this.agent.generate(payload, {
+    const agent = this.withAgentOverrides(options);
+
+    const result = await agent.generate(payload, {
       ...this.thread,
       output: jsonSchema,
       maxSteps: this.maxSteps(),
@@ -756,9 +759,9 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
       return agent;
     }
 
-    if (options.model) {
+    if (options.model || options.bypassOpenRouter) {
       const { llm } = this.createLLM({
-        model: options.model,
+        model: options.model ?? this._configuration?.model ?? DEFAULT_MODEL,
         bypassOpenRouter: options.bypassOpenRouter,
       });
       // TODO(@mcandeia) for now, token limiter is not being used because we are avoiding instantiating a new memory.

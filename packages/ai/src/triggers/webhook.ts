@@ -97,6 +97,7 @@ export const hooks: TriggerHooks<TriggerData & { type: "webhook" }> = {
         messages,
         trigger,
         workspace,
+        options,
       });
     }
 
@@ -111,7 +112,7 @@ export const hooks: TriggerHooks<TriggerData & { type: "webhook" }> = {
       const schema = data.schema || (args as { schema: any }).schema;
       try {
         const result = await agent
-          .generateObject(messages, schema)
+          .generateObject(messages, schema, options)
           .then((r) => r.object);
         return result;
       } catch (error) {

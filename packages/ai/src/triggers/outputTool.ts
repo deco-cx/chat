@@ -5,7 +5,7 @@ import { ToolAction } from "@mastra/core";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { AIAgent } from "../agent.ts";
 import { mcpServerTools } from "../mcp.ts";
-import type { Message } from "../types.ts";
+import type { Message, StreamOptions } from "../types.ts";
 import type { Trigger } from "./trigger.ts";
 import { slugify } from "@deco/sdk/memory";
 
@@ -76,12 +76,14 @@ export const handleOutputTool = async ({
   messages,
   trigger,
   workspace,
+  options,
 }: {
   outputTool: string;
   agent: ActorProxy<AIAgent>;
   messages: Message[];
   trigger: Trigger;
   workspace: Workspace;
+  options?: StreamOptions;
 }) => {
   try {
     const getToolResult = await getOutputTool({
@@ -103,7 +105,7 @@ export const handleOutputTool = async ({
     const { tool, schema } = getToolResult;
     const toolArgs =
       // deno-lint-ignore no-explicit-any
-      (await agent.generateObject(messages, schema as any)).object;
+      (await agent.generateObject(messages, schema as any, options)).object;
 
     // deno-lint-ignore no-explicit-any
     const result = await tool.execute!({ context: toolArgs } as any);
