@@ -60,6 +60,19 @@ export const acceptInvite = (
 > => MCPClient.TEAM_INVITE_ACCEPT({ id: inviteId });
 
 /**
+ * Reject an invite
+ * @param inviteId - The ID of the invite to reject
+ * @returns Success status
+ */
+export const rejectInvite = (
+  inviteId: string,
+  signal?: AbortSignal,
+) =>
+  MCPClient.TEAM_INVITE_DELETE({
+    id: inviteId,
+  }, { signal });
+
+/**
  * Fetch team members by team ID
  * @param teamId - The ID of the team to fetch members for
  * @returns List of team members
@@ -67,10 +80,7 @@ export const acceptInvite = (
 export const getTeamMembers = (
   { teamId, withActivity }: { teamId: number; withActivity?: boolean },
   signal?: AbortSignal,
-): Promise<Member[]> =>
-  MCPClient.TEAM_MEMBERS_GET({ teamId, withActivity }, { signal }) as Promise<
-    Member[]
-  >;
+) => MCPClient.TEAM_MEMBERS_GET({ teamId, withActivity }, { signal });
 
 /**
  * Fetch team roles by team ID

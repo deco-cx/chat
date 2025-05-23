@@ -78,7 +78,7 @@ export function AuditListContent(
   const { data: teams } = useTeams();
   const resolvedTeamSlug = params.teamSlug;
   const teamId = teams?.find((t) => t.slug === resolvedTeamSlug)?.id ?? null;
-  const members = teamId !== null ? useTeamMembers(teamId).data : [];
+  const members = teamId !== null ? useTeamMembers(teamId).data.members : [];
 
   const { data: auditData } = useAuditEvents({
     agentId: optionsProp?.agentId ?? selectedAgent,

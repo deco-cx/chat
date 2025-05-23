@@ -56,6 +56,12 @@ interface Role {
   name: string;
 }
 
+interface InviteAPIData {
+  email: string;
+  id: string;
+  roles: Role[];
+}
+
 const isRole = (
   // deno-lint-ignore no-explicit-any
   r: any,
@@ -85,6 +91,8 @@ const mapMember = (
   { member_roles, ...member }: DbMember,
 ) => ({
   ...member,
+  user_id: member.user_id ?? "",
+  created_at: member.created_at ?? "",
   // @ts-expect-error - Supabase user metadata is not typed
   profiles: userFromDatabase(member.profiles),
   roles: member_roles.map((memberRole) => memberRole.roles).filter(isRole),
@@ -100,11 +108,14 @@ export const getTeamMembers = createTool({
   async canAccess(name, props, c) {
     return await canAccessTeamResource(name, props.teamId, c);
   },
-  handler: async (props, c) => {
+  handler: async (props, c): Promise<{
+    members: (ReturnType<typeof mapMember> & { lastActivity?: string })[];
+    invites: InviteAPIData[];
+  }> => {
     const { teamId, withActivity } = props;
 
     // Get all members of the team
-    const [{ data, error }] = await Promise.all([
+    const [{ data, error }, { data: invitesData }] = await Promise.all([
       c
         .db
         .from("members")
@@ -123,11 +134,18 @@ export const getTeamMembers = createTool({
       `)
         .eq("team_id", teamId)
         .is("deleted_at", null),
+      c.db.from("invites").select(
+        "id, email:invited_email, roles:invited_roles",
+      ).eq(
+        "team_id",
+        teamId,
+      ).overrideTypes<{ id: string; email: string; roles: Role[] }[]>(),
     ]);
 
     if (error) throw error;
 
     const members = data.map((member) => mapMember(member));
+    const invites = invitesData ?? [];
 
     let activityByUserId: Record<string, string> = {};
 
@@ -148,13 +166,16 @@ export const getTeamMembers = createTool({
         }, {} as Record<string, string>);
       }
 
-      return members.map((member) => ({
-        ...member,
-        lastActivity: activityByUserId[member.user_id ?? ""],
-      }));
+      return {
+        members: members.map((member) => ({
+          ...member,
+          lastActivity: activityByUserId[member.user_id ?? ""],
+        })),
+        invites,
+      };
     }
 
-    return members;
+    return { members, invites };
   },
 });
 
@@ -624,7 +645,24 @@ export const deleteInvite = createTool({
   inputSchema: z.object({
     id: z.string(),
   }),
-  canAccess: bypass,
+  canAccess: async (name, props, c) => {
+    assertPrincipalIsUser(c);
+    const [{ data: invite, error }, { data: profile }] = await Promise.all([
+      c.db.from("invites").select("team_id, invited_email").eq("id", props.id)
+        .single(),
+
+      c.db.from("profiles").select("email").eq("user_id", c.user.id).single(),
+    ]);
+
+    if (error || !invite || !profile) return false;
+
+    if (
+      invite?.invited_email && profile?.email &&
+      invite.invited_email === profile.email
+    ) return true;
+
+    return await canAccessTeamResource(name, invite.team_id, c);
+  },
   handler: async (props, c) => {
     const { id } = props;
     const db = c.db;

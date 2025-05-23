@@ -27,6 +27,7 @@ export const GLOBAL_TOOLS = [
   membersAPI.registerMemberActivity,
   membersAPI.getMyInvites,
   membersAPI.acceptInvite,
+  membersAPI.deleteInvite,
   membersAPI.inviteTeamMembers,
   membersAPI.teamRolesList,
   profilesAPI.getProfile,

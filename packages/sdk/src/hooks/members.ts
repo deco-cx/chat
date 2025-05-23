@@ -13,6 +13,7 @@ import {
   inviteTeamMembers,
   type Member,
   registerActivity,
+  rejectInvite,
   removeTeamMember,
   type Role as _Role,
 } from "../crud/members.ts";
@@ -31,7 +32,7 @@ export const useTeamMembers = (
     queryFn: ({ signal }) =>
       typeof teamId === "number"
         ? getTeamMembers({ teamId, withActivity }, signal)
-        : [],
+        : ([] as unknown as Awaited<ReturnType<typeof getTeamMembers>>),
   });
 };
 
@@ -70,6 +71,29 @@ export const useAcceptInvite = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: KEYS.MY_INVITES() });
       queryClient.invalidateQueries({ queryKey: KEYS.TEAMS() });
+    },
+  });
+};
+
+/**
+ * Hook to reject an invite
+ * @returns Mutation function for rejecting an invite
+ */
+export const useRejectInvite = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (
+      { id: id }: { id: string; teamId?: number },
+    ) => rejectInvite(id),
+    onSuccess: (_, variables) => {
+      variables.teamId === undefined &&
+        queryClient.invalidateQueries({ queryKey: KEYS.MY_INVITES() });
+
+      variables.teamId !== undefined &&
+        queryClient.invalidateQueries({
+          queryKey: KEYS.TEAM_MEMBERS(variables.teamId ?? -1),
+        });
     },
   });
 };
