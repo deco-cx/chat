@@ -15,10 +15,13 @@ import {
   useContext,
   useEffect,
   useRef,
+  useState,
 } from "react";
 import { trackEvent } from "../../hooks/analytics.ts";
 import { useUserPreferences } from "../../hooks/useUserPreferences.ts";
+import { MentionItem } from "./extensions/Mention.ts";
 import { IMAGE_REGEXP, openPreviewPanel } from "./utils/preview.ts";
+import { useAllIntegrationTools } from "../../hooks/useAllIntegrationTools.ts";
 
 const LAST_MESSAGES_COUNT = 10;
 interface FileData {
@@ -55,6 +58,7 @@ type IContext = {
     showAgentVisibility: boolean;
     showEditAgent: boolean;
   };
+  setMentions: (tools: MentionItem[] | null) => void;
 };
 
 const Context = createContext<IContext | null>(null);
@@ -91,6 +95,7 @@ export function ChatProvider({
 }: PropsWithChildren<Props>) {
   const agentRoot = useAgentRoot(agentId);
   const invalidateAll = useInvalidateAll();
+  const [mentions, setMentions] = useState<MentionItem[] | null>(null);
   const {
     addOptimisticThread,
   } = useAddOptimisticThread();
@@ -105,6 +110,8 @@ export function ChatProvider({
   const { data: agent } = useAgent(agentId);
 
   const correlationIdRef = useRef<string | null>(null);
+
+  const { toolsMap } = useAllIntegrationTools();
 
   const chat = useChat({
     initialMessages: initialMessages || [],
@@ -136,6 +143,18 @@ export function ChatProvider({
       }
 
       const bypassOpenRouter = !preferences.useOpenRouter;
+      const integrations = mentions?.map((integration) => integration.id);
+
+      const filteredToolsMap = Object.fromEntries(
+        Object.entries(toolsMap)
+          .filter(([key]) => integrations?.includes(key))
+          .map(([key, tools]) => [
+            key,
+            Object.fromEntries(tools.map((tool) => [tool.name, tool])),
+          ]),
+      );
+
+      console.log("filteredToolsMap", filteredToolsMap);
 
       return {
         args: [messagesWindow, {
@@ -146,6 +165,7 @@ export function ChatProvider({
           bypassOpenRouter,
           lastMessages: 0,
           sendReasoning: true,
+          tools: filteredToolsMap,
           smoothStream: {
             delayInMs: 20,
             chunk: "word",
@@ -258,6 +278,7 @@ export function ChatProvider({
         retry: handleRetry,
         select: handlePickerSelect,
         correlationIdRef,
+        setMentions,
       }}
     >
       {children}

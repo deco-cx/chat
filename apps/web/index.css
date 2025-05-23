@@ -61,3 +61,10 @@
     }
   }
 }
+
+/* Tiptap */
+
+.mention {
+  @apply bg-blue-500/5 text-blue-500 border border-blue-500/20 rounded-lg px-1.5
+    py-0.5 box-decoration-clone;
+}

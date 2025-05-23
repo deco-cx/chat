@@ -30,6 +30,7 @@ import { ErrorBoundary } from "../../ErrorBoundary.tsx";
 import { useUserPreferences } from "../../hooks/useUserPreferences.ts";
 import { AudioButton } from "./AudioButton.tsx";
 import { useChatContext } from "./context.tsx";
+import type { MentionItem } from "./extensions/Mention.ts";
 import { ModelSelector } from "./ModelSelector.tsx";
 import { RichTextArea } from "./RichText.tsx";
 import ToolsButton from "./ToolsButton.tsx";
@@ -123,6 +124,7 @@ ChatInput.UI = (
   const {
     chat: { stop, input, handleInputChange, handleSubmit, status },
     uiOptions: { showModelSelector, showThreadTools },
+    setMentions,
   } = useChatContext();
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -146,10 +148,14 @@ ChatInput.UI = (
 
   const writeFileMutation = useWriteFile();
 
-  const handleRichTextChange = (markdown: string) => {
+  const handleRichTextChange = (
+    markdown: string,
+    mentions: MentionItem[] | null,
+  ) => {
     handleInputChange(
       { target: { value: markdown } } as ChangeEvent<HTMLTextAreaElement>,
     );
+    setMentions(mentions);
   };
 
   // Auto-focus when loading state changes from true to false

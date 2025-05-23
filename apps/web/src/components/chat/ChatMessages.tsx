@@ -32,6 +32,7 @@ function Dots() {
 
 export function ChatMessages() {
   const {
+    agentId,
     scrollRef,
     chat,
     isAutoScrollEnabled,
@@ -89,6 +90,7 @@ export function ChatMessages() {
             <ChatMessage
               key={message.id}
               message={message}
+              agentId={agentId}
               isStreaming={isStreaming}
               isLastMessage={messages.length === index + 1}
             />

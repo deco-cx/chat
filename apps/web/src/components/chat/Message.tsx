@@ -1,14 +1,17 @@
 import type { Message } from "@ai-sdk/react";
+import { useAgent } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import { useMemo } from "react";
+import { AgentAvatar } from "../common/Avatar.tsx";
 import { MemoizedMarkdown } from "./Markdown.tsx";
-import { ToolMessage } from "./ToolMessage.tsx";
 import { ReasoningPart } from "./ReasoningPart.tsx";
+import { ToolMessage } from "./ToolMessage.tsx";
 
 interface ChatMessageProps {
   message: Message;
+  agentId: string;
   isStreaming?: boolean;
   isLastMessage?: boolean;
 }
@@ -111,8 +114,11 @@ function mergeParts(parts: Part[] | undefined): MessagePart[] {
 }
 
 export function ChatMessage(
-  { message, isStreaming = false, isLastMessage = false }: ChatMessageProps,
+  { message, agentId, isStreaming = false, isLastMessage = false }:
+    ChatMessageProps,
 ) {
+  const { data: agent } = useAgent(agentId);
+
   const isUser = message.role === "user";
   const timestamp = new Date(message.createdAt || Date.now())
     .toLocaleTimeString([], {
@@ -167,10 +173,19 @@ export function ChatMessage(
   return (
     <div
       className={cn(
-        "w-full group relative flex items-start gap-4 px-4 z-20 text-slate-700 group",
+        "w-full group relative flex items-start gap-3 px-4 z-20 text-slate-700 group",
         isUser ? "flex-row-reverse py-4" : "flex-row",
       )}
     >
+      {!isUser && (
+        <div className="flex-shrink-0">
+          <AgentAvatar
+            name={agent?.name}
+            avatar={agent?.avatar}
+            className="h-8 w-8 rounded-lg"
+          />
+        </div>
+      )}
       <div
         className={cn(
           "flex flex-col gap-1",
@@ -178,6 +193,7 @@ export function ChatMessage(
         )}
       >
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {!isUser && <span className="font-medium">{agent?.name}</span>}
           <span>{timestamp}</span>
         </div>
 
