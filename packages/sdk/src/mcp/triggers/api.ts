@@ -118,20 +118,57 @@ export const listTriggers = createTool({
   },
 });
 
-export const createTrigger = createTool({
-  name: "TRIGGERS_CREATE",
-  description: "Create a trigger",
-  inputSchema: z.object({ agentId: z.string(), data: TriggerSchema }),
+export const upsertTrigger = createTool({
+  name: "TRIGGERS_UPSERT",
+  description: "Create or update a trigger",
+  inputSchema: z.object({
+    agentId: z.string().describe(
+      "The ID of the agent to create the trigger for, use only UUIDs",
+    ),
+    triggerId: z.string().optional(),
+    data: TriggerSchema,
+  }),
   canAccess: canAccessWorkspaceResource,
   handler: async (
-    { agentId, data },
+    { agentId, triggerId, data },
     c,
-  ): Promise<z.infer<typeof CreateTriggerOutputSchema>> => {
+  ) => {
     assertHasWorkspace(c);
     const db = c.db;
     const workspace = c.workspace.value;
     const user = c.user;
     const stub = c.stub;
+
+    const triggerPath = Path.resolveHome(
+      join(
+        Path.folders.Agent.root(agentId),
+        Path.folders.trigger(triggerId || crypto.randomUUID()),
+      ),
+      workspace,
+    ).path;
+
+    // Validate trigger data based on type
+    if (data.type === "cron") {
+      const parse = CreateCronTriggerInputSchema.safeParse(data);
+      if (!parse.success) {
+        throw new UserInputError("Invalid trigger");
+      }
+    }
+
+    if (data.type === "webhook") {
+      const parse = CreateWebhookTriggerInputSchema.safeParse(data);
+      if (!parse.success) {
+        throw new UserInputError("Invalid trigger");
+      }
+      (data as z.infer<typeof TriggerSchema> & { url: string }).url =
+        buildWebhookUrl(
+          triggerPath,
+          data.passphrase,
+          data.outputTool,
+        );
+    }
+
+    const userId = typeof user.id === "string" ? user.id : undefined;
 
     // Check if there's already a WhatsApp-enabled trigger for this agent
     const whatsappEnabled =
@@ -153,42 +190,27 @@ export const createTrigger = createTool({
 
     const id = crypto.randomUUID();
 
-    const triggerId = Path.resolveHome(
-      join(Path.folders.Agent.root(agentId), Path.folders.trigger(id)),
-      workspace,
-    ).path;
-
-    if (data.type === "cron") {
-      const parse = CreateCronTriggerInputSchema.safeParse(data);
-      if (!parse.success) {
-        throw new UserInputError("Invalid trigger");
-      }
+    // Delete existing trigger if updating
+    if (triggerId) {
+      await stub(Trigger).new(triggerPath).delete();
     }
 
-    if (data.type === "webhook") {
-      const parse = CreateWebhookTriggerInputSchema.safeParse(data);
-      if (!parse.success) {
-        throw new UserInputError("Invalid trigger");
-      }
-      (data as z.infer<typeof TriggerSchema> & { url: string }).url =
-        buildWebhookUrl(triggerId, data.passphrase, data.outputTool);
-    }
-
-    const userId = typeof user.id === "string" ? user.id : undefined;
-    await stub(Trigger).new(triggerId).create(
+    // Create new trigger
+    await stub(Trigger).new(triggerPath).create(
       {
         ...data,
-        id,
+        id: triggerId || id,
         resourceId: userId,
       },
     );
 
+    // Update database
     const { data: trigger, error } = await db.from("deco_chat_triggers")
-      .insert({
-        id,
+      .upsert({
+        id: triggerId || id,
+        workspace,
         agent_id: agentId,
         user_id: userId,
-        workspace,
         metadata: data as Json,
         whatsapp_enabled:
           (data as z.infer<typeof TriggerSchema> & { whatsappEnabled: boolean })
@@ -208,6 +230,51 @@ export const createTrigger = createTool({
     }, {} as Record<string, z.infer<typeof AgentSchema>>);
 
     return mapTrigger(trigger, agentsById);
+  },
+});
+
+export const createTrigger = createTool({
+  name: "TRIGGERS_CREATE",
+  description: "Create a trigger",
+  inputSchema: z.object({
+    agentId: z.string().describe(
+      "The ID of the agent to create the trigger for, use only UUIDs",
+    ),
+    data: TriggerSchema,
+  }),
+  canAccess: canAccessWorkspaceResource,
+  handler: async (
+    { agentId, data },
+    _c,
+  ) => {
+    const result = await upsertTrigger.handler({ agentId, data });
+    if (result.isError) {
+      throw result.structuredContent;
+    }
+    return result.structuredContent;
+  },
+});
+
+export const updateTrigger = createTool({
+  name: "TRIGGERS_UPDATE",
+  description: "Update a trigger",
+  inputSchema: z.object({
+    agentId: z.string().describe(
+      "The ID of the agent to create the trigger for, use only UUIDs",
+    ),
+    triggerId: z.string(),
+    data: TriggerSchema,
+  }),
+  canAccess: canAccessWorkspaceResource,
+  handler: async (
+    { agentId, triggerId, data },
+    _c,
+  ) => {
+    const result = await upsertTrigger.handler({ agentId, triggerId, data });
+    if (result.isError) {
+      throw result.structuredContent;
+    }
+    return result.structuredContent;
   },
 });
 
@@ -215,58 +282,21 @@ export const createCronTrigger = createTool({
   name: "TRIGGERS_CREATE_CRON",
   description: "Create a cron trigger",
   inputSchema: z.object({
-    agentId: z.string(),
+    agentId: z.string().default(crypto.randomUUID()).describe(
+      "The ID of the agent to create the trigger for, use only UUIDs. If not provided, a random UUID will be generated",
+    ),
     data: CreateCronTriggerInputSchema,
   }),
   canAccess: canAccessWorkspaceResource,
   handler: async (
     { agentId, data },
-    c,
+    _c,
   ): Promise<z.infer<typeof CreateTriggerOutputSchema>> => {
-    assertHasWorkspace(c);
-    const db = c.db;
-    const workspace = c.workspace.value;
-    const user = c.user;
-    const stub = c.stub;
-
-    const id = crypto.randomUUID();
-
-    const triggerId = Path.resolveHome(
-      join(Path.folders.Agent.root(agentId), Path.folders.trigger(id)),
-      workspace,
-    ).path;
-
-    const userId = typeof user.id === "string" ? user.id : undefined;
-    await stub(Trigger).new(triggerId).create(
-      {
-        ...data,
-        id,
-        resourceId: userId,
-      },
-    );
-
-    const { data: trigger, error } = await db.from("deco_chat_triggers")
-      .insert({
-        id,
-        agent_id: agentId,
-        user_id: userId,
-        workspace,
-        metadata: data as Json,
-      })
-      .select(SELECT_TRIGGER_QUERY)
-      .single();
-
-    if (error) {
-      throw new InternalServerError(error.message);
+    const result = await upsertTrigger.handler({ agentId, data });
+    if (result.isError) {
+      throw result.structuredContent;
     }
-
-    const agents = await getAgentsByIds([agentId], c);
-    const agentsById = agents.reduce((acc, agent) => {
-      acc[agent.id] = agent;
-      return acc;
-    }, {} as Record<string, z.infer<typeof AgentSchema>>);
-
-    return mapTrigger(trigger, agentsById);
+    return result.structuredContent;
   },
 });
 
@@ -274,66 +304,24 @@ export const createWebhookTrigger = createTool({
   name: "TRIGGERS_CREATE_WEBHOOK",
   description: "Create a webhook trigger",
   inputSchema: z.object({
-    agentId: z.string(),
+    agentId: z.string().default(crypto.randomUUID()).describe(
+      "The ID of the agent to create the trigger for, use only UUIDs. If not provided, a random UUID will be generated",
+    ),
     data: CreateWebhookTriggerInputSchema,
   }),
   canAccess: canAccessWorkspaceResource,
   handler: async (
     { agentId, data },
-    c,
+    _c,
   ): Promise<z.infer<typeof CreateTriggerOutputSchema>> => {
-    assertHasWorkspace(c);
-    const db = c.db;
-    const workspace = c.workspace.value;
-    const user = c.user;
-    const stub = c.stub;
-
-    const id = crypto.randomUUID();
-
-    const triggerId = Path.resolveHome(
-      join(Path.folders.Agent.root(agentId), Path.folders.trigger(id)),
-      workspace,
-    ).path;
-
-    (data as z.infer<typeof TriggerSchema> & { url: string }).url =
-      buildWebhookUrl(triggerId, data.passphrase);
-
-    const userId = typeof user.id === "string" ? user.id : undefined;
-    await stub(Trigger).new(triggerId).create(
-      {
-        ...data,
-        id,
-        resourceId: userId,
-      },
-    );
-
-    const { data: trigger, error } = await db.from("deco_chat_triggers")
-      .insert({
-        id,
-        agent_id: agentId,
-        user_id: userId,
-        workspace,
-        metadata: data as Json,
-        whatsapp_enabled:
-          (data as z.infer<typeof TriggerSchema> & { whatsappEnabled: boolean })
-            .whatsappEnabled,
-      })
-      .select(SELECT_TRIGGER_QUERY)
-      .single();
-
-    if (error) {
-      throw new InternalServerError(error.message);
+    const result = await upsertTrigger.handler({ agentId, data });
+    if (result.isError) {
+      throw result.structuredContent;
     }
-
-    const agents = await getAgentsByIds([agentId], c);
-    const agentsById = agents.reduce((acc, agent) => {
-      acc[agent.id] = agent;
-      return acc;
-    }, {} as Record<string, z.infer<typeof AgentSchema>>);
-
-    return mapTrigger(trigger, agentsById);
+    return result.structuredContent;
   },
 });
+
 export const deleteTrigger = createTool({
   name: "TRIGGERS_DELETE",
   description: "Delete a trigger",

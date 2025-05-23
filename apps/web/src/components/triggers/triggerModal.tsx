@@ -1,6 +1,5 @@
 import type { Agent } from "@deco/sdk";
 import { useAgents } from "@deco/sdk";
-import { Button } from "@deco/ui/components/button.tsx";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +26,8 @@ import { AgentAvatar } from "../common/Avatar.tsx";
 import { EmptyState } from "../common/EmptyState.tsx";
 import { CronTriggerForm } from "./cronTriggerForm.tsx";
 import { WebhookTriggerForm } from "./webhookTriggerForm.tsx";
+import { TriggerOutputSchema } from "@deco/sdk";
+import { z } from "zod";
 
 function AgentSelect({
   agents,
@@ -83,32 +84,34 @@ function AgentSelect({
   );
 }
 
-export function AddTriggerModal({ agentId }: {
-  agentId?: string;
-}) {
+export function TriggerModal(
+  { triggerAction, trigger, isOpen, onOpenChange, agentId }: {
+    triggerAction?: React.ReactNode;
+    agentId?: string;
+    trigger?: z.infer<typeof TriggerOutputSchema>;
+    isOpen?: boolean;
+    onOpenChange?: (open: boolean) => void;
+  },
+) {
   const { data: agents = [] } = useAgents();
-  const [isOpen, setIsOpen] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string>(
-    agentId || agents[0]?.id || "",
+    trigger?.agent?.id || agentId || agents[0]?.id || "",
   );
-  const [triggerType, setTriggerType] = useState<"webhook" | "cron">("webhook");
+  const [triggerType, setTriggerType] = useState<"webhook" | "cron">(
+    trigger?.data.type === "cron" ? "cron" : "webhook",
+  );
 
   const hasAgents = agents.length > 0;
+  const isEditing = !!trigger;
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="special"
-          title="Add Trigger"
-        >
-          <Icon name="add" />
-          <span className="hidden md:inline">Create trigger</span>
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>{triggerAction}</DialogTrigger>
+      <DialogContent onClick={(e) => e.stopPropagation()}>
         <DialogHeader>
-          <DialogTitle>Create trigger</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Edit trigger" : "Create trigger"}
+          </DialogTitle>
         </DialogHeader>
         {!hasAgents
           ? (
@@ -118,7 +121,7 @@ export function AddTriggerModal({ agentId }: {
               description="You need to create an agent before adding a trigger."
               buttonProps={{
                 onClick: () => {
-                  setIsOpen(false);
+                  onOpenChange?.(false);
                   globalThis.location.href = "/agents";
                 },
                 variant: "special",
@@ -139,7 +142,7 @@ export function AddTriggerModal({ agentId }: {
                   agents={agents}
                   value={selectedAgentId}
                   onChange={setSelectedAgentId}
-                  disabled={!!agentId || agents.length === 0}
+                  disabled={isEditing}
                 />
               </div>
               <Tabs
@@ -150,12 +153,14 @@ export function AddTriggerModal({ agentId }: {
                   <TabsTrigger
                     value="webhook"
                     className="flex-1 cursor-pointer rounded-full"
+                    disabled={isEditing}
                   >
                     Webhook
                   </TabsTrigger>
                   <TabsTrigger
                     value="cron"
                     className="flex-1 cursor-pointer rounded-full"
+                    disabled={isEditing}
                   >
                     Cron
                   </TabsTrigger>
@@ -166,7 +171,10 @@ export function AddTriggerModal({ agentId }: {
                 >
                   <WebhookTriggerForm
                     agentId={selectedAgentId}
-                    onSuccess={() => setIsOpen(false)}
+                    onSuccess={() => onOpenChange?.(false)}
+                    initialValues={trigger?.type === "webhook"
+                      ? trigger
+                      : undefined}
                   />
                 </TabsContent>
                 <TabsContent
@@ -175,7 +183,10 @@ export function AddTriggerModal({ agentId }: {
                 >
                   <CronTriggerForm
                     agentId={selectedAgentId}
-                    onSuccess={() => setIsOpen(false)}
+                    onSuccess={() => onOpenChange?.(false)}
+                    initialValues={trigger?.type === "cron"
+                      ? trigger
+                      : undefined}
                   />
                 </TabsContent>
               </Tabs>
