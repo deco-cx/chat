@@ -83,11 +83,14 @@ interface DbMember {
 
 const mapMember = (
   { member_roles, ...member }: DbMember,
+  c: AppContext,
 ) => ({
   ...member,
   // @ts-expect-error - Supabase user metadata is not typed
   profiles: userFromDatabase(member.profiles),
-  roles: member_roles.map((memberRole) => memberRole.roles).filter(isRole),
+  roles: c.policy.filterTeamRoles(
+    member_roles.map((memberRole) => memberRole.roles).filter(isRole),
+  ),
 });
 
 export const getTeamMembers = createTool({
@@ -127,7 +130,7 @@ export const getTeamMembers = createTool({
 
     if (error) throw error;
 
-    const members = data.map((member) => mapMember(member));
+    const members = data.map((member) => mapMember(member, c));
 
     let activityByUserId: Record<string, string> = {};
 
@@ -658,21 +661,34 @@ export const teamRolesList = createTool({
     return await canAccessTeamResource(name, props.teamId, c);
   },
   handler: async (props, c) => {
-    const { teamId } = props;
-    const db = c.db;
+    return await c.policy.getTeamRoles(props.teamId);
+  },
+});
 
-    // Helper function to create the team or deco basic roles query
-    const getTeamOrDecoBasicRolesQuery = (teamId: number) => {
-      return `team_id.eq.${teamId},team_id.is.null`;
-    };
+export const updateMemberRole = createApiHandler({
+  name: "TEAM_MEMBERS_UPDATE_ROLE",
+  description: "Update a member's role in a team",
+  schema: z.object({
+    teamId: z.number(),
+    userId: z.string(),
+    roleId: z.number(),
+    action: z.enum(["grant", "revoke"]),
+  }),
+  async canAccess(name, props, c) {
+    return await canAccessTeamResource(name, props.teamId, c);
+  },
+  handler: async (props, c) => {
+    const { teamId, userId, roleId, action } = props;
 
-    // Get all roles for this team and deco basic roles
-    const { data, error } = await db.from("roles").select(
-      "id, name, description, team_id",
-    ).or(getTeamOrDecoBasicRolesQuery(teamId));
+    const { data: profile } = await c.db.from("profiles").select("email").eq(
+      "user_id",
+      userId,
+    ).single();
 
-    if (error) throw error;
+    if (!profile) throw new NotFoundError(`User with id ${userId} not found`);
 
-    return data;
+    await c.policy.updateUserRole(teamId, profile.email, { roleId, action });
+
+    return { success: true };
   },
 });

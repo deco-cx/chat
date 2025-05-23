@@ -3,6 +3,8 @@ import {
   useRemoveTeamMember,
   useTeam,
   useTeamMembers,
+  useTeamRoles,
+  useUpdateMemberRole,
 } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import {
@@ -38,6 +40,8 @@ import { Avatar } from "../common/Avatar.tsx";
 import { useCurrentTeam } from "../sidebar/TeamSelector.tsx";
 import { SettingsMobileHeader } from "./SettingsMobileHeader.tsx";
 import { InviteTeamMembersDialog } from "../common/InviteTeamMembersDialog.tsx";
+import { Checkbox } from "@deco/ui/components/checkbox.tsx";
+import { toast } from "@deco/ui/components/sonner.tsx";
 
 function MemberTitle() {
   return (
@@ -188,7 +192,9 @@ function MembersViewContent() {
   const { data: members } = useTeamMembers(teamId ?? null, {
     withActivity: true,
   });
+  const { data: roles = [] } = useTeamRoles(teamId ?? null);
   const removeMemberMutation = useRemoveTeamMember();
+  const updateRoleMutation = useUpdateMemberRole();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("name_asc");
   const deferredQuery = useDeferredValue(query);
@@ -224,6 +230,29 @@ function MembersViewContent() {
       });
     } catch (error) {
       console.error("Failed to remove team member:", error);
+    }
+  };
+
+  // Update member role
+  const handleUpdateMemberRole = async (
+    userId: string,
+    roleId: number,
+    checked: boolean,
+  ) => {
+    if (!teamId) return;
+    try {
+      await updateRoleMutation.mutateAsync({
+        teamId,
+        userId,
+        roleId,
+        action: checked ? "grant" : "revoke",
+      });
+      toast.success(
+        checked ? "Role assigned successfully" : "Role removed successfully"
+      );
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update role");
+      console.error("Failed to update member role:", error);
     }
   };
 
@@ -307,12 +336,59 @@ function MembersViewContent() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className="inline-flex gap-2">
+                      <span className="inline-flex gap-2 items-center">
                         {member.roles.map((role) => (
                           <Badge variant="outline" key={role.id}>
                             {role.name}
                           </Badge>
                         ))}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-5.5 w-5.5 p-0 rounded-md"
+                            >
+                              <Icon name="add" size={14} />
+                              <span className="sr-only">Manage roles</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-56 p-2">
+                            <div className="text-xs font-medium px-2 py-1.5">Roles</div>
+                            {roles.map((role) => {
+                              const checked = member.roles.some((memberRole) => 
+                                memberRole.id === role.id
+                              );
+                              return (
+                                <DropdownMenuItem key={role.id} asChild>
+                                  <div 
+                                    className="flex items-center gap-2 px-2 py-1.5 cursor-pointer"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      // Don't allow removing the last role
+                                      if (checked && member.roles.length <= 1) {
+                                        toast.error("Member must have at least one role");
+                                        return;
+                                      }
+                                      handleUpdateMemberRole(
+                                        member.user_id,
+                                        role.id,
+                                        !checked
+                                      );
+                                    }}
+                                  >
+                                    <Checkbox
+                                      checked={checked}
+                                      className="h-4 w-4"
+                                      disabled={updateRoleMutation.isPending}
+                                    />
+                                    <span className="capitalize">{role.name}</span>
+                                  </div>
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </span>
                     </TableCell>
                     {!isMobile && (

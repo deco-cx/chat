@@ -15,6 +15,7 @@ import {
   registerActivity,
   removeTeamMember,
   type Role as _Role,
+  updateMemberRole,
 } from "../crud/members.ts";
 import { KEYS } from "./api.ts";
 
@@ -127,4 +128,42 @@ export const useRegisterActivity = (teamId?: number) => {
 
     registerActivity(teamId);
   }, [teamId]);
+};
+
+/**
+ * Hook to update a member's role in a team
+ * @returns Mutation function for updating a member's role
+ */
+export const useUpdateMemberRole = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      teamId,
+      userId,
+      roleId,
+      action,
+    }: {
+      teamId: number;
+      userId: string;
+      roleId: number;
+      action: "grant" | "revoke";
+    }) => updateMemberRole(teamId, userId, roleId, action),
+    onSuccess: (_, { teamId, userId, roleId, action }) => {
+      const membersKey = KEYS.TEAM_MEMBERS(teamId);
+      const membersData = queryClient.getQueryData<Member[]>(membersKey);
+
+      if (!membersData) return;
+
+      const membersWithChangedRole = membersData.map((member) => {
+        if (member.user_id !== userId) return member;
+
+        const newRoles = action === "grant"
+          ? [...member.roles, { id: roleId, name: "" }]
+          : member.roles.filter((r) => r.id !== roleId);
+        return { ...member, roles: newRoles };
+      });
+      queryClient.setQueryData(membersKey, membersWithChangedRole);
+    },
+  });
 };

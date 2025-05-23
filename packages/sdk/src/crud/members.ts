@@ -18,7 +18,7 @@ export interface Member {
 export interface Role {
   id: number;
   name: string;
-  description: string | null;
+  description?: string | null;
   team_id: number | null;
 }
 
@@ -111,4 +111,32 @@ export const removeTeamMember = (
 
 export const registerActivity = (teamId: number) => {
   MCPClient.TEAM_MEMBER_ACTIVITY_REGISTER({ teamId });
+};
+
+/**
+ * Update a member's role in a team
+ * @param teamId - The ID of the team
+ * @param userId - The user ID of the member
+ * @param roleId - The ID of the role to grant or revoke
+ * @param action - Whether to grant or revoke the role
+ * @returns Success status
+ */
+export const updateMemberRole = async (
+  teamId: number,
+  userId: string,
+  roleId: number,
+  action: "grant" | "revoke",
+): Promise<{ success: boolean }> => {
+  const { data, error, ok } = await MCPClient.TEAM_MEMBERS_UPDATE_ROLE({
+    teamId,
+    userId,
+    roleId,
+    action,
+  });
+
+  if (!ok || !data) {
+    throw new Error(error?.message ?? "Failed to update member role");
+  }
+
+  return data;
 };
