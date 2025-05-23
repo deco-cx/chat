@@ -2,8 +2,27 @@ import { MCPConnection } from "../models/mcp.ts";
 import { MCPClient, ToolLike } from "./index.ts";
 import { MCPClientFetchStub } from "./stub.ts";
 
-export const createMCPBinding = <TDefinition extends readonly ToolLike[]>() => {
+export type Binder<TDefinition extends readonly ToolLike[]> = {
+  [K in keyof TDefinition]: Pick<
+    TDefinition[K],
+    "name" | "inputSchema" | "outputSchema"
+  >;
+};
+export const mcpBinding = <TDefinition extends readonly ToolLike[]>(
+  binder: Binder<TDefinition>,
+) => {
   return {
+    implements: async (
+      mcpConnection: MCPConnection,
+    ) => {
+      const listedTools = await MCPClient.INTEGRATIONS_LIST_TOOLS({
+        connection: mcpConnection,
+      }).catch(() => ({ tools: [] }));
+
+      return binder.filter((tool) =>
+        (listedTools.tools ?? []).some((t) => t.name === tool.name)
+      );
+    },
     forConnection: (
       mcpConnection: MCPConnection,
     ): MCPClientFetchStub<TDefinition> => {

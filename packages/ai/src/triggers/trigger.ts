@@ -5,10 +5,13 @@ import { SUPABASE_URL } from "@deco/sdk/auth";
 import {
   AppContext,
   AuthorizationClient,
+  Binder,
   fromWorkspaceString,
+  mcpBinding,
   MCPClient,
   MCPClientStub,
   PolicyClient,
+  Tool,
   WorkspaceTools,
 } from "@deco/sdk/mcp";
 import { getTwoFirstSegments, type Workspace } from "@deco/sdk/path";
@@ -18,6 +21,7 @@ import { Cloudflare } from "cloudflare";
 import { getRuntimeKey } from "hono/adapter";
 import { dirname } from "node:path/posix";
 import process from "node:process";
+import z from "zod";
 import { hooks as cron } from "./cron.ts";
 import type { TriggerData, TriggerRun } from "./services.ts";
 import { hooks as webhook } from "./webhook.ts";
@@ -33,6 +37,42 @@ export const threadOf = (
   return { threadId, resourceId };
 };
 
+const callbacksSchema = z.object({
+  stream: z.string(),
+  generate: z.string(),
+});
+
+const onWebhookMessageInputSchema = z.object({
+  payload: z.any(),
+  callbacks: callbacksSchema,
+});
+
+const scheduledInputSchema = z.object({
+  callbacks: callbacksSchema,
+});
+export type Callbacks = z.infer<typeof callbacksSchema>;
+export type OnWebhookMessageInput = z.infer<typeof onWebhookMessageInputSchema>;
+export type ScheduledInput = z.infer<typeof scheduledInputSchema>;
+
+export type TriggerBinding = [
+  Tool<"ON_WEBHOOK_MESSAGE", OnWebhookMessageInput, Record<string, unknown>>,
+  Tool<"SCHEDULED", ScheduledInput, Record<string, unknown>>,
+];
+
+const binder: Binder<TriggerBinding> = [{
+  name: "ON_WEBHOOK_MESSAGE" as const,
+  inputSchema: onWebhookMessageInputSchema,
+  outputSchema: z.any(),
+}, {
+  name: "SCHEDULED" as const,
+  inputSchema: scheduledInputSchema,
+  outputSchema: z.any(),
+}];
+
+const TriggerBinding = mcpBinding<TriggerBinding>(binder);
+// TODO (@mcandeia) trigger should set a token at Actor Level that can be used later to callback trigger and then call the agent.
+// we can keep the token for the request lifetime.
+// or we can use the state storage to save the token and fire&forget the request.
 export interface TriggerHooks<TData extends TriggerData = TriggerData> {
   type: TData["type"];
   onCreated?(data: TData, trigger: Trigger): Promise<void>;
@@ -76,6 +116,7 @@ function mapTriggerToTriggerData(
       email: trigger.user.metadata.email,
       avatar: trigger.user.metadata.avatar_url,
     },
+    binding: trigger.binding,
     ...trigger.data,
   } as TriggerData;
 }
