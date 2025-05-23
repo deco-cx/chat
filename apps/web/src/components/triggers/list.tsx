@@ -6,13 +6,15 @@ import { ListPageHeader } from "../common/ListPageHeader.tsx";
 import { Table, TableColumn } from "../common/Table.tsx";
 import { AgentInfo, DateTimeCell, UserInfo } from "../common/TableCells.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
-import { AddTriggerModal } from "./addTriggerModal.tsx";
+import { TriggerModal } from "./triggerModal.tsx";
 import { TriggerActions } from "./triggerActions.tsx";
 import { TriggerCard } from "./triggerCard.tsx";
 import { TriggerType } from "./triggerType.tsx";
 import { TriggerOutputSchema } from "@deco/sdk";
 import { z } from "zod";
 import { TriggerToggle } from "./triggerToggle.tsx";
+import { Button } from "@deco/ui/components/button.tsx";
+import { Icon } from "@deco/ui/components/icon.tsx";
 
 const SORTABLE_KEYS = ["title", "type", "agent", "author"] as const;
 
@@ -60,6 +62,7 @@ const TABS = {
 };
 
 export default function ListTriggersLayout() {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   return (
     <PageLayout
       displayViewsTrigger={false}
@@ -67,7 +70,22 @@ export default function ListTriggersLayout() {
       breadcrumb={
         <DefaultBreadcrumb items={[{ label: "Triggers", link: "/triggers" }]} />
       }
-      actionButtons={<AddTriggerModal />}
+      actionButtons={
+        <TriggerModal
+          isOpen={isCreateModalOpen}
+          onOpenChange={setIsCreateModalOpen}
+          triggerAction={
+            <Button
+              variant="special"
+              title="Add Trigger"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Icon name="add" />
+              <span className="hidden md:inline">Create trigger</span>
+            </Button>
+          }
+        />
+      }
     />
   );
 }

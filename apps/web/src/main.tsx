@@ -42,6 +42,7 @@ const RouteLayout = lazy(() =>
     default: mod.RouteLayout,
   }))
 );
+
 const PageviewTrackerLayout = lazy(
   () => import("./components/analytics/PageviewTracker.tsx"),
 );
@@ -228,7 +229,6 @@ function ErrorFallback() {
   );
 }
 
-// Inline wrapper for Chat with disabled messages
 function HomeChat() {
   return (
     <Chat

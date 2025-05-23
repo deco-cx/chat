@@ -11,6 +11,7 @@ import {
   deleteTrigger,
   listAllTriggers,
   listTriggers,
+  updateTrigger,
 } from "../crud/trigger.ts";
 import { useSDK } from "./store.tsx";
 import { KEYS } from "./api.ts";
@@ -56,6 +57,24 @@ export function useCreateTrigger(agentId: string) {
   return useMutation({
     mutationFn: (trigger: CreateTriggerInput) =>
       createTrigger(workspace, agentId, trigger),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: KEYS.TRIGGERS(workspace) });
+      client.invalidateQueries({ queryKey: KEYS.TRIGGERS(workspace, agentId) });
+    },
+  });
+}
+
+export function useUpdateTrigger(agentId: string) {
+  const { workspace } = useSDK();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      triggerId,
+      trigger,
+    }: {
+      triggerId: string;
+      trigger: CreateTriggerInput;
+    }) => updateTrigger(workspace, agentId, triggerId, trigger),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: KEYS.TRIGGERS(workspace) });
       client.invalidateQueries({ queryKey: KEYS.TRIGGERS(workspace, agentId) });
