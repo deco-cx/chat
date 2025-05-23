@@ -4,4127 +4,4133 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[];
+  | Json[]
 
 export type Database = {
   public: {
     Tables: {
       admin_ai_usage: {
         Row: {
-          created_at: string;
-          event_name: string | null;
-          id: number;
-          sitename: string | null;
-          user_id: string | null;
-          value: number | null;
-        };
+          created_at: string
+          event_name: string | null
+          id: number
+          sitename: string | null
+          user_id: string | null
+          value: number | null
+        }
         Insert: {
-          created_at?: string;
-          event_name?: string | null;
-          id?: number;
-          sitename?: string | null;
-          user_id?: string | null;
-          value?: number | null;
-        };
+          created_at?: string
+          event_name?: string | null
+          id?: number
+          sitename?: string | null
+          user_id?: string | null
+          value?: number | null
+        }
         Update: {
-          created_at?: string;
-          event_name?: string | null;
-          id?: number;
-          sitename?: string | null;
-          user_id?: string | null;
-          value?: number | null;
-        };
+          created_at?: string
+          event_name?: string | null
+          id?: number
+          sitename?: string | null
+          user_id?: string | null
+          value?: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "admin_ai_usage_sitename_fkey";
-            columns: ["sitename"];
-            isOneToOne: false;
-            referencedRelation: "sites";
-            referencedColumns: ["name"];
+            foreignKeyName: "admin_ai_usage_sitename_fkey"
+            columns: ["sitename"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["name"]
           },
           {
-            foreignKeyName: "admin_ai_usage_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "admin_ai_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       ai_query_limit: {
         Row: {
-          count: number | null;
-          created_at: string;
-          id: number;
-          team_id: number | null;
-        };
+          count: number | null
+          created_at: string
+          id: number
+          team_id: number | null
+        }
         Insert: {
-          count?: number | null;
-          created_at: string;
-          id?: number;
-          team_id?: number | null;
-        };
+          count?: number | null
+          created_at: string
+          id?: number
+          team_id?: number | null
+        }
         Update: {
-          count?: number | null;
-          created_at?: string;
-          id?: number;
-          team_id?: number | null;
-        };
+          count?: number | null
+          created_at?: string
+          id?: number
+          team_id?: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "public_ai_query_limit_teamId_fkey";
-            columns: ["team_id"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
+            foreignKeyName: "public_ai_query_limit_teamId_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       api_key: {
         Row: {
-          created_at: string;
-          id: string;
-          user_id: string | null;
-        };
+          created_at: string
+          id: string
+          user_id: string | null
+        }
         Insert: {
-          created_at?: string;
-          id?: string;
-          user_id?: string | null;
-        };
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
         Update: {
-          created_at?: string;
-          id?: string;
-          user_id?: string | null;
-        };
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "api_key_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users_meta_data_view";
-            referencedColumns: ["id"];
+            foreignKeyName: "api_key_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_meta_data_view"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       apps: {
         Row: {
-          authority: string;
-          category: string | null;
-          created_at: string;
-          description: string;
-          id: number;
-          logo: string;
-          name: string;
-          path: string;
-          title: string;
-          type: string;
-          vendor_alias: string | null;
-        };
+          authority: string
+          category: string | null
+          created_at: string
+          description: string
+          id: number
+          logo: string
+          name: string
+          path: string
+          title: string
+          type: string
+          vendor_alias: string | null
+        }
         Insert: {
-          authority: string;
-          category?: string | null;
-          created_at?: string;
-          description: string;
-          id?: number;
-          logo: string;
-          name: string;
-          path: string;
-          title: string;
-          type: string;
-          vendor_alias?: string | null;
-        };
+          authority: string
+          category?: string | null
+          created_at?: string
+          description: string
+          id?: number
+          logo: string
+          name: string
+          path: string
+          title: string
+          type: string
+          vendor_alias?: string | null
+        }
         Update: {
-          authority?: string;
-          category?: string | null;
-          created_at?: string;
-          description?: string;
-          id?: number;
-          logo?: string;
-          name?: string;
-          path?: string;
-          title?: string;
-          type?: string;
-          vendor_alias?: string | null;
-        };
+          authority?: string
+          category?: string | null
+          created_at?: string
+          description?: string
+          id?: number
+          logo?: string
+          name?: string
+          path?: string
+          title?: string
+          type?: string
+          vendor_alias?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "apps_vendor_alias_fkey";
-            columns: ["vendor_alias"];
-            isOneToOne: false;
-            referencedRelation: "vendors";
-            referencedColumns: ["alias"];
+            foreignKeyName: "apps_vendor_alias_fkey"
+            columns: ["vendor_alias"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["alias"]
           },
-        ];
-      };
+        ]
+      }
       assets: {
         Row: {
-          asset_id: string | null;
-          brightness: number | null;
-          created_at: string;
-          id: number;
-          label: string | null;
-          mime: string | null;
-          path: string;
-          preview: string | null;
-          publicUrl: string;
-          site_id: number;
-          updated_at: string;
-        };
+          asset_id: string | null
+          brightness: number | null
+          created_at: string
+          id: number
+          label: string | null
+          mime: string | null
+          path: string
+          preview: string | null
+          publicUrl: string
+          site_id: number
+          updated_at: string
+        }
         Insert: {
-          asset_id?: string | null;
-          brightness?: number | null;
-          created_at?: string;
-          id?: number;
-          label?: string | null;
-          mime?: string | null;
-          path: string;
-          preview?: string | null;
-          publicUrl: string;
-          site_id: number;
-          updated_at?: string;
-        };
+          asset_id?: string | null
+          brightness?: number | null
+          created_at?: string
+          id?: number
+          label?: string | null
+          mime?: string | null
+          path: string
+          preview?: string | null
+          publicUrl: string
+          site_id: number
+          updated_at?: string
+        }
         Update: {
-          asset_id?: string | null;
-          brightness?: number | null;
-          created_at?: string;
-          id?: number;
-          label?: string | null;
-          mime?: string | null;
-          path?: string;
-          preview?: string | null;
-          publicUrl?: string;
-          site_id?: number;
-          updated_at?: string;
-        };
+          asset_id?: string | null
+          brightness?: number | null
+          created_at?: string
+          id?: number
+          label?: string | null
+          mime?: string | null
+          path?: string
+          preview?: string | null
+          publicUrl?: string
+          site_id?: number
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "assets_site_id_fkey";
-            columns: ["site_id"];
-            isOneToOne: false;
-            referencedRelation: "sites";
-            referencedColumns: ["id"];
+            foreignKeyName: "assets_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       assets_tag: {
         Row: {
-          asset_id: number | null;
-          created_at: string;
-          id: number;
-          tag_id: number | null;
-        };
+          asset_id: number | null
+          created_at: string
+          id: number
+          tag_id: number | null
+        }
         Insert: {
-          asset_id?: number | null;
-          created_at?: string;
-          id?: number;
-          tag_id?: number | null;
-        };
+          asset_id?: number | null
+          created_at?: string
+          id?: number
+          tag_id?: number | null
+        }
         Update: {
-          asset_id?: number | null;
-          created_at?: string;
-          id?: number;
-          tag_id?: number | null;
-        };
+          asset_id?: number | null
+          created_at?: string
+          id?: number
+          tag_id?: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "assets_tag_asset_id_fkey";
-            columns: ["asset_id"];
-            isOneToOne: false;
-            referencedRelation: "assets";
-            referencedColumns: ["id"];
+            foreignKeyName: "assets_tag_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "assets_tag_tag_id_fkey";
-            columns: ["tag_id"];
-            isOneToOne: false;
-            referencedRelation: "tag";
-            referencedColumns: ["id"];
+            foreignKeyName: "assets_tag_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tag"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       blocks: {
         Row: {
-          __resolveType: string;
-          created_at: string;
-          created_by: string | null;
-          id: string;
-          revision: string;
-          site: string;
-          value: Json | null;
-        };
+          __resolveType: string
+          created_at: string
+          created_by: string | null
+          id: string
+          revision: string
+          site: string
+          value: Json | null
+        }
         Insert: {
-          __resolveType: string;
-          created_at?: string;
-          created_by?: string | null;
-          id: string;
-          revision?: string;
-          site: string;
-          value?: Json | null;
-        };
+          __resolveType: string
+          created_at?: string
+          created_by?: string | null
+          id: string
+          revision?: string
+          site: string
+          value?: Json | null
+        }
         Update: {
-          __resolveType?: string;
-          created_at?: string;
-          created_by?: string | null;
-          id?: string;
-          revision?: string;
-          site?: string;
-          value?: Json | null;
-        };
+          __resolveType?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          revision?: string
+          site?: string
+          value?: Json | null
+        }
         Relationships: [
           {
-            foreignKeyName: "blocks_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "blocks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       configs: {
         Row: {
-          archived: Json | null;
-          metadata: Json | null;
-          revision: string | null;
-          site: string;
-          state: Json | null;
-          updated_at: string | null;
-        };
+          archived: Json | null
+          metadata: Json | null
+          revision: string | null
+          site: string
+          state: Json | null
+          updated_at: string | null
+        }
         Insert: {
-          archived?: Json | null;
-          metadata?: Json | null;
-          revision?: string | null;
-          site: string;
-          state?: Json | null;
-          updated_at?: string | null;
-        };
+          archived?: Json | null
+          metadata?: Json | null
+          revision?: string | null
+          site: string
+          state?: Json | null
+          updated_at?: string | null
+        }
         Update: {
-          archived?: Json | null;
-          metadata?: Json | null;
-          revision?: string | null;
-          site?: string;
-          state?: Json | null;
-          updated_at?: string | null;
-        };
-        Relationships: [];
-      };
+          archived?: Json | null
+          metadata?: Json | null
+          revision?: string | null
+          site?: string
+          state?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       deco_chat_agents: {
         Row: {
-          avatar: string;
-          created_at: string;
-          description: string | null;
-          id: string;
-          instructions: string;
-          max_steps: number | null;
-          max_tokens: number | null;
-          memory: Json | null;
-          model: string;
-          name: string;
-          tools_set: Json;
-          views: Json;
-          visibility: Database["public"]["Enums"]["visibility_type"];
-          workspace: string;
-        };
+          avatar: string
+          created_at: string
+          description: string | null
+          id: string
+          instructions: string
+          max_steps: number | null
+          max_tokens: number | null
+          memory: Json | null
+          model: string
+          name: string
+          tools_set: Json
+          views: Json
+          visibility: Database["public"]["Enums"]["visibility_type"]
+          workspace: string
+        }
         Insert: {
-          avatar: string;
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          instructions: string;
-          max_steps?: number | null;
-          max_tokens?: number | null;
-          memory?: Json | null;
-          model?: string;
-          name: string;
-          tools_set: Json;
-          views: Json;
-          visibility?: Database["public"]["Enums"]["visibility_type"];
-          workspace: string;
-        };
+          avatar: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          instructions: string
+          max_steps?: number | null
+          max_tokens?: number | null
+          memory?: Json | null
+          model?: string
+          name: string
+          tools_set: Json
+          views: Json
+          visibility?: Database["public"]["Enums"]["visibility_type"]
+          workspace: string
+        }
         Update: {
-          avatar?: string;
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          instructions?: string;
-          max_steps?: number | null;
-          max_tokens?: number | null;
-          memory?: Json | null;
-          model?: string;
-          name?: string;
-          tools_set?: Json;
-          views?: Json;
-          visibility?: Database["public"]["Enums"]["visibility_type"];
-          workspace?: string;
-        };
-        Relationships: [];
-      };
+          avatar?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          instructions?: string
+          max_steps?: number | null
+          max_tokens?: number | null
+          memory?: Json | null
+          model?: string
+          name?: string
+          tools_set?: Json
+          views?: Json
+          visibility?: Database["public"]["Enums"]["visibility_type"]
+          workspace?: string
+        }
+        Relationships: []
+      }
       deco_chat_customer: {
         Row: {
-          created_at: string;
-          customer_id: string;
-          workspace: string;
-        };
+          created_at: string
+          customer_id: string
+          workspace: string
+        }
         Insert: {
-          created_at?: string;
-          customer_id: string;
-          workspace: string;
-        };
+          created_at?: string
+          customer_id: string
+          workspace: string
+        }
         Update: {
-          created_at?: string;
-          customer_id?: string;
-          workspace?: string;
-        };
-        Relationships: [];
-      };
+          created_at?: string
+          customer_id?: string
+          workspace?: string
+        }
+        Relationships: []
+      }
       deco_chat_hosting_apps: {
         Row: {
-          cloudflare_script_hash: string | null;
-          cloudflare_worker_id: string | null;
-          created_at: string;
-          deleted_at: string | null;
-          files: Json | null;
-          id: string;
-          metadata: Json | null;
-          slug: string;
-          updated_at: string;
-          workspace: string;
-        };
+          cloudflare_script_hash: string | null
+          cloudflare_worker_id: string | null
+          created_at: string
+          deleted_at: string | null
+          files: Json | null
+          id: string
+          metadata: Json | null
+          slug: string
+          updated_at: string
+          workspace: string
+        }
         Insert: {
-          cloudflare_script_hash?: string | null;
-          cloudflare_worker_id?: string | null;
-          created_at?: string;
-          deleted_at?: string | null;
-          files?: Json | null;
-          id?: string;
-          metadata?: Json | null;
-          slug: string;
-          updated_at?: string;
-          workspace: string;
-        };
+          cloudflare_script_hash?: string | null
+          cloudflare_worker_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          files?: Json | null
+          id?: string
+          metadata?: Json | null
+          slug: string
+          updated_at?: string
+          workspace: string
+        }
         Update: {
-          cloudflare_script_hash?: string | null;
-          cloudflare_worker_id?: string | null;
-          created_at?: string;
-          deleted_at?: string | null;
-          files?: Json | null;
-          id?: string;
-          metadata?: Json | null;
-          slug?: string;
-          updated_at?: string;
-          workspace?: string;
-        };
-        Relationships: [];
-      };
+          cloudflare_script_hash?: string | null
+          cloudflare_worker_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          files?: Json | null
+          id?: string
+          metadata?: Json | null
+          slug?: string
+          updated_at?: string
+          workspace?: string
+        }
+        Relationships: []
+      }
       deco_chat_integrations: {
         Row: {
-          connection: Json;
-          created_at: string;
-          description: string | null;
-          icon: string | null;
-          id: string;
-          name: string;
-          workspace: string;
-        };
+          connection: Json
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          workspace: string
+        }
         Insert: {
-          connection: Json;
-          created_at?: string;
-          description?: string | null;
-          icon?: string | null;
-          id?: string;
-          name: string;
-          workspace: string;
-        };
+          connection: Json
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          workspace: string
+        }
         Update: {
-          connection?: Json;
-          created_at?: string;
-          description?: string | null;
-          icon?: string | null;
-          id?: string;
-          name?: string;
-          workspace?: string;
-        };
-        Relationships: [];
-      };
+          connection?: Json
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          workspace?: string
+        }
+        Relationships: []
+      }
       deco_chat_trigger_runs: {
         Row: {
-          id: string;
-          metadata: Json | null;
-          result: Json | null;
-          status: string;
-          timestamp: string;
-          trigger_id: string;
-        };
+          id: string
+          metadata: Json | null
+          result: Json | null
+          status: string
+          timestamp: string
+          trigger_id: string
+        }
         Insert: {
-          id?: string;
-          metadata?: Json | null;
-          result?: Json | null;
-          status: string;
-          timestamp?: string;
-          trigger_id: string;
-        };
+          id?: string
+          metadata?: Json | null
+          result?: Json | null
+          status: string
+          timestamp?: string
+          trigger_id: string
+        }
         Update: {
-          id?: string;
-          metadata?: Json | null;
-          result?: Json | null;
-          status?: string;
-          timestamp?: string;
-          trigger_id?: string;
-        };
+          id?: string
+          metadata?: Json | null
+          result?: Json | null
+          status?: string
+          timestamp?: string
+          trigger_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "deco_chat_trigger_runs_trigger_id_fkey";
-            columns: ["trigger_id"];
-            isOneToOne: false;
-            referencedRelation: "deco_chat_triggers";
-            referencedColumns: ["id"];
+            foreignKeyName: "deco_chat_trigger_runs_trigger_id_fkey"
+            columns: ["trigger_id"]
+            isOneToOne: false
+            referencedRelation: "deco_chat_triggers"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       deco_chat_triggers: {
         Row: {
-          active: boolean;
-          agent_id: string;
-          created_at: string;
-          id: string;
-          metadata: Json;
-          updated_at: string;
-          user_id: string | null;
-          whatsapp_enabled: boolean;
-          workspace: string;
-        };
+          active: boolean
+          agent_id: string
+          binding_id: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          updated_at: string
+          user_id: string | null
+          whatsapp_enabled: boolean
+          workspace: string
+        }
         Insert: {
-          active?: boolean;
-          agent_id: string;
-          created_at?: string;
-          id?: string;
-          metadata: Json;
-          updated_at?: string;
-          user_id?: string | null;
-          whatsapp_enabled?: boolean;
-          workspace: string;
-        };
+          active?: boolean
+          agent_id: string
+          binding_id?: string | null
+          created_at?: string
+          id?: string
+          metadata: Json
+          updated_at?: string
+          user_id?: string | null
+          whatsapp_enabled?: boolean
+          workspace: string
+        }
         Update: {
-          active?: boolean;
-          agent_id?: string;
-          created_at?: string;
-          id?: string;
-          metadata?: Json;
-          updated_at?: string;
-          user_id?: string | null;
-          whatsapp_enabled?: boolean;
-          workspace?: string;
-        };
+          active?: boolean
+          agent_id?: string
+          binding_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          updated_at?: string
+          user_id?: string | null
+          whatsapp_enabled?: boolean
+          workspace?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "deco_chat_triggers_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "deco_chat_triggers_binding_id_fkey"
+            columns: ["binding_id"]
+            isOneToOne: false
+            referencedRelation: "deco_chat_integrations"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+          {
+            foreignKeyName: "deco_chat_triggers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       deco_users: {
         Row: {
-          avatar: string | null;
-          created_at: string;
-          experts_airtable_id: string;
-          id: number;
-          username: string;
-        };
+          avatar: string | null
+          created_at: string
+          experts_airtable_id: string
+          id: number
+          username: string
+        }
         Insert: {
-          avatar?: string | null;
-          created_at?: string;
-          experts_airtable_id: string;
-          id?: number;
-          username: string;
-        };
+          avatar?: string | null
+          created_at?: string
+          experts_airtable_id: string
+          id?: number
+          username: string
+        }
         Update: {
-          avatar?: string | null;
-          created_at?: string;
-          experts_airtable_id?: string;
-          id?: number;
-          username?: string;
-        };
-        Relationships: [];
-      };
+          avatar?: string | null
+          created_at?: string
+          experts_airtable_id?: string
+          id?: number
+          username?: string
+        }
+        Relationships: []
+      }
       "decochat-admin": {
         Row: {
-          code: string | null;
-          connectionId: string | null;
-          created_at: string;
-          id: number;
-          token: string | null;
-        };
+          code: string | null
+          connectionId: string | null
+          created_at: string
+          id: number
+          token: string | null
+        }
         Insert: {
-          code?: string | null;
-          connectionId?: string | null;
-          created_at?: string;
-          id?: number;
-          token?: string | null;
-        };
+          code?: string | null
+          connectionId?: string | null
+          created_at?: string
+          id?: number
+          token?: string | null
+        }
         Update: {
-          code?: string | null;
-          connectionId?: string | null;
-          created_at?: string;
-          id?: number;
-          token?: string | null;
-        };
-        Relationships: [];
-      };
+          code?: string | null
+          connectionId?: string | null
+          created_at?: string
+          id?: number
+          token?: string | null
+        }
+        Relationships: []
+      }
       domain_validation_tokens: {
         Row: {
-          created_at: string;
-          domain: string | null;
-          id: number;
-          sitename: string | null;
-          uuid: string | null;
-        };
+          created_at: string
+          domain: string | null
+          id: number
+          sitename: string | null
+          uuid: string | null
+        }
         Insert: {
-          created_at?: string;
-          domain?: string | null;
-          id?: number;
-          sitename?: string | null;
-          uuid?: string | null;
-        };
+          created_at?: string
+          domain?: string | null
+          id?: number
+          sitename?: string | null
+          uuid?: string | null
+        }
         Update: {
-          created_at?: string;
-          domain?: string | null;
-          id?: number;
-          sitename?: string | null;
-          uuid?: string | null;
-        };
+          created_at?: string
+          domain?: string | null
+          id?: number
+          sitename?: string | null
+          uuid?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "domain_validation_tokens_sitename_fkey";
-            columns: ["sitename"];
-            isOneToOne: false;
-            referencedRelation: "sites";
-            referencedColumns: ["name"];
+            foreignKeyName: "domain_validation_tokens_sitename_fkey"
+            columns: ["sitename"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["name"]
           },
-        ];
-      };
+        ]
+      }
       e2e_config: {
         Row: {
-          config: Json;
-          created_at: string;
-          id: number;
-          site_id: number;
-        };
+          config: Json
+          created_at: string
+          id: number
+          site_id: number
+        }
         Insert: {
-          config: Json;
-          created_at?: string;
-          id?: number;
-          site_id: number;
-        };
+          config: Json
+          created_at?: string
+          id?: number
+          site_id: number
+        }
         Update: {
-          config?: Json;
-          created_at?: string;
-          id?: number;
-          site_id?: number;
-        };
+          config?: Json
+          created_at?: string
+          id?: number
+          site_id?: number
+        }
         Relationships: [
           {
-            foreignKeyName: "e2e_config_site_id_fkey";
-            columns: ["site_id"];
-            isOneToOne: false;
-            referencedRelation: "sites";
-            referencedColumns: ["id"];
+            foreignKeyName: "e2e_config_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       events: {
         Row: {
-          _timestamp: string | null;
-          api_key: string | null;
-          columnno: number | null;
-          delta: number | null;
-          doc_encoding: string | null;
-          doc_host: string | null;
-          doc_path: string | null;
-          doc_search: string | null;
-          entries: string | null;
-          error_1type: string | null;
-          error_name: string | null;
-          error_stack: string | null;
-          error_type: string | null;
-          event_type: string | null;
-          eventn_ctx_event_id: string;
-          flag_ab_test_page_1033: boolean | null;
-          flag_ab_test_page_1128: boolean | null;
-          flag_ab_test_page_1130: boolean | null;
-          flag_ab_test_page_1140: boolean | null;
-          flag_ab_test_page_1168: boolean | null;
-          flag_ab_test_page_1170: boolean | null;
-          flag_ab_test_page_1177: boolean | null;
-          flag_ab_test_page_1293: boolean | null;
-          flag_ab_test_page_1476: boolean | null;
-          flag_ab_test_page_1487: boolean | null;
-          flag_ab_test_page_1560: boolean | null;
-          flag_ab_test_page_1600: boolean | null;
-          flag_ab_test_page_1639: boolean | null;
-          flag_ab_test_page_1659: boolean | null;
-          flag_ab_test_page_1660: boolean | null;
-          flag_ab_test_page_1677: boolean | null;
-          flag_ab_test_page_1678: boolean | null;
-          flag_ab_test_page_1679: boolean | null;
-          flag_ab_test_page_1706: boolean | null;
-          flag_ab_test_page_1763: boolean | null;
-          flag_ab_test_page_1765: boolean | null;
-          flag_ab_test_page_1769: boolean | null;
-          flag_ab_test_page_1778: boolean | null;
-          flag_ab_test_page_1797: boolean | null;
-          flag_ab_test_page_1803: boolean | null;
-          flag_ab_test_page_1806: boolean | null;
-          flag_ab_test_page_1815: boolean | null;
-          flag_ab_test_page_1848: boolean | null;
-          flag_ab_test_page_1861: boolean | null;
-          flag_ab_test_page_2026: boolean | null;
-          flag_ab_test_page_2041: boolean | null;
-          flag_ab_test_page_2050: boolean | null;
-          flag_ab_test_page_2137: boolean | null;
-          flag_ab_test_page_2144: boolean | null;
-          flag_ab_test_page_2147: boolean | null;
-          flag_ab_test_page_545: boolean | null;
-          flag_ab_test_page_603: boolean | null;
-          flag_ab_test_page_622: boolean | null;
-          flag_ab_test_page_892: boolean | null;
-          flag_ab_test_page_922: boolean | null;
-          flag_ab_test_page_951: boolean | null;
-          flag_ab_test_page_954: boolean | null;
-          flag_ab_test_page_969: boolean | null;
-          flag_ab_test_page_983: boolean | null;
-          flag_ab_test_page_984: boolean | null;
-          flag_ab_test_page_993: boolean | null;
-          flag_ab_test_page_994: boolean | null;
-          flag_ab_test_page_996: boolean | null;
-          flag_ab_test_page_999: boolean | null;
-          flag_show_globe: boolean | null;
-          id: string | null;
-          ids_ga: string | null;
-          lineno: number | null;
-          local_tz_offset: number | null;
-          location_city: string | null;
-          location_continent: string | null;
-          location_country: string | null;
-          location_country_name: string | null;
-          location_latitude: number | null;
-          location_longitude: number | null;
-          location_region: string | null;
-          location_zip: string | null;
-          message: string | null;
-          name: string | null;
-          navigationtype: string | null;
-          page_id: string | null;
-          page_path: string | null;
-          page_title: string | null;
-          pageid: string | null;
-          pagepath: string | null;
-          parsed_ua_bot: boolean | null;
-          parsed_ua_device_brand: string | null;
-          parsed_ua_device_family: string | null;
-          parsed_ua_device_model: string | null;
-          parsed_ua_os_family: string | null;
-          parsed_ua_os_version: string | null;
-          parsed_ua_ua_family: string | null;
-          parsed_ua_ua_version: string | null;
-          publish_type: string | null;
-          published_page_id: number | null;
-          rating: string | null;
-          referer: string | null;
-          saved_page_id: number | null;
-          screen_resolution: string | null;
-          section_id: string | null;
-          section_label: string | null;
-          sectionid: string | null;
-          sectionlabe: string | null;
-          site_id: string | null;
-          source_ip: string | null;
-          src: string | null;
-          url: string | null;
-          usage_type: string | null;
-          user_agent: string | null;
-          user_anonymous_id: string | null;
-          user_hashed_anonymous_id: string | null;
-          user_language: string | null;
-          utc_time: string | null;
-          value: number | null;
-          vp_size: string | null;
-        };
+          _timestamp: string | null
+          api_key: string | null
+          columnno: number | null
+          delta: number | null
+          doc_encoding: string | null
+          doc_host: string | null
+          doc_path: string | null
+          doc_search: string | null
+          entries: string | null
+          error_1type: string | null
+          error_name: string | null
+          error_stack: string | null
+          error_type: string | null
+          event_type: string | null
+          eventn_ctx_event_id: string
+          flag_ab_test_page_1033: boolean | null
+          flag_ab_test_page_1128: boolean | null
+          flag_ab_test_page_1130: boolean | null
+          flag_ab_test_page_1140: boolean | null
+          flag_ab_test_page_1168: boolean | null
+          flag_ab_test_page_1170: boolean | null
+          flag_ab_test_page_1177: boolean | null
+          flag_ab_test_page_1293: boolean | null
+          flag_ab_test_page_1476: boolean | null
+          flag_ab_test_page_1487: boolean | null
+          flag_ab_test_page_1560: boolean | null
+          flag_ab_test_page_1600: boolean | null
+          flag_ab_test_page_1639: boolean | null
+          flag_ab_test_page_1659: boolean | null
+          flag_ab_test_page_1660: boolean | null
+          flag_ab_test_page_1677: boolean | null
+          flag_ab_test_page_1678: boolean | null
+          flag_ab_test_page_1679: boolean | null
+          flag_ab_test_page_1706: boolean | null
+          flag_ab_test_page_1763: boolean | null
+          flag_ab_test_page_1765: boolean | null
+          flag_ab_test_page_1769: boolean | null
+          flag_ab_test_page_1778: boolean | null
+          flag_ab_test_page_1797: boolean | null
+          flag_ab_test_page_1803: boolean | null
+          flag_ab_test_page_1806: boolean | null
+          flag_ab_test_page_1815: boolean | null
+          flag_ab_test_page_1848: boolean | null
+          flag_ab_test_page_1861: boolean | null
+          flag_ab_test_page_2026: boolean | null
+          flag_ab_test_page_2041: boolean | null
+          flag_ab_test_page_2050: boolean | null
+          flag_ab_test_page_2137: boolean | null
+          flag_ab_test_page_2144: boolean | null
+          flag_ab_test_page_2147: boolean | null
+          flag_ab_test_page_545: boolean | null
+          flag_ab_test_page_603: boolean | null
+          flag_ab_test_page_622: boolean | null
+          flag_ab_test_page_892: boolean | null
+          flag_ab_test_page_922: boolean | null
+          flag_ab_test_page_951: boolean | null
+          flag_ab_test_page_954: boolean | null
+          flag_ab_test_page_969: boolean | null
+          flag_ab_test_page_983: boolean | null
+          flag_ab_test_page_984: boolean | null
+          flag_ab_test_page_993: boolean | null
+          flag_ab_test_page_994: boolean | null
+          flag_ab_test_page_996: boolean | null
+          flag_ab_test_page_999: boolean | null
+          flag_show_globe: boolean | null
+          id: string | null
+          ids_ga: string | null
+          lineno: number | null
+          local_tz_offset: number | null
+          location_city: string | null
+          location_continent: string | null
+          location_country: string | null
+          location_country_name: string | null
+          location_latitude: number | null
+          location_longitude: number | null
+          location_region: string | null
+          location_zip: string | null
+          message: string | null
+          name: string | null
+          navigationtype: string | null
+          page_id: string | null
+          page_path: string | null
+          page_title: string | null
+          pageid: string | null
+          pagepath: string | null
+          parsed_ua_bot: boolean | null
+          parsed_ua_device_brand: string | null
+          parsed_ua_device_family: string | null
+          parsed_ua_device_model: string | null
+          parsed_ua_os_family: string | null
+          parsed_ua_os_version: string | null
+          parsed_ua_ua_family: string | null
+          parsed_ua_ua_version: string | null
+          publish_type: string | null
+          published_page_id: number | null
+          rating: string | null
+          referer: string | null
+          saved_page_id: number | null
+          screen_resolution: string | null
+          section_id: string | null
+          section_label: string | null
+          sectionid: string | null
+          sectionlabe: string | null
+          site_id: string | null
+          source_ip: string | null
+          src: string | null
+          url: string | null
+          usage_type: string | null
+          user_agent: string | null
+          user_anonymous_id: string | null
+          user_hashed_anonymous_id: string | null
+          user_language: string | null
+          utc_time: string | null
+          value: number | null
+          vp_size: string | null
+        }
         Insert: {
-          _timestamp?: string | null;
-          api_key?: string | null;
-          columnno?: number | null;
-          delta?: number | null;
-          doc_encoding?: string | null;
-          doc_host?: string | null;
-          doc_path?: string | null;
-          doc_search?: string | null;
-          entries?: string | null;
-          error_1type?: string | null;
-          error_name?: string | null;
-          error_stack?: string | null;
-          error_type?: string | null;
-          event_type?: string | null;
-          eventn_ctx_event_id?: string;
-          flag_ab_test_page_1033?: boolean | null;
-          flag_ab_test_page_1128?: boolean | null;
-          flag_ab_test_page_1130?: boolean | null;
-          flag_ab_test_page_1140?: boolean | null;
-          flag_ab_test_page_1168?: boolean | null;
-          flag_ab_test_page_1170?: boolean | null;
-          flag_ab_test_page_1177?: boolean | null;
-          flag_ab_test_page_1293?: boolean | null;
-          flag_ab_test_page_1476?: boolean | null;
-          flag_ab_test_page_1487?: boolean | null;
-          flag_ab_test_page_1560?: boolean | null;
-          flag_ab_test_page_1600?: boolean | null;
-          flag_ab_test_page_1639?: boolean | null;
-          flag_ab_test_page_1659?: boolean | null;
-          flag_ab_test_page_1660?: boolean | null;
-          flag_ab_test_page_1677?: boolean | null;
-          flag_ab_test_page_1678?: boolean | null;
-          flag_ab_test_page_1679?: boolean | null;
-          flag_ab_test_page_1706?: boolean | null;
-          flag_ab_test_page_1763?: boolean | null;
-          flag_ab_test_page_1765?: boolean | null;
-          flag_ab_test_page_1769?: boolean | null;
-          flag_ab_test_page_1778?: boolean | null;
-          flag_ab_test_page_1797?: boolean | null;
-          flag_ab_test_page_1803?: boolean | null;
-          flag_ab_test_page_1806?: boolean | null;
-          flag_ab_test_page_1815?: boolean | null;
-          flag_ab_test_page_1848?: boolean | null;
-          flag_ab_test_page_1861?: boolean | null;
-          flag_ab_test_page_2026?: boolean | null;
-          flag_ab_test_page_2041?: boolean | null;
-          flag_ab_test_page_2050?: boolean | null;
-          flag_ab_test_page_2137?: boolean | null;
-          flag_ab_test_page_2144?: boolean | null;
-          flag_ab_test_page_2147?: boolean | null;
-          flag_ab_test_page_545?: boolean | null;
-          flag_ab_test_page_603?: boolean | null;
-          flag_ab_test_page_622?: boolean | null;
-          flag_ab_test_page_892?: boolean | null;
-          flag_ab_test_page_922?: boolean | null;
-          flag_ab_test_page_951?: boolean | null;
-          flag_ab_test_page_954?: boolean | null;
-          flag_ab_test_page_969?: boolean | null;
-          flag_ab_test_page_983?: boolean | null;
-          flag_ab_test_page_984?: boolean | null;
-          flag_ab_test_page_993?: boolean | null;
-          flag_ab_test_page_994?: boolean | null;
-          flag_ab_test_page_996?: boolean | null;
-          flag_ab_test_page_999?: boolean | null;
-          flag_show_globe?: boolean | null;
-          id?: string | null;
-          ids_ga?: string | null;
-          lineno?: number | null;
-          local_tz_offset?: number | null;
-          location_city?: string | null;
-          location_continent?: string | null;
-          location_country?: string | null;
-          location_country_name?: string | null;
-          location_latitude?: number | null;
-          location_longitude?: number | null;
-          location_region?: string | null;
-          location_zip?: string | null;
-          message?: string | null;
-          name?: string | null;
-          navigationtype?: string | null;
-          page_id?: string | null;
-          page_path?: string | null;
-          page_title?: string | null;
-          pageid?: string | null;
-          pagepath?: string | null;
-          parsed_ua_bot?: boolean | null;
-          parsed_ua_device_brand?: string | null;
-          parsed_ua_device_family?: string | null;
-          parsed_ua_device_model?: string | null;
-          parsed_ua_os_family?: string | null;
-          parsed_ua_os_version?: string | null;
-          parsed_ua_ua_family?: string | null;
-          parsed_ua_ua_version?: string | null;
-          publish_type?: string | null;
-          published_page_id?: number | null;
-          rating?: string | null;
-          referer?: string | null;
-          saved_page_id?: number | null;
-          screen_resolution?: string | null;
-          section_id?: string | null;
-          section_label?: string | null;
-          sectionid?: string | null;
-          sectionlabe?: string | null;
-          site_id?: string | null;
-          source_ip?: string | null;
-          src?: string | null;
-          url?: string | null;
-          usage_type?: string | null;
-          user_agent?: string | null;
-          user_anonymous_id?: string | null;
-          user_hashed_anonymous_id?: string | null;
-          user_language?: string | null;
-          utc_time?: string | null;
-          value?: number | null;
-          vp_size?: string | null;
-        };
+          _timestamp?: string | null
+          api_key?: string | null
+          columnno?: number | null
+          delta?: number | null
+          doc_encoding?: string | null
+          doc_host?: string | null
+          doc_path?: string | null
+          doc_search?: string | null
+          entries?: string | null
+          error_1type?: string | null
+          error_name?: string | null
+          error_stack?: string | null
+          error_type?: string | null
+          event_type?: string | null
+          eventn_ctx_event_id?: string
+          flag_ab_test_page_1033?: boolean | null
+          flag_ab_test_page_1128?: boolean | null
+          flag_ab_test_page_1130?: boolean | null
+          flag_ab_test_page_1140?: boolean | null
+          flag_ab_test_page_1168?: boolean | null
+          flag_ab_test_page_1170?: boolean | null
+          flag_ab_test_page_1177?: boolean | null
+          flag_ab_test_page_1293?: boolean | null
+          flag_ab_test_page_1476?: boolean | null
+          flag_ab_test_page_1487?: boolean | null
+          flag_ab_test_page_1560?: boolean | null
+          flag_ab_test_page_1600?: boolean | null
+          flag_ab_test_page_1639?: boolean | null
+          flag_ab_test_page_1659?: boolean | null
+          flag_ab_test_page_1660?: boolean | null
+          flag_ab_test_page_1677?: boolean | null
+          flag_ab_test_page_1678?: boolean | null
+          flag_ab_test_page_1679?: boolean | null
+          flag_ab_test_page_1706?: boolean | null
+          flag_ab_test_page_1763?: boolean | null
+          flag_ab_test_page_1765?: boolean | null
+          flag_ab_test_page_1769?: boolean | null
+          flag_ab_test_page_1778?: boolean | null
+          flag_ab_test_page_1797?: boolean | null
+          flag_ab_test_page_1803?: boolean | null
+          flag_ab_test_page_1806?: boolean | null
+          flag_ab_test_page_1815?: boolean | null
+          flag_ab_test_page_1848?: boolean | null
+          flag_ab_test_page_1861?: boolean | null
+          flag_ab_test_page_2026?: boolean | null
+          flag_ab_test_page_2041?: boolean | null
+          flag_ab_test_page_2050?: boolean | null
+          flag_ab_test_page_2137?: boolean | null
+          flag_ab_test_page_2144?: boolean | null
+          flag_ab_test_page_2147?: boolean | null
+          flag_ab_test_page_545?: boolean | null
+          flag_ab_test_page_603?: boolean | null
+          flag_ab_test_page_622?: boolean | null
+          flag_ab_test_page_892?: boolean | null
+          flag_ab_test_page_922?: boolean | null
+          flag_ab_test_page_951?: boolean | null
+          flag_ab_test_page_954?: boolean | null
+          flag_ab_test_page_969?: boolean | null
+          flag_ab_test_page_983?: boolean | null
+          flag_ab_test_page_984?: boolean | null
+          flag_ab_test_page_993?: boolean | null
+          flag_ab_test_page_994?: boolean | null
+          flag_ab_test_page_996?: boolean | null
+          flag_ab_test_page_999?: boolean | null
+          flag_show_globe?: boolean | null
+          id?: string | null
+          ids_ga?: string | null
+          lineno?: number | null
+          local_tz_offset?: number | null
+          location_city?: string | null
+          location_continent?: string | null
+          location_country?: string | null
+          location_country_name?: string | null
+          location_latitude?: number | null
+          location_longitude?: number | null
+          location_region?: string | null
+          location_zip?: string | null
+          message?: string | null
+          name?: string | null
+          navigationtype?: string | null
+          page_id?: string | null
+          page_path?: string | null
+          page_title?: string | null
+          pageid?: string | null
+          pagepath?: string | null
+          parsed_ua_bot?: boolean | null
+          parsed_ua_device_brand?: string | null
+          parsed_ua_device_family?: string | null
+          parsed_ua_device_model?: string | null
+          parsed_ua_os_family?: string | null
+          parsed_ua_os_version?: string | null
+          parsed_ua_ua_family?: string | null
+          parsed_ua_ua_version?: string | null
+          publish_type?: string | null
+          published_page_id?: number | null
+          rating?: string | null
+          referer?: string | null
+          saved_page_id?: number | null
+          screen_resolution?: string | null
+          section_id?: string | null
+          section_label?: string | null
+          sectionid?: string | null
+          sectionlabe?: string | null
+          site_id?: string | null
+          source_ip?: string | null
+          src?: string | null
+          url?: string | null
+          usage_type?: string | null
+          user_agent?: string | null
+          user_anonymous_id?: string | null
+          user_hashed_anonymous_id?: string | null
+          user_language?: string | null
+          utc_time?: string | null
+          value?: number | null
+          vp_size?: string | null
+        }
         Update: {
-          _timestamp?: string | null;
-          api_key?: string | null;
-          columnno?: number | null;
-          delta?: number | null;
-          doc_encoding?: string | null;
-          doc_host?: string | null;
-          doc_path?: string | null;
-          doc_search?: string | null;
-          entries?: string | null;
-          error_1type?: string | null;
-          error_name?: string | null;
-          error_stack?: string | null;
-          error_type?: string | null;
-          event_type?: string | null;
-          eventn_ctx_event_id?: string;
-          flag_ab_test_page_1033?: boolean | null;
-          flag_ab_test_page_1128?: boolean | null;
-          flag_ab_test_page_1130?: boolean | null;
-          flag_ab_test_page_1140?: boolean | null;
-          flag_ab_test_page_1168?: boolean | null;
-          flag_ab_test_page_1170?: boolean | null;
-          flag_ab_test_page_1177?: boolean | null;
-          flag_ab_test_page_1293?: boolean | null;
-          flag_ab_test_page_1476?: boolean | null;
-          flag_ab_test_page_1487?: boolean | null;
-          flag_ab_test_page_1560?: boolean | null;
-          flag_ab_test_page_1600?: boolean | null;
-          flag_ab_test_page_1639?: boolean | null;
-          flag_ab_test_page_1659?: boolean | null;
-          flag_ab_test_page_1660?: boolean | null;
-          flag_ab_test_page_1677?: boolean | null;
-          flag_ab_test_page_1678?: boolean | null;
-          flag_ab_test_page_1679?: boolean | null;
-          flag_ab_test_page_1706?: boolean | null;
-          flag_ab_test_page_1763?: boolean | null;
-          flag_ab_test_page_1765?: boolean | null;
-          flag_ab_test_page_1769?: boolean | null;
-          flag_ab_test_page_1778?: boolean | null;
-          flag_ab_test_page_1797?: boolean | null;
-          flag_ab_test_page_1803?: boolean | null;
-          flag_ab_test_page_1806?: boolean | null;
-          flag_ab_test_page_1815?: boolean | null;
-          flag_ab_test_page_1848?: boolean | null;
-          flag_ab_test_page_1861?: boolean | null;
-          flag_ab_test_page_2026?: boolean | null;
-          flag_ab_test_page_2041?: boolean | null;
-          flag_ab_test_page_2050?: boolean | null;
-          flag_ab_test_page_2137?: boolean | null;
-          flag_ab_test_page_2144?: boolean | null;
-          flag_ab_test_page_2147?: boolean | null;
-          flag_ab_test_page_545?: boolean | null;
-          flag_ab_test_page_603?: boolean | null;
-          flag_ab_test_page_622?: boolean | null;
-          flag_ab_test_page_892?: boolean | null;
-          flag_ab_test_page_922?: boolean | null;
-          flag_ab_test_page_951?: boolean | null;
-          flag_ab_test_page_954?: boolean | null;
-          flag_ab_test_page_969?: boolean | null;
-          flag_ab_test_page_983?: boolean | null;
-          flag_ab_test_page_984?: boolean | null;
-          flag_ab_test_page_993?: boolean | null;
-          flag_ab_test_page_994?: boolean | null;
-          flag_ab_test_page_996?: boolean | null;
-          flag_ab_test_page_999?: boolean | null;
-          flag_show_globe?: boolean | null;
-          id?: string | null;
-          ids_ga?: string | null;
-          lineno?: number | null;
-          local_tz_offset?: number | null;
-          location_city?: string | null;
-          location_continent?: string | null;
-          location_country?: string | null;
-          location_country_name?: string | null;
-          location_latitude?: number | null;
-          location_longitude?: number | null;
-          location_region?: string | null;
-          location_zip?: string | null;
-          message?: string | null;
-          name?: string | null;
-          navigationtype?: string | null;
-          page_id?: string | null;
-          page_path?: string | null;
-          page_title?: string | null;
-          pageid?: string | null;
-          pagepath?: string | null;
-          parsed_ua_bot?: boolean | null;
-          parsed_ua_device_brand?: string | null;
-          parsed_ua_device_family?: string | null;
-          parsed_ua_device_model?: string | null;
-          parsed_ua_os_family?: string | null;
-          parsed_ua_os_version?: string | null;
-          parsed_ua_ua_family?: string | null;
-          parsed_ua_ua_version?: string | null;
-          publish_type?: string | null;
-          published_page_id?: number | null;
-          rating?: string | null;
-          referer?: string | null;
-          saved_page_id?: number | null;
-          screen_resolution?: string | null;
-          section_id?: string | null;
-          section_label?: string | null;
-          sectionid?: string | null;
-          sectionlabe?: string | null;
-          site_id?: string | null;
-          source_ip?: string | null;
-          src?: string | null;
-          url?: string | null;
-          usage_type?: string | null;
-          user_agent?: string | null;
-          user_anonymous_id?: string | null;
-          user_hashed_anonymous_id?: string | null;
-          user_language?: string | null;
-          utc_time?: string | null;
-          value?: number | null;
-          vp_size?: string | null;
-        };
-        Relationships: [];
-      };
+          _timestamp?: string | null
+          api_key?: string | null
+          columnno?: number | null
+          delta?: number | null
+          doc_encoding?: string | null
+          doc_host?: string | null
+          doc_path?: string | null
+          doc_search?: string | null
+          entries?: string | null
+          error_1type?: string | null
+          error_name?: string | null
+          error_stack?: string | null
+          error_type?: string | null
+          event_type?: string | null
+          eventn_ctx_event_id?: string
+          flag_ab_test_page_1033?: boolean | null
+          flag_ab_test_page_1128?: boolean | null
+          flag_ab_test_page_1130?: boolean | null
+          flag_ab_test_page_1140?: boolean | null
+          flag_ab_test_page_1168?: boolean | null
+          flag_ab_test_page_1170?: boolean | null
+          flag_ab_test_page_1177?: boolean | null
+          flag_ab_test_page_1293?: boolean | null
+          flag_ab_test_page_1476?: boolean | null
+          flag_ab_test_page_1487?: boolean | null
+          flag_ab_test_page_1560?: boolean | null
+          flag_ab_test_page_1600?: boolean | null
+          flag_ab_test_page_1639?: boolean | null
+          flag_ab_test_page_1659?: boolean | null
+          flag_ab_test_page_1660?: boolean | null
+          flag_ab_test_page_1677?: boolean | null
+          flag_ab_test_page_1678?: boolean | null
+          flag_ab_test_page_1679?: boolean | null
+          flag_ab_test_page_1706?: boolean | null
+          flag_ab_test_page_1763?: boolean | null
+          flag_ab_test_page_1765?: boolean | null
+          flag_ab_test_page_1769?: boolean | null
+          flag_ab_test_page_1778?: boolean | null
+          flag_ab_test_page_1797?: boolean | null
+          flag_ab_test_page_1803?: boolean | null
+          flag_ab_test_page_1806?: boolean | null
+          flag_ab_test_page_1815?: boolean | null
+          flag_ab_test_page_1848?: boolean | null
+          flag_ab_test_page_1861?: boolean | null
+          flag_ab_test_page_2026?: boolean | null
+          flag_ab_test_page_2041?: boolean | null
+          flag_ab_test_page_2050?: boolean | null
+          flag_ab_test_page_2137?: boolean | null
+          flag_ab_test_page_2144?: boolean | null
+          flag_ab_test_page_2147?: boolean | null
+          flag_ab_test_page_545?: boolean | null
+          flag_ab_test_page_603?: boolean | null
+          flag_ab_test_page_622?: boolean | null
+          flag_ab_test_page_892?: boolean | null
+          flag_ab_test_page_922?: boolean | null
+          flag_ab_test_page_951?: boolean | null
+          flag_ab_test_page_954?: boolean | null
+          flag_ab_test_page_969?: boolean | null
+          flag_ab_test_page_983?: boolean | null
+          flag_ab_test_page_984?: boolean | null
+          flag_ab_test_page_993?: boolean | null
+          flag_ab_test_page_994?: boolean | null
+          flag_ab_test_page_996?: boolean | null
+          flag_ab_test_page_999?: boolean | null
+          flag_show_globe?: boolean | null
+          id?: string | null
+          ids_ga?: string | null
+          lineno?: number | null
+          local_tz_offset?: number | null
+          location_city?: string | null
+          location_continent?: string | null
+          location_country?: string | null
+          location_country_name?: string | null
+          location_latitude?: number | null
+          location_longitude?: number | null
+          location_region?: string | null
+          location_zip?: string | null
+          message?: string | null
+          name?: string | null
+          navigationtype?: string | null
+          page_id?: string | null
+          page_path?: string | null
+          page_title?: string | null
+          pageid?: string | null
+          pagepath?: string | null
+          parsed_ua_bot?: boolean | null
+          parsed_ua_device_brand?: string | null
+          parsed_ua_device_family?: string | null
+          parsed_ua_device_model?: string | null
+          parsed_ua_os_family?: string | null
+          parsed_ua_os_version?: string | null
+          parsed_ua_ua_family?: string | null
+          parsed_ua_ua_version?: string | null
+          publish_type?: string | null
+          published_page_id?: number | null
+          rating?: string | null
+          referer?: string | null
+          saved_page_id?: number | null
+          screen_resolution?: string | null
+          section_id?: string | null
+          section_label?: string | null
+          sectionid?: string | null
+          sectionlabe?: string | null
+          site_id?: string | null
+          source_ip?: string | null
+          src?: string | null
+          url?: string | null
+          usage_type?: string | null
+          user_agent?: string | null
+          user_anonymous_id?: string | null
+          user_hashed_anonymous_id?: string | null
+          user_language?: string | null
+          utc_time?: string | null
+          value?: number | null
+          vp_size?: string | null
+        }
+        Relationships: []
+      }
       experiments: {
         Row: {
-          createdBy: string | null;
-          custom_goals: string[] | null;
-          description: string | null;
-          endedAt: string | null;
-          id: number;
-          name: string | null;
-          site: string | null;
-          startedAt: string;
-          status: string | null;
-          variants: Json | null;
-        };
+          createdBy: string | null
+          custom_goals: string[] | null
+          description: string | null
+          endedAt: string | null
+          id: number
+          name: string | null
+          site: string | null
+          startedAt: string
+          status: string | null
+          variants: Json | null
+        }
         Insert: {
-          createdBy?: string | null;
-          custom_goals?: string[] | null;
-          description?: string | null;
-          endedAt?: string | null;
-          id?: number;
-          name?: string | null;
-          site?: string | null;
-          startedAt?: string;
-          status?: string | null;
-          variants?: Json | null;
-        };
+          createdBy?: string | null
+          custom_goals?: string[] | null
+          description?: string | null
+          endedAt?: string | null
+          id?: number
+          name?: string | null
+          site?: string | null
+          startedAt?: string
+          status?: string | null
+          variants?: Json | null
+        }
         Update: {
-          createdBy?: string | null;
-          custom_goals?: string[] | null;
-          description?: string | null;
-          endedAt?: string | null;
-          id?: number;
-          name?: string | null;
-          site?: string | null;
-          startedAt?: string;
-          status?: string | null;
-          variants?: Json | null;
-        };
-        Relationships: [];
-      };
+          createdBy?: string | null
+          custom_goals?: string[] | null
+          description?: string | null
+          endedAt?: string | null
+          id?: number
+          name?: string | null
+          site?: string | null
+          startedAt?: string
+          status?: string | null
+          variants?: Json | null
+        }
+        Relationships: []
+      }
       expert_praises: {
         Row: {
-          content: string | null;
-          created_at: string;
-          created_by: number | null;
-          id: number;
-          user_id: number | null;
-        };
+          content: string | null
+          created_at: string
+          created_by: number | null
+          id: number
+          user_id: number | null
+        }
         Insert: {
-          content?: string | null;
-          created_at?: string;
-          created_by?: number | null;
-          id?: number;
-          user_id?: number | null;
-        };
+          content?: string | null
+          created_at?: string
+          created_by?: number | null
+          id?: number
+          user_id?: number | null
+        }
         Update: {
-          content?: string | null;
-          created_at?: string;
-          created_by?: number | null;
-          id?: number;
-          user_id?: number | null;
-        };
+          content?: string | null
+          created_at?: string
+          created_by?: number | null
+          id?: number
+          user_id?: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "public_expert_praises_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "deco_users";
-            referencedColumns: ["id"];
+            foreignKeyName: "public_expert_praises_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "deco_users"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "public_expert_praises_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "deco_users";
-            referencedColumns: ["id"];
+            foreignKeyName: "public_expert_praises_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "deco_users"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       flags: {
         Row: {
-          created_at: string | null;
-          data: Json | null;
-          description: string | null;
-          id: number;
-          key: string | null;
-          name: string | null;
-          site: number | null;
-          state: string;
-          updated_at: string | null;
-          updated_by: string | null;
-        };
+          created_at: string | null
+          data: Json | null
+          description: string | null
+          id: number
+          key: string | null
+          name: string | null
+          site: number | null
+          state: string
+          updated_at: string | null
+          updated_by: string | null
+        }
         Insert: {
-          created_at?: string | null;
-          data?: Json | null;
-          description?: string | null;
-          id?: number;
-          key?: string | null;
-          name?: string | null;
-          site?: number | null;
-          state?: string;
-          updated_at?: string | null;
-          updated_by?: string | null;
-        };
+          created_at?: string | null
+          data?: Json | null
+          description?: string | null
+          id?: number
+          key?: string | null
+          name?: string | null
+          site?: number | null
+          state?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
         Update: {
-          created_at?: string | null;
-          data?: Json | null;
-          description?: string | null;
-          id?: number;
-          key?: string | null;
-          name?: string | null;
-          site?: number | null;
-          state?: string;
-          updated_at?: string | null;
-          updated_by?: string | null;
-        };
+          created_at?: string | null
+          data?: Json | null
+          description?: string | null
+          id?: number
+          key?: string | null
+          name?: string | null
+          site?: number | null
+          state?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "flags_site_fkey";
-            columns: ["site"];
-            isOneToOne: false;
-            referencedRelation: "sites";
-            referencedColumns: ["id"];
+            foreignKeyName: "flags_site_fkey"
+            columns: ["site"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "flags_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "flags_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       form_submission: {
         Row: {
-          created_at: string | null;
-          data: Json | null;
-          id: number;
-          site_id: number;
-        };
+          created_at: string | null
+          data: Json | null
+          id: number
+          site_id: number
+        }
         Insert: {
-          created_at?: string | null;
-          data?: Json | null;
-          id?: number;
-          site_id: number;
-        };
+          created_at?: string | null
+          data?: Json | null
+          id?: number
+          site_id: number
+        }
         Update: {
-          created_at?: string | null;
-          data?: Json | null;
-          id?: number;
-          site_id?: number;
-        };
+          created_at?: string | null
+          data?: Json | null
+          id?: number
+          site_id?: number
+        }
         Relationships: [
           {
-            foreignKeyName: "form_submission_site_id_fkey";
-            columns: ["site_id"];
-            isOneToOne: false;
-            referencedRelation: "sites";
-            referencedColumns: ["id"];
+            foreignKeyName: "form_submission_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       invites: {
         Row: {
-          created_at: string;
-          id: string;
-          invited_email: string;
-          invited_roles: Json[] | null;
-          inviter_id: string;
-          team_id: number;
-          team_name: string;
-        };
+          created_at: string
+          id: string
+          invited_email: string
+          invited_roles: Json[] | null
+          inviter_id: string
+          team_id: number
+          team_name: string
+        }
         Insert: {
-          created_at?: string;
-          id?: string;
-          invited_email: string;
-          invited_roles?: Json[] | null;
-          inviter_id: string;
-          team_id: number;
-          team_name: string;
-        };
+          created_at?: string
+          id?: string
+          invited_email: string
+          invited_roles?: Json[] | null
+          inviter_id: string
+          team_id: number
+          team_name: string
+        }
         Update: {
-          created_at?: string;
-          id?: string;
-          invited_email?: string;
-          invited_roles?: Json[] | null;
-          inviter_id?: string;
-          team_id?: number;
-          team_name?: string;
-        };
+          created_at?: string
+          id?: string
+          invited_email?: string
+          invited_roles?: Json[] | null
+          inviter_id?: string
+          team_id?: number
+          team_name?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "invites_inviter_id_fkey";
-            columns: ["inviter_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "invites_inviter_id_fkey"
+            columns: ["inviter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "invites_team_id_fkey";
-            columns: ["team_id"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
+            foreignKeyName: "invites_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       invoices: {
         Row: {
-          bank_slip_url: string | null;
-          description: string | null;
-          due_date: string | null;
-          id: number;
-          invoice_id: number | null;
-          nf_url: string | null;
-          reference_month: string | null;
-          status: string | null;
-          team: string | null;
-          value: number | null;
-        };
+          bank_slip_url: string | null
+          description: string | null
+          due_date: string | null
+          id: number
+          invoice_id: number | null
+          nf_url: string | null
+          reference_month: string | null
+          status: string | null
+          team: string | null
+          value: number | null
+        }
         Insert: {
-          bank_slip_url?: string | null;
-          description?: string | null;
-          due_date?: string | null;
-          id: number;
-          invoice_id?: number | null;
-          nf_url?: string | null;
-          reference_month?: string | null;
-          status?: string | null;
-          team?: string | null;
-          value?: number | null;
-        };
+          bank_slip_url?: string | null
+          description?: string | null
+          due_date?: string | null
+          id: number
+          invoice_id?: number | null
+          nf_url?: string | null
+          reference_month?: string | null
+          status?: string | null
+          team?: string | null
+          value?: number | null
+        }
         Update: {
-          bank_slip_url?: string | null;
-          description?: string | null;
-          due_date?: string | null;
-          id?: number;
-          invoice_id?: number | null;
-          nf_url?: string | null;
-          reference_month?: string | null;
-          status?: string | null;
-          team?: string | null;
-          value?: number | null;
-        };
-        Relationships: [];
-      };
+          bank_slip_url?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: number
+          invoice_id?: number | null
+          nf_url?: string | null
+          reference_month?: string | null
+          status?: string | null
+          team?: string | null
+          value?: number | null
+        }
+        Relationships: []
+      }
       latency: {
         Row: {
-          created_at: string;
-          id: number;
-          p50: number | null;
-          p95: number | null;
-          p99: number | null;
-          visits_12h: number | null;
-          website: string | null;
-        };
+          created_at: string
+          id: number
+          p50: number | null
+          p95: number | null
+          p99: number | null
+          visits_12h: number | null
+          website: string | null
+        }
         Insert: {
-          created_at?: string;
-          id?: number;
-          p50?: number | null;
-          p95?: number | null;
-          p99?: number | null;
-          visits_12h?: number | null;
-          website?: string | null;
-        };
+          created_at?: string
+          id?: number
+          p50?: number | null
+          p95?: number | null
+          p99?: number | null
+          visits_12h?: number | null
+          website?: string | null
+        }
         Update: {
-          created_at?: string;
-          id?: number;
-          p50?: number | null;
-          p95?: number | null;
-          p99?: number | null;
-          visits_12h?: number | null;
-          website?: string | null;
-        };
-        Relationships: [];
-      };
+          created_at?: string
+          id?: number
+          p50?: number | null
+          p95?: number | null
+          p99?: number | null
+          visits_12h?: number | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       listen_test: {
         Row: {
-          created_at: string;
-          id: number;
-          user_id: number | null;
-        };
+          created_at: string
+          id: number
+          user_id: number | null
+        }
         Insert: {
-          created_at?: string;
-          id?: number;
-          user_id?: number | null;
-        };
+          created_at?: string
+          id?: number
+          user_id?: number | null
+        }
         Update: {
-          created_at?: string;
-          id?: number;
-          user_id?: number | null;
-        };
-        Relationships: [];
-      };
+          created_at?: string
+          id?: number
+          user_id?: number | null
+        }
+        Relationships: []
+      }
       mcp_wallet_tokens: {
         Row: {
-          created_at: string;
-          mcp_id: string;
-          token: string;
-        };
+          created_at: string
+          mcp_id: string
+          token: string
+        }
         Insert: {
-          created_at?: string;
-          mcp_id: string;
-          token: string;
-        };
+          created_at?: string
+          mcp_id: string
+          token: string
+        }
         Update: {
-          created_at?: string;
-          mcp_id?: string;
-          token?: string;
-        };
+          created_at?: string
+          mcp_id?: string
+          token?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "mcp_wallet_tokens_mcp_id_fkey";
-            columns: ["mcp_id"];
-            isOneToOne: false;
-            referencedRelation: "mcp_wallets";
-            referencedColumns: ["id"];
+            foreignKeyName: "mcp_wallet_tokens_mcp_id_fkey"
+            columns: ["mcp_id"]
+            isOneToOne: false
+            referencedRelation: "mcp_wallets"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       mcp_wallets: {
         Row: {
-          created_at: string;
-          id: string;
-          name: string;
-          owner_id: string;
-        };
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+        }
         Insert: {
-          created_at?: string;
-          id?: string;
-          name: string;
-          owner_id: string;
-        };
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+        }
         Update: {
-          created_at?: string;
-          id?: string;
-          name?: string;
-          owner_id?: string;
-        };
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "mcp_wallets_owner_id_fkey";
-            columns: ["owner_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "mcp_wallets_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       member_roles: {
         Row: {
-          created_at: string;
-          id: number;
-          member_id: number;
-          role_id: number;
-        };
+          created_at: string
+          id: number
+          member_id: number
+          role_id: number
+        }
         Insert: {
-          created_at?: string;
-          id?: number;
-          member_id: number;
-          role_id: number;
-        };
+          created_at?: string
+          id?: number
+          member_id: number
+          role_id: number
+        }
         Update: {
-          created_at?: string;
-          id?: number;
-          member_id?: number;
-          role_id?: number;
-        };
+          created_at?: string
+          id?: number
+          member_id?: number
+          role_id?: number
+        }
         Relationships: [
           {
-            foreignKeyName: "member_roles_member_id_fkey";
-            columns: ["member_id"];
-            isOneToOne: false;
-            referencedRelation: "members";
-            referencedColumns: ["id"];
+            foreignKeyName: "member_roles_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "member_roles_role_id_fkey";
-            columns: ["role_id"];
-            isOneToOne: false;
-            referencedRelation: "roles";
-            referencedColumns: ["id"];
+            foreignKeyName: "member_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       members: {
         Row: {
-          activity: Json[] | null;
-          admin: boolean | null;
-          created_at: string | null;
-          deleted_at: string | null;
-          id: number;
-          stripe_customer_id: string | null;
-          team_id: number | null;
-          user_id: string | null;
-        };
+          activity: Json[] | null
+          admin: boolean | null
+          created_at: string | null
+          deleted_at: string | null
+          id: number
+          stripe_customer_id: string | null
+          team_id: number | null
+          user_id: string | null
+        }
         Insert: {
-          activity?: Json[] | null;
-          admin?: boolean | null;
-          created_at?: string | null;
-          deleted_at?: string | null;
-          id?: number;
-          stripe_customer_id?: string | null;
-          team_id?: number | null;
-          user_id?: string | null;
-        };
+          activity?: Json[] | null
+          admin?: boolean | null
+          created_at?: string | null
+          deleted_at?: string | null
+          id?: number
+          stripe_customer_id?: string | null
+          team_id?: number | null
+          user_id?: string | null
+        }
         Update: {
-          activity?: Json[] | null;
-          admin?: boolean | null;
-          created_at?: string | null;
-          deleted_at?: string | null;
-          id?: number;
-          stripe_customer_id?: string | null;
-          team_id?: number | null;
-          user_id?: string | null;
-        };
+          activity?: Json[] | null
+          admin?: boolean | null
+          created_at?: string | null
+          deleted_at?: string | null
+          id?: number
+          stripe_customer_id?: string | null
+          team_id?: number | null
+          user_id?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "members_team_id_fkey";
-            columns: ["team_id"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
+            foreignKeyName: "members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "members_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       pages: {
         Row: {
-          created_at: string | null;
-          data: Json | null;
-          example_path: string | null;
-          id: number;
-          name: string | null;
-          path: string | null;
-          public: boolean | null;
-          site: number | null;
-          state: string;
-          thumb_url: string | null;
-          updated_at: string;
-          updated_by: string | null;
-        };
+          created_at: string | null
+          data: Json | null
+          example_path: string | null
+          id: number
+          name: string | null
+          path: string | null
+          public: boolean | null
+          site: number | null
+          state: string
+          thumb_url: string | null
+          updated_at: string
+          updated_by: string | null
+        }
         Insert: {
-          created_at?: string | null;
-          data?: Json | null;
-          example_path?: string | null;
-          id?: number;
-          name?: string | null;
-          path?: string | null;
-          public?: boolean | null;
-          site?: number | null;
-          state?: string;
-          thumb_url?: string | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          created_at?: string | null
+          data?: Json | null
+          example_path?: string | null
+          id?: number
+          name?: string | null
+          path?: string | null
+          public?: boolean | null
+          site?: number | null
+          state?: string
+          thumb_url?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
         Update: {
-          created_at?: string | null;
-          data?: Json | null;
-          example_path?: string | null;
-          id?: number;
-          name?: string | null;
-          path?: string | null;
-          public?: boolean | null;
-          site?: number | null;
-          state?: string;
-          thumb_url?: string | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          created_at?: string | null
+          data?: Json | null
+          example_path?: string | null
+          id?: number
+          name?: string | null
+          path?: string | null
+          public?: boolean | null
+          site?: number | null
+          state?: string
+          thumb_url?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "pages_site_fkey";
-            columns: ["site"];
-            isOneToOne: false;
-            referencedRelation: "sites";
-            referencedColumns: ["id"];
+            foreignKeyName: "pages_site_fkey"
+            columns: ["site"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pages_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "pages_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       pagespeeds: {
         Row: {
-          pagespeed: Json | null;
-          site: string;
-          timestamp: string;
-        };
+          pagespeed: Json | null
+          site: string
+          timestamp: string
+        }
         Insert: {
-          pagespeed?: Json | null;
-          site: string;
-          timestamp: string;
-        };
+          pagespeed?: Json | null
+          site: string
+          timestamp: string
+        }
         Update: {
-          pagespeed?: Json | null;
-          site?: string;
-          timestamp?: string;
-        };
+          pagespeed?: Json | null
+          site?: string
+          timestamp?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "public_pagespeeds_site_fkey";
-            columns: ["site"];
-            isOneToOne: false;
-            referencedRelation: "sites";
-            referencedColumns: ["name"];
+            foreignKeyName: "public_pagespeeds_site_fkey"
+            columns: ["site"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["name"]
           },
-        ];
-      };
+        ]
+      }
       permissions: {
         Row: {
-          action: string;
-          created_at: string;
-          id: number;
-          role_id: number;
-          type: string;
-        };
+          action: string
+          created_at: string
+          id: number
+          role_id: number
+          type: string
+        }
         Insert: {
-          action: string;
-          created_at?: string;
-          id?: number;
-          role_id: number;
-          type: string;
-        };
+          action: string
+          created_at?: string
+          id?: number
+          role_id: number
+          type: string
+        }
         Update: {
-          action?: string;
-          created_at?: string;
-          id?: number;
-          role_id?: number;
-          type?: string;
-        };
+          action?: string
+          created_at?: string
+          id?: number
+          role_id?: number
+          type?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "permissions_role_id_fkey";
-            columns: ["role_id"];
-            isOneToOne: false;
-            referencedRelation: "roles";
-            referencedColumns: ["id"];
+            foreignKeyName: "permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       plans: {
         Row: {
-          currency: string | null;
-          discount: number | null;
-          fixed_price: number | null;
-          gmv_threshold: number | null;
-          id: number;
-          included_bw: number | null;
-          included_bw_per_10k_pageviews: number | null;
-          included_pageviews: number | null;
-          included_requests_per_10k_pageviews: number | null;
-          name: string | null;
-          performance_bonus: number | null;
-          plan_id: string | null;
-          price_extra_1gb_bw_after_included_per_10k_pageviews: number | null;
+          currency: string | null
+          discount: number | null
+          fixed_price: number | null
+          gmv_threshold: number | null
+          id: number
+          included_bw: number | null
+          included_bw_per_10k_pageviews: number | null
+          included_pageviews: number | null
+          included_requests_per_10k_pageviews: number | null
+          name: string | null
+          performance_bonus: number | null
+          plan_id: string | null
+          price_extra_1gb_bw_after_included_per_10k_pageviews: number | null
           price_extra_1k_requests_after_included_per_10k_pageviews:
             | number
-            | null;
-          price_per_10k: number | null;
-          price_per_additional_1gb_bw: number | null;
-          price_review: number | null;
-          takerate_gmv: number | null;
-        };
+            | null
+          price_per_10k: number | null
+          price_per_additional_1gb_bw: number | null
+          price_review: number | null
+          takerate_gmv: number | null
+        }
         Insert: {
-          currency?: string | null;
-          discount?: number | null;
-          fixed_price?: number | null;
-          gmv_threshold?: number | null;
-          id: number;
-          included_bw?: number | null;
-          included_bw_per_10k_pageviews?: number | null;
-          included_pageviews?: number | null;
-          included_requests_per_10k_pageviews?: number | null;
-          name?: string | null;
-          performance_bonus?: number | null;
-          plan_id?: string | null;
-          price_extra_1gb_bw_after_included_per_10k_pageviews?: number | null;
+          currency?: string | null
+          discount?: number | null
+          fixed_price?: number | null
+          gmv_threshold?: number | null
+          id: number
+          included_bw?: number | null
+          included_bw_per_10k_pageviews?: number | null
+          included_pageviews?: number | null
+          included_requests_per_10k_pageviews?: number | null
+          name?: string | null
+          performance_bonus?: number | null
+          plan_id?: string | null
+          price_extra_1gb_bw_after_included_per_10k_pageviews?: number | null
           price_extra_1k_requests_after_included_per_10k_pageviews?:
             | number
-            | null;
-          price_per_10k?: number | null;
-          price_per_additional_1gb_bw?: number | null;
-          price_review?: number | null;
-          takerate_gmv?: number | null;
-        };
+            | null
+          price_per_10k?: number | null
+          price_per_additional_1gb_bw?: number | null
+          price_review?: number | null
+          takerate_gmv?: number | null
+        }
         Update: {
-          currency?: string | null;
-          discount?: number | null;
-          fixed_price?: number | null;
-          gmv_threshold?: number | null;
-          id?: number;
-          included_bw?: number | null;
-          included_bw_per_10k_pageviews?: number | null;
-          included_pageviews?: number | null;
-          included_requests_per_10k_pageviews?: number | null;
-          name?: string | null;
-          performance_bonus?: number | null;
-          plan_id?: string | null;
-          price_extra_1gb_bw_after_included_per_10k_pageviews?: number | null;
+          currency?: string | null
+          discount?: number | null
+          fixed_price?: number | null
+          gmv_threshold?: number | null
+          id?: number
+          included_bw?: number | null
+          included_bw_per_10k_pageviews?: number | null
+          included_pageviews?: number | null
+          included_requests_per_10k_pageviews?: number | null
+          name?: string | null
+          performance_bonus?: number | null
+          plan_id?: string | null
+          price_extra_1gb_bw_after_included_per_10k_pageviews?: number | null
           price_extra_1k_requests_after_included_per_10k_pageviews?:
             | number
-            | null;
-          price_per_10k?: number | null;
-          price_per_additional_1gb_bw?: number | null;
-          price_review?: number | null;
-          takerate_gmv?: number | null;
-        };
-        Relationships: [];
-      };
+            | null
+          price_per_10k?: number | null
+          price_per_additional_1gb_bw?: number | null
+          price_review?: number | null
+          takerate_gmv?: number | null
+        }
+        Relationships: []
+      }
       policies: {
         Row: {
-          created_at: string;
-          description: string | null;
-          id: number;
-          name: string;
-          statements: Json[];
-          team_id: number | null;
-        };
+          created_at: string
+          description: string | null
+          id: number
+          name: string
+          statements: Json[]
+          team_id: number | null
+        }
         Insert: {
-          created_at?: string;
-          description?: string | null;
-          id?: number;
-          name: string;
-          statements: Json[];
-          team_id?: number | null;
-        };
+          created_at?: string
+          description?: string | null
+          id?: number
+          name: string
+          statements: Json[]
+          team_id?: number | null
+        }
         Update: {
-          created_at?: string;
-          description?: string | null;
-          id?: number;
-          name?: string;
-          statements?: Json[];
-          team_id?: number | null;
-        };
+          created_at?: string
+          description?: string | null
+          id?: number
+          name?: string
+          statements?: Json[]
+          team_id?: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "policies_team_id_fkey";
-            columns: ["team_id"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
+            foreignKeyName: "policies_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       profiles: {
         Row: {
-          created_at: string | null;
-          deco_user_id: number | null;
-          email: string;
-          id: number;
-          is_new_user: boolean | null;
-          name: string | null;
-          phone: string | null;
-          phone_verified_at: string | null;
-          user_id: string;
-        };
+          created_at: string | null
+          deco_user_id: number | null
+          email: string
+          id: number
+          is_new_user: boolean | null
+          name: string | null
+          phone: string | null
+          phone_verified_at: string | null
+          user_id: string
+        }
         Insert: {
-          created_at?: string | null;
-          deco_user_id?: number | null;
-          email: string;
-          id?: number;
-          is_new_user?: boolean | null;
-          name?: string | null;
-          phone?: string | null;
-          phone_verified_at?: string | null;
-          user_id: string;
-        };
+          created_at?: string | null
+          deco_user_id?: number | null
+          email: string
+          id?: number
+          is_new_user?: boolean | null
+          name?: string | null
+          phone?: string | null
+          phone_verified_at?: string | null
+          user_id: string
+        }
         Update: {
-          created_at?: string | null;
-          deco_user_id?: number | null;
-          email?: string;
-          id?: number;
-          is_new_user?: boolean | null;
-          name?: string | null;
-          phone?: string | null;
-          phone_verified_at?: string | null;
-          user_id?: string;
-        };
+          created_at?: string | null
+          deco_user_id?: number | null
+          email?: string
+          id?: number
+          is_new_user?: boolean | null
+          name?: string | null
+          phone?: string | null
+          phone_verified_at?: string | null
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "profiles_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: true;
-            referencedRelation: "users_meta_data_view";
-            referencedColumns: ["id"];
+            foreignKeyName: "profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users_meta_data_view"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "public_profiles_deco_user_id_fkey";
-            columns: ["deco_user_id"];
-            isOneToOne: false;
-            referencedRelation: "deco_users";
-            referencedColumns: ["id"];
+            foreignKeyName: "public_profiles_deco_user_id_fkey"
+            columns: ["deco_user_id"]
+            isOneToOne: false
+            referencedRelation: "deco_users"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       projects: {
         Row: {
-          created_at: string | null;
-          created_from: number | null;
-          id: number;
-          metadata: Json | null;
-          name: string;
-          public: boolean | null;
-          team: number | null;
-        };
+          created_at: string | null
+          created_from: number | null
+          id: number
+          metadata: Json | null
+          name: string
+          public: boolean | null
+          team: number | null
+        }
         Insert: {
-          created_at?: string | null;
-          created_from?: number | null;
-          id?: number;
-          metadata?: Json | null;
-          name: string;
-          public?: boolean | null;
-          team?: number | null;
-        };
+          created_at?: string | null
+          created_from?: number | null
+          id?: number
+          metadata?: Json | null
+          name: string
+          public?: boolean | null
+          team?: number | null
+        }
         Update: {
-          created_at?: string | null;
-          created_from?: number | null;
-          id?: number;
-          metadata?: Json | null;
-          name?: string;
-          public?: boolean | null;
-          team?: number | null;
-        };
+          created_at?: string | null
+          created_from?: number | null
+          id?: number
+          metadata?: Json | null
+          name?: string
+          public?: boolean | null
+          team?: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "projects_created_from_fkey";
-            columns: ["created_from"];
-            isOneToOne: false;
-            referencedRelation: "sites";
-            referencedColumns: ["id"];
+            foreignKeyName: "projects_created_from_fkey"
+            columns: ["created_from"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "projects_team_fkey";
-            columns: ["team"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
+            foreignKeyName: "projects_team_fkey"
+            columns: ["team"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       role_policies: {
         Row: {
-          created_at: string;
-          id: number;
-          policy_id: number;
-          role_id: number;
-        };
+          created_at: string
+          id: number
+          policy_id: number
+          role_id: number
+        }
         Insert: {
-          created_at?: string;
-          id?: number;
-          policy_id: number;
-          role_id: number;
-        };
+          created_at?: string
+          id?: number
+          policy_id: number
+          role_id: number
+        }
         Update: {
-          created_at?: string;
-          id?: number;
-          policy_id?: number;
-          role_id?: number;
-        };
+          created_at?: string
+          id?: number
+          policy_id?: number
+          role_id?: number
+        }
         Relationships: [
           {
-            foreignKeyName: "RolePolicies_policy_id_fkey";
-            columns: ["policy_id"];
-            isOneToOne: false;
-            referencedRelation: "policies";
-            referencedColumns: ["id"];
+            foreignKeyName: "RolePolicies_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "RolePolicies_role_id_fkey";
-            columns: ["role_id"];
-            isOneToOne: false;
-            referencedRelation: "roles";
-            referencedColumns: ["id"];
+            foreignKeyName: "RolePolicies_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       roles: {
         Row: {
-          created_at: string;
-          description: string | null;
-          id: number;
-          name: string;
-          team_id: number | null;
-        };
+          created_at: string
+          description: string | null
+          id: number
+          name: string
+          team_id: number | null
+        }
         Insert: {
-          created_at?: string;
-          description?: string | null;
-          id?: number;
-          name: string;
-          team_id?: number | null;
-        };
+          created_at?: string
+          description?: string | null
+          id?: number
+          name: string
+          team_id?: number | null
+        }
         Update: {
-          created_at?: string;
-          description?: string | null;
-          id?: number;
-          name?: string;
-          team_id?: number | null;
-        };
+          created_at?: string
+          description?: string | null
+          id?: number
+          name?: string
+          team_id?: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "roles_team_id_fkey";
-            columns: ["team_id"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
+            foreignKeyName: "roles_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       scrap: {
         Row: {
-          banners: string | null;
-          categories: string | null;
-          colors: string | null;
-          created_at: string | null;
-          domain: string;
-          favicon: string | null;
-          logos: string | null;
-          seo: string | null;
-          themeColor: string | null;
-          title: string | null;
-          vtexconfig: string | null;
-        };
+          banners: string | null
+          categories: string | null
+          colors: string | null
+          created_at: string | null
+          domain: string
+          favicon: string | null
+          logos: string | null
+          seo: string | null
+          themeColor: string | null
+          title: string | null
+          vtexconfig: string | null
+        }
         Insert: {
-          banners?: string | null;
-          categories?: string | null;
-          colors?: string | null;
-          created_at?: string | null;
-          domain: string;
-          favicon?: string | null;
-          logos?: string | null;
-          seo?: string | null;
-          themeColor?: string | null;
-          title?: string | null;
-          vtexconfig?: string | null;
-        };
+          banners?: string | null
+          categories?: string | null
+          colors?: string | null
+          created_at?: string | null
+          domain: string
+          favicon?: string | null
+          logos?: string | null
+          seo?: string | null
+          themeColor?: string | null
+          title?: string | null
+          vtexconfig?: string | null
+        }
         Update: {
-          banners?: string | null;
-          categories?: string | null;
-          colors?: string | null;
-          created_at?: string | null;
-          domain?: string;
-          favicon?: string | null;
-          logos?: string | null;
-          seo?: string | null;
-          themeColor?: string | null;
-          title?: string | null;
-          vtexconfig?: string | null;
-        };
-        Relationships: [];
-      };
+          banners?: string | null
+          categories?: string | null
+          colors?: string | null
+          created_at?: string | null
+          domain?: string
+          favicon?: string | null
+          logos?: string | null
+          seo?: string | null
+          themeColor?: string | null
+          title?: string | null
+          vtexconfig?: string | null
+        }
+        Relationships: []
+      }
       site_metrics: {
         Row: {
-          bounce_rate: number | null;
-          cpu_seconds: number | null;
-          date: string;
-          kv_read_count: number | null;
-          kv_read_units: number | null;
-          kv_write_count: number | null;
-          kv_write_units: number | null;
-          max_rss_memory_bytes: number | null;
-          network_egress_bytes: number | null;
-          network_ingress_bytes: number | null;
-          pageviews: number | null;
-          request_count: number | null;
-          site: string;
-          team: number | null;
-          uptime_seconds: number | null;
-          visit_duration: number | null;
-          visitors: number | null;
-        };
+          bounce_rate: number | null
+          cpu_seconds: number | null
+          date: string
+          kv_read_count: number | null
+          kv_read_units: number | null
+          kv_write_count: number | null
+          kv_write_units: number | null
+          max_rss_memory_bytes: number | null
+          network_egress_bytes: number | null
+          network_ingress_bytes: number | null
+          pageviews: number | null
+          request_count: number | null
+          site: string
+          team: number | null
+          uptime_seconds: number | null
+          visit_duration: number | null
+          visitors: number | null
+        }
         Insert: {
-          bounce_rate?: number | null;
-          cpu_seconds?: number | null;
-          date: string;
-          kv_read_count?: number | null;
-          kv_read_units?: number | null;
-          kv_write_count?: number | null;
-          kv_write_units?: number | null;
-          max_rss_memory_bytes?: number | null;
-          network_egress_bytes?: number | null;
-          network_ingress_bytes?: number | null;
-          pageviews?: number | null;
-          request_count?: number | null;
-          site: string;
-          team?: number | null;
-          uptime_seconds?: number | null;
-          visit_duration?: number | null;
-          visitors?: number | null;
-        };
+          bounce_rate?: number | null
+          cpu_seconds?: number | null
+          date: string
+          kv_read_count?: number | null
+          kv_read_units?: number | null
+          kv_write_count?: number | null
+          kv_write_units?: number | null
+          max_rss_memory_bytes?: number | null
+          network_egress_bytes?: number | null
+          network_ingress_bytes?: number | null
+          pageviews?: number | null
+          request_count?: number | null
+          site: string
+          team?: number | null
+          uptime_seconds?: number | null
+          visit_duration?: number | null
+          visitors?: number | null
+        }
         Update: {
-          bounce_rate?: number | null;
-          cpu_seconds?: number | null;
-          date?: string;
-          kv_read_count?: number | null;
-          kv_read_units?: number | null;
-          kv_write_count?: number | null;
-          kv_write_units?: number | null;
-          max_rss_memory_bytes?: number | null;
-          network_egress_bytes?: number | null;
-          network_ingress_bytes?: number | null;
-          pageviews?: number | null;
-          request_count?: number | null;
-          site?: string;
-          team?: number | null;
-          uptime_seconds?: number | null;
-          visit_duration?: number | null;
-          visitors?: number | null;
-        };
+          bounce_rate?: number | null
+          cpu_seconds?: number | null
+          date?: string
+          kv_read_count?: number | null
+          kv_read_units?: number | null
+          kv_write_count?: number | null
+          kv_write_units?: number | null
+          max_rss_memory_bytes?: number | null
+          network_egress_bytes?: number | null
+          network_ingress_bytes?: number | null
+          pageviews?: number | null
+          request_count?: number | null
+          site?: string
+          team?: number | null
+          uptime_seconds?: number | null
+          visit_duration?: number | null
+          visitors?: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "site_metrics_team_fkey";
-            columns: ["team"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
+            foreignKeyName: "site_metrics_team_fkey"
+            columns: ["team"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       sites: {
         Row: {
-          capture_logs: boolean;
-          created_at: string | null;
-          created_from: number | null;
-          deno_project_id: string | null;
-          deployments: Json | null;
-          domains: Json;
-          favicon_cache: string | null;
-          full_name: string | null;
-          github_repo_url: string | null;
-          id: number;
-          is_template: boolean;
-          metadata: Json | null;
-          name: string;
-          pagespeed: Json | null;
-          public: boolean | null;
-          site_creation_error: Json | null;
-          team: number | null;
-          test_e2e: boolean;
-          thumb_url: string | null;
-        };
+          capture_logs: boolean
+          created_at: string | null
+          created_from: number | null
+          deno_project_id: string | null
+          deployments: Json | null
+          domains: Json
+          favicon_cache: string | null
+          full_name: string | null
+          github_repo_url: string | null
+          id: number
+          is_template: boolean
+          metadata: Json | null
+          name: string
+          pagespeed: Json | null
+          public: boolean | null
+          site_creation_error: Json | null
+          team: number | null
+          test_e2e: boolean
+          thumb_url: string | null
+        }
         Insert: {
-          capture_logs?: boolean;
-          created_at?: string | null;
-          created_from?: number | null;
-          deno_project_id?: string | null;
-          deployments?: Json | null;
-          domains?: Json;
-          favicon_cache?: string | null;
-          full_name?: string | null;
-          github_repo_url?: string | null;
-          id?: number;
-          is_template?: boolean;
-          metadata?: Json | null;
-          name: string;
-          pagespeed?: Json | null;
-          public?: boolean | null;
-          site_creation_error?: Json | null;
-          team?: number | null;
-          test_e2e?: boolean;
-          thumb_url?: string | null;
-        };
+          capture_logs?: boolean
+          created_at?: string | null
+          created_from?: number | null
+          deno_project_id?: string | null
+          deployments?: Json | null
+          domains?: Json
+          favicon_cache?: string | null
+          full_name?: string | null
+          github_repo_url?: string | null
+          id?: number
+          is_template?: boolean
+          metadata?: Json | null
+          name: string
+          pagespeed?: Json | null
+          public?: boolean | null
+          site_creation_error?: Json | null
+          team?: number | null
+          test_e2e?: boolean
+          thumb_url?: string | null
+        }
         Update: {
-          capture_logs?: boolean;
-          created_at?: string | null;
-          created_from?: number | null;
-          deno_project_id?: string | null;
-          deployments?: Json | null;
-          domains?: Json;
-          favicon_cache?: string | null;
-          full_name?: string | null;
-          github_repo_url?: string | null;
-          id?: number;
-          is_template?: boolean;
-          metadata?: Json | null;
-          name?: string;
-          pagespeed?: Json | null;
-          public?: boolean | null;
-          site_creation_error?: Json | null;
-          team?: number | null;
-          test_e2e?: boolean;
-          thumb_url?: string | null;
-        };
+          capture_logs?: boolean
+          created_at?: string | null
+          created_from?: number | null
+          deno_project_id?: string | null
+          deployments?: Json | null
+          domains?: Json
+          favicon_cache?: string | null
+          full_name?: string | null
+          github_repo_url?: string | null
+          id?: number
+          is_template?: boolean
+          metadata?: Json | null
+          name?: string
+          pagespeed?: Json | null
+          public?: boolean | null
+          site_creation_error?: Json | null
+          team?: number | null
+          test_e2e?: boolean
+          thumb_url?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "sites_created_from_fkey";
-            columns: ["created_from"];
-            isOneToOne: false;
-            referencedRelation: "sites";
-            referencedColumns: ["id"];
+            foreignKeyName: "sites_created_from_fkey"
+            columns: ["created_from"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "sites_team_fkey";
-            columns: ["team"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
+            foreignKeyName: "sites_team_fkey"
+            columns: ["team"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       students: {
         Row: {
-          referral_id: string | null;
-          referrals_count: number;
-          referred_by: string | null;
-          student_id: number;
-          university_id: number;
-        };
+          referral_id: string | null
+          referrals_count: number
+          referred_by: string | null
+          student_id: number
+          university_id: number
+        }
         Insert: {
-          referral_id?: string | null;
-          referrals_count?: number;
-          referred_by?: string | null;
-          student_id: number;
-          university_id: number;
-        };
+          referral_id?: string | null
+          referrals_count?: number
+          referred_by?: string | null
+          student_id: number
+          university_id: number
+        }
         Update: {
-          referral_id?: string | null;
-          referrals_count?: number;
-          referred_by?: string | null;
-          student_id?: number;
-          university_id?: number;
-        };
+          referral_id?: string | null
+          referrals_count?: number
+          referred_by?: string | null
+          student_id?: number
+          university_id?: number
+        }
         Relationships: [
           {
-            foreignKeyName: "students_student_id_fkey";
-            columns: ["student_id"];
-            isOneToOne: true;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "students_university_id_fkey";
-            columns: ["university_id"];
-            isOneToOne: false;
-            referencedRelation: "universities";
-            referencedColumns: ["id"];
+            foreignKeyName: "students_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       subscriptions: {
         Row: {
-          customer_details: Json | null;
-          go_live_date: string | null;
-          id: string;
-          plan: number | null;
-          signed_date: string | null;
-          status: string | null;
-          tax_id: string | null;
-          team: number | null;
-        };
+          customer_details: Json | null
+          go_live_date: string | null
+          id: string
+          plan: number | null
+          signed_date: string | null
+          status: string | null
+          tax_id: string | null
+          team: number | null
+        }
         Insert: {
-          customer_details?: Json | null;
-          go_live_date?: string | null;
-          id?: string;
-          plan?: number | null;
-          signed_date?: string | null;
-          status?: string | null;
-          tax_id?: string | null;
-          team?: number | null;
-        };
+          customer_details?: Json | null
+          go_live_date?: string | null
+          id?: string
+          plan?: number | null
+          signed_date?: string | null
+          status?: string | null
+          tax_id?: string | null
+          team?: number | null
+        }
         Update: {
-          customer_details?: Json | null;
-          go_live_date?: string | null;
-          id?: string;
-          plan?: number | null;
-          signed_date?: string | null;
-          status?: string | null;
-          tax_id?: string | null;
-          team?: number | null;
-        };
-        Relationships: [];
-      };
+          customer_details?: Json | null
+          go_live_date?: string | null
+          id?: string
+          plan?: number | null
+          signed_date?: string | null
+          status?: string | null
+          tax_id?: string | null
+          team?: number | null
+        }
+        Relationships: []
+      }
       tag: {
         Row: {
-          color: string;
-          created_at: string;
-          id: number;
-          label: string;
-        };
+          color: string
+          created_at: string
+          id: number
+          label: string
+        }
         Insert: {
-          color: string;
-          created_at?: string;
-          id?: number;
-          label: string;
-        };
+          color: string
+          created_at?: string
+          id?: number
+          label: string
+        }
         Update: {
-          color?: string;
-          created_at?: string;
-          id?: number;
-          label?: string;
-        };
-        Relationships: [];
-      };
+          color?: string
+          created_at?: string
+          id?: number
+          label?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
-          created_at: string;
-          data: Json | null;
-          expires_at: string | null;
-          last_failure: string | null;
-          name: string;
-          queue: string | null;
-          result: Json | null;
-          retries: number | null;
-          site: string;
-          state: string | null;
-          updated_at: string | null;
-        };
+          created_at: string
+          data: Json | null
+          expires_at: string | null
+          last_failure: string | null
+          name: string
+          queue: string | null
+          result: Json | null
+          retries: number | null
+          site: string
+          state: string | null
+          updated_at: string | null
+        }
         Insert: {
-          created_at?: string;
-          data?: Json | null;
-          expires_at?: string | null;
-          last_failure?: string | null;
-          name: string;
-          queue?: string | null;
-          result?: Json | null;
-          retries?: number | null;
-          site: string;
-          state?: string | null;
-          updated_at?: string | null;
-        };
+          created_at?: string
+          data?: Json | null
+          expires_at?: string | null
+          last_failure?: string | null
+          name: string
+          queue?: string | null
+          result?: Json | null
+          retries?: number | null
+          site: string
+          state?: string | null
+          updated_at?: string | null
+        }
         Update: {
-          created_at?: string;
-          data?: Json | null;
-          expires_at?: string | null;
-          last_failure?: string | null;
-          name?: string;
-          queue?: string | null;
-          result?: Json | null;
-          retries?: number | null;
-          site?: string;
-          state?: string | null;
-          updated_at?: string | null;
-        };
+          created_at?: string
+          data?: Json | null
+          expires_at?: string | null
+          last_failure?: string | null
+          name?: string
+          queue?: string | null
+          result?: Json | null
+          retries?: number | null
+          site?: string
+          state?: string | null
+          updated_at?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "tasks_site_fkey";
-            columns: ["site"];
-            isOneToOne: false;
-            referencedRelation: "sites";
-            referencedColumns: ["name"];
+            foreignKeyName: "tasks_site_fkey"
+            columns: ["site"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["name"]
           },
-        ];
-      };
+        ]
+      }
       team_access_suspension: {
         Row: {
-          created_at: string;
-          id: number;
-          is_active: boolean;
-          suspended_at: string;
-          suspended_reason: string;
-          team_id: number;
-        };
+          created_at: string
+          id: number
+          is_active: boolean
+          suspended_at: string
+          suspended_reason: string
+          team_id: number
+        }
         Insert: {
-          created_at?: string;
-          id?: number;
-          is_active?: boolean;
-          suspended_at: string;
-          suspended_reason: string;
-          team_id: number;
-        };
+          created_at?: string
+          id?: number
+          is_active?: boolean
+          suspended_at: string
+          suspended_reason: string
+          team_id: number
+        }
         Update: {
-          created_at?: string;
-          id?: number;
-          is_active?: boolean;
-          suspended_at?: string;
-          suspended_reason?: string;
-          team_id?: number;
-        };
+          created_at?: string
+          id?: number
+          is_active?: boolean
+          suspended_at?: string
+          suspended_reason?: string
+          team_id?: number
+        }
         Relationships: [
           {
-            foreignKeyName: "team_blocks_team_id_fkey";
-            columns: ["team_id"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
+            foreignKeyName: "team_blocks_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       team_overdue_warning: {
         Row: {
-          acknowledged_at: string | null;
-          created_at: string;
-          expected_access_suspension: string;
-          id: number;
-          is_active: boolean;
-          overdue_invoices: number[];
-          team_id: number;
-          warned_at: string;
-        };
+          acknowledged_at: string | null
+          created_at: string
+          expected_access_suspension: string
+          id: number
+          is_active: boolean
+          overdue_invoices: number[]
+          team_id: number
+          warned_at: string
+        }
         Insert: {
-          acknowledged_at?: string | null;
-          created_at?: string;
-          expected_access_suspension: string;
-          id?: number;
-          is_active?: boolean;
-          overdue_invoices: number[];
-          team_id: number;
-          warned_at: string;
-        };
+          acknowledged_at?: string | null
+          created_at?: string
+          expected_access_suspension: string
+          id?: number
+          is_active?: boolean
+          overdue_invoices: number[]
+          team_id: number
+          warned_at: string
+        }
         Update: {
-          acknowledged_at?: string | null;
-          created_at?: string;
-          expected_access_suspension?: string;
-          id?: number;
-          is_active?: boolean;
-          overdue_invoices?: number[];
-          team_id?: number;
-          warned_at?: string;
-        };
+          acknowledged_at?: string | null
+          created_at?: string
+          expected_access_suspension?: string
+          id?: number
+          is_active?: boolean
+          overdue_invoices?: number[]
+          team_id?: number
+          warned_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "team_overdue_warning_team_id_fkey";
-            columns: ["team_id"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
+            foreignKeyName: "team_overdue_warning_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       teams: {
         Row: {
-          created_at: string | null;
-          id: number;
-          name: string;
-          slug: string | null;
-          stripe_subscription_id: string | null;
-        };
+          created_at: string | null
+          id: number
+          name: string
+          slug: string | null
+          stripe_subscription_id: string | null
+        }
         Insert: {
-          created_at?: string | null;
-          id?: number;
-          name: string;
-          slug?: string | null;
-          stripe_subscription_id?: string | null;
-        };
+          created_at?: string | null
+          id?: number
+          name: string
+          slug?: string | null
+          stripe_subscription_id?: string | null
+        }
         Update: {
-          created_at?: string | null;
-          id?: number;
-          name?: string;
-          slug?: string | null;
-          stripe_subscription_id?: string | null;
-        };
-        Relationships: [];
-      };
+          created_at?: string | null
+          id?: number
+          name?: string
+          slug?: string | null
+          stripe_subscription_id?: string | null
+        }
+        Relationships: []
+      }
       temp_webdraw_community_apps: {
         Row: {
-          allow_fork: boolean | null;
-          content: string;
-          created_at: string;
-          icon_url: string | null;
-          id: number;
-          link: string;
-          medias: Json[] | null;
-          milestones: Json | null;
-          short_description: string | null;
-          slug: string;
-          title: string;
-          uid: string | null;
-          updated_at: string;
-          user_id: string;
-          views: number;
-          visibility: string;
-        };
+          allow_fork: boolean | null
+          content: string
+          created_at: string
+          icon_url: string | null
+          id: number
+          link: string
+          medias: Json[] | null
+          milestones: Json | null
+          short_description: string | null
+          slug: string
+          title: string
+          uid: string | null
+          updated_at: string
+          user_id: string
+          views: number
+          visibility: string
+        }
         Insert: {
-          allow_fork?: boolean | null;
-          content: string;
-          created_at?: string;
-          icon_url?: string | null;
-          id?: number;
-          link: string;
-          medias?: Json[] | null;
-          milestones?: Json | null;
-          short_description?: string | null;
-          slug: string;
-          title: string;
-          uid?: string | null;
-          updated_at: string;
-          user_id: string;
-          views: number;
-          visibility?: string;
-        };
+          allow_fork?: boolean | null
+          content: string
+          created_at?: string
+          icon_url?: string | null
+          id?: number
+          link: string
+          medias?: Json[] | null
+          milestones?: Json | null
+          short_description?: string | null
+          slug: string
+          title: string
+          uid?: string | null
+          updated_at: string
+          user_id: string
+          views: number
+          visibility?: string
+        }
         Update: {
-          allow_fork?: boolean | null;
-          content?: string;
-          created_at?: string;
-          icon_url?: string | null;
-          id?: number;
-          link?: string;
-          medias?: Json[] | null;
-          milestones?: Json | null;
-          short_description?: string | null;
-          slug?: string;
-          title?: string;
-          uid?: string | null;
-          updated_at?: string;
-          user_id?: string;
-          views?: number;
-          visibility?: string;
-        };
+          allow_fork?: boolean | null
+          content?: string
+          created_at?: string
+          icon_url?: string | null
+          id?: number
+          link?: string
+          medias?: Json[] | null
+          milestones?: Json | null
+          short_description?: string | null
+          slug?: string
+          title?: string
+          uid?: string | null
+          updated_at?: string
+          user_id?: string
+          views?: number
+          visibility?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "temp_webdraw_community_apps_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "temp_webdraw_community_apps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "temp_webdraw_community_apps_user_id_fkey1";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "webdraw_user_metadata";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "temp_webdraw_community_apps_user_id_fkey1"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "webdraw_user_metadata"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       temp_wpp_agents: {
         Row: {
-          agent_id: string;
-          created_at: string;
-          id: number;
-          user_id: string;
-        };
+          agent_id: string
+          created_at: string
+          id: number
+          user_id: string
+        }
         Insert: {
-          agent_id: string;
-          created_at?: string;
-          id?: number;
-          user_id: string;
-        };
+          agent_id: string
+          created_at?: string
+          id?: number
+          user_id: string
+        }
         Update: {
-          agent_id?: string;
-          created_at?: string;
-          id?: number;
-          user_id?: string;
-        };
+          agent_id?: string
+          created_at?: string
+          id?: number
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "temp_wpp_agents_agent_id_fkey";
-            columns: ["agent_id"];
-            isOneToOne: false;
-            referencedRelation: "deco_chat_agents";
-            referencedColumns: ["id"];
+            foreignKeyName: "temp_wpp_agents_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "deco_chat_agents"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "temp_wpp_agents_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: true;
-            referencedRelation: "users_meta_data_view";
-            referencedColumns: ["id"];
+            foreignKeyName: "temp_wpp_agents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users_meta_data_view"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       tokens: {
         Row: {
-          created_at: string;
-          credits: Json | null;
-          token: string;
-        };
+          created_at: string
+          credits: Json | null
+          token: string
+        }
         Insert: {
-          created_at?: string;
-          credits?: Json | null;
-          token?: string;
-        };
+          created_at?: string
+          credits?: Json | null
+          token?: string
+        }
         Update: {
-          created_at?: string;
-          credits?: Json | null;
-          token?: string;
-        };
-        Relationships: [];
-      };
+          created_at?: string
+          credits?: Json | null
+          token?: string
+        }
+        Relationships: []
+      }
       universities: {
         Row: {
-          acronym: string | null;
-          created_at: string;
-          domains: string[] | null;
-          id: number;
-          name: string | null;
-          quantity: number | null;
-          quantity_updated_at: string | null;
-        };
+          acronym: string | null
+          created_at: string
+          domains: string[] | null
+          id: number
+          name: string | null
+          quantity: number | null
+          quantity_updated_at: string | null
+        }
         Insert: {
-          acronym?: string | null;
-          created_at?: string;
-          domains?: string[] | null;
-          id?: number;
-          name?: string | null;
-          quantity?: number | null;
-          quantity_updated_at?: string | null;
-        };
+          acronym?: string | null
+          created_at?: string
+          domains?: string[] | null
+          id?: number
+          name?: string | null
+          quantity?: number | null
+          quantity_updated_at?: string | null
+        }
         Update: {
-          acronym?: string | null;
-          created_at?: string;
-          domains?: string[] | null;
-          id?: number;
-          name?: string | null;
-          quantity?: number | null;
-          quantity_updated_at?: string | null;
-        };
-        Relationships: [];
-      };
+          acronym?: string | null
+          created_at?: string
+          domains?: string[] | null
+          id?: number
+          name?: string | null
+          quantity?: number | null
+          quantity_updated_at?: string | null
+        }
+        Relationships: []
+      }
       url_metadata_cache: {
         Row: {
-          created_at: string;
-          creator_token: string | null;
-          data: Json | null;
-          id: number;
-          url: string | null;
-        };
+          created_at: string
+          creator_token: string | null
+          data: Json | null
+          id: number
+          url: string | null
+        }
         Insert: {
-          created_at?: string;
-          creator_token?: string | null;
-          data?: Json | null;
-          id?: number;
-          url?: string | null;
-        };
+          created_at?: string
+          creator_token?: string | null
+          data?: Json | null
+          id?: number
+          url?: string | null
+        }
         Update: {
-          created_at?: string;
-          creator_token?: string | null;
-          data?: Json | null;
-          id?: number;
-          url?: string | null;
-        };
+          created_at?: string
+          creator_token?: string | null
+          data?: Json | null
+          id?: number
+          url?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "url_metadata_cache_creator_token_fkey";
-            columns: ["creator_token"];
-            isOneToOne: false;
-            referencedRelation: "tokens";
-            referencedColumns: ["token"];
+            foreignKeyName: "url_metadata_cache_creator_token_fkey"
+            columns: ["creator_token"]
+            isOneToOne: false
+            referencedRelation: "tokens"
+            referencedColumns: ["token"]
           },
-        ];
-      };
+        ]
+      }
       user_activity: {
         Row: {
-          created_at: string;
-          id: number;
-          key: string | null;
-          resource: string;
-          user_id: string;
-          value: string | null;
-        };
+          created_at: string
+          id: number
+          key: string | null
+          resource: string
+          user_id: string
+          value: string | null
+        }
         Insert: {
-          created_at?: string;
-          id?: number;
-          key?: string | null;
-          resource: string;
-          user_id: string;
-          value?: string | null;
-        };
+          created_at?: string
+          id?: number
+          key?: string | null
+          resource: string
+          user_id: string
+          value?: string | null
+        }
         Update: {
-          created_at?: string;
-          id?: number;
-          key?: string | null;
-          resource?: string;
-          user_id?: string;
-          value?: string | null;
-        };
+          created_at?: string
+          id?: number
+          key?: string | null
+          resource?: string
+          user_id?: string
+          value?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "user_opened_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "user_opened_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       vendors: {
         Row: {
-          alias: string;
-          created_at: string;
-          id: number;
-          team_id: number;
-          url: string;
-        };
+          alias: string
+          created_at: string
+          id: number
+          team_id: number
+          url: string
+        }
         Insert: {
-          alias: string;
-          created_at?: string;
-          id?: number;
-          team_id: number;
-          url: string;
-        };
+          alias: string
+          created_at?: string
+          id?: number
+          team_id: number
+          url: string
+        }
         Update: {
-          alias?: string;
-          created_at?: string;
-          id?: number;
-          team_id?: number;
-          url?: string;
-        };
+          alias?: string
+          created_at?: string
+          id?: number
+          team_id?: number
+          url?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "vendors_team_id_fkey";
-            columns: ["team_id"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
+            foreignKeyName: "vendors_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       wd_credits: {
         Row: {
-          created_at: string | null;
-          credits: number | null;
-          id: number;
-          user_id: string | null;
-        };
+          created_at: string | null
+          credits: number | null
+          id: number
+          user_id: string | null
+        }
         Insert: {
-          created_at?: string | null;
-          credits?: number | null;
-          id?: never;
-          user_id?: string | null;
-        };
+          created_at?: string | null
+          credits?: number | null
+          id?: never
+          user_id?: string | null
+        }
         Update: {
-          created_at?: string | null;
-          credits?: number | null;
-          id?: never;
-          user_id?: string | null;
-        };
-        Relationships: [];
-      };
+          created_at?: string | null
+          credits?: number | null
+          id?: never
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       webdraw_anon_gen: {
         Row: {
-          created_at: string;
-          id: number;
-          user_id: string;
-        };
+          created_at: string
+          id: number
+          user_id: string
+        }
         Insert: {
-          created_at?: string;
-          id?: number;
-          user_id: string;
-        };
+          created_at?: string
+          id?: number
+          user_id: string
+        }
         Update: {
-          created_at?: string;
-          id?: number;
-          user_id?: string;
-        };
-        Relationships: [];
-      };
+          created_at?: string
+          id?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       webdraw_api_keys: {
         Row: {
-          api_key: string;
-          created_at: string;
-          description: string | null;
-          user_id: string;
-        };
+          api_key: string
+          created_at: string
+          description: string | null
+          user_id: string
+        }
         Insert: {
-          api_key: string;
-          created_at?: string;
-          description?: string | null;
-          user_id: string;
-        };
+          api_key: string
+          created_at?: string
+          description?: string | null
+          user_id: string
+        }
         Update: {
-          api_key?: string;
-          created_at?: string;
-          description?: string | null;
-          user_id?: string;
-        };
+          api_key?: string
+          created_at?: string
+          description?: string | null
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_fs_api_keys_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_fs_api_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_app_categories: {
         Row: {
-          app_id: number;
-          category_id: number;
-          created_at: string;
-          id: number;
-        };
+          app_id: number
+          category_id: number
+          created_at: string
+          id: number
+        }
         Insert: {
-          app_id: number;
-          category_id: number;
-          created_at?: string;
-          id?: number;
-        };
+          app_id: number
+          category_id: number
+          created_at?: string
+          id?: number
+        }
         Update: {
-          app_id?: number;
-          category_id?: number;
-          created_at?: string;
-          id?: number;
-        };
+          app_id?: number
+          category_id?: number
+          created_at?: string
+          id?: number
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_app_categories_app_id_fkey";
-            columns: ["app_id"];
-            isOneToOne: false;
-            referencedRelation: "webdraw_community_apps";
-            referencedColumns: ["id"];
+            foreignKeyName: "webdraw_app_categories_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "webdraw_community_apps"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "webdraw_app_categories_category_id_fkey";
-            columns: ["category_id"];
-            isOneToOne: false;
-            referencedRelation: "webdraw_community_categories";
-            referencedColumns: ["id"];
+            foreignKeyName: "webdraw_app_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "webdraw_community_categories"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_app_comments: {
         Row: {
-          app_id: number;
-          content: string;
-          created_at: string;
-          id: number;
-          is_deleted: boolean | null;
-          parent_id: number | null;
-          updated_at: string;
-          user_id: string;
-        };
+          app_id: number
+          content: string
+          created_at: string
+          id: number
+          is_deleted: boolean | null
+          parent_id: number | null
+          updated_at: string
+          user_id: string
+        }
         Insert: {
-          app_id: number;
-          content: string;
-          created_at?: string;
-          id?: number;
-          is_deleted?: boolean | null;
-          parent_id?: number | null;
-          updated_at: string;
-          user_id: string;
-        };
+          app_id: number
+          content: string
+          created_at?: string
+          id?: number
+          is_deleted?: boolean | null
+          parent_id?: number | null
+          updated_at: string
+          user_id: string
+        }
         Update: {
-          app_id?: number;
-          content?: string;
-          created_at?: string;
-          id?: number;
-          is_deleted?: boolean | null;
-          parent_id?: number | null;
-          updated_at?: string;
-          user_id?: string;
-        };
+          app_id?: number
+          content?: string
+          created_at?: string
+          id?: number
+          is_deleted?: boolean | null
+          parent_id?: number | null
+          updated_at?: string
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_app_comments_app_id_fkey";
-            columns: ["app_id"];
-            isOneToOne: false;
-            referencedRelation: "webdraw_community_apps";
-            referencedColumns: ["id"];
+            foreignKeyName: "webdraw_app_comments_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "webdraw_community_apps"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "webdraw_app_comments_parent_id_fkey";
-            columns: ["parent_id"];
-            isOneToOne: false;
-            referencedRelation: "webdraw_app_comments";
-            referencedColumns: ["id"];
+            foreignKeyName: "webdraw_app_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "webdraw_app_comments"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "webdraw_app_comments_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_app_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "webdraw_app_comments_user_id_fkey1";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "webdraw_user_metadata";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_app_comments_user_id_fkey1"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "webdraw_user_metadata"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_app_reactions: {
         Row: {
-          app_id: number;
-          comment_id: number | null;
-          created_at: string;
-          id: number;
-          reaction: string;
-          user_id: string;
-        };
+          app_id: number
+          comment_id: number | null
+          created_at: string
+          id: number
+          reaction: string
+          user_id: string
+        }
         Insert: {
-          app_id: number;
-          comment_id?: number | null;
-          created_at?: string;
-          id?: number;
-          reaction: string;
-          user_id: string;
-        };
+          app_id: number
+          comment_id?: number | null
+          created_at?: string
+          id?: number
+          reaction: string
+          user_id: string
+        }
         Update: {
-          app_id?: number;
-          comment_id?: number | null;
-          created_at?: string;
-          id?: number;
-          reaction?: string;
-          user_id?: string;
-        };
+          app_id?: number
+          comment_id?: number | null
+          created_at?: string
+          id?: number
+          reaction?: string
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_app_reactions_app_id_fkey";
-            columns: ["app_id"];
-            isOneToOne: false;
-            referencedRelation: "webdraw_community_apps";
-            referencedColumns: ["id"];
+            foreignKeyName: "webdraw_app_reactions_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "webdraw_community_apps"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "webdraw_app_reactions_comment_id_fkey";
-            columns: ["comment_id"];
-            isOneToOne: false;
-            referencedRelation: "webdraw_app_comments";
-            referencedColumns: ["id"];
+            foreignKeyName: "webdraw_app_reactions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "webdraw_app_comments"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "webdraw_app_reactions_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_app_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_badge: {
         Row: {
-          description: string;
-          id: number;
-          image: string;
-          title: string;
-        };
+          description: string
+          id: number
+          image: string
+          title: string
+        }
         Insert: {
-          description: string;
-          id?: number;
-          image: string;
-          title: string;
-        };
+          description: string
+          id?: number
+          image: string
+          title: string
+        }
         Update: {
-          description?: string;
-          id?: number;
-          image?: string;
-          title?: string;
-        };
-        Relationships: [];
-      };
+          description?: string
+          id?: number
+          image?: string
+          title?: string
+        }
+        Relationships: []
+      }
       webdraw_balance: {
         Row: {
-          created_at: string;
-          earnings_balance: string;
-          id: number;
-          use_balance: string;
-          user_id: string;
-        };
+          created_at: string
+          earnings_balance: string
+          id: number
+          use_balance: string
+          user_id: string
+        }
         Insert: {
-          created_at?: string;
-          earnings_balance: string;
-          id?: number;
-          use_balance: string;
-          user_id: string;
-        };
+          created_at?: string
+          earnings_balance: string
+          id?: number
+          use_balance: string
+          user_id: string
+        }
         Update: {
-          created_at?: string;
-          earnings_balance?: string;
-          id?: number;
-          use_balance?: string;
-          user_id?: string;
-        };
+          created_at?: string
+          earnings_balance?: string
+          id?: number
+          use_balance?: string
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_balance_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: true;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_balance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_community_apps: {
         Row: {
-          allow_fork: boolean | null;
-          content: string;
-          created_at: string;
-          icon_url: string | null;
-          id: number;
-          link: string;
-          medias: Json[] | null;
-          milestones: Json | null;
-          short_description: string | null;
-          slug: string | null;
-          title: string;
-          uid: string | null;
-          updated_at: string;
-          user_id: string;
-          views: number;
-          visibility: string;
-        };
+          allow_fork: boolean | null
+          content: string
+          created_at: string
+          icon_url: string | null
+          id: number
+          link: string
+          medias: Json[] | null
+          milestones: Json | null
+          short_description: string | null
+          slug: string | null
+          title: string
+          uid: string | null
+          updated_at: string
+          user_id: string
+          views: number
+          visibility: string
+        }
         Insert: {
-          allow_fork?: boolean | null;
-          content: string;
-          created_at?: string;
-          icon_url?: string | null;
-          id?: number;
-          link: string;
-          medias?: Json[] | null;
-          milestones?: Json | null;
-          short_description?: string | null;
-          slug?: string | null;
-          title: string;
-          uid?: string | null;
-          updated_at: string;
-          user_id: string;
-          views: number;
-          visibility?: string;
-        };
+          allow_fork?: boolean | null
+          content: string
+          created_at?: string
+          icon_url?: string | null
+          id?: number
+          link: string
+          medias?: Json[] | null
+          milestones?: Json | null
+          short_description?: string | null
+          slug?: string | null
+          title: string
+          uid?: string | null
+          updated_at: string
+          user_id: string
+          views: number
+          visibility?: string
+        }
         Update: {
-          allow_fork?: boolean | null;
-          content?: string;
-          created_at?: string;
-          icon_url?: string | null;
-          id?: number;
-          link?: string;
-          medias?: Json[] | null;
-          milestones?: Json | null;
-          short_description?: string | null;
-          slug?: string | null;
-          title?: string;
-          uid?: string | null;
-          updated_at?: string;
-          user_id?: string;
-          views?: number;
-          visibility?: string;
-        };
+          allow_fork?: boolean | null
+          content?: string
+          created_at?: string
+          icon_url?: string | null
+          id?: number
+          link?: string
+          medias?: Json[] | null
+          milestones?: Json | null
+          short_description?: string | null
+          slug?: string | null
+          title?: string
+          uid?: string | null
+          updated_at?: string
+          user_id?: string
+          views?: number
+          visibility?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_apps_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_apps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "webdraw_community_apps_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "webdraw_user_metadata";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_community_apps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "webdraw_user_metadata"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_community_categories: {
         Row: {
-          created_at: string;
-          id: number;
-          name: string;
-        };
+          created_at: string
+          id: number
+          name: string
+        }
         Insert: {
-          created_at?: string;
-          id?: number;
-          name: string;
-        };
+          created_at?: string
+          id?: number
+          name: string
+        }
         Update: {
-          created_at?: string;
-          id?: number;
-          name?: string;
-        };
-        Relationships: [];
-      };
+          created_at?: string
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
       webdraw_credit_use: {
         Row: {
-          cache_creation_input_tokens: number | null;
-          cache_read_input_tokens: number | null;
-          created_at: string;
-          id: number;
-          input_tokens: number | null;
-          model: string | null;
-          output_tokens: number | null;
-          quantity: number;
-          user_id: string;
-        };
+          cache_creation_input_tokens: number | null
+          cache_read_input_tokens: number | null
+          created_at: string
+          id: number
+          input_tokens: number | null
+          model: string | null
+          output_tokens: number | null
+          quantity: number
+          user_id: string
+        }
         Insert: {
-          cache_creation_input_tokens?: number | null;
-          cache_read_input_tokens?: number | null;
-          created_at?: string;
-          id?: number;
-          input_tokens?: number | null;
-          model?: string | null;
-          output_tokens?: number | null;
-          quantity: number;
-          user_id: string;
-        };
+          cache_creation_input_tokens?: number | null
+          cache_read_input_tokens?: number | null
+          created_at?: string
+          id?: number
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          quantity: number
+          user_id: string
+        }
         Update: {
-          cache_creation_input_tokens?: number | null;
-          cache_read_input_tokens?: number | null;
-          created_at?: string;
-          id?: number;
-          input_tokens?: number | null;
-          model?: string | null;
-          output_tokens?: number | null;
-          quantity?: number;
-          user_id?: string;
-        };
+          cache_creation_input_tokens?: number | null
+          cache_read_input_tokens?: number | null
+          created_at?: string
+          id?: number
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          quantity?: number
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_credit_use_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_credit_use_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_daily_credit_claim: {
         Row: {
-          claimed_at: string;
-          id: number;
-          user_id: string;
-        };
+          claimed_at: string
+          id: number
+          user_id: string
+        }
         Insert: {
-          claimed_at?: string;
-          id?: number;
-          user_id: string;
-        };
+          claimed_at?: string
+          id?: number
+          user_id: string
+        }
         Update: {
-          claimed_at?: string;
-          id?: number;
-          user_id?: string;
-        };
+          claimed_at?: string
+          id?: number
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_daily_credit_claim_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_daily_credit_claim_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_email_queue: {
         Row: {
-          attempts: number;
-          created_at: string;
-          error: string | null;
-          from_email: string;
-          html: string;
-          id: number;
-          status: string;
-          subject: string;
-          to_email: string;
-          updated_at: string;
-        };
+          attempts: number
+          created_at: string
+          error: string | null
+          from_email: string
+          html: string
+          id: number
+          status: string
+          subject: string
+          to_email: string
+          updated_at: string
+        }
         Insert: {
-          attempts?: number;
-          created_at?: string;
-          error?: string | null;
-          from_email: string;
-          html: string;
-          id?: number;
-          status?: string;
-          subject: string;
-          to_email: string;
-          updated_at?: string;
-        };
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          from_email: string
+          html: string
+          id?: number
+          status?: string
+          subject: string
+          to_email: string
+          updated_at?: string
+        }
         Update: {
-          attempts?: number;
-          created_at?: string;
-          error?: string | null;
-          from_email?: string;
-          html?: string;
-          id?: number;
-          status?: string;
-          subject?: string;
-          to_email?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          from_email?: string
+          html?: string
+          id?: number
+          status?: string
+          subject?: string
+          to_email?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       webdraw_followers: {
         Row: {
-          created_at: string;
-          followed_by: string;
-          id: number;
-          user_id: string;
-        };
+          created_at: string
+          followed_by: string
+          id: number
+          user_id: string
+        }
         Insert: {
-          created_at?: string;
-          followed_by: string;
-          id?: number;
-          user_id: string;
-        };
+          created_at?: string
+          followed_by: string
+          id?: number
+          user_id: string
+        }
         Update: {
-          created_at?: string;
-          followed_by?: string;
-          id?: number;
-          user_id?: string;
-        };
+          created_at?: string
+          followed_by?: string
+          id?: number
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_followers_followed_by_fkey";
-            columns: ["followed_by"];
-            isOneToOne: false;
-            referencedRelation: "webdraw_user_metadata";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_followers_followed_by_fkey"
+            columns: ["followed_by"]
+            isOneToOne: false
+            referencedRelation: "webdraw_user_metadata"
+            referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "webdraw_followers_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "webdraw_user_metadata";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_followers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "webdraw_user_metadata"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_google_tokens: {
         Row: {
-          access_token: string | null;
-          created_at: string;
-          expiry_date: string;
-          id: number;
-          refresh_token: string;
-          token_type: string;
-        };
+          access_token: string | null
+          created_at: string
+          expiry_date: string
+          id: number
+          refresh_token: string
+          token_type: string
+        }
         Insert: {
-          access_token?: string | null;
-          created_at?: string;
-          expiry_date: string;
-          id?: number;
-          refresh_token: string;
-          token_type: string;
-        };
+          access_token?: string | null
+          created_at?: string
+          expiry_date: string
+          id?: number
+          refresh_token: string
+          token_type: string
+        }
         Update: {
-          access_token?: string | null;
-          created_at?: string;
-          expiry_date?: string;
-          id?: number;
-          refresh_token?: string;
-          token_type?: string;
-        };
-        Relationships: [];
-      };
+          access_token?: string | null
+          created_at?: string
+          expiry_date?: string
+          id?: number
+          refresh_token?: string
+          token_type?: string
+        }
+        Relationships: []
+      }
       webdraw_has_access: {
         Row: {
-          created_at: string;
-          id: number;
-          user_id: string;
-          waitlist_data: Json | null;
-        };
+          created_at: string
+          id: number
+          user_id: string
+          waitlist_data: Json | null
+        }
         Insert: {
-          created_at?: string;
-          id?: number;
-          user_id: string;
-          waitlist_data?: Json | null;
-        };
+          created_at?: string
+          id?: number
+          user_id: string
+          waitlist_data?: Json | null
+        }
         Update: {
-          created_at?: string;
-          id?: number;
-          user_id?: string;
-          waitlist_data?: Json | null;
-        };
+          created_at?: string
+          id?: number
+          user_id?: string
+          waitlist_data?: Json | null
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_has_access_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_has_access_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_integrations: {
         Row: {
-          config: Json | null;
-          created_at: string;
-          id: number;
-          integration_id: string;
-          status: string;
-          user_id: string;
-        };
+          config: Json | null
+          created_at: string
+          id: number
+          integration_id: string
+          status: string
+          user_id: string
+        }
         Insert: {
-          config?: Json | null;
-          created_at?: string;
-          id?: number;
-          integration_id: string;
-          status: string;
-          user_id: string;
-        };
+          config?: Json | null
+          created_at?: string
+          id?: number
+          integration_id: string
+          status: string
+          user_id: string
+        }
         Update: {
-          config?: Json | null;
-          created_at?: string;
-          id?: number;
-          integration_id?: string;
-          status?: string;
-          user_id?: string;
-        };
+          config?: Json | null
+          created_at?: string
+          id?: number
+          integration_id?: string
+          status?: string
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_integrations_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_integrations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_onboarding: {
         Row: {
-          claimed_20k_prize: boolean | null;
-          completed_steps: string[];
-          created_at: string;
-          current_step: string;
-          id: number;
-          user_id: string;
-        };
+          claimed_20k_prize: boolean | null
+          completed_steps: string[]
+          created_at: string
+          current_step: string
+          id: number
+          user_id: string
+        }
         Insert: {
-          claimed_20k_prize?: boolean | null;
-          completed_steps?: string[];
-          created_at?: string;
-          current_step?: string;
-          id?: number;
-          user_id: string;
-        };
+          claimed_20k_prize?: boolean | null
+          completed_steps?: string[]
+          created_at?: string
+          current_step?: string
+          id?: number
+          user_id: string
+        }
         Update: {
-          claimed_20k_prize?: boolean | null;
-          completed_steps?: string[];
-          created_at?: string;
-          current_step?: string;
-          id?: number;
-          user_id?: string;
-        };
-        Relationships: [];
-      };
+          claimed_20k_prize?: boolean | null
+          completed_steps?: string[]
+          created_at?: string
+          current_step?: string
+          id?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       webdraw_pending_notifications: {
         Row: {
-          expires_at: string | null;
-          id: string;
-          last_message_ts: number | null;
-          nickname: string | null;
-          session_id: string;
-        };
+          expires_at: string | null
+          id: string
+          last_message_ts: number | null
+          nickname: string | null
+          session_id: string
+        }
         Insert: {
-          expires_at?: string | null;
-          id: string;
-          last_message_ts?: number | null;
-          nickname?: string | null;
-          session_id: string;
-        };
+          expires_at?: string | null
+          id: string
+          last_message_ts?: number | null
+          nickname?: string | null
+          session_id: string
+        }
         Update: {
-          expires_at?: string | null;
-          id?: string;
-          last_message_ts?: number | null;
-          nickname?: string | null;
-          session_id?: string;
-        };
-        Relationships: [];
-      };
+          expires_at?: string | null
+          id?: string
+          last_message_ts?: number | null
+          nickname?: string | null
+          session_id?: string
+        }
+        Relationships: []
+      }
       webdraw_session_share_code: {
         Row: {
-          code: string;
-          created_at: string;
-          expires_at: string;
-          id: number;
-          principal_id: string;
-        };
+          code: string
+          created_at: string
+          expires_at: string
+          id: number
+          principal_id: string
+        }
         Insert: {
-          code: string;
-          created_at?: string;
-          expires_at: string;
-          id?: number;
-          principal_id: string;
-        };
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: number
+          principal_id: string
+        }
         Update: {
-          code?: string;
-          created_at?: string;
-          expires_at?: string;
-          id?: number;
-          principal_id?: string;
-        };
-        Relationships: [];
-      };
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: number
+          principal_id?: string
+        }
+        Relationships: []
+      }
       webdraw_streak: {
         Row: {
-          created_at: string;
-          credits: number;
-          current_streak: number | null;
-          id: number;
-          last_streak_date: string | null;
-          longest_streak: number | null;
-          user_id: string;
-        };
+          created_at: string
+          credits: number
+          current_streak: number | null
+          id: number
+          last_streak_date: string | null
+          longest_streak: number | null
+          user_id: string
+        }
         Insert: {
-          created_at?: string;
-          credits?: number;
-          current_streak?: number | null;
-          id?: number;
-          last_streak_date?: string | null;
-          longest_streak?: number | null;
-          user_id: string;
-        };
+          created_at?: string
+          credits?: number
+          current_streak?: number | null
+          id?: number
+          last_streak_date?: string | null
+          longest_streak?: number | null
+          user_id: string
+        }
         Update: {
-          created_at?: string;
-          credits?: number;
-          current_streak?: number | null;
-          id?: number;
-          last_streak_date?: string | null;
-          longest_streak?: number | null;
-          user_id?: string;
-        };
+          created_at?: string
+          credits?: number
+          current_streak?: number | null
+          id?: number
+          last_streak_date?: string | null
+          longest_streak?: number | null
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_credits_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_credits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_streak_marker: {
         Row: {
-          created_at: string;
-          id: number;
-          user_id: string;
-        };
+          created_at: string
+          id: number
+          user_id: string
+        }
         Insert: {
-          created_at?: string;
-          id?: number;
-          user_id: string;
-        };
+          created_at?: string
+          id?: number
+          user_id: string
+        }
         Update: {
-          created_at?: string;
-          id?: number;
-          user_id?: string;
-        };
+          created_at?: string
+          id?: number
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_streak_marker_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_streak_marker_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_subscriptions: {
         Row: {
-          created_at: string | null;
-          customer_details: Json | null;
-          id: string;
-          status: string;
-          subscription_id: string | null;
-          tax_id: string | null;
-          type: string | null;
-          user_id: string | null;
-        };
+          created_at: string | null
+          customer_details: Json | null
+          id: string
+          status: string
+          subscription_id: string | null
+          tax_id: string | null
+          type: string | null
+          user_id: string | null
+        }
         Insert: {
-          created_at?: string | null;
-          customer_details?: Json | null;
-          id: string;
-          status?: string;
-          subscription_id?: string | null;
-          tax_id?: string | null;
-          type?: string | null;
-          user_id?: string | null;
-        };
+          created_at?: string | null
+          customer_details?: Json | null
+          id: string
+          status?: string
+          subscription_id?: string | null
+          tax_id?: string | null
+          type?: string | null
+          user_id?: string | null
+        }
         Update: {
-          created_at?: string | null;
-          customer_details?: Json | null;
-          id?: string;
-          status?: string;
-          subscription_id?: string | null;
-          tax_id?: string | null;
-          type?: string | null;
-          user_id?: string | null;
-        };
+          created_at?: string | null
+          customer_details?: Json | null
+          id?: string
+          status?: string
+          subscription_id?: string | null
+          tax_id?: string | null
+          type?: string | null
+          user_id?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_subscriptions_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_transaction: {
         Row: {
-          amount: string;
-          created_at: string;
-          id: number;
-          meta: Json | null;
-          type: string;
-          user_id: string;
-        };
+          amount: string
+          created_at: string
+          id: number
+          meta: Json | null
+          type: string
+          user_id: string
+        }
         Insert: {
-          amount: string;
-          created_at?: string;
-          id?: number;
-          meta?: Json | null;
-          type: string;
-          user_id: string;
-        };
+          amount: string
+          created_at?: string
+          id?: number
+          meta?: Json | null
+          type: string
+          user_id: string
+        }
         Update: {
-          amount?: string;
-          created_at?: string;
-          id?: number;
-          meta?: Json | null;
-          type?: string;
-          user_id?: string;
-        };
+          amount?: string
+          created_at?: string
+          id?: number
+          meta?: Json | null
+          type?: string
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_transaction_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_transaction_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_user_badge: {
         Row: {
-          badge_id: number;
-          created_at: string;
-          id: number;
-          user_id: string;
-        };
+          badge_id: number
+          created_at: string
+          id: number
+          user_id: string
+        }
         Insert: {
-          badge_id: number;
-          created_at?: string;
-          id?: number;
-          user_id: string;
-        };
+          badge_id: number
+          created_at?: string
+          id?: number
+          user_id: string
+        }
         Update: {
-          badge_id?: number;
-          created_at?: string;
-          id?: number;
-          user_id?: string;
-        };
+          badge_id?: number
+          created_at?: string
+          id?: number
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_user_badge_badge_id_fkey";
-            columns: ["badge_id"];
-            isOneToOne: false;
-            referencedRelation: "webdraw_badge";
-            referencedColumns: ["id"];
+            foreignKeyName: "webdraw_user_badge_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "webdraw_badge"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "webdraw_user_badge_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_user_badge_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "webdraw_user_badge_user_id_fkey1";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "webdraw_user_metadata";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_user_badge_user_id_fkey1"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "webdraw_user_metadata"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_user_metadata: {
         Row: {
-          avatar_url: string | null;
-          company: string | null;
-          created_at: string;
-          drawinrio_prize_claimed: boolean | null;
-          first_domain_claim_at: string | null;
-          full_name: string | null;
-          github_url: string | null;
-          id: number;
-          linkedin_url: string | null;
-          occupation: string | null;
-          show_email_public: boolean | null;
-          survey_data: Json | null;
-          user_id: string;
-          username: string;
-          website_url: string | null;
-        };
+          avatar_url: string | null
+          company: string | null
+          created_at: string
+          drawinrio_prize_claimed: boolean | null
+          first_domain_claim_at: string | null
+          full_name: string | null
+          github_url: string | null
+          id: number
+          linkedin_url: string | null
+          occupation: string | null
+          show_email_public: boolean | null
+          survey_data: Json | null
+          user_id: string
+          username: string
+          website_url: string | null
+        }
         Insert: {
-          avatar_url?: string | null;
-          company?: string | null;
-          created_at?: string;
-          drawinrio_prize_claimed?: boolean | null;
-          first_domain_claim_at?: string | null;
-          full_name?: string | null;
-          github_url?: string | null;
-          id?: number;
-          linkedin_url?: string | null;
-          occupation?: string | null;
-          show_email_public?: boolean | null;
-          survey_data?: Json | null;
-          user_id: string;
-          username: string;
-          website_url?: string | null;
-        };
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string
+          drawinrio_prize_claimed?: boolean | null
+          first_domain_claim_at?: string | null
+          full_name?: string | null
+          github_url?: string | null
+          id?: number
+          linkedin_url?: string | null
+          occupation?: string | null
+          show_email_public?: boolean | null
+          survey_data?: Json | null
+          user_id: string
+          username: string
+          website_url?: string | null
+        }
         Update: {
-          avatar_url?: string | null;
-          company?: string | null;
-          created_at?: string;
-          drawinrio_prize_claimed?: boolean | null;
-          first_domain_claim_at?: string | null;
-          full_name?: string | null;
-          github_url?: string | null;
-          id?: number;
-          linkedin_url?: string | null;
-          occupation?: string | null;
-          show_email_public?: boolean | null;
-          survey_data?: Json | null;
-          user_id?: string;
-          username?: string;
-          website_url?: string | null;
-        };
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string
+          drawinrio_prize_claimed?: boolean | null
+          first_domain_claim_at?: string | null
+          full_name?: string | null
+          github_url?: string | null
+          id?: number
+          linkedin_url?: string | null
+          occupation?: string | null
+          show_email_public?: boolean | null
+          survey_data?: Json | null
+          user_id?: string
+          username?: string
+          website_url?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_user_metadata_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: true;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_user_metadata_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_user_notifications: {
         Row: {
-          created_at: string;
-          data: Json | null;
-          id: number;
-          image: string | null;
-          link: string | null;
-          message: string;
-          read_at: string | null;
-          status: string;
-          title: string | null;
-          user_id: string;
-        };
+          created_at: string
+          data: Json | null
+          id: number
+          image: string | null
+          link: string | null
+          message: string
+          read_at: string | null
+          status: string
+          title: string | null
+          user_id: string
+        }
         Insert: {
-          created_at?: string;
-          data?: Json | null;
-          id?: number;
-          image?: string | null;
-          link?: string | null;
-          message: string;
-          read_at?: string | null;
-          status: string;
-          title?: string | null;
-          user_id: string;
-        };
+          created_at?: string
+          data?: Json | null
+          id?: number
+          image?: string | null
+          link?: string | null
+          message: string
+          read_at?: string | null
+          status: string
+          title?: string | null
+          user_id: string
+        }
         Update: {
-          created_at?: string;
-          data?: Json | null;
-          id?: number;
-          image?: string | null;
-          link?: string | null;
-          message?: string;
-          read_at?: string | null;
-          status?: string;
-          title?: string | null;
-          user_id?: string;
-        };
+          created_at?: string
+          data?: Json | null
+          id?: number
+          image?: string | null
+          link?: string | null
+          message?: string
+          read_at?: string | null
+          status?: string
+          title?: string | null
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_user_notifications_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_user_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "webdraw_user_notifications_user_id_fkey1";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "webdraw_user_metadata";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_user_notifications_user_id_fkey1"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "webdraw_user_metadata"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       webdraw_user_preferences: {
         Row: {
-          auto_save_enabled: boolean;
-          created_at: string;
-          id: number;
-          updated_at: string | null;
-          user_id: string;
-        };
+          auto_save_enabled: boolean
+          created_at: string
+          id: number
+          updated_at: string | null
+          user_id: string
+        }
         Insert: {
-          auto_save_enabled?: boolean;
-          created_at?: string;
-          id?: number;
-          updated_at?: string | null;
-          user_id: string;
-        };
+          auto_save_enabled?: boolean
+          created_at?: string
+          id?: number
+          updated_at?: string | null
+          user_id: string
+        }
         Update: {
-          auto_save_enabled?: boolean;
-          created_at?: string;
-          id?: number;
-          updated_at?: string | null;
-          user_id?: string;
-        };
-        Relationships: [];
-      };
+          auto_save_enabled?: boolean
+          created_at?: string
+          id?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       webdraw_withdraw_request: {
         Row: {
-          amount: string;
-          created_at: string;
-          id: string;
-          status: string;
-          user_id: string;
-        };
+          amount: string
+          created_at: string
+          id: string
+          status: string
+          user_id: string
+        }
         Insert: {
-          amount: string;
-          created_at?: string;
-          id?: string;
-          status: string;
-          user_id: string;
-        };
+          amount: string
+          created_at?: string
+          id?: string
+          status: string
+          user_id: string
+        }
         Update: {
-          amount?: string;
-          created_at?: string;
-          id?: string;
-          status?: string;
-          user_id?: string;
-        };
+          amount?: string
+          created_at?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_withdraw_request_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_withdraw_request_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
+        ]
+      }
       workflow_executions: {
         Row: {
-          created_at: string;
-          id: number;
-          site: string | null;
-          workflow_id: string | null;
-        };
+          created_at: string
+          id: number
+          site: string | null
+          workflow_id: string | null
+        }
         Insert: {
-          created_at?: string;
-          id?: number;
-          site?: string | null;
-          workflow_id?: string | null;
-        };
+          created_at?: string
+          id?: number
+          site?: string | null
+          workflow_id?: string | null
+        }
         Update: {
-          created_at?: string;
-          id?: number;
-          site?: string | null;
-          workflow_id?: string | null;
-        };
-        Relationships: [];
-      };
-    };
+          created_at?: string
+          id?: number
+          site?: string | null
+          workflow_id?: string | null
+        }
+        Relationships: []
+      }
+    }
     Views: {
       users_meta_data_view: {
         Row: {
-          id: string | null;
-          raw_app_meta_data: Json | null;
-          raw_user_meta_data: Json | null;
-        };
+          id: string | null
+          raw_app_meta_data: Json | null
+          raw_user_meta_data: Json | null
+        }
         Insert: {
-          id?: string | null;
-          raw_app_meta_data?: Json | null;
-          raw_user_meta_data?: Json | null;
-        };
+          id?: string | null
+          raw_app_meta_data?: Json | null
+          raw_user_meta_data?: Json | null
+        }
         Update: {
-          id?: string | null;
-          raw_app_meta_data?: Json | null;
-          raw_user_meta_data?: Json | null;
-        };
-        Relationships: [];
-      };
+          id?: string | null
+          raw_app_meta_data?: Json | null
+          raw_user_meta_data?: Json | null
+        }
+        Relationships: []
+      }
       webdraw_credits: {
         Row: {
-          created_at: string | null;
-          credits: number | null;
-          current_streak: number | null;
-          id: number | null;
-          last_streak_date: string | null;
-          longest_streak: number | null;
-          user_id: string | null;
-        };
+          created_at: string | null
+          credits: number | null
+          current_streak: number | null
+          id: number | null
+          last_streak_date: string | null
+          longest_streak: number | null
+          user_id: string | null
+        }
         Insert: {
-          created_at?: string | null;
-          credits?: number | null;
-          current_streak?: number | null;
-          id?: number | null;
-          last_streak_date?: string | null;
-          longest_streak?: number | null;
-          user_id?: string | null;
-        };
+          created_at?: string | null
+          credits?: number | null
+          current_streak?: number | null
+          id?: number | null
+          last_streak_date?: string | null
+          longest_streak?: number | null
+          user_id?: string | null
+        }
         Update: {
-          created_at?: string | null;
-          credits?: number | null;
-          current_streak?: number | null;
-          id?: number | null;
-          last_streak_date?: string | null;
-          longest_streak?: number | null;
-          user_id?: string | null;
-        };
+          created_at?: string | null
+          credits?: number | null
+          current_streak?: number | null
+          id?: number | null
+          last_streak_date?: string | null
+          longest_streak?: number | null
+          user_id?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "webdraw_credits_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["user_id"];
+            foreignKeyName: "webdraw_credits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
-        ];
-      };
-    };
+        ]
+      }
+    }
     Functions: {
       create_team_and_member: {
-        Args: { name: string };
-        Returns: number;
-      };
+        Args: { name: string }
+        Returns: number
+      }
       deduct_app_use_balance: {
-        Args: { target_user_id: string; amount: string };
-        Returns: undefined;
-      };
+        Args: { target_user_id: string; amount: string }
+        Returns: undefined
+      }
       deduct_earnings_balance: {
-        Args: { target_user_id: string; amount: string };
-        Returns: undefined;
-      };
+        Args: { target_user_id: string; amount: string }
+        Returns: undefined
+      }
       exchange_session_share_code: {
-        Args: { code: string };
-        Returns: Json;
-      };
+        Args: { code: string }
+        Returns: Json
+      }
       generate_referral_code: {
-        Args: Record<PropertyKey, never>;
-        Returns: string;
-      };
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_app_reactions: {
         Args: {
-          app_id: number;
-          from_offset: number;
-          to_offset: number;
-          comment_id?: number;
-        };
+          app_id: number
+          from_offset: number
+          to_offset: number
+          comment_id?: number
+        }
         Returns: {
-          id: string;
-          reaction: string;
-          username: string;
-          full_name: string;
-          avatar_url: string;
-          occupation: string;
-          company: string;
-        }[];
-      };
+          id: string
+          reaction: string
+          username: string
+          full_name: string
+          avatar_url: string
+          occupation: string
+          company: string
+        }[]
+      }
       get_apps_by_category: {
         Args: {
-          from_offset: number;
-          to_offset: number;
-          category_id: number;
-          from_date?: string;
-        };
+          from_offset: number
+          to_offset: number
+          category_id: number
+          from_date?: string
+        }
         Returns: {
-          id: number;
-          title: string;
-          content: string;
-          created_at: string;
-          updated_at: string;
-          slug: string;
-          user_id: string;
-          link: string;
-          icon_url: string;
-          short_description: string;
-          allow_fork: boolean;
-          reactions: number;
-          medias: Json[];
-          webdraw_app_reactions: Json;
-          username: string;
-          full_name: string;
-          avatar_url: string;
-          user_metadata_user_id: string;
-          visibility: string;
-          user_apps: Json;
-        }[];
-      };
+          id: number
+          title: string
+          content: string
+          created_at: string
+          updated_at: string
+          slug: string
+          user_id: string
+          link: string
+          icon_url: string
+          short_description: string
+          allow_fork: boolean
+          reactions: number
+          medias: Json[]
+          webdraw_app_reactions: Json
+          username: string
+          full_name: string
+          avatar_url: string
+          user_metadata_user_id: string
+          visibility: string
+          user_apps: Json
+        }[]
+      }
       get_followers_by_profile_id: {
         Args: {
-          profile_id: string;
-          logged_user_id: string;
-          page: number;
-          limit_value: number;
-        };
+          profile_id: string
+          logged_user_id: string
+          page: number
+          limit_value: number
+        }
         Returns: {
-          id: number;
-          username: string;
-          avatar_url: string;
-          full_name: string;
-          created_at: string;
-          company: string;
-          user_id: string;
-          occupation: string;
-          is_following: boolean;
-        }[];
-      };
+          id: number
+          username: string
+          avatar_url: string
+          full_name: string
+          created_at: string
+          company: string
+          user_id: string
+          occupation: string
+          is_following: boolean
+        }[]
+      }
       get_followers_by_user_id: {
         Args: {
-          profile_id: string;
-          logged_user_id: string;
-          page: number;
-          limit_value: number;
-        };
+          profile_id: string
+          logged_user_id: string
+          page: number
+          limit_value: number
+        }
         Returns: {
-          id: number;
-          username: string;
-          avatar_url: string;
-          full_name: string;
-          created_at: string;
-          company: string;
-          user_id: string;
-          occupation: string;
-          is_following: boolean;
-        }[];
-      };
+          id: number
+          username: string
+          avatar_url: string
+          full_name: string
+          created_at: string
+          company: string
+          user_id: string
+          occupation: string
+          is_following: boolean
+        }[]
+      }
       get_following_by_user_id: {
         Args:
           | {
-            profile_id: string;
-            logged_user_id: string;
-            page: number;
-            limit_rows?: number;
-          }
+              profile_id: string
+              logged_user_id: string
+              page: number
+              limit_rows?: number
+            }
           | {
-            profile_id: string;
-            logged_user_id: string;
-            page: number;
-            limit_rows?: number;
-          };
+              profile_id: string
+              logged_user_id: string
+              page: number
+              limit_rows?: number
+            }
         Returns: {
-          id: number;
-          username: string;
-          avatar_url: string;
-          full_name: string;
-          created_at: string;
-          company: string;
-          user_id: string;
-          occupation: string;
-          is_following: boolean;
-        }[];
-      };
+          id: number
+          username: string
+          avatar_url: string
+          full_name: string
+          created_at: string
+          company: string
+          user_id: string
+          occupation: string
+          is_following: boolean
+        }[]
+      }
       get_followings_by_profile_id: {
         Args: {
-          profile_id: string;
-          logged_user_id: string;
-          page: number;
-          limit_value: number;
-        };
+          profile_id: string
+          logged_user_id: string
+          page: number
+          limit_value: number
+        }
         Returns: {
-          id: number;
-          username: string;
-          avatar_url: string;
-          full_name: string;
-          created_at: string;
-          company: string;
-          user_id: string;
-          occupation: string;
-          is_following: boolean;
-        }[];
-      };
+          id: number
+          username: string
+          avatar_url: string
+          full_name: string
+          created_at: string
+          company: string
+          user_id: string
+          occupation: string
+          is_following: boolean
+        }[]
+      }
       get_latest_user_activity: {
         Args: {
-          p_user_id?: string;
-          p_resource?: string;
-          p_key?: string;
-          p_value?: string;
-        };
+          p_user_id?: string
+          p_resource?: string
+          p_key?: string
+          p_value?: string
+        }
         Returns: {
-          user_id: string;
-          created_at: string;
-          resource: string;
-          key: string;
-          value: string;
-        }[];
-      };
+          user_id: string
+          created_at: string
+          resource: string
+          key: string
+          value: string
+        }[]
+      }
       get_more_liked_apps: {
-        Args: { from_offset: number; to_offset: number };
+        Args: { from_offset: number; to_offset: number }
         Returns: {
-          id: number;
-          title: string;
-          content: string;
-          created_at: string;
-          updated_at: string;
-          slug: string;
-          user_id: string;
-          link: string;
-          likes: number;
-          medias: Json[];
-          webdraw_app_likes: Json;
-          username: string;
-          full_name: string;
-          avatar_url: string;
-          user_metadata_user_id: string;
-          visibility: string;
-        }[];
-      };
+          id: number
+          title: string
+          content: string
+          created_at: string
+          updated_at: string
+          slug: string
+          user_id: string
+          link: string
+          likes: number
+          medias: Json[]
+          webdraw_app_likes: Json
+          username: string
+          full_name: string
+          avatar_url: string
+          user_metadata_user_id: string
+          visibility: string
+        }[]
+      }
       get_more_reacted_apps: {
-        Args: { from_offset: number; to_offset: number; from_date?: string };
+        Args: { from_offset: number; to_offset: number; from_date?: string }
         Returns: {
-          id: number;
-          title: string;
-          content: string;
-          created_at: string;
-          updated_at: string;
-          slug: string;
-          user_id: string;
-          link: string;
-          icon_url: string;
-          short_description: string;
-          reactions: number;
-          medias: Json[];
-          webdraw_app_reactions: Json;
-          username: string;
-          full_name: string;
-          avatar_url: string;
-          user_metadata_user_id: string;
-          visibility: string;
-          user_apps: Json;
-        }[];
-      };
+          id: number
+          title: string
+          content: string
+          created_at: string
+          updated_at: string
+          slug: string
+          user_id: string
+          link: string
+          icon_url: string
+          short_description: string
+          reactions: number
+          medias: Json[]
+          webdraw_app_reactions: Json
+          username: string
+          full_name: string
+          avatar_url: string
+          user_metadata_user_id: string
+          visibility: string
+          user_apps: Json
+        }[]
+      }
       get_reacted_apps_by_user_id: {
-        Args: { user_id_input: string; from_offset: number; to_offset: number };
+        Args: { user_id_input: string; from_offset: number; to_offset: number }
         Returns: {
-          id: number;
-          title: string;
-          content: string;
-          created_at: string;
-          updated_at: string;
-          slug: string;
-          user_id: string;
-          link: string;
-          short_description: string;
-          icon_url: string;
-          reactions: number;
-          medias: Json[];
-          webdraw_app_reactions: Json;
-          username: string;
-          full_name: string;
-          avatar_url: string;
-          user_metadata_user_id: string;
-          visibility: string;
-          user_apps: Json;
-        }[];
-      };
+          id: number
+          title: string
+          content: string
+          created_at: string
+          updated_at: string
+          slug: string
+          user_id: string
+          link: string
+          short_description: string
+          icon_url: string
+          reactions: number
+          medias: Json[]
+          webdraw_app_reactions: Json
+          username: string
+          full_name: string
+          avatar_url: string
+          user_metadata_user_id: string
+          visibility: string
+          user_apps: Json
+        }[]
+      }
       get_student_by_email: {
-        Args: { user_email: string };
+        Args: { user_email: string }
         Returns: {
-          referral_id: string | null;
-          referrals_count: number;
-          referred_by: string | null;
-          student_id: number;
-          university_id: number;
-        };
-      };
+          referral_id: string | null
+          referrals_count: number
+          referred_by: string | null
+          student_id: number
+          university_id: number
+        }
+      }
       get_university: {
-        Args: { domain_text: string };
+        Args: { domain_text: string }
         Returns: {
-          acronym: string | null;
-          created_at: string;
-          domains: string[] | null;
-          id: number;
-          name: string | null;
-          quantity: number | null;
-          quantity_updated_at: string | null;
-        }[];
-      };
+          acronym: string | null
+          created_at: string
+          domains: string[] | null
+          id: number
+          name: string | null
+          quantity: number | null
+          quantity_updated_at: string | null
+        }[]
+      }
       get_university_by_email: {
-        Args: { user_email: string };
+        Args: { user_email: string }
         Returns: {
-          acronym: string | null;
-          created_at: string;
-          domains: string[] | null;
-          id: number;
-          name: string | null;
-          quantity: number | null;
-          quantity_updated_at: string | null;
-        };
-      };
+          acronym: string | null
+          created_at: string
+          domains: string[] | null
+          id: number
+          name: string | null
+          quantity: number | null
+          quantity_updated_at: string | null
+        }
+      }
       is_member_of: {
-        Args: { _user_id: string; _team_id: number };
-        Returns: boolean;
-      };
+        Args: { _user_id: string; _team_id: number }
+        Returns: boolean
+      }
       list_distinct_blocks: {
-        Args: { site: string; resolve_type: string };
+        Args: { site: string; resolve_type: string }
         Returns: {
-          id: string;
-          site: string;
-          __resolveType: string;
-          value: Json;
-          created_at: string;
-          created_by: string;
-          revision: string;
-          block_count: number;
-        }[];
-      };
+          id: string
+          site: string
+          __resolveType: string
+          value: Json
+          created_at: string
+          created_by: string
+          revision: string
+          block_count: number
+        }[]
+      }
       list_many_distinct_blocks: {
-        Args: { site: string; resolve_type: string[] };
+        Args: { site: string; resolve_type: string[] }
         Returns: {
-          id: string;
-          site: string;
-          __resolveType: string;
-          value: Json;
-          created_at: string;
-          created_by: string;
-          revision: string;
-          block_count: number;
-        }[];
-      };
+          id: string
+          site: string
+          __resolveType: string
+          value: Json
+          created_at: string
+          created_by: string
+          revision: string
+          block_count: number
+        }[]
+      }
       list_many_distinct_blocks_optimized: {
-        Args: { site: string; resolve_type: string[] };
+        Args: { site: string; resolve_type: string[] }
         Returns: {
-          id: string;
-          site: string;
-          __resolveType: string;
-          value: Json;
-          created_at: string;
-          created_by: string;
-          revision: string;
-          block_count: number;
-        }[];
-      };
+          id: string
+          site: string
+          __resolveType: string
+          value: Json
+          created_at: string
+          created_by: string
+          revision: string
+          block_count: number
+        }[]
+      }
       put_app_use_balance: {
-        Args: { target_user_id: string; amount: string };
-        Returns: undefined;
-      };
+        Args: { target_user_id: string; amount: string }
+        Returns: undefined
+      }
       put_earnings_balance: {
-        Args: { target_user_id: string; amount: string };
-        Returns: undefined;
-      };
+        Args: { target_user_id: string; amount: string }
+        Returns: undefined
+      }
       rank_search_community_apps: {
-        Args: { search_text: string };
+        Args: { search_text: string }
         Returns: {
-          metadata_score: number;
-          id: number;
-          user_id: string;
-          created_at: string;
-          title: string;
-          content: string;
-          views: number;
-          updated_at: string;
-          link: string;
-          slug: string;
-          uid: string;
-          medias: Json[];
-          visibility: string;
-          short_description: string;
-          icon_url: string;
-          allow_fork: boolean;
-          milestones: Json;
-        }[];
-      };
+          metadata_score: number
+          id: number
+          user_id: string
+          created_at: string
+          title: string
+          content: string
+          views: number
+          updated_at: string
+          link: string
+          slug: string
+          uid: string
+          medias: Json[]
+          visibility: string
+          short_description: string
+          icon_url: string
+          allow_fork: boolean
+          milestones: Json
+        }[]
+      }
       register_app_usage: {
         Args: {
-          user_id_from: string;
-          user_id_to: string;
-          deduct_amount: string;
-          earning_amount: string;
-        };
-        Returns: undefined;
-      };
+          user_id_from: string
+          user_id_to: string
+          deduct_amount: string
+          earning_amount: string
+        }
+        Returns: undefined
+      }
       rpc_safe_execute: {
-        Args: { query_text: string };
-        Returns: Json[];
-      };
+        Args: { query_text: string }
+        Returns: Json[]
+      }
       search_community_apps: {
-        Args: { search_text: string };
+        Args: { search_text: string }
         Returns: {
-          metadata_score: number;
-          id: number;
-          user_id: string;
-          created_at: string;
-          title: string;
-          content: string;
-          views: number;
-          updated_at: string;
-          link: string;
-          slug: string;
-          uid: string;
-          medias: Json[];
-          visibility: string;
-          short_description: string;
-          icon_url: string;
-          allow_fork: boolean;
-          milestones: Json;
-          reactions: Json;
-          user_metadata: Json;
-        }[];
-      };
+          metadata_score: number
+          id: number
+          user_id: string
+          created_at: string
+          title: string
+          content: string
+          views: number
+          updated_at: string
+          link: string
+          slug: string
+          uid: string
+          medias: Json[]
+          visibility: string
+          short_description: string
+          icon_url: string
+          allow_fork: boolean
+          milestones: Json
+          reactions: Json
+          user_metadata: Json
+        }[]
+      }
       update_referral_by_email: {
-        Args: { user_email: string; new_referred_by: string };
+        Args: { user_email: string; new_referred_by: string }
         Returns: {
-          referral_id: string | null;
-          referrals_count: number;
-          referred_by: string | null;
-          student_id: number;
-          university_id: number;
-        };
-      };
+          referral_id: string | null
+          referrals_count: number
+          referred_by: string | null
+          student_id: number
+          university_id: number
+        }
+      }
       update_university: {
-        Args: { domain_text: string };
+        Args: { domain_text: string }
         Returns: {
-          acronym: string | null;
-          created_at: string;
-          domains: string[] | null;
-          id: number;
-          name: string | null;
-          quantity: number | null;
-          quantity_updated_at: string | null;
-        }[];
-      };
+          acronym: string | null
+          created_at: string
+          domains: string[] | null
+          id: number
+          name: string | null
+          quantity: number | null
+          quantity_updated_at: string | null
+        }[]
+      }
       user_has_webdraw_access: {
-        Args: { useremail: string };
-        Returns: boolean;
-      };
+        Args: { useremail: string }
+        Returns: boolean
+      }
       webdraw_exchange_auth_code: {
-        Args: { code: string };
-        Returns: Json;
-      };
-    };
+        Args: { code: string }
+        Returns: Json
+      }
+    }
     Enums: {
-      visibility_type: "PUBLIC" | "WORKSPACE" | "PRIVATE";
-    };
+      visibility_type: "PUBLIC" | "WORKSPACE" | "PRIVATE"
+    }
     CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
-};
+      [_ in never]: never
+    }
+  }
+}
 
-type DefaultSchema = Database[Extract<keyof Database, "public">];
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database;
-  } ? keyof (
-      & Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-      & Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"]
-    )
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database } ? (
-    & Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    & Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"]
-  )[TableName] extends {
-    Row: infer R;
-  } ? R
-  : never
-  : DefaultSchemaTableNameOrOptions extends keyof (
-    & DefaultSchema["Tables"]
-    & DefaultSchema["Views"]
-  ) ? (
-      & DefaultSchema["Tables"]
-      & DefaultSchema["Views"]
-    )[DefaultSchemaTableNameOrOptions] extends {
-      Row: infer R;
-    } ? R
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
     : never
-  : never;
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database;
-  } ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][
-    TableName
-  ] extends {
-    Insert: infer I;
-  } ? I
-  : never
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-      Insert: infer I;
-    } ? I
+        Insert: infer I
+      }
+      ? I
+      : never
     : never
-  : never;
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database;
-  } ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][
-    TableName
-  ] extends {
-    Update: infer U;
-  } ? U
-  : never
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-      Update: infer U;
-    } ? U
+        Update: infer U
+      }
+      ? U
+      : never
     : never
-  : never;
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof Database },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database;
-  } ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
   ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-  : never;
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database;
-  } ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]][
-      "CompositeTypes"
-    ]
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][
-    CompositeTypeName
-  ]
-  : PublicCompositeTypeNameOrOptions extends
-    keyof DefaultSchema["CompositeTypes"]
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never;
+    : never
 
 export const Constants = {
   public: {
@@ -4132,4 +4138,4 @@ export const Constants = {
       visibility_type: ["PUBLIC", "WORKSPACE", "PRIVATE"],
     },
   },
-} as const;
+} as const

@@ -6,6 +6,7 @@ import {
   CreateWebhookTriggerOutputSchema,
   CronTriggerSchema,
   DeleteTriggerOutputSchema,
+  IntegrationSchema,
   ListTriggersOutputSchema,
   WebhookTriggerSchema,
 } from "@deco/sdk";
@@ -28,6 +29,7 @@ export type TriggerData = CreateTriggerInput & {
     email: string;
     avatar: string;
   };
+  binding?: z.infer<typeof IntegrationSchema> | null;
 };
 
 export interface TriggerListResult {

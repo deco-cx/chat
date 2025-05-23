@@ -19,6 +19,7 @@ import {
 } from "../../index.ts";
 import { CallToolResultSchema } from "../../models/toolCall.ts";
 import type { Workspace } from "../../path.ts";
+import { QueryResult } from "../../storage/supabase/client.ts";
 import {
   assertHasWorkspace,
   bypass,
@@ -238,6 +239,15 @@ export const listIntegrations = createTool({
     return result;
   },
 });
+
+export const convertFromDatabase = (
+  integration: QueryResult<"deco_chat_integrations", "*">,
+) => {
+  return IntegrationSchema.parse({
+    ...integration,
+    id: formatId("i", integration.id),
+  });
+};
 
 export const getIntegration = createTool({
   name: "INTEGRATIONS_GET",

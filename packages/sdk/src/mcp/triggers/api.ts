@@ -8,6 +8,7 @@ import {
 } from "../../errors.ts";
 import { Hosts } from "../../hosts.ts";
 import { AgentSchema } from "../../models/agent.ts";
+import { IntegrationSchema } from "../../models/mcp.ts";
 import {
   CreateCronTriggerInputSchema,
   CreateTriggerOutputSchema,
@@ -18,17 +19,21 @@ import {
   TriggerSchema,
 } from "../../models/trigger.ts";
 import { Path } from "../../path.ts";
-import { Database, Json } from "../../storage/index.ts";
+import { Json, QueryResult } from "../../storage/index.ts";
 import { getAgentsByIds } from "../agents/api.ts";
 import {
   assertHasWorkspace,
   canAccessWorkspaceResource,
 } from "../assertions.ts";
 import { createTool } from "../context.ts";
+import { convertFromDatabase } from "../integrations/api.ts";
 import { userFromDatabase } from "../user.ts";
 
 const SELECT_TRIGGER_QUERY = `
   *,
+  binding:deco_chat_integrations(
+    *
+  ),
   profile:profiles(
     metadata:users_meta_data_view(
       raw_user_meta_data
@@ -37,7 +42,7 @@ const SELECT_TRIGGER_QUERY = `
 `;
 
 function mapTrigger(
-  trigger: Database["public"]["Tables"]["deco_chat_triggers"]["Row"],
+  trigger: QueryResult<"deco_chat_triggers", typeof SELECT_TRIGGER_QUERY>,
   agentsById: Record<string, z.infer<typeof AgentSchema>>,
 ) {
   return {
@@ -58,6 +63,7 @@ function mapTrigger(
     workspace: trigger.workspace,
     active: trigger.active,
     data: trigger.metadata as z.infer<typeof TriggerSchema>,
+    binding: trigger.binding ? convertFromDatabase(trigger.binding) : null,
   };
 }
 
@@ -338,7 +344,6 @@ export const deleteTrigger = createTool({
   name: "TRIGGERS_DELETE",
   description: "Delete a trigger",
   inputSchema: z.object({ triggerId: z.string(), agentId: z.string() }),
-
   canAccess: canAccessWorkspaceResource,
   handler: async (
     { triggerId, agentId },
@@ -412,7 +417,13 @@ export const getTrigger = createTool({
   handler: async (
     { id: triggerId },
     c,
-  ): Promise<z.infer<typeof CreateTriggerOutputSchema>> => {
+  ): Promise<
+    z.infer<
+      typeof CreateTriggerOutputSchema
+    > & {
+      binding: z.infer<typeof IntegrationSchema> | null;
+    }
+  > => {
     assertHasWorkspace(c);
     const db = c.db;
     const workspace = c.workspace.value;

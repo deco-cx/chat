@@ -13,7 +13,7 @@ import { CreateStubHandlerOptions, MCPClientStub } from "./stub.ts";
 import * as teamsAPI from "./teams/api.ts";
 import * as threadsAPI from "./threads/api.ts";
 import * as triggersAPI from "./triggers/api.ts";
-
+export * from "./bindings.ts";
 // Register tools for each API handler
 export const GLOBAL_TOOLS = [
   teamsAPI.getTeam,
