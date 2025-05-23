@@ -646,6 +646,7 @@ export const deleteInvite = createTool({
     id: z.string(),
   }),
   canAccess: async (name, props, c) => {
+    assertPrincipalIsUser(c);
     const [{ data: invite, error }, { data: profile }] = await Promise.all([
       c.db.from("invites").select("team_id, invited_email").eq("id", props.id)
         .single(),

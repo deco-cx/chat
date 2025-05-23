@@ -64,7 +64,7 @@ export const acceptInvite = (
  * @param inviteId - The ID of the invite to reject
  * @returns Success status
  */
-export const rejectInvite = async (
+export const rejectInvite = (
   inviteId: string,
   signal?: AbortSignal,
 ) =>
