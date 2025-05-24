@@ -1,15 +1,13 @@
 import { MCPConnection } from "../models/mcp.ts";
-import { MCPClient, ToolLike } from "./index.ts";
+import { MCPClient, ToolBinder } from "./index.ts";
 import { MCPClientFetchStub } from "./stub.ts";
 
-export type Binder<TDefinition extends readonly ToolLike[]> = {
-  [K in keyof TDefinition]: Pick<
-    TDefinition[K],
-    "name" | "inputSchema" | "outputSchema"
-  >;
+export type Binder<TDefinition extends readonly ToolBinder[]> = {
+  [K in keyof TDefinition]: TDefinition[K];
 };
-export const mcpBinding = <TDefinition extends readonly ToolLike[]>(
-  binder: Binder<TDefinition>,
+
+export const mcpBinding = <TDefinition extends readonly ToolBinder[]>(
+  binder: TDefinition,
 ) => {
   return {
     implements: async (

@@ -5,13 +5,12 @@ import { SUPABASE_URL } from "@deco/sdk/auth";
 import {
   AppContext,
   AuthorizationClient,
-  Binder,
   fromWorkspaceString,
   mcpBinding,
   MCPClient,
+  MCPClientFetchStub,
   MCPClientStub,
   PolicyClient,
-  Tool,
   WorkspaceTools,
 } from "@deco/sdk/mcp";
 import { getTwoFirstSegments, type Workspace } from "@deco/sdk/path";
@@ -22,6 +21,7 @@ import { getRuntimeKey } from "hono/adapter";
 import { dirname } from "node:path/posix";
 import process from "node:process";
 import z from "zod";
+import { AIAgent } from "../agent.ts";
 import { hooks as cron } from "./cron.ts";
 import type { TriggerData, TriggerRun } from "./services.ts";
 import { hooks as webhook } from "./webhook.ts";
@@ -40,39 +40,33 @@ export const threadOf = (
 const callbacksSchema = z.object({
   stream: z.string(),
   generate: z.string(),
+  generateObject: z.string(),
 });
 
-const onWebhookMessageInputSchema = z.object({
+const inputBindingSchema = z.object({
   payload: z.any(),
   callbacks: callbacksSchema,
 });
 
-const scheduledInputSchema = z.object({
+const outputBindingSchema = z.object({
   callbacks: callbacksSchema,
 });
 export type Callbacks = z.infer<typeof callbacksSchema>;
-export type OnWebhookMessageInput = z.infer<typeof onWebhookMessageInputSchema>;
-export type ScheduledInput = z.infer<typeof scheduledInputSchema>;
+export type OnWebhookMessageInput = z.infer<typeof inputBindingSchema>;
+export type ScheduledInput = z.infer<typeof outputBindingSchema>;
 
-export type TriggerBinding = [
-  Tool<"ON_WEBHOOK_MESSAGE", OnWebhookMessageInput, Record<string, unknown>>,
-  Tool<"SCHEDULED", ScheduledInput, Record<string, unknown>>,
-];
-
-const binder: Binder<TriggerBinding> = [{
-  name: "ON_WEBHOOK_MESSAGE" as const,
-  inputSchema: onWebhookMessageInputSchema,
+const INPUT_BINDING = [{
+  name: "ON_AGENT_INPUT" as const,
+  inputSchema: inputBindingSchema,
   outputSchema: z.any(),
-}, {
-  name: "SCHEDULED" as const,
-  inputSchema: scheduledInputSchema,
-  outputSchema: z.any(),
-}];
+}] as const;
 
-const TriggerBinding = mcpBinding<TriggerBinding>(binder);
-// TODO (@mcandeia) trigger should set a token at Actor Level that can be used later to callback trigger and then call the agent.
-// we can keep the token for the request lifetime.
-// or we can use the state storage to save the token and fire&forget the request.
+const OUTPUT_BINDING = [{
+  name: "ON_AGENT_OUTPUT" as const,
+  inputSchema: outputBindingSchema,
+  outputSchema: z.any(),
+}] as const;
+
 export interface TriggerHooks<TData extends TriggerData = TriggerData> {
   type: TData["type"];
   onCreated?(data: TData, trigger: Trigger): Promise<void>;
@@ -97,14 +91,12 @@ export interface TriggerMetadata {
 }
 
 function mapTriggerToTriggerData(
-  trigger: Awaited<
-    ReturnType<MCPClientStub<WorkspaceTools>["TRIGGERS_GET"]>
+  trigger: NonNullable<
+    Awaited<
+      ReturnType<MCPClientStub<WorkspaceTools>["TRIGGERS_GET"]>
+    >
   >,
-): TriggerData | null {
-  if (!trigger) {
-    return null;
-  }
-
+): TriggerData {
   return {
     id: trigger.id,
     resourceId: trigger.user.id,
@@ -121,10 +113,32 @@ function mapTriggerToTriggerData(
   } as TriggerData;
 }
 
+export interface InvokePayload {
+  args: unknown[];
+  metadata?: Record<string, unknown>;
+}
+const buildInvokeUrl = (
+  url: URL,
+  method: keyof Trigger,
+  payload?: InvokePayload,
+) => {
+  const stream = new URL(url);
+  stream.pathname = `/actors/${Trigger.name}/invoke/${method}`;
+  if (payload) {
+    stream.searchParams.set(
+      "args",
+      encodeURIComponent(JSON.stringify(payload)),
+    );
+  }
+  return stream;
+};
+
 @Actor()
 export class Trigger {
   public metadata?: TriggerMetadata;
   public mcpClient: MCPClientStub<WorkspaceTools>;
+  public inputBinding?: MCPClientFetchStub<typeof INPUT_BINDING>;
+  public outputBinding?: MCPClientFetchStub<typeof OUTPUT_BINDING>;
 
   protected data: TriggerData | null = null;
   public agentId: string;
@@ -175,6 +189,19 @@ export class Trigger {
     });
   }
 
+  public callbacks(
+    payload?: InvokePayload,
+  ): Callbacks {
+    if (!this.metadata?.reqUrl) {
+      throw new Error("Trigger does not have a reqUrl");
+    }
+    const url = new URL(this.metadata.reqUrl);
+    return {
+      stream: buildInvokeUrl(url, "stream", payload).href,
+      generate: buildInvokeUrl(url, "generate", payload).href,
+      generateObject: buildInvokeUrl(url, "generateObject", payload).href,
+    };
+  }
   private async loadData(): Promise<TriggerData | null> {
     const triggerData = await this.mcpClient.TRIGGERS_GET({
       id: this.getTriggerId(),
@@ -184,7 +211,19 @@ export class Trigger {
       return null;
     }
 
-    return mapTriggerToTriggerData(triggerData);
+    const trigger = mapTriggerToTriggerData(triggerData);
+    if (trigger.binding) {
+      if (trigger.type === "webhook") {
+        this.inputBinding = mcpBinding(INPUT_BINDING).forConnection(
+          trigger.binding.connection,
+        );
+      } else {
+        this.outputBinding = mcpBinding(OUTPUT_BINDING).forConnection(
+          trigger.binding.connection,
+        );
+      }
+    }
+    return trigger;
   }
 
   enrichMetadata(metadata: TriggerMetadata, req: Request): TriggerMetadata {
@@ -252,6 +291,36 @@ export class Trigger {
 
   async alarm() {
     await this.run();
+  }
+
+  assertsValidInvoke() {
+    if (!this.data) {
+      throw new Error("Trigger does not have a data");
+    }
+    if (!("passphrase" in this.data)) {
+      throw new Error("Trigger does not have a passphrase");
+    }
+    if (this.data.passphrase !== this.metadata?.passphrase) {
+      throw new Error("Invalid passphrase");
+    }
+  }
+
+  generateObject(...args: Parameters<AIAgent["generateObject"]>) {
+    this.assertsValidInvoke();
+    const stub = this.state.stub(AIAgent).new(this.agentId);
+    return stub.generateObject(...args);
+  }
+
+  stream(...args: Parameters<AIAgent["stream"]>) {
+    this.assertsValidInvoke();
+    const stub = this.state.stub(AIAgent).new(this.agentId);
+    return stub.stream(...args);
+  }
+
+  generate(...args: Parameters<AIAgent["generate"]>) {
+    this.assertsValidInvoke();
+    const stub = this.state.stub(AIAgent).new(this.agentId);
+    return stub.generate(...args);
   }
 
   async create(data: TriggerData) {

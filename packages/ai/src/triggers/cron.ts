@@ -1,7 +1,7 @@
 import { Cron } from "croner";
 import { AIAgent } from "../agent.ts";
-import type { TriggerHooks } from "./trigger.ts";
 import type { TriggerData } from "./services.ts";
+import type { TriggerHooks } from "./trigger.ts";
 
 export const hooks: TriggerHooks<TriggerData & { type: "cron" }> = {
   type: "cron",
@@ -32,17 +32,32 @@ export const hooks: TriggerHooks<TriggerData & { type: "cron" }> = {
       ? crypto.randomUUID()
       : undefined;
     const threadId = data.prompt.threadId ?? defaultThreadId;
-    const agent = trigger.state.stub(AIAgent).new(trigger.agentId)
-      .withMetadata({
+
+    const messages = data.prompt.messages.map((message) => ({
+      ...message,
+      id: crypto.randomUUID(),
+    }));
+
+    let response: unknown;
+
+    if (trigger.outputBinding) {
+      const args = [messages, {
         threadId,
         resourceId: data.id,
+      }];
+      response = await trigger.outputBinding.ON_AGENT_OUTPUT({
+        callbacks: trigger.callbacks({ args }),
       });
-    const response = await agent.generate(
-      data.prompt.messages.map((message) => ({
-        ...message,
-        id: crypto.randomUUID(),
-      })),
-    );
+    } else {
+      const agent = trigger.state.stub(AIAgent).new(trigger.agentId)
+        .withMetadata({
+          threadId,
+          resourceId: data.id,
+        });
+      response = await agent.generate(
+        messages,
+      );
+    }
     const cron = new Cron(data.cronExp);
     const dt = cron.nextRun();
     if (dt) {

@@ -89,6 +89,16 @@ export type ToolLike<
   TReturn extends object | null | boolean = object,
 > = Tool<TName, TInput, TReturn>;
 
+export type ToolBinder<
+  TName extends string = string,
+  // deno-lint-ignore no-explicit-any
+  TInput = any,
+  TReturn extends object | null | boolean = object,
+> = Pick<
+  ToolLike<TName, TInput, TReturn>,
+  "name" | "inputSchema" | "outputSchema"
+>;
+
 const global = createMCPToolsStub({
   tools: GLOBAL_TOOLS,
 });

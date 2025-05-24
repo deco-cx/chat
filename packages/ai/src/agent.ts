@@ -129,6 +129,11 @@ const removeNonSerializableFields = (obj: any) => {
   return newObj;
 };
 
+interface ThreadLocator {
+  threadId: string;
+  resourceId: string;
+}
+
 @Actor()
 export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
   private _agent?: Agent;
@@ -355,8 +360,10 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     };
   }
 
-  public async getThreadTools(): Promise<Configuration["tools_set"]> {
-    const thread = await this.memory.getThreadById(this.thread)
+  public async getThreadTools(
+    threadLocator = this.thread,
+  ): Promise<Configuration["tools_set"]> {
+    const thread = await this.memory.getThreadById(threadLocator)
       .catch(() => null);
 
     if (!thread) {
@@ -650,7 +657,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     return new AgentMemory(this.agentMemoryConfig);
   }
 
-  public get thread(): { threadId: string; resourceId: string } {
+  public get thread(): ThreadLocator {
     const threadId = this.metadata?.threadId ?? this.memory.generateId(); // private thread with the given resource
     return {
       threadId,
@@ -738,9 +745,10 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
   private async withToolOverrides(
     restrictedTools?: Record<string, string[]>,
     timings?: ServerTimingsBuilder,
+    thread = this.thread,
   ): Promise<ToolsetsInput> {
     const getThreadToolsTiming = timings?.start("get-thread-tools");
-    const tool_set = await this.getThreadTools();
+    const tool_set = await this.getThreadTools(thread);
     getThreadToolsTiming?.end();
     const pickCallableToolsTiming = timings?.start("pick-callable-tools");
     const toolsets = await this.pickCallableTools(tool_set, timings);
@@ -810,8 +818,12 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     options?: StreamOptions,
   ): Promise<Response> {
     const tracer = trace.getTracer("stream-tracer");
-
     const timings = this.metadata?.timings ?? createServerTimings();
+
+    const thread = {
+      threadId: options?.threadId ?? this.thread.threadId,
+      resourceId: options?.resourceId ?? this.thread.resourceId,
+    };
 
     /*
      * Additional context from the payload, through annotations (converting to a CoreMessage-like object)
@@ -829,7 +841,11 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
         : []
     );
 
-    const toolsets = await this.withToolOverrides(options?.tools, timings);
+    const toolsets = await this.withToolOverrides(
+      options?.tools,
+      timings,
+      thread,
+    );
     const agentOverridesTiming = timings.start("agent-overrides");
     const agent = this.withAgentOverrides(options);
     agentOverridesTiming.end();
@@ -852,7 +868,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
         "agent.id": this.state.id,
         model: options?.model ?? this._configuration?.model ??
           DEFAULT_MODEL,
-        "thread.id": this.thread.threadId,
+        "thread.id": thread.threadId,
         "openrouter.bypass": `${options?.bypassOpenRouter ?? false}`,
       },
     });
@@ -880,7 +896,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     );
 
     const response = await agent.stream(payload, {
-      ...this.thread,
+      ...thread,
       context,
       toolsets,
       instructions: options?.instructions,
@@ -916,7 +932,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
           wallet.computeLLMUsage({
             userId,
             usage: result.usage,
-            threadId: this.thread.threadId,
+            threadId: thread.threadId,
             model: this._configuration?.model ?? DEFAULT_MODEL,
             agentName: this._configuration?.name ?? ANONYMOUS_NAME,
           });
