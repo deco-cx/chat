@@ -1,10 +1,10 @@
 import { AIAgent } from "../agent.ts";
 import type { Message, StreamOptions } from "../types.ts";
-import { getWorkspaceFromAgentId } from "../utils/workspace.ts";
-import { handleOutputTool } from "./outputTool.ts";
 import type { TriggerData } from "./services.ts";
 import { threadOf } from "./tools.ts";
-import { type TriggerHooks } from "./trigger.ts";
+import type { TriggerHooks } from "./trigger.ts";
+import { handleOutputTool } from "./outputTool.ts";
+import { getWorkspaceFromAgentId } from "../utils/workspace.ts";
 
 export interface WebhookArgs {
   threadId?: string;
@@ -40,16 +40,10 @@ export const hooks: TriggerHooks<TriggerData & { type: "webhook" }> = {
         error: "Invalid passphrase",
       };
     }
+
     const url = trigger.metadata?.reqUrl
       ? new URL(trigger.metadata.reqUrl)
       : undefined;
-    const inputBinding = trigger.inputBinding;
-    if (inputBinding) {
-      return await inputBinding.ON_AGENT_INPUT({
-        callbacks: trigger.callbacks(),
-        payload: args,
-      });
-    }
 
     const useStream = url?.searchParams.get("stream") === "true";
     const options: StreamOptions = {};

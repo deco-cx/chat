@@ -1,7 +1,7 @@
 import { Cron } from "croner";
 import { AIAgent } from "../agent.ts";
-import type { TriggerData } from "./services.ts";
 import type { TriggerHooks } from "./trigger.ts";
+import type { TriggerData } from "./services.ts";
 
 export const hooks: TriggerHooks<TriggerData & { type: "cron" }> = {
   type: "cron",
@@ -33,35 +33,32 @@ export const hooks: TriggerHooks<TriggerData & { type: "cron" }> = {
       ? crypto.randomUUID()
       : undefined;
     const threadId = data.prompt.threadId ?? defaultThreadId;
-
-    const messages = data.prompt.messages.map((message) => ({
-      ...message,
-      id: crypto.randomUUID(),
-    }));
-
-    let response: unknown;
-
-    if (trigger.outputBinding) {
-      const args = [messages, {
+    console.log("[CRON] threadId", threadId);
+    const agent = trigger.state.stub(AIAgent).new(trigger.agentId)
+      .withMetadata({
         threadId,
         resourceId: data.id,
-      }];
-      response = await trigger.outputBinding.ON_AGENT_OUTPUT({
-        callbacks: trigger.callbacks({ args }),
       });
-    } else {
-      const agent = trigger.state.stub(AIAgent).new(trigger.agentId)
-        .withMetadata({
-          threadId,
-          resourceId: data.id,
-        });
-      response = await agent.generate(
-        messages,
-      );
-    }
+    console.log("[CRON] agent", JSON.stringify(agent, null, 2));
+    const response = await agent.generate(
+      data.prompt.messages.map((message) => ({
+        ...message,
+        id: crypto.randomUUID(),
+      })),
+    ).catch((error) => {
+      console.log("[CRON] error", JSON.stringify(error, null, 2));
+      return {
+        success: false,
+        message: "Error generating response",
+      };
+    });
+    console.log("[CRON] response", JSON.stringify(response, null, 2));
     const cron = new Cron(data.cronExp);
+    console.log("[CRON] cron", JSON.stringify(cron, null, 2));
     const dt = cron.nextRun();
+    console.log("[CRON] dt", JSON.stringify(dt, null, 2));
     if (dt) {
+      console.log("[CRON] setAlarm", dt.getTime());
       await trigger.state.storage.setAlarm(dt.getTime());
     }
     return response;

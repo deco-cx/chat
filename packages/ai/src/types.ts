@@ -53,8 +53,6 @@ export interface GenerateOptions {
   tools?: Record<string, string[]>;
   lastMessages?: number;
   bypassOpenRouter?: boolean;
-  threadId?: string;
-  resourceId?: string;
 }
 
 export interface StreamOptions extends GenerateOptions {

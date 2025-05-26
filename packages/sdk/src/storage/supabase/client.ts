@@ -1,7 +1,3 @@
-import {
-  PostgrestFilterBuilder,
-  UnstableGetResult as GetResult,
-} from "@supabase/postgrest-js";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "./schema.ts";
 
@@ -40,24 +36,3 @@ export const getServerClient = (
 
   return client;
 };
-
-export type QueryResult<
-  TableName extends keyof Database["public"]["Tables"],
-  Query extends string,
-> = NonNullable<
-  Awaited<
-    PostgrestFilterBuilder<
-      Database["public"],
-      Database["public"]["Tables"][TableName]["Row"],
-      GetResult<
-        Database["public"],
-        Database["public"]["Tables"][TableName]["Row"],
-        TableName,
-        Database["public"]["Tables"][TableName]["Relationships"],
-        Query
-      >,
-      TableName,
-      Database["public"]["Tables"][TableName]["Relationships"]
-    >
-  >["data"]
->;

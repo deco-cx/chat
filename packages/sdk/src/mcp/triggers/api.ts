@@ -8,7 +8,6 @@ import {
 } from "../../errors.ts";
 import { Hosts } from "../../hosts.ts";
 import { AgentSchema } from "../../models/agent.ts";
-import { IntegrationSchema } from "../../models/mcp.ts";
 import {
   CreateCronTriggerInputSchema,
   CreateTriggerOutputSchema,
@@ -19,21 +18,17 @@ import {
   TriggerSchema,
 } from "../../models/trigger.ts";
 import { Path } from "../../path.ts";
-import { Json, QueryResult } from "../../storage/index.ts";
+import { Database, Json } from "../../storage/index.ts";
 import { getAgentsByIds } from "../agents/api.ts";
 import {
   assertHasWorkspace,
   canAccessWorkspaceResource,
 } from "../assertions.ts";
 import { createTool } from "../context.ts";
-import { convertFromDatabase, parseId } from "../integrations/api.ts";
 import { userFromDatabase } from "../user.ts";
 
 const SELECT_TRIGGER_QUERY = `
   *,
-  binding:deco_chat_integrations(
-    *
-  ),
   profile:profiles(
     metadata:users_meta_data_view(
       raw_user_meta_data
@@ -42,7 +37,7 @@ const SELECT_TRIGGER_QUERY = `
 `;
 
 function mapTrigger(
-  trigger: QueryResult<"deco_chat_triggers", typeof SELECT_TRIGGER_QUERY>,
+  trigger: Database["public"]["Tables"]["deco_chat_triggers"]["Row"],
   agentsById: Record<string, z.infer<typeof AgentSchema>>,
 ) {
   return {
@@ -63,7 +58,6 @@ function mapTrigger(
     workspace: trigger.workspace,
     active: trigger.active,
     data: trigger.metadata as z.infer<typeof TriggerSchema>,
-    binding: trigger.binding ? convertFromDatabase(trigger.binding) : null,
   };
 }
 
@@ -205,7 +199,6 @@ export const upsertTrigger = createTool({
         resourceId: userId,
       },
     );
-    const bindingId = data.bindingId ? parseId(data.bindingId).uuid : undefined;
 
     // Update database
     const { data: trigger, error } = await db.from("deco_chat_triggers")
@@ -214,7 +207,6 @@ export const upsertTrigger = createTool({
         workspace,
         agent_id: agentId,
         user_id: userId,
-        binding_id: bindingId,
         metadata: data as Json,
         whatsapp_enabled:
           (data as z.infer<typeof TriggerSchema> & { whatsappEnabled: boolean })
@@ -296,7 +288,6 @@ export const createCronTrigger = createTool({
     { agentId, data },
     _c,
   ): Promise<z.infer<typeof CreateTriggerOutputSchema>> => {
-    agentId ??= crypto.randomUUID();
     const result = await upsertTrigger.handler({ agentId, data });
     if (result.isError) {
       throw result.structuredContent;
@@ -319,7 +310,6 @@ export const createWebhookTrigger = createTool({
     { agentId, data },
     _c,
   ): Promise<z.infer<typeof CreateTriggerOutputSchema>> => {
-    agentId ??= crypto.randomUUID();
     const result = await upsertTrigger.handler({ agentId, data });
     if (result.isError) {
       throw result.structuredContent;
@@ -357,10 +347,6 @@ export const deleteTrigger = createTool({
     if (error) {
       throw new InternalServerError(error.message);
     }
-    return {
-      triggerId,
-      agentId,
-    };
   },
 });
 
@@ -405,13 +391,7 @@ export const getTrigger = createTool({
   handler: async (
     { id: triggerId },
     c,
-  ): Promise<
-    z.infer<
-      typeof CreateTriggerOutputSchema
-    > & {
-      binding: z.infer<typeof IntegrationSchema> | null;
-    }
-  > => {
+  ): Promise<z.infer<typeof CreateTriggerOutputSchema> | null> => {
     assertHasWorkspace(c);
     const db = c.db;
     const workspace = c.workspace.value;
@@ -427,7 +407,7 @@ export const getTrigger = createTool({
     }
 
     if (!trigger) {
-      throw new NotFoundError("Trigger not found");
+      return null;
     }
 
     const agents = await getAgentsByIds([trigger.agent_id], c);

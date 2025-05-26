@@ -1,12 +1,24 @@
+import { Input } from "@deco/ui/components/input.tsx";
+import { Textarea } from "@deco/ui/components/textarea.tsx";
+import { Label } from "@deco/ui/components/label.tsx";
+import { Button } from "@deco/ui/components/button.tsx";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@deco/ui/components/select.tsx";
+import { useState } from "react";
 import {
   CronTriggerSchema,
   TriggerOutputSchema,
   useCreateTrigger,
-  useIntegrations,
   useUpdateTrigger,
 } from "@deco/sdk";
-import { TRIGGER_OUTPUT_BINDING_SCHEMA } from "@deco/sdk/mcp/bindings";
-import { Button } from "@deco/ui/components/button.tsx";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { z } from "zod";
 import {
   Form,
   FormControl,
@@ -15,23 +27,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@deco/ui/components/form.tsx";
-import { Icon } from "@deco/ui/components/icon.tsx";
-import { Input } from "@deco/ui/components/input.tsx";
-import { Label } from "@deco/ui/components/label.tsx";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@deco/ui/components/select.tsx";
-import { Textarea } from "@deco/ui/components/textarea.tsx";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import type { z } from "zod";
-import { IntegrationIcon } from "../integrations/list/common.tsx";
-import { BindingSelector } from "../toolsets/binding-selector.tsx";
 
 const cronPresets = [
   { label: "Every hour", value: "0 * * * *" },
@@ -181,10 +176,7 @@ export function CronTriggerForm({ agentId, onSuccess, initialValues }: {
     ? initialValues.data as CronTriggerData
     : undefined;
 
-  const [open, setOpen] = useState(false);
-  const { data: integrations = [] } = useIntegrations();
-
-  const form = useForm<CronTriggerFormType & { bindingId?: string }>({
+  const form = useForm<CronTriggerFormType>({
     resolver: zodResolver(CronTriggerSchema),
     defaultValues: {
       title: initialValues?.data.title || "",
@@ -192,18 +184,10 @@ export function CronTriggerForm({ agentId, onSuccess, initialValues }: {
       cronExp: cronData?.cronExp || cronPresets[0].value,
       prompt: cronData?.prompt || { messages: [{ role: "user", content: "" }] },
       type: "cron",
-      bindingId: initialValues?.data.bindingId || "",
     },
   });
 
-  const selected = useMemo(() => {
-    const bindingId = form.watch("bindingId");
-    if (!bindingId) return null;
-    const integration = integrations.find((i) => i.id === bindingId);
-    return integration ? { integration } : null;
-  }, [form.watch("bindingId"), integrations]);
-
-  const onSubmit = (data: CronTriggerFormType & { bindingId?: string }) => {
+  const onSubmit = (data: CronTriggerFormType) => {
     if (!data.prompt?.messages?.[0]?.content?.trim()) {
       form.setError("prompt", { message: "Prompt is required" });
       return;
@@ -214,24 +198,22 @@ export function CronTriggerForm({ agentId, onSuccess, initialValues }: {
       });
       return;
     }
-    const triggerPayload = {
-      title: data.title,
-      description: data.description || undefined,
-      cronExp: data.cronExp,
-      prompt: {
-        messages: [{
-          role: "user" as const,
-          content: data.prompt.messages[0].content,
-        }],
-      },
-      type: "cron" as const,
-      bindingId: data.bindingId || undefined,
-    };
     if (initialValues) {
       updateTrigger(
         {
           triggerId: initialValues.id,
-          trigger: triggerPayload,
+          trigger: {
+            title: data.title,
+            description: data.description || undefined,
+            cronExp: data.cronExp,
+            prompt: {
+              messages: [{
+                role: "user",
+                content: data.prompt.messages[0].content,
+              }],
+            },
+            type: "cron",
+          },
         },
         {
           onSuccess: () => {
@@ -247,7 +229,18 @@ export function CronTriggerForm({ agentId, onSuccess, initialValues }: {
       );
     } else {
       createTrigger(
-        triggerPayload,
+        {
+          title: data.title,
+          description: data.description || undefined,
+          cronExp: data.cronExp,
+          prompt: {
+            messages: [{
+              role: "user",
+              content: data.prompt.messages[0].content,
+            }],
+          },
+          type: "cron",
+        },
         {
           onSuccess: () => {
             form.reset();
@@ -345,74 +338,6 @@ export function CronTriggerForm({ agentId, onSuccess, initialValues }: {
                   required
                 />
               </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="bindingId"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex flex-col gap-1 px-1 justify-between">
-                <FormLabel>Binding</FormLabel>
-                <span className="text-xs text-slate-400">
-                  When selected, this cron trigger will use the selected binding
-                </span>
-              </div>
-              <div className="flex gap-2 items-center">
-                <FormControl>
-                  <div>
-                    {field.value || open
-                      ? (
-                        <BindingSelector
-                          open={open}
-                          onOpenChange={setOpen}
-                          onIntegrationSelected={field.onChange}
-                          initialSelectedIntegration={field.value || null}
-                          binder={TRIGGER_OUTPUT_BINDING_SCHEMA}
-                        />
-                      )
-                      : (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full justify-between truncate"
-                          onClick={() => setOpen(true)}
-                        >
-                          <span className="text-slate-400">
-                            Select a binding...
-                          </span>
-                          <Icon
-                            name="expand_more"
-                            size={18}
-                            className="ml-2 text-slate-400"
-                          />
-                        </Button>
-                      )}
-                  </div>
-                </FormControl>
-                {field.value && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="flex items-center gap-2 px-2 py-1 h-auto"
-                    onClick={() => field.onChange("")}
-                  >
-                    <Icon name="close" size={12} className="text-slate-400" />
-                    <span className="flex items-center gap-2">
-                      <IntegrationIcon
-                        icon={selected?.integration.icon}
-                        name={selected?.integration.name || ""}
-                        className="h-8 w-8"
-                      />
-                      <span className="truncate overflow-hidden whitespace-nowrap max-w-[350px]">
-                        {selected?.integration.name}
-                      </span>
-                    </span>
-                  </Button>
-                )}
-              </div>
               <FormMessage />
             </FormItem>
           )}

@@ -185,7 +185,7 @@ export const createTempAgent = createTool({
       throw new InternalServerError(error.message);
     }
 
-    return data || { agent_id: agentId, user_id: userId };
+    return data;
   },
 });
 
@@ -239,7 +239,7 @@ export const deleteAgent = createTool({
       throw new InternalServerError(error.message);
     }
 
-    return { deleted: true };
+    return true;
   },
 });
 
@@ -256,13 +256,8 @@ export const getTempAgent = createTool({
       .select("agent_id")
       .eq("user_id", userId)
       .maybeSingle();
-
     if (error) {
       throw new InternalServerError(error.message);
-    }
-
-    if (!data) {
-      throw new NotFoundError("Temp agent not found");
     }
 
     return data;

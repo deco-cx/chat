@@ -2,11 +2,10 @@ import { Input } from "@deco/ui/components/input.tsx";
 import { Textarea } from "@deco/ui/components/textarea.tsx";
 import { Button } from "@deco/ui/components/button.tsx";
 import Ajv from "ajv";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   TriggerOutputSchema,
   useCreateTrigger,
-  useIntegrations,
   useUpdateTrigger,
   WebhookTriggerSchema,
 } from "@deco/sdk";
@@ -23,9 +22,6 @@ import {
 } from "@deco/ui/components/form.tsx";
 import { SingleToolSelector } from "../toolsets/single-selector.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
-import { BindingSelector } from "../toolsets/binding-selector.tsx";
-import { TRIGGER_INPUT_BINDING_SCHEMA } from "@deco/sdk/mcp/bindings";
-import { IntegrationIcon } from "../integrations/list/common.tsx";
 
 function JsonSchemaInput({ value, onChange }: {
   value: string | undefined;
@@ -114,8 +110,6 @@ export function WebhookTriggerForm({
   const { mutate: createTrigger, isPending: isCreating } = useCreateTrigger(
     agentId,
   );
-  const [open, setOpen] = useState(false);
-
   const { mutate: updateTrigger, isPending: isUpdating } = useUpdateTrigger(
     agentId,
   );
@@ -129,7 +123,6 @@ export function WebhookTriggerForm({
   const form = useForm<WebhookTriggerFormType>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      bindingId: initialValues?.data.bindingId || "",
       title: initialValues?.data.title || "",
       description: initialValues?.data.description || "",
       passphrase: webhookData?.passphrase || "",
@@ -168,7 +161,6 @@ export function WebhookTriggerForm({
             passphrase: data.passphrase || undefined,
             schema: schemaObj as Record<string, unknown> | undefined,
             outputTool: data.outputTool || undefined,
-            bindingId: data.bindingId,
           },
         },
         {
@@ -192,7 +184,6 @@ export function WebhookTriggerForm({
           passphrase: data.passphrase || undefined,
           schema: schemaObj as Record<string, unknown> | undefined,
           outputTool: data.outputTool || undefined,
-          bindingId: data.bindingId,
         },
         {
           onSuccess: () => {
@@ -208,15 +199,6 @@ export function WebhookTriggerForm({
       );
     }
   };
-
-  const { data: integrations = [] } = useIntegrations();
-
-  const selected = useMemo(() => {
-    const bindingId = form.watch("bindingId");
-    if (!bindingId) return null;
-    const integration = integrations.find((i) => i.id === bindingId);
-    return integration ? { integration } : null;
-  }, [form.watch("bindingId"), integrations]);
 
   return (
     <Form {...form}>
@@ -301,75 +283,6 @@ export function WebhookTriggerForm({
         />
         <FormField
           control={form.control}
-          name="bindingId"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex flex-col gap-1 px-1 justify-between">
-                <FormLabel>Binding</FormLabel>
-                <span className="text-xs text-slate-400">
-                  When selected, this webhook trigger will use the selected
-                  binding
-                </span>
-              </div>
-              <div className="flex gap-2 items-center">
-                <FormControl>
-                  <div>
-                    {field.value || open
-                      ? (
-                        <BindingSelector
-                          open={open}
-                          onOpenChange={setOpen}
-                          onIntegrationSelected={field.onChange}
-                          initialSelectedIntegration={field.value || null}
-                          binder={TRIGGER_INPUT_BINDING_SCHEMA}
-                        />
-                      )
-                      : (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full justify-between truncate"
-                          onClick={() => setOpen(true)}
-                        >
-                          <span className="text-slate-400">
-                            Select a binding...
-                          </span>
-                          <Icon
-                            name="expand_more"
-                            size={18}
-                            className="ml-2 text-slate-400"
-                          />
-                        </Button>
-                      )}
-                  </div>
-                </FormControl>
-                {field.value && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="flex items-center gap-2 px-2 py-1 h-auto"
-                    onClick={() => field.onChange("")}
-                  >
-                    <Icon name="close" size={12} className="text-slate-400" />
-                    <span className="flex items-center gap-2">
-                      <IntegrationIcon
-                        icon={selected?.integration.icon}
-                        name={selected?.integration.name || ""}
-                        className="h-8 w-8"
-                      />
-                      <span className="truncate overflow-hidden whitespace-nowrap max-w-[350px]">
-                        {selected?.integration.name}
-                      </span>
-                    </span>
-                  </Button>
-                )}
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
           name="outputTool"
           render={({ field }) => (
             <FormItem>
@@ -382,24 +295,20 @@ export function WebhookTriggerForm({
               </div>
               <div className="flex gap-2 items-center">
                 <FormControl>
-                  <div>
-                    <SingleToolSelector
-                      value={field.value || null}
-                      onChange={field.onChange}
-                    />
-                  </div>
+                  <SingleToolSelector
+                    value={field.value || null}
+                    onChange={field.onChange}
+                  />
                 </FormControl>
                 {field.value && (
                   <Button
                     type="button"
                     variant="ghost"
-                    className="flex items-center gap-2 px-2 py-1 h-auto"
+                    size="icon"
+                    className="p-1"
                     onClick={() => field.onChange("")}
                   >
                     <Icon name="close" size={12} className="text-slate-400" />
-                    <span className="truncate overflow-hidden whitespace-nowrap max-w-[350px]">
-                      {field.value}
-                    </span>
                   </Button>
                 )}
               </div>
