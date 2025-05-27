@@ -4,7 +4,6 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect } from "react";
 import { Markdown } from "tiptap-markdown";
-import { NoNewLine } from "./extensions/NoNewLine.ts";
 
 export interface Mention {
   id: string;
@@ -46,7 +45,6 @@ export function RichTextArea({
       Markdown.configure({
         html: true,
       }),
-      NoNewLine,
       Placeholder.configure({
         placeholder: placeholder ?? "Type a message...",
       }),

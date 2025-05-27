@@ -33,6 +33,7 @@ import { useChatContext } from "./context.tsx";
 import { ModelSelector } from "./ModelSelector.tsx";
 import { RichTextArea } from "./RichText.tsx";
 import ToolsButton from "./ToolsButton.tsx";
+import { useIsMobile } from "@deco/ui/hooks/use-mobile.ts";
 
 export function ChatInput() {
   return (
@@ -131,6 +132,8 @@ ChatInput.UI = (
   const { preferences, setPreferences } = useUserPreferences();
   const model = preferences.defaultModel;
 
+  const isMobile = useIsMobile();
+
   const selectedModel = MODELS.find((m) => m.id === model) || MODELS[0];
 
   const getAcceptedFileTypes = () => {
@@ -164,8 +167,8 @@ ChatInput.UI = (
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter") {
-      if (e.shiftKey) {
-        return; // Allow new lines with Shift+Enter
+      if (e.shiftKey || isMobile) {
+        return;
       }
 
       if (!isLoading && (input.trim() || uploadedFiles.length > 0)) {
