@@ -116,3 +116,17 @@ export const removeTeamMember = (
 export const registerActivity = (teamId: number) => {
   MCPClient.TEAM_MEMBER_ACTIVITY_REGISTER({ teamId });
 };
+
+/**
+ * Auto-join team for @deco.cx users
+ * @param teamSlug - The slug of the team to join
+ * @returns Success status and team info
+ */
+export const autoJoinTeamForDecoUsers = (
+  teamSlug: string,
+): Promise<{
+  success: boolean;
+  message: string;
+  teamId: number;
+  teamSlug: string;
+}> => MCPClient.TEAM_AUTO_JOIN_DECO({ teamSlug });

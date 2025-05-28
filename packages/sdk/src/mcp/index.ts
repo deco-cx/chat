@@ -35,6 +35,7 @@ export const GLOBAL_TOOLS = [
   membersAPI.acceptInvite,
   membersAPI.inviteTeamMembers,
   membersAPI.teamRolesList,
+  membersAPI.autoJoinTeamForDecoUsers,
   profilesAPI.getProfile,
   profilesAPI.updateProfile,
   integrationsAPI.callTool,

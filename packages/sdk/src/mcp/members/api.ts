@@ -683,3 +683,116 @@ export const teamRolesList = createTool({
     return data;
   },
 });
+
+export const autoJoinTeamForDecoUsers = createTool({
+  name: "TEAM_AUTO_JOIN_DECO",
+  description: "Auto-join team for @deco.cx users",
+  inputSchema: z.object({
+    teamSlug: z.string(),
+  }),
+  canAccess: bypass,
+  handler: async (props, c) => {
+    assertPrincipalIsUser(c);
+    const { teamSlug } = props;
+    const user = c.user;
+    const db = c.db;
+
+    // Check if user has @deco.cx email
+    if (!user.email?.endsWith("@deco.cx")) {
+      throw new UserInputError("Only @deco.cx users can auto-join teams");
+    }
+
+    // Get team by slug
+    const { data: teamData, error: teamError } = await db
+      .from("teams")
+      .select("id, name")
+      .eq("slug", teamSlug)
+      .single();
+
+    if (teamError || !teamData) {
+      throw new NotFoundError("Team not found");
+    }
+
+    const teamId = teamData.id;
+
+    // Check if user is already a member
+    const { data: existingMember } = await db
+      .from("members")
+      .select("id, deleted_at")
+      .eq("team_id", teamId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (existingMember && !existingMember.deleted_at) {
+      // User is already an active member
+      return { success: true, message: "Already a member" };
+    }
+
+    // Add user to team or reactivate membership
+    if (existingMember && existingMember.deleted_at) {
+      // Reactivate existing membership
+      const { error: reactivateError } = await db
+        .from("members")
+        .update({ deleted_at: null })
+        .eq("id", existingMember.id);
+
+      if (reactivateError) {
+        throw new InternalServerError("Failed to reactivate membership");
+      }
+    } else {
+      // Create new membership
+      const { error: insertError } = await db
+        .from("members")
+        .insert({
+          team_id: teamId,
+          user_id: user.id,
+          deleted_at: null,
+        });
+
+      if (insertError) {
+        throw new InternalServerError("Failed to add user to team");
+      }
+    }
+
+    // Get default member role (not owner)
+    const { data: defaultRole } = await db
+      .from("roles")
+      .select("id")
+      .eq("name", "member")
+      .is("team_id", null)
+      .single();
+
+    // Assign default member role
+    if (defaultRole) {
+      const { data: memberData } = await db
+        .from("members")
+        .select("id")
+        .eq("team_id", teamId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (memberData) {
+        await db
+          .from("member_roles")
+          .insert({
+            member_id: memberData.id,
+            role_id: defaultRole.id,
+          });
+      }
+    }
+
+    // Update activity log
+    await updateActivityLog(c, {
+      action: "add_member",
+      userId: user.id,
+      teamId: teamId,
+    });
+
+    return { 
+      success: true, 
+      message: `Successfully joined team ${teamData.name}`,
+      teamId: teamId,
+      teamSlug: teamSlug
+    };
+  },
+});

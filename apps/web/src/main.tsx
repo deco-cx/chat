@@ -16,6 +16,7 @@ import {
   useRouteError,
 } from "react-router";
 import { EmptyState } from "./components/common/EmptyState.tsx";
+import { AccessDeniedWithJoinOption } from "./components/common/AccessDeniedWithJoinOption.tsx";
 
 type LazyComp<P> = Promise<{
   default: React.ComponentType<P>;
@@ -152,7 +153,7 @@ function ErrorFallback() {
 
   if (error instanceof ForbiddenError) {
     return (
-      <EmptyState
+      <AccessDeniedWithJoinOption
         icon="report"
         title="Access Denied"
         description={
