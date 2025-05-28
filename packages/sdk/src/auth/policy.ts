@@ -1,5 +1,7 @@
-import type { Client } from "@deco/sdk/storage";
+import type { Client, Json } from "@deco/sdk/storage";
 import { WebCache } from "../cache/index.ts";
+import { UserPrincipal } from "../mcp/index.ts";
+import { z } from "zod";
 
 // Cache duration in seconds (WebCache expects seconds)
 const TWO_MIN_TTL = 60 * 2;
@@ -14,10 +16,15 @@ export const BASE_ROLES_ID = {
 
 const BLOCKED_ROLES = new Set([BASE_ROLES_ID.PUBLISHER]);
 
+type MatchFunctionsManifest = typeof MatcherFunctions;
+type MatchCondition<
+  FnR extends keyof MatchFunctionsManifest = keyof MatchFunctionsManifest,
+> = { resource: FnR } & z.infer<MatchFunctionsManifest[FnR]["schema"]>;
+
 // Typed interfaces
 export interface Statement {
-  effect: "allow" | "deny";
   resource: string;
+  matchCondition?: MatchCondition;
 }
 
 export interface Policy {
@@ -59,6 +66,7 @@ export class PolicyClient {
   private userPolicyCache: WebCache<Pick<Policy, "statements">[]>;
   private userRolesCache: WebCache<MemberRole[]>;
   private teamRolesCache: WebCache<Role[]>;
+  private teamPoliciesCache: WebCache<Pick<Policy, "statements" | "name">[]>;
   private teamSlugCache: WebCache<number>;
 
   private constructor() {
@@ -69,6 +77,12 @@ export class PolicyClient {
     );
     this.userRolesCache = new WebCache<MemberRole[]>("user-roles", TWO_MIN_TTL);
     this.teamRolesCache = new WebCache<Role[]>("team-role", TWO_MIN_TTL);
+    this.teamPoliciesCache = new WebCache<
+      Pick<Policy, "statements" | "name">[]
+    >(
+      "team-policies",
+      TWO_MIN_TTL,
+    );
     this.teamSlugCache = new WebCache<number>("team-slug", TWO_MIN_TTL);
   }
 
@@ -146,9 +160,7 @@ export class PolicyClient {
     userId: string,
     teamIdOrSlug: number | string,
   ): Promise<Pick<Policy, "statements">[]> {
-    if (!this.db) {
-      throw new Error("PolicyClient not initialized with database client");
-    }
+    this.assertDb(this.db);
 
     const teamId = typeof teamIdOrSlug === "number"
       ? teamIdOrSlug
@@ -161,9 +173,12 @@ export class PolicyClient {
     const cacheKey = this.getUserPoliceCacheKey(userId, teamId);
 
     // Try to get from cache first
-    const cachedPolicies = await this.userPolicyCache.get(cacheKey);
+    const [cachedPolicies, teamPolicies] = await Promise.all([
+      this.userPolicyCache.get(cacheKey),
+      this.getTeamPolicies(teamId),
+    ]);
     if (cachedPolicies) {
-      return cachedPolicies;
+      return [...cachedPolicies, ...teamPolicies];
     }
 
     const { data, error: policiesError } = await this.db
@@ -199,7 +214,7 @@ export class PolicyClient {
       this.filterValidPolicies(policies),
     );
 
-    return policies;
+    return [...policies, ...teamPolicies];
   }
 
   public async removeAllMemberPoliciesAtTeam(
@@ -241,9 +256,7 @@ export class PolicyClient {
    * Get all roles for a team
    */
   public async getTeamRoles(teamId: number): Promise<Role[]> {
-    if (!this.db) {
-      throw new Error("PolicyClient not initialized with database client");
-    }
+    this.assertDb(this.db);
 
     // Try to get from cache first
     const cachedRoles = await this.teamRolesCache.get(
@@ -284,9 +297,7 @@ export class PolicyClient {
     email: string,
     params: RoleUpdateParams,
   ): Promise<Role | null> {
-    if (!this.db) {
-      throw new Error("PolicyClient not initialized with database client");
-    }
+    this.assertDb(this.db);
 
     const [{ data: memberWithProfile }, roles] = await Promise.all([
       this.db.from("members").select("id, profiles!inner(email, user_id)")
@@ -365,6 +376,91 @@ export class PolicyClient {
     return role;
   }
 
+  async createPolicyForTeamResource(
+    teamIdOrSlug: string | number,
+    partialPolicy: { name: string; statements: Statement[] },
+  ) {
+    this.assertDb(this.db);
+    const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
+
+    const policy = {
+      name: `${teamId}_${partialPolicy.name}`,
+      team_id: teamId,
+      statements: partialPolicy.statements as unknown as Json[],
+    };
+
+    const teamPolicies = await this.getTeamPolicies(teamId);
+    //  check if one already exists with policy.name, if yes, throw an error saying policy already exists
+    if (teamPolicies.some((p) => p.name === policy.name)) return null;
+
+    const { data } = await this.db.from("policies").insert(policy).select();
+    await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
+    return data;
+  }
+
+  async deletePolicyForTeamResource(
+    teamIdOrSlug: string | number,
+    policyName: string,
+  ) {
+    this.assertDb(this.db);
+    const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
+
+    const { data } = await this.db.from("policies").delete().eq(
+      "team_id",
+      teamId,
+    ).eq("name", policyName).select();
+
+    await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
+    return data;
+  }
+
+  private async getTeamPolicies(
+    teamIdOrSlug: number | string,
+  ): Promise<Pick<Policy, "statements" | "name">[]> {
+    this.assertDb(this.db);
+
+    const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
+    const cacheKey = this.getTeamPoliciesCacheKey(teamId);
+
+    // Try to get from cache first
+    const cachedPolicies = await this.teamPoliciesCache.get(cacheKey);
+    if (cachedPolicies) {
+      return cachedPolicies;
+    }
+
+    // Get from database
+    const { data: policies, error } = await this.db
+      .from("policies")
+      .select("id, name, team_id, statements")
+      .eq("team_id", teamId);
+
+    if (error || !policies) {
+      return [];
+    }
+
+    // Transform the data to match Policy interface
+    const transformedPolicies: Pick<Policy, "name" | "statements">[] = policies
+      .map((policy) => ({
+        name: policy.name,
+        statements: policy.statements as unknown as Statement[],
+      }));
+
+    // Cache the result
+    await this.teamPoliciesCache.delete(cacheKey);
+    await this.teamPoliciesCache.set(
+      cacheKey,
+      this.filterValidPolicies(transformedPolicies),
+    );
+
+    return transformedPolicies;
+  }
+
+  private async getTeamIdByIdOrSlug(teamIdOrSlug: string | number) {
+    return typeof teamIdOrSlug === "number"
+      ? teamIdOrSlug
+      : await this.getTeamIdBySlug(teamIdOrSlug);
+  }
+
   private async getTeamIdBySlug(teamSlug: string): Promise<number> {
     const cachedTeamId = await this.teamSlugCache.get(teamSlug);
     if (cachedTeamId) return cachedTeamId;
@@ -404,6 +500,16 @@ export class PolicyClient {
   private getTeamRolesCacheKey(teamId: number) {
     return teamId.toString();
   }
+
+  private getTeamPoliciesCacheKey(teamId: number) {
+    return teamId.toString();
+  }
+
+  private assertDb(db: unknown = this.db): asserts db is Client {
+    if (!db) {
+      throw new Error("PolicyClient not initialized with database client");
+    }
+  }
 }
 
 /**
@@ -423,6 +529,7 @@ export class AuthorizationClient {
     userOrPolicies: string | Pick<Policy, "statements">[],
     teamIdOrSlug: number | string,
     resource: string,
+    ctx: Partial<AuthContext> = {},
   ): Promise<boolean> {
     const policies = typeof userOrPolicies === "string"
       ? await this.policyClient.getUserPolicies(
@@ -441,7 +548,7 @@ export class AuthorizationClient {
     for (const policy of policies) {
       for (const statement of policy.statements) {
         // Check if statement applies to this resource
-        const resourceMatch = this.matchResource(statement.resource, resource);
+        const resourceMatch = this.matchResource(statement, resource, ctx);
 
         if (resourceMatch) {
           // Explicit deny always overrides any allows
@@ -462,7 +569,41 @@ export class AuthorizationClient {
   /**
    * Check if a resource pattern matches the requested resource
    */
-  private matchResource(pattern: string, resource: string): boolean {
-    return pattern === resource;
+  private matchResource(
+    statement: Statement,
+    resource: string,
+    ctx: Partial<AuthContext> = {},
+  ): boolean {
+    const fn = statement.matchCondition
+      ? MatcherFunctions[statement.matchCondition.resource].handler
+      : undefined;
+
+    const matched = fn?.(statement.matchCondition!, ctx) ?? true;
+
+    return matched && statement.resource === resource;
   }
 }
+
+interface AuthContext {
+  user?: UserPrincipal;
+}
+
+interface MatchFunction<TSchema extends z.ZodTypeAny = z.ZodTypeAny> {
+  schema: TSchema;
+  handler: (
+    props: z.infer<TSchema>,
+    context: Partial<AuthContext>,
+  ) => boolean | Promise<boolean>;
+}
+
+// fn to type
+const createMatchFn = <TSchema extends z.ZodTypeAny>(
+  def: MatchFunction<TSchema>,
+): MatchFunction<TSchema> => def;
+
+const MatcherFunctions = {
+  is_not_user: createMatchFn({
+    schema: z.object({ userId: z.string() }),
+    handler: ({ userId }, c) => !!c.user && c.user.id !== userId,
+  }),
+};
