@@ -11,6 +11,7 @@
   "dependencies": {
     "@deco/actors": "npm:@jsr/deco__actors@0.33.1",
     "@deco/mcp": "npm:@jsr/deco__mcp@0.5.5",
+    "@std/media-types": "npm:@jsr/std__media-types@1.1.0",
     "@deco/sdk": "^0.1.1",
     "@deco/ai": "^1.0.0",
     "@libsql/client": "^0.15.4",
@@ -20,7 +21,8 @@
     "ai": "^4.3.13",
     "cloudflare": "^4.2.0",
     "hono": "^4.7.7",
-    "zod": "3.24.3"
+    "zod": "3.24.3",
+    "@aws-sdk/client-s3": "^3.808.0"
   },
   "devDependencies": {
     "supabase": "^2.22.12",

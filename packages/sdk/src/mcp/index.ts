@@ -17,6 +17,7 @@ import * as threadsAPI from "./threads/api.ts";
 import * as triggersAPI from "./triggers/api.ts";
 import * as modelsAPI from "./models/api.ts";
 import * as walletAPI from "./wallet/api.ts";
+import * as assetsAPI from "./assets/api.ts";
 
 export * from "./bindings/binder.ts";
 
@@ -40,6 +41,9 @@ export const GLOBAL_TOOLS = [
   profilesAPI.updateProfile,
   integrationsAPI.callTool,
   integrationsAPI.listTools,
+  assetsAPI.uploadAsset,
+  assetsAPI.getAssetUrl,
+  assetsAPI.deleteAsset,
 ] as const;
 
 // Tools tied to an specific workspace

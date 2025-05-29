@@ -29,7 +29,7 @@ import {
   TriggerInputBinding,
 } from "@deco/sdk/mcp/binder";
 import { getTwoFirstSegments, type Workspace } from "@deco/sdk/path";
-import { Json } from "@deco/sdk/storage";
+import { getS3ServerClient, Json } from "@deco/sdk/storage";
 import { createServerClient } from "@supabase/ssr";
 import { Cloudflare } from "cloudflare";
 import { getRuntimeKey } from "hono/adapter";
@@ -177,6 +177,11 @@ export class Trigger {
       stub: this.state.stub as AppContext["stub"],
       workspace: fromWorkspaceString(this.workspace),
       cf: new Cloudflare({ apiToken: this.env.CF_API_TOKEN }),
+      s3: getS3ServerClient({
+        accountId: this.env.CF_ACCOUNT_ID,
+        accessKeyId: this.env.CF_R2_ACCESS_KEY_ID,
+        secretAccessKey: this.env.CF_R2_SECRET_ACCESS_KEY,
+      }),
       params: {},
       policy: policyClient,
       authorization: authorizationClient,

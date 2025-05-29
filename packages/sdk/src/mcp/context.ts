@@ -4,6 +4,7 @@ import { AIAgent, Trigger } from "@deco/ai/actors";
 import { Client } from "@deco/sdk/storage";
 import type { ToolAnnotations } from "@modelcontextprotocol/sdk/types.d.ts";
 import { type User as SupaUser } from "@supabase/supabase-js";
+import { S3Client } from "@aws-sdk/client-s3";
 import Cloudflare from "cloudflare";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { z } from "zod";
@@ -31,6 +32,7 @@ export interface Vars {
   isLocal?: boolean;
   cf: Cloudflare;
   walletBinding?: { fetch: typeof fetch };
+  s3: S3Client;
   immutableRes?: boolean;
   stub: <
     Constructor extends

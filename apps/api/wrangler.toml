@@ -5,6 +5,7 @@ main = "main.ts"
 compatibility_date = "2024-11-27"
 routes = [
   { pattern = "api.deco.chat", custom_domain = true },
+  { pattern = "assets.deco.chat", custom_domain = true },
   { pattern = "*/*", zone_name = "deco.page" },
 ]
 
