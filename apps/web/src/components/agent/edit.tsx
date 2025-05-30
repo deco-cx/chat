@@ -35,7 +35,6 @@ import { ChatProvider, useChatContext } from "../chat/context.tsx";
 import { AgentAvatar } from "../common/avatar/index.tsx";
 import type { Tab } from "../dock/index.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
-import IntegrationsTab from "../settings/integrations.tsx";
 import PromptTab from "../settings/prompt.tsx";
 import { AgentTriggers } from "../triggers/agent-triggers.tsx";
 import { AgentBreadcrumbSegment } from "./breadcrumb-segment.tsx";
@@ -105,6 +104,10 @@ const Chat = () => {
 
 const AgentSettings = lazy(() =>
   wrapWithUILoadingFallback(import("../settings/agent.tsx"))
+);
+
+const IntegrationsTab = lazy(() =>
+  import("../settings/integrations.tsx").then(module => ({ default: module.default }))
 );
 
 const TABS: Record<string, Tab> = {
