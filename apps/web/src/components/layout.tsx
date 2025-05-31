@@ -32,6 +32,7 @@ import Docked, { Tab } from "./dock/index.tsx";
 import { AppSidebar } from "./sidebar/index.tsx";
 import { useLocalStorage } from "../hooks/use-local-storage.ts";
 import { ProfileSettings } from "./settings/profile.tsx";
+import { WithWorkspaceTheme } from "./theme.tsx";
 
 // Context for profile modal
 interface ProfileModalContextType {
@@ -81,36 +82,38 @@ export function RouteLayout() {
     : `users/${user?.id}`;
 
   return (
-    <ProfileModalContext.Provider
-      value={{ openProfileModal, closeProfileModal }}
-    >
-      <SidebarProvider
-        open={open}
-        onOpenChange={(open) => {
-          setDefaultOpen(open);
-          setOpen(open);
-        }}
-        className="h-full bg-sidebar"
-        style={{
-          "--sidebar-width": "16rem",
-          "--sidebar-width-mobile": "14rem",
-        } as Record<string, string>}
-      >
-        <SDKProvider workspace={rootContext}>
-          <AppSidebar />
-          <SidebarInset className="h-full flex-col bg-sidebar">
-            <Outlet />
-          </SidebarInset>
-          <ProfileSettings
-            open={profileOpen}
-            onOpenChange={setProfileOpen}
-            onPhoneSaved={handlePhoneSaved}
-          />
-          <RegisterActivity teamSlug={teamSlug} />
-          <Toaster />
-        </SDKProvider>
-      </SidebarProvider>
-    </ProfileModalContext.Provider>
+    <SDKProvider workspace={rootContext}>
+      <WithWorkspaceTheme>
+        <ProfileModalContext.Provider
+          value={{ openProfileModal, closeProfileModal }}
+        >
+          <SidebarProvider
+            open={open}
+            onOpenChange={(open) => {
+              setDefaultOpen(open);
+              setOpen(open);
+            }}
+            className="h-full bg-sidebar"
+            style={{
+              "--sidebar-width": "16rem",
+              "--sidebar-width-mobile": "14rem",
+            } as Record<string, string>}
+          >
+            <AppSidebar />
+            <SidebarInset className="h-full flex-col bg-sidebar">
+              <Outlet />
+            </SidebarInset>
+            <ProfileSettings
+              open={profileOpen}
+              onOpenChange={setProfileOpen}
+              onPhoneSaved={handlePhoneSaved}
+            />
+            <RegisterActivity teamSlug={teamSlug} />
+            <Toaster />
+          </SidebarProvider>
+        </ProfileModalContext.Provider>
+      </WithWorkspaceTheme>
+    </SDKProvider>
   );
 }
 
