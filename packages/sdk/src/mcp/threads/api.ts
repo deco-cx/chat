@@ -3,16 +3,17 @@ import {
   createClient,
   type InStatement,
 } from "@libsql/client/web";
+import { MessageList } from "@mastra/core/agent";
+import type { Message as AIMessage } from "ai";
 import { z } from "zod";
+import { WorkspaceMemory } from "../../memory/memory.ts";
 import {
   assertHasWorkspace,
   canAccessWorkspaceResource,
 } from "../assertions.ts";
 import { type AppContext, createTool } from "../context.ts";
-import { convertToUIMessages, MessageType } from "../convert-to-ui-messages.ts";
 import { InternalServerError, NotFoundError } from "../index.ts";
 import { generateUUIDv5, toAlphanumericId } from "../slugify.ts";
-import { WorkspaceMemory } from "../../memory/memory.ts";
 
 async function getWorkspaceMemory(c: AppContext) {
   assertHasWorkspace(c);
@@ -221,7 +222,12 @@ export const getThreadMessages = createTool({
       .map((row: unknown) => MessageSchema.safeParse(row)?.data)
       .filter((a: Message | undefined): a is Message => !!a);
 
-    return convertToUIMessages(messages as unknown as MessageType[]);
+    const list = new MessageList({ threadId: id });
+    for (const message of messages) {
+      list.add(message as unknown as AIMessage, "memory");
+    }
+
+    return list.get.all.ui();
   },
 });
 

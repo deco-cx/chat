@@ -5,6 +5,7 @@ import type { SharedMemoryConfig } from "@mastra/core/memory";
 import { Memory as MastraMemory } from "@mastra/memory";
 import { slugify, slugifyForDNS, toAlphanumericId } from "../mcp/slugify.ts";
 import { LibSQLFactory, type LibSQLFactoryOpts } from "./libsql.ts";
+import { createOpenAI } from "@ai-sdk/openai";
 export { slugify, slugifyForDNS, toAlphanumericId };
 type CreateThreadOpts = Parameters<MastraMemory["createThread"]>[0];
 
@@ -16,7 +17,11 @@ interface CreateWorkspaceMemoryOpts
   extends LibSQLFactoryOpts, Omit<SharedMemoryConfig, "storage" | "vector"> {
   workspace: Workspace;
   discriminator?: string;
+  openAPIKey?: string;
 }
+
+const openAIEmbedder = (apiKey: string) =>
+  createOpenAI({ apiKey }).embedding("text-embedding-3-small");
 
 export class WorkspaceMemory extends MastraMemory {
   constructor(protected config: WorkspaceMemoryConfig) {
@@ -42,12 +47,15 @@ export class WorkspaceMemory extends MastraMemory {
 
     const libsqlClient = await libsqlFactory.createRawClient(memoryId);
 
+    const embedder = opts.openAPIKey
+      ? openAIEmbedder(opts.openAPIKey)
+      : undefined;
+
     return {
       libsqlClient,
-      ...(await libsqlFactory.create({
-        memoryId,
-      })),
+      ...(await libsqlFactory.create({ memoryId })),
       ...opts,
+      embedder,
     };
   }
 

@@ -1,3 +1,4 @@
+import type { UIMessage } from "ai";
 import { MCPClient } from "../fetcher.ts";
 
 export interface ThreadFilterOptions {
@@ -72,11 +73,9 @@ export const getThreadMessages = (
   workspace: string,
   threadId: string,
   init: RequestInit = {},
-): Promise<ThreadMessage[]> =>
-  MCPClient.forWorkspace(workspace).THREADS_GET_MESSAGES(
-    { id: threadId },
-    init,
-  ) as Promise<ThreadMessage[]>;
+): Promise<UIMessage[]> =>
+  MCPClient.forWorkspace(workspace)
+    .THREADS_GET_MESSAGES({ id: threadId }, init);
 
 export interface ThreadTools {
   tools_set: Record<string, string[]>;

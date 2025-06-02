@@ -102,9 +102,7 @@ export function ChatProvider({
     api: new URL("/actors/AIAgent/invoke/stream", API_SERVER_URL).href,
     experimental_prepareRequestBody: ({ messages }) => {
       dispatchMessages({ messages, threadId, agentId });
-
-      const messagesWindow = messages.slice(-LAST_MESSAGES_COUNT);
-      const lastMessage = messagesWindow.at(-1);
+      const lastMessage = messages.at(-1);
 
       /** Add annotation so we can use the file URL as a parameter to a tool call */
       if (lastMessage) {
@@ -122,20 +120,20 @@ export function ChatProvider({
       const bypassOpenRouter = !preferences.useOpenRouter;
 
       return {
-        args: [messagesWindow, {
+        metadata: { threadId: threadId ?? agentId },
+        args: [[lastMessage], {
           model: options.showModelSelector // use the agent model if selector is not shown on the UI
             ? preferences.defaultModel
             : agent?.model,
           instructions: agent?.instructions,
           bypassOpenRouter,
-          lastMessages: 0,
+          lastMessages: LAST_MESSAGES_COUNT,
           sendReasoning: true,
           tools: agent?.tools_set,
           smoothStream: preferences.smoothStream !== false
             ? { delayInMs: 25, chunk: "word" }
             : undefined,
         }],
-        metadata: { threadId: threadId ?? agentId },
       };
     },
     onError: (error) => {
