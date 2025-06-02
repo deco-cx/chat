@@ -9,6 +9,7 @@ import {
   type WithTool,
 } from "../assertions.ts";
 import { AppContext, createTool, createToolFactory } from "../context.ts";
+import { FileProcessor } from "../file-processor.ts";
 
 export interface KnowledgeBaseContext extends AppContext {
   name: string;
@@ -163,19 +164,26 @@ export const remember = createKnowledgeBaseTool({
     const vector = await getVector(c);
     const docId = _id ?? crypto.randomUUID();
     const embedder = openAIEmbedder(c.envVars.OPENAI_API_KEY);
-    // Create embeddings using OpenAI
-    const { embedding } = await embed({
-      model: embedder,
-      value: content,
-    });
-    await vector.upsert(c.name, [embedding], [{
-      id: docId,
-      metadata: { ...metadata ?? {}, content },
-    }]);
 
-    return {
-      docId,
-    };
+    console.log("HERE");
+    try {
+      // Create embeddings using OpenAI
+      const { embedding } = await embed({
+        model: embedder,
+        value: content,
+      });
+      await vector.upsert(c.name, [embedding], [{
+        id: docId,
+        metadata: { ...metadata ?? {}, content },
+      }]);
+
+      return {
+        docId,
+      };
+    } catch (e) {
+      console.log(e);
+      return;
+    }
   },
 });
 
@@ -219,5 +227,36 @@ export const search = createKnowledgeBaseTool({
       queryVector: embedding,
       topK: topK ?? 1,
     });
+  },
+});
+
+export const addFileToKnowledgeBase = createKnowledgeBaseTool({
+  name: "KNOWLEDGE_BASE_ADD_FILE",
+  description: "Add a file content into knowledge base",
+  inputSchema: z.object({ fileUrl: z.string() }),
+  handler: async ({ fileUrl }, c) => {
+    await assertWorkspaceResourceAccess(c.tool.name, c);
+
+    const fileProcessor = new FileProcessor({
+      chunkSize: 1000,
+      chunkOverlap: 200,
+    });
+
+    const proccessedFile = await fileProcessor.processFile(fileUrl);
+
+    return { content: proccessedFile.content };
+    // const result = await remember.handler({
+    //   content: proccessedFile.chunks[0],
+    //   metadata: {
+    //     filename: proccessedFile.filename,
+    //     ...proccessedFile.metadata,
+    //     fileSize: proccessedFile.metadata.fileSize.toString(),
+    //     chunkCount: proccessedFile.metadata.chunkCount.toString(),
+    //   },
+    // });
+    //
+    // console.log(result);
+    //
+    // return { ok: true };
   },
 });
