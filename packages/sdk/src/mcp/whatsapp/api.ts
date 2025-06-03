@@ -142,7 +142,7 @@ export const createWhatsAppInvite = createTool({
       throw new Error(error.message);
     }
 
-    return { success: true };
+    return { ok: true };
   },
 });
 
@@ -181,7 +181,7 @@ export const upsertWhatsAppUser = createTool({
     }
 
     return {
-      success: true,
+      ok: true,
     };
   },
 });

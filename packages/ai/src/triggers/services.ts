@@ -22,7 +22,7 @@ export type TriggerData = CreateTriggerInput & {
 };
 
 export interface TriggerListResult {
-  success: boolean;
+  ok: boolean;
   message: string;
   triggers: z.infer<typeof ListTriggersOutputSchema>["triggers"];
 }
@@ -37,7 +37,7 @@ export interface TriggerRun {
 }
 
 export interface TriggerRunListResult {
-  success: boolean;
+  ok: boolean;
   message: string;
   runs: TriggerRun[] | undefined;
 }

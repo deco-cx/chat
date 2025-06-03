@@ -97,7 +97,7 @@ export function ProfileSettings(
   const [country, setCountry] = useState<Country | null>(null);
   const [fullPhone, setFullPhone] = useState(""); // full international number for saving
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [showSavedMessage, setShowSavedMessage] = useState(false);
   const [userIdCopied, setUserIdCopied] = useState(false);
 
   function handleSave() {
@@ -105,7 +105,7 @@ export function ProfileSettings(
       { phone: fullPhone },
       {
         onSuccess: () => {
-          setSuccess(true);
+          setShowSavedMessage(true);
           if (onPhoneSaved) onPhoneSaved();
         },
         onError: (err: any) =>
@@ -204,7 +204,7 @@ export function ProfileSettings(
               {error && (
                 <span className="text-destructive text-xs mt-1">{error}</span>
               )}
-              {success && (
+              {showSavedMessage && (
                 <span className="text-special text-xs mt-1">Saved!</span>
               )}
             </div>

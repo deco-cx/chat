@@ -100,7 +100,7 @@ export default function Page() {
       await updateIntegration.mutateAsync(data);
 
       trackEvent("integration_update", {
-        success: true,
+        ok: true,
         data,
       });
 
@@ -112,7 +112,7 @@ export default function Page() {
       );
 
       trackEvent("integration_create", {
-        success: false,
+        ok: false,
         error,
         data,
       });

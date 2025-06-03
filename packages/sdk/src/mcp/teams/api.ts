@@ -219,7 +219,7 @@ export const deleteTeam = createTool({
       .select("id");
 
     if (error) throw error;
-    return { success: true };
+    return { ok: true };
   },
 });
 

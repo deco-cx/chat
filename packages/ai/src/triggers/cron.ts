@@ -18,13 +18,13 @@ export const hooks: TriggerHooks<TriggerData & { type: "cron" }> = {
   run: async (data, trigger) => {
     if (trigger.metadata?.internalCall === false) {
       return {
-        success: false,
+        ok: false,
         message: "Trigger is not allowed to be run from external sources",
       };
     }
     if (!("prompt" in data)) {
       return {
-        success: false,
+        ok: false,
         message: "Prompt is required",
       };
     }

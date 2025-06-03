@@ -214,7 +214,7 @@ export const deleteModel = createTool({
 
     if (error) throw error;
 
-    return { success: true };
+    return { ok: true };
   },
 });
 

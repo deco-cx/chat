@@ -45,7 +45,7 @@ export const deleteModel = (
   workspace: string,
   id: string,
   init?: RequestInit,
-): Promise<{ success: boolean }> =>
+): Promise<{ ok: boolean }> =>
   MCPClient.forWorkspace(workspace).MODELS_DELETE({ id }, init) as Promise<
-    { success: boolean }
+    { ok: boolean }
   >;

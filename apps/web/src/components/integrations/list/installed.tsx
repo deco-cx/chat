@@ -289,14 +289,14 @@ function InstalledIntegrationsTab() {
       await removeIntegration(integrationToDelete);
 
       trackEvent("integration_delete", {
-        success: true,
+        ok: true,
         data: integrationToDelete,
       });
     } catch (error) {
       console.error("Error deleting integration:", error);
 
       trackEvent("integration_delete", {
-        success: false,
+        ok: false,
         data: integrationToDelete,
         error,
       });

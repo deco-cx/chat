@@ -441,7 +441,7 @@ const SpeakInputSchema = z.object({
 });
 
 const SpeakOutputSchema = z.object({
-  success: z.boolean().describe(
+  ok: z.boolean().describe(
     "Whether the speech was successfully generated",
   ),
   message: z.string().describe("Status message about the speech generation"),
@@ -485,7 +485,7 @@ export const SPEAK = createInnateTool({
       // Check if we got a valid ReadableStream
       if (!readableStream) {
         return {
-          success: false,
+          ok: false,
           message: "Voice synthesis is not available for this agent",
         };
       }
@@ -531,7 +531,7 @@ export const SPEAK = createInnateTool({
       }
 
       return {
-        success: true,
+        ok: true,
         message: `Successfully generated speech for: "${text.substring(0, 50)}${
           text.length > 50 ? "..." : ""
         }"`,
@@ -540,7 +540,7 @@ export const SPEAK = createInnateTool({
     } catch (error) {
       console.error("💥 Error in SPEAK tool:", error);
       return {
-        success: false,
+        ok: false,
         message: `Failed to generate speech: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,

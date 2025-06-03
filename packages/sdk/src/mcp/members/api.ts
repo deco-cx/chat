@@ -303,7 +303,7 @@ export const removeTeamMember = createTool({
     });
 
     if (error) throw error;
-    return { success: true };
+    return { ok: true };
   },
 });
 
@@ -328,7 +328,7 @@ export const registerMemberActivity = createTool({
       value: `${teamId}`,
     });
 
-    return { success: true };
+    return { ok: true };
   },
 });
 
@@ -734,6 +734,6 @@ export const updateMemberRole = createTool({
 
     await c.policy.updateUserRole(teamId, profile.email, { roleId, action });
 
-    return { success: true };
+    return { ok: true };
   },
 });

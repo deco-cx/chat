@@ -457,6 +457,6 @@ export const deleteIntegration = createTool({
       throw new InternalServerError(error.message);
     }
 
-    return { success: true };
+    return { ok: true };
   },
 });

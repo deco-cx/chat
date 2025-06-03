@@ -159,7 +159,7 @@ export function ChatProvider({
         }
 
         return {
-          success: true,
+          ok: true,
         };
       }
     },

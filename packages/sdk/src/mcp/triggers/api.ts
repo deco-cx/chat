@@ -463,14 +463,14 @@ export const activateTrigger = createTool({
 
       if (selectError) {
         return {
-          success: false,
+          ok: false,
           message: "Failed to activate trigger",
         };
       }
 
       if (data?.active) {
         return {
-          success: true,
+          ok: true,
           message: "Trigger already activated",
         };
       }
@@ -491,18 +491,18 @@ export const activateTrigger = createTool({
 
       if (error) {
         return {
-          success: false,
+          ok: false,
           message: "Failed to activate trigger",
         };
       }
 
       return {
-        success: true,
+        ok: true,
         message: "Trigger activated successfully",
       };
     } catch (_) {
       return {
-        success: false,
+        ok: false,
         message: "Failed to activate trigger",
       };
     }
@@ -529,14 +529,14 @@ export const deactivateTrigger = createTool({
 
       if (selectError) {
         return {
-          success: false,
+          ok: false,
           message: "Failed to deactivate trigger",
         };
       }
 
       if (!data?.active) {
         return {
-          success: true,
+          ok: true,
           message: "Trigger already deactivated",
         };
       }
@@ -550,18 +550,18 @@ export const deactivateTrigger = createTool({
 
       if (error) {
         return {
-          success: false,
+          ok: false,
           message: "Failed to deactivate trigger",
         };
       }
 
       return {
-        success: true,
+        ok: true,
         message: "Trigger deactivated successfully",
       };
     } catch (_) {
       return {
-        success: false,
+        ok: false,
         message: "Failed to deactivate trigger",
       };
     }

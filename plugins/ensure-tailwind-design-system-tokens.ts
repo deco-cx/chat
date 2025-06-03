@@ -21,7 +21,6 @@ const CATEGORIES = [
   "ring-offset",
 ];
 
-// Helper function to check if a class uses design system tokens
 function isValidDesignSystemToken(className: string): boolean {
   const withoutPrefix = className.split(":").at(-1);
 
@@ -61,14 +60,12 @@ function handleLiteral({
   }
 }
 
-// Create the lint rule
 const ensureTailwindDesignSystemTokens: Deno.lint.Plugin = {
   name: "ensure-tailwind-design-system-tokens",
   rules: {
     "ensure-tailwind-design-system-tokens": {
       create(context) {
         return {
-          // Check JSX elements for className attributes
           JSXAttribute(node) {
             if (node.name.name === "className") {
               if (node.value?.type === "Literal") {

@@ -716,7 +716,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     const thread = await this._memory.getThreadById(this._thread);
     if (!thread) {
       return {
-        success: false,
+        ok: false,
         message: "Thread not found",
       };
     }
@@ -736,7 +736,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     this._resetCallableToolSet();
 
     return {
-      success: true,
+      ok: true,
       message: "Thread updated",
     };
   }
@@ -806,7 +806,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
 
     if (!toolSet[integrationId]) {
       return {
-        success: false,
+        ok: false,
         message: `Integration ${integrationId} not found`,
       };
     }
@@ -818,7 +818,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     const tool = callable?.[integrationId]?.[toolName];
     if (!tool) {
       return {
-        success: false,
+        ok: false,
         message: `Tool ${toolName} not found`,
       };
     }
