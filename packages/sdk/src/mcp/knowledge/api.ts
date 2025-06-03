@@ -165,7 +165,6 @@ export const remember = createKnowledgeBaseTool({
     const docId = _id ?? crypto.randomUUID();
     const embedder = openAIEmbedder(c.envVars.OPENAI_API_KEY);
 
-    console.log("HERE");
     try {
       // Create embeddings using OpenAI
       const { embedding } = await embed({
