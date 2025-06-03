@@ -234,9 +234,14 @@ export const addFileToKnowledgeBase = createKnowledgeBaseTool({
   name: "KNOWLEDGE_BASE_ADD_FILE",
   description: "Add a file content into knowledge base",
   inputSchema: z.object({ fileUrl: z.string() }),
+<<<<<<< HEAD
   handler: async ({ fileUrl }, c) => {
     await assertWorkspaceResourceAccess(c.tool.name, c);
 
+=======
+  canAccess: canAccessWorkspaceResource,
+  handler: async ({ fileUrl }) => {
+>>>>>>> 17a1ff02 (add auth policy)
     const fileProcessor = new FileProcessor({
       chunkSize: 1000,
       chunkOverlap: 200,
@@ -245,18 +250,7 @@ export const addFileToKnowledgeBase = createKnowledgeBaseTool({
     const proccessedFile = await fileProcessor.processFile(fileUrl);
 
     return { content: proccessedFile.content };
-    // const result = await remember.handler({
-    //   content: proccessedFile.chunks[0],
-    //   metadata: {
-    //     filename: proccessedFile.filename,
-    //     ...proccessedFile.metadata,
-    //     fileSize: proccessedFile.metadata.fileSize.toString(),
-    //     chunkCount: proccessedFile.metadata.chunkCount.toString(),
-    //   },
-    // });
-    //
-    // console.log(result);
-    //
-    // return { ok: true };
+    // TODO: save chunked content into knowledge base
+    // call remember.handler for each chunk content
   },
 });
