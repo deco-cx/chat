@@ -1,7 +1,6 @@
 import {
   DeleteObjectCommand,
   GetObjectCommand,
-  ListObjectsCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -183,7 +182,7 @@ export const writeFile = createTool({
 
     const { data: newFile, error } = await c.db.from("deco_chat_assets").insert(
       {
-        file_url: url,
+        file_url: path,
         workspace: c.workspace.value,
         metadata,
       },
@@ -216,6 +215,17 @@ export const deleteFile = createTool({
       Bucket: bucketName,
       Key: path,
     });
+
+    const { error } = await c.db.from("deco_chat_assets").delete().eq(
+      "workspace",
+      c.workspace.value,
+    ).eq("file_url", path).select().single();
+
+    if (error) {
+      console.log(
+        `failed deleting file: ${path} - workspace: ${c.workspace.value}`,
+      );
+    }
 
     return s3Client.send(deleteCommand);
   },

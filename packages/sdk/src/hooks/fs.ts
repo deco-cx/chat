@@ -12,6 +12,17 @@ export const useFile = (path: string) => {
   });
 };
 
+export const useReadFile = () => {
+  const queryClient = useQueryClient();
+  const { workspace } = useSDK();
+
+  return (path: string) =>
+    queryClient.fetchQuery({
+      queryKey: KEYS.FILE(workspace, path),
+      queryFn: () => readFile({ workspace, path }),
+    });
+};
+
 export const useFiles = (root: string) => {
   const { workspace } = useSDK();
 
@@ -26,11 +37,12 @@ export const useWriteFile = () => {
   const { workspace } = useSDK();
 
   return useMutation({
-    mutationFn: ({ path, content, contentType }: {
+    mutationFn: ({ path, content, contentType, metadata }: {
       path: string;
       content: Uint8Array;
       contentType: string;
-    }) => writeFile({ path, workspace, content, contentType }),
+      metadata?: Record<string, string>;
+    }) => writeFile({ path, workspace, content, contentType, metadata }),
     onMutate: async ({ path, content, contentType }: {
       path: string;
       content: Uint8Array;
