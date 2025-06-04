@@ -12,10 +12,13 @@ import {
   FormLabel,
 } from "@deco/ui/components/form.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
+import { useAgentSettingsForm } from "./edit.tsx";
 
-const KNOWLEDGE_FILE_PATH = "assets/knowledge";
+const agentKnowledgeBasePath = (agentId: string, path: string) =>
+  `agent/${agentId}/knowledge/${path}`;
 
 export default function UploadKnowledgeBaseAsset() {
+  const { agent } = useAgentSettingsForm();
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<
     { file: File; url?: string; uploading?: boolean }[]
@@ -93,7 +96,7 @@ export default function UploadKnowledgeBaseAsset() {
       const uploadPromises = files.map(async (file) => {
         try {
           const filename = file.name;
-          const path = `${KNOWLEDGE_FILE_PATH}/${filename}`;
+          const path = agentKnowledgeBasePath(agent.id, filename);
           const buffer = await file.arrayBuffer();
 
           // add metadata
@@ -101,7 +104,9 @@ export default function UploadKnowledgeBaseAsset() {
             path,
             contentType: file.type || "application/octet-stream",
             content: new Uint8Array(buffer),
-            // metadata: {}, // TODO add agent id
+            metadata: {
+              agentId: agent.id,
+            },
           });
 
           if (!savedResponse.ok) {
@@ -118,6 +123,7 @@ export default function UploadKnowledgeBaseAsset() {
             return;
           }
 
+          // TODO: get knowledge based by id like `agent-${id}` or create
           const content = await addFileToKnowledgeBase.mutateAsync({
             fileUrl,
             metadata: {
