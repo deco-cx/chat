@@ -12,3 +12,4 @@ export * from "./audit.ts";
 export * from "./fs.ts";
 export * from "./wallet.ts";
 export * from "./channels.ts";
+export * from "./knowledge-base.ts";

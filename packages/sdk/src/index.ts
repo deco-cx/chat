@@ -9,6 +9,7 @@ export * from "./crud/wallet.ts";
 export * from "./crud/trigger.ts";
 export * from "./crud/members.ts";
 export * from "./crud/thread.ts";
+export * from "./crud/knowledge-base.ts";
 
 export * from "./hooks/agent.ts";
 export * from "./hooks/fs.ts";
@@ -23,6 +24,7 @@ export * from "./hooks/teams.ts";
 export * from "./hooks/whatsapp.ts";
 export * from "./hooks/models.ts";
 export * from "./hooks/wallet.ts";
+export * from "./hooks/knowledge-base.ts";
 
 export * from "./models/agent.ts";
 export * from "./models/mcp.ts";

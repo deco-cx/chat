@@ -29,6 +29,7 @@ import { ModelSelector } from "../chat/model-selector.tsx";
 import { AgentAvatar } from "../common/avatar/index.tsx";
 import { useCurrentTeam } from "../sidebar/team-selector.tsx";
 import { Channels } from "./channels.tsx";
+import UploadKnowledgeBaseAsset from "../agent/upload-knowledge-asset.tsx";
 
 const AVATAR_FILE_PATH = "assets/avatars";
 
@@ -373,6 +374,11 @@ function SettingsTab() {
             <div className="border-t pt-6">
               <Channels />
             </div>
+            {/* Knowledge File Upload Section */}
+            <FormField
+              name="upload-knowledge-file"
+              render={UploadKnowledgeBaseAsset}
+            />
           </form>
         </div>
       </Form>
