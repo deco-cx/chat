@@ -239,30 +239,32 @@ export const addFileToKnowledgeBase = createKnowledgeBaseTool({
   handler: async ({ fileUrl, metadata }, c) => {
     await assertWorkspaceResourceAccess(c.tool.name, c);
     const fileProcessor = new FileProcessor({
-      chunkSize: 900,
-      chunkOverlap: 100,
+      chunkSize: 500,
+      chunkOverlap: 50,
     });
 
     const proccessedFile = await fileProcessor.processFile(fileUrl);
 
-    const embed = await remember.handler({
-      content: proccessedFile.content,
-      metadata: {
-        ...proccessedFile.metadata,
-        fileSize: proccessedFile.metadata.fileSize.toString(),
-        chunkCount: proccessedFile.metadata.chunkCount.toString(),
-        fileUrl,
-        ...metadata,
-      },
-    });
+    const embeds = await Promise.all(
+      proccessedFile.chunks.map((chunk, idx) =>
+        remember.handler({
+          content: chunk,
+          metadata: {
+            ...proccessedFile.metadata,
+            fileSize: proccessedFile.metadata.fileSize.toString(),
+            chunkCount: proccessedFile.metadata.chunkCount.toString(),
+            fileUrl,
+            chunkIdx: idx.toString(),
+            ...metadata,
+          },
+        })
+      ),
+    );
 
-    console.log(embed, proccessedFile.chunks[0]);
-    if (embed.isError) {
+    if (embeds.some((embeded) => embeded.isError)) {
       throw new Error("Failed to embed file");
     }
 
     return { content: proccessedFile.content, embed };
-    // TODO: save chunked content into knowledge base
-    // call remember.handler for each chunk content
   },
 });
