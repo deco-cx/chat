@@ -233,10 +233,11 @@ export const addFileToKnowledgeBase = createKnowledgeBaseTool({
   description: "Add a file content into knowledge base",
   inputSchema: z.object({
     fileUrl: z.string(),
+    path: z.string(),
     metadata: z.record(z.string(), z.union([z.string(), z.boolean()]))
       .optional(),
   }),
-  handler: async ({ fileUrl, metadata }, c) => {
+  handler: async ({ fileUrl, metadata, path }, c) => {
     await assertWorkspaceResourceAccess(c.tool.name, c);
     const fileProcessor = new FileProcessor({
       chunkSize: 500,
@@ -251,8 +252,8 @@ export const addFileToKnowledgeBase = createKnowledgeBaseTool({
       chunkCount: proccessedFile.metadata.chunkCount.toString(),
     };
 
-    const embeds = await Promise.all(
-      proccessedFile.chunks.map((chunk, idx) =>
+    const chunks = await Promise.all(
+      proccessedFile.chunks.map((chunk) =>
         remember.handler({
           content: chunk,
           metadata: fileMetadata,
@@ -260,10 +261,22 @@ export const addFileToKnowledgeBase = createKnowledgeBaseTool({
       ),
     );
 
-    if (embeds.some((embeded) => embeded.isError)) {
+    if (chunks.some((embeded) => embeded.isError)) {
       throw new Error("Failed to embed file");
     }
 
-    return { content: proccessedFile.content, embed };
+    const docIds = chunks.map((chunk) => chunk.structuredContent.docId);
+
+    assertHasWorkspace(c);
+    if (path) {
+      await c.db.from("deco_chat_assets").update({
+        metadata: {
+          ...metadata,
+          docIds,
+        },
+      }).eq("workspace", c.workspace.value).eq("file_url", path);
+    }
+
+    return { docIds };
   },
 });

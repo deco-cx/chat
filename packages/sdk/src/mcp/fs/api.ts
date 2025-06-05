@@ -96,7 +96,7 @@ export const listFiles = createTool({
       "file_url, metadata",
     ).eq("workspace", c.workspace.value).ilike("file_url", `${prefix}%`)
       .overrideTypes<
-        { file_url: string; metadata?: Record<string, string> }[]
+        { file_url: string; metadata?: Record<string, string | string[]> }[]
       >();
 
     return assets;
@@ -171,11 +171,12 @@ export const writeFile = createTool({
     contentType: z.string().describe(
       "Content-Type for the file. This is required.",
     ),
-    metadata: z.record(z.string(), z.string()).optional().describe(
+    metadata: z.record(z.string(), z.any()).optional().describe(
       "Metadata to be added to the file",
     ),
   }),
   handler: async ({ path, expiresIn = 60, contentType, metadata }, c) => {
+    await assertWorkspaceResourceAccess(c.tool.name, c);
     assertHasWorkspace(c);
     const bucketName = getWorkspaceBucketName(c.workspace.value);
 
@@ -193,7 +194,7 @@ export const writeFile = createTool({
       signableHeaders: new Set(["content-type"]),
     });
 
-    const { data: newFile, error } = await c.db.from("deco_chat_assets").insert(
+    const { data: newFile, error } = await c.db.from("deco_chat_assets").upsert(
       {
         file_url: path,
         workspace: c.workspace.value,

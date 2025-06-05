@@ -19,7 +19,8 @@ interface WriteOptions {
   content: Uint8Array;
   contentType: string;
   expiresIn?: number;
-  metadata?: Record<string, string>;
+  metadata?: Record<string, string | string[]>;
+  skipWrite?: boolean;
 }
 
 export const writeFile = async ({
@@ -29,6 +30,7 @@ export const writeFile = async ({
   contentType,
   expiresIn,
   metadata,
+  skipWrite,
 }: WriteOptions) => {
   const { url: uploadUrl } = await MCPClient
     .forWorkspace(workspace)
@@ -38,6 +40,10 @@ export const writeFile = async ({
       metadata,
       ...(expiresIn ? { expiresIn } : {}),
     });
+
+  if (skipWrite) {
+    return { ok: true };
+  }
 
   const response = await fetch(uploadUrl!, {
     method: "PUT",

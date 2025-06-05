@@ -1,9 +1,10 @@
 import { useMemo, useRef, useState } from "react";
 import {
-  useAddFileToKnowledgeBase,
+  useAddFileToKnowledge,
   useDeleteFile,
   useFiles,
   useReadFile,
+  useRemoveFromKnowledge,
   useWriteFile,
 } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
@@ -34,11 +35,13 @@ function KnowledgeBaseFileList(
       uploading?: boolean;
       size?: number;
       file_url?: string;
+      docIds?: string[];
     }[];
   },
 ) {
   const prefix = agentKnowledgeBasePath(agentId);
   const removeFile = useDeleteFile();
+  const removeFromKnowledge = useRemoveFromKnowledge();
 
   return (
     <div className="space-y-2">
@@ -107,9 +110,14 @@ function KnowledgeBaseFileList(
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() =>
+              onClick={() => {
                 file.file_url &&
-                removeFile.mutateAsync({ root: prefix, path: file.file_url })}
+                  removeFile.mutateAsync({ root: prefix, path: file.file_url });
+                file.docIds &&
+                  file.docIds.map((docId) =>
+                    removeFromKnowledge.mutateAsync({ docId })
+                  );
+              }}
               className="flex-shrink-0 h-8 w-8 p-0"
               disabled={!file.file_url}
             >
@@ -130,7 +138,8 @@ function AgentKnowledgeBaseFileList({ agentId }: { agentId: string }) {
       ? files.map((file) => ({
         file_url: file.file_url,
         name: file.file_url.replace(prefix, ""),
-        type: file.metadata?.type ?? "",
+        type: file.metadata?.type as string ?? "",
+        docIds: file.metadata?.docIds as string[] ?? [] as string[],
       }))
       : [], [prefix, files]);
 
@@ -152,12 +161,12 @@ export default function UploadKnowledgeBaseAsset() {
   const { agent } = useAgentSettingsForm();
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<
-    { file: File; file_url?: string; uploading?: boolean }[]
+    { file: File; file_url?: string; uploading?: boolean; docIds?: string[] }[]
   >([]);
   const [isUploading, setIsUploading] = useState(false);
   const knowledgeFileInputRef = useRef<HTMLInputElement>(null);
   const writeFileMutation = useWriteFile();
-  const addFileToKnowledgeBase = useAddFileToKnowledgeBase();
+  const addFileToKnowledgeBase = useAddFileToKnowledge();
   const readFile = useReadFile();
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -230,16 +239,22 @@ export default function UploadKnowledgeBaseAsset() {
           const path = agentKnowledgeBaseFilepath(agent.id, filename);
           const buffer = await file.arrayBuffer();
 
-          // add metadata
-          const savedResponse = await writeFileMutation.mutateAsync({
+          const fileMetadata = {
+            agentId: agent.id,
+            type: file.type,
+          };
+
+          const fileMutateData = {
             path,
             contentType: file.type || "application/octet-stream",
             content: new Uint8Array(buffer),
-            metadata: {
-              agentId: agent.id,
-              type: file.type,
-            },
-          });
+            metadata: fileMetadata,
+          };
+
+          // add metadata
+          const savedResponse = await writeFileMutation.mutateAsync(
+            fileMutateData,
+          );
 
           if (!savedResponse.ok) {
             // TODO: handle erro
@@ -259,9 +274,17 @@ export default function UploadKnowledgeBaseAsset() {
           const content = await addFileToKnowledgeBase.mutateAsync({
             fileUrl,
             metadata: {
-              internalFs: "true",
               path,
-              fileUrl: "",
+            },
+            path,
+          });
+
+          await writeFileMutation.mutateAsync({
+            ...fileMutateData,
+            skipWrite: true,
+            metadata: {
+              ...fileMetadata,
+              docIds: content.docIds,
             },
           });
 
@@ -274,6 +297,7 @@ export default function UploadKnowledgeBaseAsset() {
                   file_url: path,
                   uploading: false,
                   content,
+                  docIds: content.docIds,
                 };
               }
               return fileObj;
@@ -379,12 +403,13 @@ export default function UploadKnowledgeBaseAsset() {
         <KnowledgeBaseFileList
           title="Uploaded Files"
           agentId={agent.id}
-          files={uploadedFiles.map(({ file, uploading, file_url }) => ({
+          files={uploadedFiles.map(({ file, uploading, file_url, docIds }) => ({
             name: file.name,
             type: file.type,
             size: file.size,
             file_url: file_url,
             uploading,
+            docIds,
           }))}
         />
       </div>
