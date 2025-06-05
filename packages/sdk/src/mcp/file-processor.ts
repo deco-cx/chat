@@ -6,7 +6,6 @@ interface ProcessedDocument {
   metadata: {
     fileType: string;
     fileSize: number;
-    processedAt: string;
     chunkCount: number;
     fileHash: string;
   };
@@ -91,7 +90,6 @@ export class FileProcessor {
       metadata: {
         fileType,
         fileSize: file.size,
-        processedAt: new Date().toISOString(),
         chunkCount: chunks.length,
         fileHash,
       },

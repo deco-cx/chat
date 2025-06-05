@@ -244,19 +244,18 @@ export const addFileToKnowledgeBase = createKnowledgeBaseTool({
     });
 
     const proccessedFile = await fileProcessor.processFile(fileUrl);
+    const fileMetadata = {
+      ...metadata, // metadata has path that is used to get full file path
+      ...proccessedFile.metadata,
+      fileSize: proccessedFile.metadata.fileSize.toString(),
+      chunkCount: proccessedFile.metadata.chunkCount.toString(),
+    };
 
     const embeds = await Promise.all(
       proccessedFile.chunks.map((chunk, idx) =>
         remember.handler({
           content: chunk,
-          metadata: {
-            ...proccessedFile.metadata,
-            fileSize: proccessedFile.metadata.fileSize.toString(),
-            chunkCount: proccessedFile.metadata.chunkCount.toString(),
-            fileUrl,
-            chunkIdx: idx.toString(),
-            ...metadata,
-          },
+          metadata: fileMetadata,
         })
       ),
     );
