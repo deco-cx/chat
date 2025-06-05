@@ -78,8 +78,8 @@ export function createMCPFetchStub<TDefinition extends readonly ToolBinder[]>(
               credentials: "include",
               ...init,
               headers: {
-                ...init?.headers,
                 "content-type": "application/json",
+                ...init?.headers,
                 "accept": "application/json",
                 "x-trace-debug-id": traceDebugId,
               },
