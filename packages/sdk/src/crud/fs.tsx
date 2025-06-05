@@ -71,3 +71,11 @@ export const readFile = async ({
 
   return url;
 };
+
+interface DeleteOptions {
+  workspace: string;
+  path: string;
+}
+
+export const deleteFile = ({ workspace, path }: DeleteOptions) =>
+  MCPClient.forWorkspace(workspace).FS_DELETE({ path });

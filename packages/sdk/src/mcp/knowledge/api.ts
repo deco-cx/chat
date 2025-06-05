@@ -156,7 +156,6 @@ export const remember = createKnowledgeBaseTool({
     assertHasWorkspace(c);
 
     await assertWorkspaceResourceAccess(c.tool.name, c);
-
     if (!c.envVars.OPENAI_API_KEY) {
       throw new InternalServerError("Missing OPENAI_API_KEY");
     }
@@ -181,7 +180,7 @@ export const remember = createKnowledgeBaseTool({
       };
     } catch (e) {
       console.log(e);
-      return;
+      throw e;
     }
   },
 });
@@ -246,10 +245,8 @@ export const addFileToKnowledgeBase = createKnowledgeBaseTool({
 
     const proccessedFile = await fileProcessor.processFile(fileUrl);
 
-    return { content: proccessedFile.content };
-
     const embed = await remember.handler({
-      content: proccessedFile.chunks[0],
+      content: proccessedFile.content,
       metadata: {
         ...proccessedFile.metadata,
         fileSize: proccessedFile.metadata.fileSize.toString(),
@@ -260,8 +257,11 @@ export const addFileToKnowledgeBase = createKnowledgeBaseTool({
     });
 
     console.log(embed, proccessedFile.chunks[0]);
+    if (embed.isError) {
+      throw new Error("Failed to embed file");
+    }
 
-    return { content: proccessedFile.content };
+    return { content: proccessedFile.content, embed };
     // TODO: save chunked content into knowledge base
     // call remember.handler for each chunk content
   },

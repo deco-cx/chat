@@ -1,6 +1,8 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   useAddFileToKnowledgeBase,
+  useDeleteFile,
+  useFiles,
   useReadFile,
   useWriteFile,
 } from "@deco/sdk";
@@ -14,14 +16,143 @@ import {
 import { cn } from "@deco/ui/lib/utils.ts";
 import { useAgentSettingsForm } from "./edit.tsx";
 
-const agentKnowledgeBasePath = (agentId: string, path: string) =>
-  `agent/${agentId}/knowledge/${path}`;
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
+
+function KnowledgeBaseFileList(
+  { files, title, agentId }: {
+    agentId: string;
+    title: string;
+    files: {
+      name: string;
+      type: string;
+      uploading?: boolean;
+      size?: number;
+      file_url?: string;
+    }[];
+  },
+) {
+  const prefix = agentKnowledgeBasePath(agentId);
+  const removeFile = useDeleteFile();
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium">
+        {title} ({files.length})
+      </p>
+      <div className="space-y-2 max-h-40 overflow-y-auto">
+        {files.map((file, index) => (
+          <div
+            key={`${file.name}-${index}`}
+            className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
+          >
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
+                {file.uploading
+                  ? (
+                    <Icon
+                      name="hourglass_empty"
+                      size={16}
+                      className="text-primary animate-spin"
+                    />
+                  )
+                  : (
+                    <Icon
+                      name={file.type.includes("pdf") ||
+                          file.name.endsWith(".pdf")
+                        ? "picture_as_pdf"
+                        : file.name.endsWith(".csv")
+                        ? "table_chart"
+                        : file.name.endsWith(".json")
+                        ? "code"
+                        : file.name.endsWith(".md") ||
+                            file.name.endsWith(".txt")
+                        ? "description"
+                        : "insert_drive_file"}
+                      size={16}
+                      className="text-primary"
+                    />
+                  )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {file.name}
+                </p>
+                <div className="flex items-center gap-2">
+                  {file.size && (
+                    <p className="text-xs text-muted-foreground">
+                      {formatFileSize(file.size)}
+                    </p>
+                  )}
+                  {file.uploading && (
+                    <span className="text-xs text-primary">
+                      Uploading...
+                    </span>
+                  )}
+                  {file.file_url && file.uploading === false && (
+                    <span className="text-xs text-muted-foreground">
+                      ✓ Uploaded
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                file.file_url &&
+                removeFile.mutateAsync({ root: prefix, path: file.file_url })}
+              className="flex-shrink-0 h-8 w-8 p-0"
+              disabled={!file.file_url}
+            >
+              <Icon name="close" size={16} />
+            </Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AgentKnowledgeBaseFileList({ agentId }: { agentId: string }) {
+  const prefix = agentKnowledgeBasePath(agentId);
+  const { data: files } = useFiles({ root: prefix });
+  const formatedFiles = useMemo(() =>
+    files
+      ? files.map((file) => ({
+        file_url: file.file_url,
+        name: file.file_url.replace(prefix, ""),
+        type: file.metadata?.type ?? "",
+      }))
+      : [], [prefix, files]);
+
+  return (
+    <KnowledgeBaseFileList
+      agentId={agentId}
+      files={formatedFiles}
+      title="Current Files"
+    />
+  );
+}
+
+const agentKnowledgeBasePath = (agentId: string) =>
+  `agent/${agentId}/knowledge`;
+const agentKnowledgeBaseFilepath = (agentId: string, path: string) =>
+  `${agentKnowledgeBasePath(agentId)}/${path}`;
 
 export default function UploadKnowledgeBaseAsset() {
   const { agent } = useAgentSettingsForm();
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<
-    { file: File; url?: string; uploading?: boolean }[]
+    { file: File; file_url?: string; uploading?: boolean }[]
   >([]);
   const [isUploading, setIsUploading] = useState(false);
   const knowledgeFileInputRef = useRef<HTMLInputElement>(null);
@@ -96,7 +227,7 @@ export default function UploadKnowledgeBaseAsset() {
       const uploadPromises = files.map(async (file) => {
         try {
           const filename = file.name;
-          const path = agentKnowledgeBasePath(agent.id, filename);
+          const path = agentKnowledgeBaseFilepath(agent.id, filename);
           const buffer = await file.arrayBuffer();
 
           // add metadata
@@ -106,6 +237,7 @@ export default function UploadKnowledgeBaseAsset() {
             content: new Uint8Array(buffer),
             metadata: {
               agentId: agent.id,
+              type: file.type,
             },
           });
 
@@ -137,7 +269,12 @@ export default function UploadKnowledgeBaseAsset() {
           setUploadedFiles((prev) =>
             prev.map((fileObj) => {
               if (fileObj.file === file) {
-                return { ...fileObj, url: path, uploading: false, content };
+                return {
+                  ...fileObj,
+                  file_url: path,
+                  uploading: false,
+                  content,
+                };
               }
               return fileObj;
             })
@@ -167,20 +304,8 @@ export default function UploadKnowledgeBaseAsset() {
     }
   };
 
-  const removeFile = (index: number) => {
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const triggerFileInput = () => {
     knowledgeFileInputRef.current?.click();
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   return (
@@ -190,6 +315,8 @@ export default function UploadKnowledgeBaseAsset() {
         Upload documents to enhance your agent's knowledge base. Supports PDF,
         TXT, MD, CSV, and JSON files.
       </FormDescription>
+
+      <AgentKnowledgeBaseFileList agentId={agent.id} />
 
       <div className="space-y-4">
         {/* Drag and Drop Area */}
@@ -249,82 +376,17 @@ export default function UploadKnowledgeBaseAsset() {
         </div>
 
         {/* Uploaded Files List */}
-        {uploadedFiles.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium">
-              Uploaded Files ({uploadedFiles.length})
-            </p>
-            <div className="space-y-2 max-h-40 overflow-y-auto">
-              {uploadedFiles.map((fileObj, index) => (
-                <div
-                  key={`${fileObj.file.name}-${index}`}
-                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      {fileObj.uploading
-                        ? (
-                          <Icon
-                            name="hourglass_empty"
-                            size={16}
-                            className="text-primary animate-spin"
-                          />
-                        )
-                        : (
-                          <Icon
-                            name={fileObj.file.type.includes("pdf") ||
-                                fileObj.file.name.endsWith(".pdf")
-                              ? "picture_as_pdf"
-                              : fileObj.file.name.endsWith(".csv")
-                              ? "table_chart"
-                              : fileObj.file.name.endsWith(".json")
-                              ? "code"
-                              : fileObj.file.name.endsWith(".md") ||
-                                  fileObj.file.name.endsWith(".txt")
-                              ? "description"
-                              : "insert_drive_file"}
-                            size={16}
-                            className="text-primary"
-                          />
-                        )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {fileObj.file.name}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs text-muted-foreground">
-                          {formatFileSize(fileObj.file.size)}
-                        </p>
-                        {fileObj.uploading && (
-                          <span className="text-xs text-primary">
-                            Uploading...
-                          </span>
-                        )}
-                        {fileObj.url && !fileObj.uploading && (
-                          <span className="text-xs text-muted-foreground">
-                            ✓ Uploaded
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeFile(index)}
-                    className="flex-shrink-0 h-8 w-8 p-0"
-                    disabled={fileObj.uploading}
-                  >
-                    <Icon name="close" size={16} />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <KnowledgeBaseFileList
+          title="Uploaded Files"
+          agentId={agent.id}
+          files={uploadedFiles.map(({ file, uploading, file_url }) => ({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            file_url: file_url,
+            uploading,
+          }))}
+        />
       </div>
     </FormItem>
   );

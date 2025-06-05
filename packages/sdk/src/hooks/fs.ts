@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { listFiles, readFile, writeFile } from "../crud/fs.tsx";
+import { deleteFile, listFiles, readFile, writeFile } from "../crud/fs.tsx";
 import { useSDK } from "../index.ts";
 import { KEYS } from "./api.ts";
 
@@ -23,7 +23,9 @@ export const useReadFile = () => {
     });
 };
 
-export const useFiles = (root: string) => {
+export const useFiles = (
+  { root }: { root: string },
+) => {
   const { workspace } = useSDK();
 
   return useQuery({
@@ -78,6 +80,30 @@ export const useWriteFile = () => {
       queryClient.invalidateQueries({
         queryKey: KEYS.FILE(workspace, variables.path),
       });
+    },
+  });
+};
+
+interface DeleteFileParams {
+  path: string;
+  /* prefix root to revalited useFiles */
+  root?: string;
+}
+
+export const useDeleteFile = () => {
+  const { workspace } = useSDK();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (
+      { path }: DeleteFileParams,
+    ) => deleteFile({ workspace, path }),
+    onSuccess: (_, { root }) => {
+      if (!root) return;
+
+      const rootKey = KEYS.FILE(workspace, root);
+
+      queryClient.invalidateQueries({ queryKey: rootKey });
     },
   });
 };
