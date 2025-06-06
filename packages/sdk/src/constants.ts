@@ -212,7 +212,7 @@ export const NEW_AGENT_TEMPLATE: Omit<Agent, "id"> = {
   avatar: "https://assets.webdraw.app/uploads/capy-5.png",
   description: "",
   model: DEFAULT_MODEL.id,
-  visibility: "WORKSPACE",
+  access: ["private"],
   tools_set: {},
   views: [],
   instructions: "",
@@ -248,7 +248,7 @@ export const WELL_KNOWN_AGENTS = {
     avatar: "https://assets.webdraw.app/uploads/capy-5.png",
     description: "I can help you with this setup.",
     model: DEFAULT_MODEL.id,
-    visibility: "PUBLIC",
+    access: ["private"],
     tools_set: {
       DECO_INTEGRATIONS: [
         "DECO_INTEGRATIONS_SEARCH",

@@ -29,7 +29,6 @@ import { useNavigateWorkspace } from "../../../hooks/use-navigate-workspace.ts";
 import { EmptyState } from "../../common/empty-state.tsx";
 import { Table, TableColumn } from "../../common/table/index.tsx";
 import { IntegrationInfo } from "../../common/table/table-cells.tsx";
-import { Header, IntegrationPageLayout } from "./breadcrumb.tsx";
 import { IntegrationIcon } from "./common.tsx";
 
 const INTEGRATION_ID_DENYLIST = [
@@ -112,21 +111,18 @@ function IntegrationCard({
 }
 
 interface ListState {
-  filter: string;
   deleteDialogOpen: boolean;
   integrationToDelete: string | null;
   deleting: boolean;
 }
 
 type ListAction =
-  | { type: "SET_FILTER"; payload: string }
   | { type: "CONFIRM_DELETE"; payload: string }
   | { type: "CANCEL_DELETE" }
   | { type: "DELETE_START" }
   | { type: "DELETE_END" };
 
 const initialState: ListState = {
-  filter: "",
   deleteDialogOpen: false,
   integrationToDelete: null,
   deleting: false,
@@ -134,9 +130,6 @@ const initialState: ListState = {
 
 function listReducer(state: ListState, action: ListAction): ListState {
   switch (action.type) {
-    case "SET_FILTER": {
-      return { ...state, filter: action.payload };
-    }
     case "CONFIRM_DELETE": {
       return {
         ...state,
@@ -255,14 +248,23 @@ function TableView(
   );
 }
 
-function InstalledIntegrationsTab() {
+interface Props {
+  filter: string;
+  viewMode: "cards" | "table";
+  integrations: Integration[];
+  setVisibility: (visibility: "marketplace") => void;
+}
+
+export function InstalledIntegrationsTab({
+  viewMode,
+  filter,
+  integrations: installedIntegrations,
+  setVisibility,
+}: Props) {
   const [state, dispatch] = useReducer(listReducer, initialState);
-  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const navigateWorkspace = useNavigateWorkspace();
   const { mutateAsync: removeIntegration } = useRemoveIntegration();
-  const { filter, deleteDialogOpen, integrationToDelete, deleting } = state;
-
-  const { data: installedIntegrations } = useIntegrations();
+  const { deleteDialogOpen, integrationToDelete, deleting } = state;
 
   const filteredIntegrations =
     installedIntegrations?.filter((integration) =>
@@ -312,17 +314,8 @@ function InstalledIntegrationsTab() {
   };
 
   return (
-    <div className="flex flex-col gap-4 h-full py-4">
-      <div className="px-4 overflow-x-auto">
-        <Header
-          value={filter}
-          setValue={(value) => dispatch({ type: "SET_FILTER", payload: value })}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-        />
-      </div>
-
-      <div className="flex-1 min-h-0 px-4 overflow-x-auto">
+    <>
+      <div className="flex-1 min-h-0 px-4 overflow-x-auto h-full">
         {!installedIntegrations
           ? (
             <div className="flex h-48 items-center justify-center">
@@ -334,10 +327,10 @@ function InstalledIntegrationsTab() {
             <EmptyState
               icon="conversion_path"
               title="No connected integrations yet"
-              description="Connect services to expand what your agents can do."
+              description="Explore the marketplace to find services to expand what your agents can do."
               buttonProps={{
                 children: "Connect an integration",
-                onClick: () => navigateWorkspace("/integrations/marketplace"),
+                onClick: () => setVisibility("marketplace"),
               }}
             />
           )
@@ -393,20 +386,6 @@ function InstalledIntegrationsTab() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
-}
-
-export default function Page() {
-  return (
-    <IntegrationPageLayout
-      tabs={{
-        installed: {
-          title: "Installed",
-          Component: InstalledIntegrationsTab,
-          initialOpen: true,
-        },
-      }}
-    />
+    </>
   );
 }

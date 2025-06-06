@@ -1,4 +1,9 @@
-import { useSDK, useTeam, useTeamRoles, useWriteFile } from "@deco/sdk";
+import {
+  useSDK,
+  useTeamRoles,
+  useWriteFile,
+  WELL_KNOWN_AGENTS,
+} from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import {
   Form,
@@ -73,9 +78,7 @@ const useAvatarFilename = () => {
 
 export const useCurrentTeamRoles = () => {
   const { slug } = useCurrentTeam();
-  const { data: team } = useTeam(slug);
-  const teamId = team?.id;
-  const { data: roles = [] } = useTeamRoles(teamId ?? null);
+  const { data: roles = [] } = useTeamRoles(slug || null);
   return roles;
 };
 
@@ -240,24 +243,24 @@ function SettingsTab() {
               )}
             />
 
-            {/* Visibility Section */}
+            {/* Team Access Section */}
             <FormField
-              name="visibility"
+              name="access"
               render={({ field }) => {
                 const { workspace } = useSDK();
-                const isPublic = field.value === "PUBLIC";
+                const isPublic = field.value.includes("public") &&
+                  !(agent.id in WELL_KNOWN_AGENTS);
                 const publicLink = getPublicChatLink(agent.id, workspace);
 
                 return (
                   <FormItem>
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col gap-2">
-                        <FormLabel>Visibility</FormLabel>
+                        <FormLabel>Access</FormLabel>
                         <FormDescription className="text-xs text-muted-foreground">
-                          Control who can interact with this agent.
+                          Control who can access with this agent by role.
                         </FormDescription>
                       </div>
-
                       <CopyLinkButton
                         link={publicLink}
                         className={cn(isPublic ? "visible" : "invisible")}
@@ -266,32 +269,32 @@ function SettingsTab() {
 
                     <FormControl>
                       <Select
-                        value={field.value ?? "PRIVATE"}
-                        onValueChange={field.onChange}
+                        value={`${field.value}`}
+                        onValueChange={(value) => field.onChange([value])}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="WORKSPACE">
-                            <div className="flex items-center gap-2">
-                              <Icon name="groups" />
-                              <span>Team</span>
+                          {roles.map((role) => (
+                            <SelectItem key={role.id} value={role.name}>
+                              <Icon
+                                name={role.name === "private"
+                                  ? "lock_person"
+                                  : role.name === "public"
+                                  ? "public"
+                                  : "groups"}
+                              />
+                              {role.name}
                               <span className="text-xs text-muted-foreground">
-                                Members of your team can access and edit the
-                                agent
+                                {role.name === "private"
+                                  ? "Only me"
+                                  : role.name === "public"
+                                  ? "Anyone with the link"
+                                  : `Team ${role.name}s`}
                               </span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="PUBLIC">
-                            <div className="flex items-center gap-2">
-                              <Icon name="public" />
-                              <span>Public</span>
-                              <span className="text-xs text-muted-foreground">
-                                Anyone with the link can view and use the agent.
-                              </span>
-                            </div>
-                          </SelectItem>
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </FormControl>
@@ -301,53 +304,6 @@ function SettingsTab() {
                 );
               }}
             />
-
-            {/* Team Access Section */}
-            {roles.length > 0 && (
-              <FormField
-                name="access"
-                control={form.control}
-                render={({ field }) => {
-                  return (
-                    <FormItem>
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col gap-2">
-                          <FormLabel>Access</FormLabel>
-                          <FormDescription className="text-xs text-muted-foreground">
-                            Control who can access with this agent by role.
-                          </FormDescription>
-                        </div>
-                      </div>
-
-                      <FormControl>
-                        <Select
-                          value={`${field.value}`}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {roles.map((role) => (
-                              <SelectItem key={role.id} value={role.name}>
-                                <Icon
-                                  name={role.name === "owner"
-                                    ? "lock_person"
-                                    : "groups"}
-                                />
-                                {role.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            )}
 
             <FormField
               name="description"

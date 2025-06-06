@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AccessArraySchema } from "../mcp/access.ts";
 import { WellKnownBindingsName } from "../mcp/index.ts";
 
 export const BindingsSchema = z.enum(
@@ -50,8 +51,6 @@ export const IntegrationSchema = z.object({
   description: z.string().optional(),
   /** URL to the integration's icon */
   icon: z.string().optional(),
-  /** Access level of the integration */
-  access: z.string().optional().nullable(),
   /** Connection configuration */
   connection: z.discriminatedUnion("type", [
     HTTPConnectionSchema,
@@ -60,6 +59,8 @@ export const IntegrationSchema = z.object({
     DecoConnectionSchema,
     InnateConnectionSchema,
   ]),
+  /** Access control */
+  access: AccessArraySchema,
 });
 
 /**

@@ -193,7 +193,7 @@ function Actions({ agent }: { agent: Agent }) {
             <Icon name="content_copy" className="mr-2" />
             {duplicating ? "Duplicating..." : "Duplicate"}
           </DropdownMenuItem>
-          {agent.visibility === "PUBLIC" && (
+          {agent.access?.includes("public") && (
             <DropdownMenuItem
               disabled={duplicating}
               onClick={(e) => {
@@ -330,8 +330,13 @@ function TableView({ agents }: {
   const [sortKey, setSortKey] = useState<"name" | "description">("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  function getSortValue(agent: Agent, key: "name" | "description"): string {
-    if (key === "description") return agent.description?.toLowerCase() || "";
+  function getSortValue(
+    agent: Agent,
+    key: "name" | "description",
+  ): string {
+    if (key === "description") {
+      return agent.description?.toLowerCase() || "";
+    }
     return agent.name?.toLowerCase() || "";
   }
   const sortedAgents = [...agents].sort((a, b) => {
@@ -418,7 +423,7 @@ function CardsView({ agents }: {
   );
 }
 
-const VISIBILITIES = ["all", "public", "workspace"] as const;
+const VISIBILITIES = ["all", "public", "workspace", "private"] as const;
 const VISIBILITY_LABELS = {
   all: "All",
   public: (
@@ -429,6 +434,11 @@ const VISIBILITY_LABELS = {
   workspace: (
     <>
       <Icon name="groups" /> Team
+    </>
+  ),
+  private: (
+    <>
+      <Icon name="lock" /> Private
     </>
   ),
 } as const;
@@ -450,17 +460,23 @@ function List() {
       VISIBILITIES.map((v) => [v, []] as [string, Agent[]]),
     );
 
-    return agents?.reduce((acc, agent) => {
-      acc["all"].push(agent);
-      acc[agent.visibility.toLowerCase()]?.push(agent);
+    return agents?.reduce((acc, item) => {
+      acc["all"].push(item);
+      acc[
+        item.access?.includes("public")
+          ? "public"
+          : item.access?.includes("private")
+          ? "private"
+          : "workspace"
+      ]?.push(item);
 
       return acc;
     }, initial);
   }, [agents]);
 
   const filteredAgents =
-    agentsByVisibility[visibility]?.filter((agent) =>
-      agent.name.toLowerCase().includes(filter.toLowerCase())
+    agentsByVisibility[visibility]?.filter((item) =>
+      item.name.toLowerCase().includes(filter.toLowerCase())
     ) ?? [];
 
   return (

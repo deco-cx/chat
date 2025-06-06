@@ -5,7 +5,7 @@ import { WebCache } from "../cache/index.ts";
 const TWO_MIN_TTL = 60 * 2;
 
 // Base roles
-export const BASE_ROLES_ID = {
+const BASE_ROLES_ID = {
   OWNER: 1,
   PUBLISHER: 2,
   COLLABORATOR: 3,
@@ -261,6 +261,7 @@ export class PolicyClient {
         description,
         team_id
       `)
+      .order("id", { ascending: false })
       .or(`team_id.eq.${teamId},team_id.is.null`);
 
     if (error || !roles) {

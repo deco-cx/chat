@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DEFAULT_MODEL } from "../constants.ts";
+import { AccessArraySchema } from "../mcp/access.ts";
 
 /**
  * Zod schema for an AI Agent
@@ -53,12 +54,8 @@ export const AgentSchema = z.object({
       name: z.string().describe("Name of the view"),
     }),
   ).describe("Views where the agent can be used"),
-  /** Visibility of the agent */
-  visibility: z.enum(["PUBLIC", "WORKSPACE", "PRIVATE"])
-    .describe("Visibility of the agent"),
-  access: z.string().optional().nullable().describe(
-    "Access control by role",
-  ),
+  /** Access control */
+  access: AccessArraySchema,
 });
 
 /**

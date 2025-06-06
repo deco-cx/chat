@@ -204,52 +204,62 @@ export function DetailForm() {
           </div>
 
           {/* Team Access Section */}
-          {roles.length > 0 && (
-            <FormField
-              name="access"
-              control={form.control}
-              render={({ field }) => {
-                return (
-                  <FormItem>
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-col gap-2">
-                        <FormLabel>Access</FormLabel>
-                        <FormDescription className="text-xs text-muted-foreground">
-                          Control who can access and interact with this
-                          integration.
-                        </FormDescription>
-                      </div>
+          <FormField
+            name="access"
+            control={form.control}
+            render={({ field }) => {
+              return (
+                <FormItem>
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-2">
+                      <FormLabel>Access</FormLabel>
+                      <FormDescription className="text-xs text-muted-foreground">
+                        Control who can access and interact with this
+                        integration.
+                      </FormDescription>
                     </div>
+                  </div>
 
-                    <FormControl>
-                      <Select
-                        value={`${field.value}`}
-                        onValueChange={field.onChange}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {roles.map((role) => (
+                  <FormControl>
+                    <Select
+                      value={`${field.value}`}
+                      onValueChange={(value) => field.onChange([value])}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roles
+                          // public access makes no sense for integrations so far
+                          .filter((role) => role.name !== "public")
+                          .map((role) => (
                             <SelectItem key={role.id} value={role.name}>
                               <Icon
-                                name={role.name === "owner"
+                                name={role.name === "private"
                                   ? "lock_person"
+                                  : role.name === "public"
+                                  ? "public"
                                   : "groups"}
                               />
                               {role.name}
+                              <span className="text-xs text-muted-foreground">
+                                {role.name === "private"
+                                  ? "Only me"
+                                  : role.name === "public"
+                                  ? "Anyone with the link"
+                                  : `Team ${role.name}s`}
+                              </span>
                             </SelectItem>
                           ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
 
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
-          )}
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
+          />
 
           <FormField
             control={form.control}

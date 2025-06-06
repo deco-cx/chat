@@ -10,6 +10,7 @@ import {
   assertTeamResourceAccess,
 } from "../assertions.ts";
 import { type AppContext, createTool } from "../context.ts";
+import { getTeam } from "../teams/api.ts";
 import { userFromDatabase } from "../user.ts";
 import { getPlan } from "../wallet/api.ts";
 import {
@@ -709,10 +710,19 @@ export const teamRolesList = createTool({
   name: "TEAM_ROLES_LIST",
   description: "Get all roles available for a team, including basic deco roles",
   inputSchema: z.object({
-    teamId: z.number(),
+    teamId: z.number().optional(),
+    slug: z.string().optional(),
   }),
   handler: async (props, c) => {
-    const { teamId } = props;
+    const team = typeof props.slug === "string"
+      ? await getTeam.handler({ slug: props.slug })
+      : { structuredContent: { id: props.teamId } };
+
+    const teamId = team?.structuredContent?.id;
+
+    if (!teamId) {
+      throw new NotFoundError("Team not found");
+    }
 
     await assertTeamResourceAccess(c.tool.name, teamId, c);
 

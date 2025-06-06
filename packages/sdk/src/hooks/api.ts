@@ -57,7 +57,7 @@ export const KEYS = {
     slugOrId: string | number,
   ) => ["taem", slugOrId, "members"],
   TEAM_ROLES: (
-    teamId: number,
+    teamId: number | string,
   ) => ["team", teamId, "roles"],
   MY_INVITES: () => ["my_invites"],
   MODELS: (
