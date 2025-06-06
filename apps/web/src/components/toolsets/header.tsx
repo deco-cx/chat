@@ -1,7 +1,7 @@
 import type { Integration } from "@deco/sdk";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Skeleton } from "@deco/ui/components/skeleton.tsx";
-import { IntegrationIcon } from "../integrations/list/common.tsx";
+import { IntegrationIcon } from "../integrations/common.tsx";
 import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 import {
   Tooltip,

@@ -1,39 +1,25 @@
-import { Form, FormControl } from "@deco/ui/components/form.tsx";
+import { Form } from "@deco/ui/components/form.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Input } from "@deco/ui/components/input.tsx";
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@deco/ui/components/select.tsx";
 import { useMemo, useState } from "react";
+import { Button } from "@deco/ui/components/button.tsx";
 import { useAgentSettingsForm } from "../agent/edit.tsx";
-import { Chiplet } from "../common/list-page-header.tsx";
-import { IntegrationList } from "../toolsets/selector.tsx";
+import { SelectConnectionDialog } from "../integrations/select-connection-dialog.tsx";
+import { IntegrationListItem } from "../toolsets/selector.tsx";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deco/ui/components/tooltip.tsx";
+import { Integration } from "@deco/sdk";
+import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
+import { AppKeys, getConnectionAppKey } from "../integrations/apps.ts";
 
-const tabs = [
-  {
-    id: "tools",
-    label: "Tools",
-    description:
-      "Connect and configure integrations to extend your agent's capabilities with external services.",
-  },
-  {
-    id: "agents",
-    label: "Agents",
-    description:
-      "Enable your agent to communicate with other agents for collaborative workflows.",
-  },
-  {
-    id: "advanced",
-    label: "Advanced",
-    description:
-      "Access advanced controls for managing users, workspaces, integrations, memory, and automations.",
-  },
-];
+type SetIntegrationTools = (
+  integrationId: string,
+  tools: string[] | boolean,
+) => void;
 
 const ADVANCED_INTEGRATIONS = [
   "i:user-management",
@@ -43,123 +29,90 @@ const ADVANCED_INTEGRATIONS = [
   "DECO_UTILS",
 ];
 
-function IntegrationsTab() {
-  const {
-    form,
-    handleSubmit,
-    installedIntegrations,
-  } = useAgentSettingsForm();
+const connectionFilter = (integration: Integration) =>
+  integration.id.startsWith("i:") ||
+  ADVANCED_INTEGRATIONS.includes(integration.id);
 
+function Connections({
+  installedIntegrations,
+  toolsSet,
+  setIntegrationTools,
+}: {
+  installedIntegrations: Integration[];
+  toolsSet: Record<string, string[]>;
+  setIntegrationTools: SetIntegrationTools;
+}) {
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<("All" | "Active" | "Inactive")>("All");
-  const [activeTab, setActiveTab] = useState("tools");
-
-  const toolsSet = form.watch("tools_set");
-  const setIntegrationTools = (
-    integrationId: string,
-    tools: string[],
-  ) => {
-    const toolsSet = form.getValues("tools_set");
-    const newToolsSet = { ...toolsSet };
-
-    if (tools.length > 0) {
-      newToolsSet[integrationId] = tools;
-    } else {
-      delete newToolsSet[integrationId];
-    }
-
-    form.setValue("tools_set", newToolsSet, { shouldDirty: true });
+  const navigateWorkspace = useNavigateWorkspace();
+  const onConfigureConnection = (integration: Integration) => {
+    const appKey = AppKeys.build(getConnectionAppKey(integration));
+    navigateWorkspace(`/connection/${appKey}?selected=${integration.id}`);
   };
 
   const activeIntegrations = installedIntegrations.filter((integration) =>
-    !!toolsSet[integration.id]?.length
+    !!toolsSet[integration.id]
   );
-
-  const filteredIntegrations = installedIntegrations.filter((integration) => {
-    let shouldShow = false;
-
-    if (integration?.name?.toLowerCase().includes(search.toLowerCase())) {
-      shouldShow = true;
-    }
-
-    if (
-      integration?.description?.toLowerCase().includes(search.toLowerCase())
-    ) {
-      shouldShow = true;
-    }
-
-    if (filter === "Active" && shouldShow) {
-      shouldShow = activeIntegrations.includes(integration);
-    }
-
-    if (filter === "Inactive" && shouldShow) {
-      shouldShow = !activeIntegrations.includes(integration);
-    }
-
-    return shouldShow;
+  const filteredIntegrations = activeIntegrations.filter((integration) => {
+    const searchTerm = search.toLowerCase();
+    return (
+      integration?.name?.toLowerCase().includes(searchTerm) ||
+      integration?.description?.toLowerCase().includes(searchTerm)
+    );
   });
 
-  const orderedIntegrations = useMemo(() => {
-    return filteredIntegrations.sort((a, b) => {
-      const aIsActive = activeIntegrations.includes(a);
-      const bIsActive = activeIntegrations.includes(b);
-
-      if (aIsActive && !bIsActive) return -1;
-      if (!aIsActive && bIsActive) return 1;
-      return 0;
-    });
-  }, [filter, search, activeTab]);
-
-  const toolsIntegrations = orderedIntegrations.filter((integration) =>
-    !ADVANCED_INTEGRATIONS.includes(integration.id) &&
+  const connections = filteredIntegrations.filter((integration) =>
     integration.id.startsWith("i:")
   );
 
-  const agentsIntegrations = orderedIntegrations.filter((integration) =>
-    !ADVANCED_INTEGRATIONS.includes(integration.id) &&
-    integration.id.startsWith("a:")
-  );
-
-  const advancedIntegrations = orderedIntegrations.filter((integration) =>
-    ADVANCED_INTEGRATIONS.includes(integration.id)
-  );
-
-  const toolsMap = {
-    "tools": toolsIntegrations,
-    "agents": agentsIntegrations,
-    "advanced": advancedIntegrations,
-  };
-
-  const tools = tabs.map((tab) => {
-    return {
-      ...tab,
-      active: tab.id === activeTab,
-      count: toolsMap[tab.id as keyof typeof toolsMap].length,
-    };
-  });
-
+  const showAddConnectionEmptyState = connections.length === 0;
   return (
-    <ScrollArea className="h-full w-full">
-      <Form {...form}>
-        <div className="h-full w-full p-4 max-w-3xl mx-auto">
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-2"
-          >
-            <div className="flex gap-2">
-              {tools.map((tab) => {
-                return (
-                  <Chiplet
-                    key={tab.id}
-                    item={tab}
-                    onClick={() => setActiveTab(tab.id)}
-                  />
-                );
-              })}
+    <div className="flex flex-col gap-2">
+      <h6 className="text-sm font-medium">Connections</h6>
+      <div className="flex justify-between items-center">
+        <span className="block text-sm text-muted-foreground pb-2">
+          Connect and configure integrations to extend your agent's capabilities
+          with external services.
+        </span>
+        {!showAddConnectionEmptyState && (
+          <SelectConnectionDialog
+            onSelect={(integration) =>
+              setIntegrationTools(integration.id, true)}
+            filter={connectionFilter}
+            trigger={
+              <Button variant="outline">
+                <Icon name="add" /> Add connection
+              </Button>
+            }
+          />
+        )}
+      </div>
+      {showAddConnectionEmptyState
+        ? (
+          <div className="flex flex-col gap-2 items-center justify-center h-full min-h-[200px] rounded-xl bg-muted border border-border border-dashed relative overflow-hidden">
+            <div className="absolute inset-0">
+              <img
+                src="/img/empty-state-agent-connections.svg"
+                alt="No connections found"
+                className="h-40"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-muted via-transparent to-muted" />
             </div>
-            <span className="block text-sm text-muted-foreground pb-2">
-              {tools.find((tab) => tab.id === activeTab)?.description}
-            </span>
+            <div className="absolute z-10 flex flex-col items-center gap-2 bottom-6">
+              <SelectConnectionDialog
+                onSelect={(integration) =>
+                  setIntegrationTools(integration.id, true)}
+                filter={connectionFilter}
+                trigger={
+                  <Button variant="outline">
+                    <Icon name="add" /> Add connection
+                  </Button>
+                }
+              />
+            </div>
+          </div>
+        )
+        : (
+          <>
             <div className="flex gap-2 w-full">
               <div className="border border-border rounded-lg w-full">
                 <div className="flex items-center h-10 px-4 gap-2">
@@ -176,40 +129,187 @@ function IntegrationsTab() {
                   />
                 </div>
               </div>
-              <Select
-                onValueChange={(value) =>
-                  setFilter(value as "All" | "Active" | "Inactive")}
-                value={filter}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a connection type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {["All", "Active", "Inactive"].map((filter) => (
-                    <SelectItem
-                      key={filter}
-                      value={filter}
-                    >
-                      {filter}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
-            {/* Tools Section */}
-            <div className="space-y-2 mb-8">
+            <div className="space-y-2">
               <div className="flex-1">
                 <div className="flex flex-col gap-2">
-                  <IntegrationList
-                    integrations={toolsMap[activeTab as keyof typeof toolsMap]}
-                    toolsSet={toolsSet}
-                    setIntegrationTools={setIntegrationTools}
-                  />
+                  {connections.map((connection) => (
+                    <IntegrationListItem
+                      key={connection.id}
+                      integration={connection}
+                      toolsSet={toolsSet}
+                      setIntegrationTools={setIntegrationTools}
+                      onConfigure={onConfigureConnection}
+                      onRemove={(integrationId) =>
+                        setIntegrationTools(integrationId, false)}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
+          </>
+        )}
+    </div>
+  );
+}
+
+function Knowledge() {
+  return (
+    <div className="flex flex-col gap-2">
+      <h6 className="text-sm font-medium">Knowledge</h6>
+      <div className="flex justify-between items-center">
+        <span className="block text-sm text-muted-foreground pb-2">
+          Directly attach files to the assistant knowledge base.
+        </span>
+      </div>
+      <div className="flex flex-col gap-2 items-center justify-center h-full min-h-[200px] rounded-xl bg-muted border border-border border-dashed">
+        <img
+          src="/img/empty-state-agent-knowledge.svg"
+          alt="No connections found"
+          className="h-24 mb-4"
+        />
+        <Tooltip>
+          <TooltipTrigger>
+            <Button disabled variant="outline">
+              <Icon name="add" /> Add files
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Coming soon</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    </div>
+  );
+}
+
+function MultiAgent({
+  installedIntegrations,
+  toolsSet,
+  setIntegrationTools,
+}: {
+  installedIntegrations: Integration[];
+  toolsSet: Record<string, string[]>;
+  setIntegrationTools: SetIntegrationTools;
+}) {
+  const navigateWorkspace = useNavigateWorkspace();
+  const onConfigure = (connection: Integration) => {
+    const agentId = connection.id.split("a:")[1];
+    navigateWorkspace(`/agent/${agentId}/${crypto.randomUUID()}`);
+  };
+
+  const activeIntegrations = installedIntegrations.filter((integration) =>
+    !!toolsSet[integration.id]
+  );
+  const agentConnections = activeIntegrations.filter((integration) =>
+    integration.id.startsWith("a:")
+  );
+  const showAddAgentEmptyState = agentConnections.length === 0;
+
+  const newAgentButton = (
+    <SelectConnectionDialog
+      title="Connect agent"
+      filter={(integration) => integration.id.startsWith("a:")}
+      onSelect={(integration) =>
+        setIntegrationTools(integration.id, ["HANDOFF_AGENT"])}
+      trigger={
+        <Button variant="outline">
+          <Icon name="add" /> Add agent
+        </Button>
+      }
+    />
+  );
+
+  return (
+    <div className="flex flex-col gap-2">
+      <h6 className="text-sm font-medium">Multi-Agent</h6>
+      <div className="flex justify-between items-center">
+        <span className="block text-sm text-muted-foreground pb-2">
+          Enable your agent to communicate with other agents for collaborative
+          workflows.
+        </span>
+        {!showAddAgentEmptyState ? newAgentButton : null}
+      </div>
+      {showAddAgentEmptyState
+        ? (
+          <div className="flex flex-col gap-2 items-center justify-center h-full min-h-[200px] rounded-xl bg-muted border border-border border-dashed">
+            {newAgentButton}
+          </div>
+        )
+        : (
+          <div className="space-y-2">
+            <div className="flex-1">
+              <div className="flex flex-col gap-2">
+                {agentConnections.map((agentConnection) => (
+                  <IntegrationListItem
+                    key={agentConnection.id}
+                    integration={agentConnection}
+                    toolsSet={toolsSet}
+                    setIntegrationTools={setIntegrationTools}
+                    onConfigure={onConfigure}
+                    onRemove={(integrationId) =>
+                      setIntegrationTools(integrationId, false)}
+                    hideTools
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+    </div>
+  );
+}
+
+function ToolsAndKnowledgeTab() {
+  const {
+    form,
+    handleSubmit,
+    installedIntegrations,
+  } = useAgentSettingsForm();
+
+  const toolsSet = form.watch("tools_set");
+  const setIntegrationTools: SetIntegrationTools = (
+    integrationId: string,
+    tools: string[] | boolean,
+  ) => {
+    const toolsSet = form.getValues("tools_set");
+    const newToolsSet = { ...toolsSet };
+
+    // Boolean means enable/disable all tools
+    if (typeof tools === "boolean") {
+      if (tools) {
+        // enable all tools
+        newToolsSet[integrationId] = [];
+      } else {
+        delete newToolsSet[integrationId];
+      }
+      form.setValue("tools_set", newToolsSet, { shouldDirty: true });
+      return;
+    }
+
+    newToolsSet[integrationId] = tools;
+    form.setValue("tools_set", newToolsSet, { shouldDirty: true });
+  };
+
+  return (
+    <ScrollArea className="h-full w-full">
+      <Form {...form}>
+        <div className="h-full w-full p-4 max-w-3xl mx-auto">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4"
+          >
+            <Connections
+              installedIntegrations={installedIntegrations}
+              toolsSet={toolsSet}
+              setIntegrationTools={setIntegrationTools}
+            />
+            <Knowledge />
+            <MultiAgent
+              installedIntegrations={installedIntegrations}
+              toolsSet={toolsSet}
+              setIntegrationTools={setIntegrationTools}
+            />
           </form>
         </div>
       </Form>
@@ -217,4 +317,4 @@ function IntegrationsTab() {
   );
 }
 
-export default IntegrationsTab;
+export default ToolsAndKnowledgeTab;

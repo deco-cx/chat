@@ -53,7 +53,7 @@ import { EmptyState } from "../common/empty-state.tsx";
 import { ListPageHeader } from "../common/list-page-header.tsx";
 import { Table } from "../common/table/index.tsx";
 import { Tab } from "../dock/index.tsx";
-import { IntegrationIcon } from "../integrations/list/common.tsx";
+import { IntegrationIcon } from "../integrations/common.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
 import { useFocusChat } from "./hooks.ts";
 
@@ -367,7 +367,7 @@ function TableView({ agents }: {
     },
     {
       id: "integrations",
-      header: "Integrations",
+      header: "Connections",
       render: (agent: Agent) => <IntegrationBadges agent={agent} max={5} />,
     },
     {

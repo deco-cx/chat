@@ -24,7 +24,6 @@ import { ChatProvider } from "../../chat/context.tsx";
 import { Tab } from "../../dock/index.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../../layout.tsx";
 import { Context } from "./context.ts";
-import { DetailForm } from "./form.tsx";
 import { Inspector } from "./inspector.tsx";
 
 function MainChat() {
@@ -45,11 +44,6 @@ const TABS: Record<string, Tab> = {
     Component: MainChat,
     title: "Chat setup",
     initialOpen: true,
-  },
-  form: {
-    Component: DetailForm,
-    title: "Setup",
-    initialOpen: "within",
   },
   inspector: {
     Component: Inspector,
@@ -80,7 +74,7 @@ export default function Page() {
       icon: integration.icon || "",
       connection: integration.connection || {
         type: "HTTP" as const,
-        url: "https://example.com/sse",
+        url: "https://example.com/messages",
         token: "",
       },
       access: integration.access || null,
@@ -96,7 +90,6 @@ export default function Page() {
 
   const onSubmit = async (data: Integration) => {
     try {
-      // Update the existing integration
       await updateIntegration.mutateAsync(data);
 
       trackEvent("integration_update", {
@@ -186,7 +179,7 @@ export default function Page() {
           breadcrumb={
             <DefaultBreadcrumb
               items={[
-                { label: "Integrations", link: "/integrations" },
+                { label: "Connections", link: "/connections" },
                 ...(integration?.name ? [{ label: integration.name }] : []),
               ]}
             />

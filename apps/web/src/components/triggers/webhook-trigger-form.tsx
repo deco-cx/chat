@@ -22,7 +22,7 @@ import Ajv from "ajv";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { IntegrationIcon } from "../integrations/list/common.tsx";
+import { IntegrationIcon } from "../integrations/common.tsx";
 import { BindingSelector } from "../toolsets/binding-selector.tsx";
 import { SingleToolSelector } from "../toolsets/single-selector.tsx";
 

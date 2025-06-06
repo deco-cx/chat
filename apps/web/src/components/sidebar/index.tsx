@@ -62,9 +62,9 @@ const STATIC_ITEMS = [
     icon: "robot_2",
   },
   {
-    url: "/integrations",
-    title: "Integrations",
-    icon: "widgets",
+    url: "/connections",
+    title: "Connections",
+    icon: "linked_services",
   },
   {
     url: "/triggers",

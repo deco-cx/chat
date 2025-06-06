@@ -35,7 +35,7 @@ import { ChatProvider, useChatContext } from "../chat/context.tsx";
 import { AgentAvatar } from "../common/avatar/index.tsx";
 import type { Tab } from "../dock/index.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
-import IntegrationsTab from "../settings/integrations.tsx";
+import ToolsAndKnowledgeTab from "../settings/integrations.tsx";
 import PromptTab from "../settings/prompt.tsx";
 import { AgentTriggers } from "../triggers/agent-triggers.tsx";
 import { AgentBreadcrumbSegment } from "./breadcrumb-segment.tsx";
@@ -133,8 +133,8 @@ const TABS: Record<string, Tab> = {
     initialOpen: "within",
   },
   integrations: {
-    Component: IntegrationsTab,
-    title: "Integrations",
+    Component: ToolsAndKnowledgeTab,
+    title: "Tools & Knowledge",
     initialOpen: "within",
     // it is not the ideal solution
     // but initialWidth is not working as expected

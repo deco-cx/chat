@@ -12,7 +12,7 @@ import { useIsMobile } from "@deco/ui/hooks/use-mobile.ts";
 import { cn } from "@deco/ui/lib/utils.ts";
 import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { ErrorBoundary } from "../../error-boundary.tsx";
-import { IntegrationIcon } from "../integrations/list/common.tsx";
+import { IntegrationIcon } from "../integrations/common.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 
 interface BindingSelectorProps {
@@ -46,9 +46,6 @@ function IntegrationListItem({
         selectedIntegration === integration.id && "bg-muted",
       )}
     >
-      <div className="absolute right-4 top-4 text-muted-foreground lg:hidden">
-        <Icon name="chevron_right" size={16} />
-      </div>
       <div className="flex items-center gap-3">
         <IntegrationIcon
           icon={integration.icon}

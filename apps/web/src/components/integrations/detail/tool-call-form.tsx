@@ -3,25 +3,48 @@ import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { Textarea } from "@deco/ui/components/textarea.tsx";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Form } from "@deco/ui/components/form.tsx";
 import { useForm } from "react-hook-form";
 import { ajvResolver } from "@hookform/resolvers/ajv";
 import type { JSONSchema7 } from "json-schema";
 import { generateDefaultValues } from "../../json-schema/utils/generate-default-values.ts";
 import JSONSchemaForm, { type SchemaType } from "../../json-schema/index.tsx";
+import { useCopy } from "../../../hooks/use-copy.ts";
 
 interface ToolCallFormProps {
   tool: MCPTool;
   onSubmit: (payload: Record<string, unknown>) => Promise<void>;
   onCancel: () => void;
   isLoading: boolean;
+  rawMode: boolean;
+}
+
+export function RawJsonView({ json }: { json: unknown }) {
+  const { copied, handleCopy } = useCopy();
+  return (
+    <div className="relative w-full">
+      <Button
+        className="absolute top-2 right-2"
+        size="icon"
+        onClick={() =>
+          handleCopy(
+            JSON.stringify(json, null, 2),
+          )}
+        variant="outline"
+      >
+        <Icon name={copied ? "check" : "content_copy"} size={16} />
+      </Button>
+      <pre className="p-2 rounded-xl max-h-[200px] border border-border bg-muted text-xs overflow-auto">
+        {JSON.stringify(json, null, 2)}
+      </pre>
+    </div>
+  );
 }
 
 export function ToolCallForm(
-  { tool, onSubmit, onCancel, isLoading }: ToolCallFormProps,
+  { tool, onSubmit, onCancel, isLoading, rawMode }: ToolCallFormProps,
 ) {
-  const [rawMode, setRawMode] = useState(false);
   const [payload, setPayload] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +75,6 @@ export function ToolCallForm(
         setError(
           "Invalid JSON payload. Please fix before switching to form mode.",
         );
-        setRawMode(true); // Stay in raw mode
       }
     }
   }, [rawMode]);
@@ -76,67 +98,30 @@ export function ToolCallForm(
     }
   });
 
-  const toggleEditMode = () => {
-    if (!rawMode) {
-      // Going from form to raw - just update payload and switch
-      try {
-        setPayload(JSON.stringify(form.getValues(), null, 2));
-        setRawMode(true);
-      } catch (_err) {
-        setPayload("{}");
-        setRawMode(true);
-      }
-    } else {
-      // Going from raw to form - validate JSON first
-      try {
-        const parsedPayload = JSON.parse(payload || "{}");
-        form.reset(parsedPayload);
-        setRawMode(false);
-        setError(null);
-      } catch (_err) {
-        setError(
-          "Invalid JSON payload. Please fix before switching to form mode.",
-        );
-      }
-    }
-  };
-
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={toggleEditMode}
-          disabled={isLoading}
-          className="flex items-center gap-2"
-        >
-          <Icon name={rawMode ? "text_ad" : "data_object"} />
-        </Button>
-      </div>
-
       {rawMode
         ? (
-          <div>
-            <div>
-              <div className="text-sm font-medium mb-2">Input Schema</div>
-              <pre className="p-4 rounded-lg bg-muted text-sm overflow-auto">
-                {JSON.stringify(tool.inputSchema, null, 2)}
-              </pre>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <div className="text-sm font-medium">Input Schema</div>
+              <RawJsonView json={tool.inputSchema} />
             </div>
 
-            <div className="text-sm font-medium mb-2">Raw JSON Payload</div>
-            <Textarea
-              value={payload}
-              onChange={(e) => setPayload(e.target.value)}
-              placeholder="Enter JSON payload..."
-              className="font-mono"
-              rows={10}
-              disabled={isLoading}
-            />
-            {error && (
-              <div className="text-sm text-destructive mt-2">{error}</div>
-            )}
+            <div className="flex flex-col gap-2">
+              <div className="text-sm font-medium">Raw JSON Payload</div>
+              <Textarea
+                value={payload}
+                onChange={(e) => setPayload(e.target.value)}
+                placeholder="Enter JSON payload..."
+                className="font-mono bg-background"
+                rows={10}
+                disabled={isLoading}
+              />
+              {error && (
+                <div className="text-sm text-destructive mt-2">{error}</div>
+              )}
+            </div>
 
             <div className="flex gap-2 mt-4">
               <Button

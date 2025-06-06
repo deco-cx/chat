@@ -9,7 +9,7 @@ import { Icon } from "@deco/ui/components/icon.tsx";
 import { Input } from "@deco/ui/components/input.tsx";
 import { useMemo, useState } from "react";
 import { formatToolName } from "../chat/utils/format-tool-name.ts";
-import { IntegrationIcon } from "../integrations/list/common.tsx";
+import { IntegrationIcon } from "../integrations/common.tsx";
 import type { Integration } from "@deco/sdk";
 import type { MCPTool } from "@deco/sdk";
 import { cn } from "@deco/ui/lib/utils.ts";
