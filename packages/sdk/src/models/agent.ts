@@ -32,6 +32,10 @@ export const AgentSchema = z.object({
   max_tokens: z.number().nullable().optional().describe(
     "Maximum number of tokens the agent can use, defaults to 8192",
   ),
+  /** Token usage level (minimal: 10%, normal: 50%, max: 100%) */
+  tokenUsage: z.enum(["minimal", "normal", "max"]).default("normal").optional().describe(
+    "Token usage level: minimal (10%), normal (50%), max (100%)",
+  ),
   /** Model to use for the agent */
   model: z.string().default(DEFAULT_MODEL.id)
     .describe("Model to use for the agent"),

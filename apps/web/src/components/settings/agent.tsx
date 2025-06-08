@@ -32,10 +32,6 @@ import { Channels } from "./channels.tsx";
 
 const AVATAR_FILE_PATH = "assets/avatars";
 
-// Token limits for Anthropic models
-const ANTHROPIC_MIN_MAX_TOKENS = 4096;
-const ANTHROPIC_MAX_MAX_TOKENS = 64000;
-
 function CopyLinkButton(
   { className, link }: { className: string; link: string },
 ) {
@@ -204,24 +200,6 @@ function SettingsTab() {
               )}
             />
 
-            <FormField
-              name="max_tokens"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Max Tokens</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={ANTHROPIC_MIN_MAX_TOKENS}
-                      max={ANTHROPIC_MAX_MAX_TOKENS}
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <FormField
               name="model"
@@ -364,6 +342,55 @@ function SettingsTab() {
                       className="min-h-18 border-border"
                       {...field}
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="tokenUsage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Token Usage</FormLabel>
+                  <FormDescription className="text-xs text-muted-foreground">
+                    Controls how many tokens the agent can use based on the selected model's limits.
+                  </FormDescription>
+                  <FormControl>
+                    <Select
+                      value={field.value ?? "normal"}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="minimal">
+                          <div className="flex items-center gap-2">
+                            <span>Minimal</span>
+                            <span className="text-xs text-muted-foreground">
+                              (10% of model limit)
+                            </span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="normal">
+                          <div className="flex items-center gap-2">
+                            <span>Normal</span>
+                            <span className="text-xs text-muted-foreground">
+                              (50% of model limit)
+                            </span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="max">
+                          <div className="flex items-center gap-2">
+                            <span>Maximum</span>
+                            <span className="text-xs text-muted-foreground">
+                              (100% of model limit)
+                            </span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

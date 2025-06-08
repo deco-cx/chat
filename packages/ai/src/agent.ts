@@ -457,7 +457,29 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     );
   }
 
-  private _maxTokens(): number {
+  private async _maxTokens(): Promise<number> {
+    // If tokenUsage is specified, calculate based on model's max tokens
+    if (this._configuration?.tokenUsage) {
+      const llmConfig = await getLLMConfig({
+        modelId: this._configuration.model,
+        llmVault: this.llmVault,
+      });
+      
+      const { tokenLimit } = createLLMInstance({
+        ...llmConfig,
+        envs: this.env,
+      });
+      
+      const percentage = this._configuration.tokenUsage === "minimal" 
+        ? 0.1 
+        : this._configuration.tokenUsage === "normal" 
+        ? 0.5 
+        : 1.0; // max
+      
+      return Math.min(Math.floor(tokenLimit * percentage), MAX_TOKENS);
+    }
+    
+    // Fallback to legacy max_tokens field
     return Math.min(
       this._configuration?.max_tokens ?? DEFAULT_MAX_TOKENS,
       MAX_TOKENS,
@@ -858,7 +880,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
       ...this.thread,
       output: jsonSchema,
       maxSteps: this._maxSteps(),
-      maxTokens: this._maxTokens(),
+      maxTokens: await this._maxTokens(),
     }) as GenerateObjectResult<TObject>;
 
     await this.memory.addMessage({
@@ -900,7 +922,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     const result = await agent.generate(aiMessages, {
       ...this.thread,
       maxSteps: this._maxSteps(),
-      maxTokens: this._maxTokens(),
+      maxTokens: await this._maxTokens(),
       instructions: options?.instructions,
       toolsets,
     }) as GenerateTextResult<any, any>;
@@ -988,10 +1010,11 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
       })
       : undefined;
 
-    const maxLimit = Math.max(MAX_TOKENS, this._maxTokens());
+    const maxTokens = await this._maxTokens();
+    const maxLimit = Math.max(MAX_TOKENS, maxTokens);
     const budgetTokens = Math.min(
       MAX_THINKING_TOKENS,
-      maxLimit - this._maxTokens(),
+      maxLimit - maxTokens,
     );
 
     const aiMessages = await Promise.all(
@@ -1008,7 +1031,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
         toolsets,
         instructions: options?.instructions,
         maxSteps: this._maxSteps(),
-        maxTokens: this._maxTokens(),
+        maxTokens: maxTokens,
         experimental_transform: experimentalTransform,
         providerOptions: budgetTokens > MIN_THINKING_TOKENS
           ? {
