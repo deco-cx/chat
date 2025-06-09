@@ -30,3 +30,5 @@ export * from "./models/trigger.ts";
 export * from "./models/tool-call.ts";
 
 export * from "./errors.ts";
+
+export * from "./mcp/access.ts";

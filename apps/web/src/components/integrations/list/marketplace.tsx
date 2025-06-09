@@ -20,10 +20,9 @@ import {
   useNavigateWorkspace,
   useWorkspaceLink,
 } from "../../../hooks/use-navigate-workspace.ts";
-import { Header, IntegrationPageLayout } from "./breadcrumb.tsx";
-import { IntegrationIcon } from "./common.tsx";
 import { Table, TableColumn } from "../../common/table/index.tsx";
 import { IntegrationInfo } from "../../common/table/table-cells.tsx";
+import { IntegrationIcon } from "./common.tsx";
 
 interface MarketplaceIntegration extends Integration {
   provider: string;
@@ -226,9 +225,9 @@ function TableView(
   );
 }
 
-function MarketplaceTab() {
-  const [registryFilter, setRegistryFilter] = useState("");
-  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+export function MarketplaceTab(
+  { viewMode, filter }: { viewMode: "cards" | "table"; filter: string },
+) {
   const [selectedIntegration, setSelectedIntegration] = useState<
     MarketplaceIntegration | null
   >(null);
@@ -245,10 +244,10 @@ function MarketplaceTab() {
   const { data: marketplace } = useMarketplaceIntegrations();
 
   const filteredRegistryIntegrations = useMemo(() => {
-    const searchTerm = registryFilter.toLowerCase();
+    const searchTerm = filter.toLowerCase();
     const integrations = marketplace?.integrations ?? [];
 
-    const filtered = registryFilter
+    const filtered = filter
       ? integrations.filter((integration: MarketplaceIntegration) =>
         integration.name.toLowerCase().includes(searchTerm) ||
         (integration.description?.toLowerCase() ?? "").includes(searchTerm) ||
@@ -271,7 +270,7 @@ function MarketplaceTab() {
     });
 
     return categorized;
-  }, [marketplace, registryFilter]);
+  }, [marketplace, filter]);
 
   function handleOpenModal(integration: MarketplaceIntegration) {
     setSelectedIntegration(integration);
@@ -333,16 +332,7 @@ function MarketplaceTab() {
   }
 
   return (
-    <div className="flex flex-col gap-4 h-full py-4">
-      <div className="px-4 overflow-x-auto">
-        <Header
-          value={registryFilter}
-          setValue={(value) => setRegistryFilter(value)}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-        />
-      </div>
-
+    <>
       <div className="flex-1 min-h-0 px-4 overflow-x-auto">
         {viewMode === "table"
           ? (
@@ -367,20 +357,6 @@ function MarketplaceTab() {
         onEdit={handleEditIntegration}
         onClose={handleCloseModal}
       />
-    </div>
-  );
-}
-
-export default function Page() {
-  return (
-    <IntegrationPageLayout
-      tabs={{
-        marketplace: {
-          title: "Marketplace",
-          Component: MarketplaceTab,
-          initialOpen: true,
-        },
-      }}
-    />
+    </>
   );
 }

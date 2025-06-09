@@ -602,7 +602,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     // this is a weak check, but it works for now
     if (
       req.headers.get("host") !== null && runtimeKey !== "deno" &&
-      this._configuration?.visibility !== "PUBLIC"
+      !this._configuration?.access?.includes("public")
     ) { // if host is set so its not an internal request so checks must be applied
       await assertWorkspaceResourceAccess("AGENTS_GET", ctx);
     } else if (req.headers.get("host") !== null && runtimeKey === "deno") {
@@ -773,12 +773,11 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     const client = this.metadata?.mcpClient ?? this.agentScoppedMcpClient;
     const manifest = this.agentId in WELL_KNOWN_AGENTS
       ? WELL_KNOWN_AGENTS[this.agentId as keyof typeof WELL_KNOWN_AGENTS]
-      : await client.AGENTS_GET({
-        id: this.agentId,
-      }).catch((err) => {
-        console.error("Error getting agent", err);
-        return null;
-      });
+      : await client.AGENTS_GET({ id: this.agentId })
+        .catch((err) => {
+          console.error("Error getting agent", err);
+          return null;
+        });
 
     const merged: Configuration = {
       name: ANONYMOUS_NAME,
@@ -788,7 +787,6 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
       id: crypto.randomUUID(),
       model: DEFAULT_MODEL.id,
       views: [],
-      visibility: "WORKSPACE",
       ...manifest,
     };
 

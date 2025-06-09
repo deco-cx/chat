@@ -88,9 +88,15 @@ export const getTeamMembers = (
  * @returns List of team roles
  */
 export const getTeamRoles = (
-  teamId: number,
+  teamIdOrSlug: number | string | string,
   signal?: AbortSignal,
-): Promise<Role[]> => MCPClient.TEAM_ROLES_LIST({ teamId }, { signal });
+): Promise<Role[]> =>
+  MCPClient.TEAM_ROLES_LIST(
+    typeof teamIdOrSlug === "number"
+      ? { teamId: teamIdOrSlug }
+      : { slug: teamIdOrSlug },
+    { signal },
+  );
 
 /**
  * Invite new members to a team

@@ -60,11 +60,26 @@ export const useTeamMembersBySlug = (currentTeamSlug: string | null) => {
  * Hook to fetch team roles
  * @param teamId - The ID of the team to fetch roles for
  */
-export const useTeamRoles = (teamId: number | null) => {
+export const useTeamRoles = (teamIdOrSlug: number | string | null) => {
   return useSuspenseQuery({
-    queryKey: KEYS.TEAM_ROLES(teamId ?? -1),
+    queryKey: KEYS.TEAM_ROLES(teamIdOrSlug ?? -1),
     queryFn: ({ signal }) =>
-      typeof teamId === "number" ? getTeamRoles(teamId, signal) : [],
+      !teamIdOrSlug
+        ? [ // TODO: this is just for when using private account as the team. We should remove this once we have a proper team for private accounts
+          {
+            id: 1,
+            name: "private",
+            description: "Only me",
+            team_id: null,
+          },
+          {
+            id: 2,
+            name: "public",
+            description: "Anyone with the link",
+            team_id: null,
+          },
+        ]
+        : getTeamRoles(teamIdOrSlug, signal),
   });
 };
 

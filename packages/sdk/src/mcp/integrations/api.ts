@@ -21,7 +21,14 @@ import {
 import { CallToolResultSchema } from "../../models/tool-call.ts";
 import type { Workspace } from "../../path.ts";
 import { QueryResult } from "../../storage/supabase/client.ts";
-import { IMPORTANT_ROLES } from "../agents/api.ts";
+import {
+  Access,
+  createAccess,
+  restoreAccessTypes,
+  updateAccess,
+  withAccessSchema,
+} from "../access.ts";
+import { IMPORTANT_ROLES, listAgents } from "../agents/api.ts";
 import {
   assertHasWorkspace,
   assertWorkspaceResourceAccess,
@@ -46,6 +53,7 @@ const formatId = (type: "i" | "a", uuid: string) => `${type}:${uuid}`;
 const agentAsIntegrationFor =
   (workspace: string) => (agent: Agent): Integration => ({
     id: formatId("a", agent.id),
+    access: agent.access,
     icon: agent.avatar,
     name: agent.name,
     description: agent.description,
@@ -187,6 +195,24 @@ const virtualIntegrationsFor = (
   ];
 };
 
+const isAccessGranted = (
+  access: Pick<Access, "visibility" | "owner_id">,
+  userId: unknown,
+  canAccessResource: boolean,
+) =>
+  access.visibility === "public" ||
+  (access.visibility === "private" && access.owner_id === userId) ||
+  (access.visibility === "role_based" && canAccessResource);
+
+const DEFAULT_ACCESS: Pick<
+  Access,
+  "visibility" | "owner_id" | "allowed_roles"
+> = {
+  owner_id: "",
+  allowed_roles: [],
+  visibility: "role_based",
+};
+
 export const listIntegrations = createTool({
   name: "INTEGRATIONS_LIST",
   description: "List all integrations",
@@ -197,48 +223,45 @@ export const listIntegrations = createTool({
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
-
     const [
+      canAccess,
       integrations,
       agents,
       knowledgeBases,
     ] = await Promise.all([
+      assertWorkspaceResourceAccess(c.tool.name, c)
+        .then(() => true).catch(() => false),
       c.db
         .from("deco_chat_integrations")
-        .select("*")
+        .select(`
+          *, 
+          access:deco_chat_access(
+            visibility, 
+            owner_id, 
+            allowed_roles
+          )
+        `)
         .ilike("workspace", workspace),
-      c.db
-        .from("deco_chat_agents")
-        .select("*")
-        .ilike("workspace", workspace),
+      listAgents.handler({}),
       listKnowledgeBases.handler({}),
     ]);
 
-    const error = integrations.error || agents.error;
-
-    if (error) {
+    if (integrations.error) {
       throw new InternalServerError(
-        error.message || "Failed to list integrations",
+        integrations.error.message || "Failed to list integrations",
       );
     }
-    const roles = c.workspace.root === "users"
-      ? []
-      : (await c.policy.getUserRoles(c.user.id as string, c.workspace.slug));
-    const userRoles: string[] = roles?.map((role) => role?.name);
 
     // TODO: This is a temporary solution to filter integrations and agents by access.
     const filteredIntegrations = integrations.data.filter((integration) =>
-      !integration.access ||
-      userRoles?.includes(integration.access) ||
-      userRoles?.some((role) => IMPORTANT_ROLES.includes(role))
+      isAccessGranted(
+        integration.access ?? DEFAULT_ACCESS,
+        c.user?.id,
+        canAccess,
+      )
     );
 
-    const filteredAgents = agents.data.filter((agent) =>
-      !agent.access ||
-      userRoles?.includes(agent.access) ||
-      userRoles?.some((role) => IMPORTANT_ROLES.includes(role))
-    );
+    const filteredAgents = agents.structuredContent ?? [];
 
     const result = [
       ...virtualIntegrationsFor(
@@ -248,6 +271,7 @@ export const listIntegrations = createTool({
       ...filteredIntegrations.map((item) => ({
         ...item,
         id: formatId("i", item.id),
+        access: restoreAccessTypes(item.access),
       })),
       ...filteredAgents
         .map((item) => AgentSchema.safeParse(item)?.data)
@@ -303,8 +327,7 @@ export const getIntegration = createTool({
   }),
   handler: async ({ id }, c) => {
     // preserve the logic of the old canAccess
-    const isInnate =
-      INNATE_INTEGRATIONS[id as keyof typeof INNATE_INTEGRATIONS];
+    const isInnate = id in INNATE_INTEGRATIONS;
 
     const canAccess = isInnate ||
       await assertWorkspaceResourceAccess(c.tool.name, c)
@@ -328,7 +351,14 @@ export const getIntegration = createTool({
 
     const selectPromise = c.db
       .from(type === "i" ? "deco_chat_integrations" : "deco_chat_agents")
-      .select("*")
+      .select(`
+        *, 
+        access:deco_chat_access(
+          visibility, 
+          owner_id, 
+          allowed_roles
+        )
+      `)
       .eq("id", uuid)
       .single().then((r) => r);
     const knowledgeBases = await listKnowledgeBases.handler({});
@@ -354,6 +384,12 @@ export const getIntegration = createTool({
       throw new InternalServerError((error as Error).message);
     }
 
+    if (
+      !isAccessGranted(data.access ?? DEFAULT_ACCESS, c.user?.id, canAccess)
+    ) {
+      throw new NotFoundError("Integration not found");
+    }
+
     if (type === "a") {
       const mapAgentToIntegration = agentAsIntegrationFor(
         c.workspace.value as Workspace,
@@ -367,6 +403,7 @@ export const getIntegration = createTool({
     return IntegrationSchema.parse({
       ...data,
       id: formatId(type, data.id),
+      access: restoreAccessTypes(data.access),
     });
   },
 });
@@ -374,28 +411,33 @@ export const getIntegration = createTool({
 export const createIntegration = createTool({
   name: "INTEGRATIONS_CREATE",
   description: "Create a new integration",
-  inputSchema: IntegrationSchema.partial(),
-  handler: async (integration, c) => {
+  inputSchema: withAccessSchema(IntegrationSchema.partial()),
+  handler: async ({ access, ...integration }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c.tool.name, c);
+
+    const accessData = await createAccess(c, access || ["private"]);
 
     const { data, error } = await c.db
       .from("deco_chat_integrations")
       .insert({
         ...NEW_INTEGRATION_TEMPLATE,
         ...integration,
+        access: null,
+        access_id: accessData.id,
         workspace: c.workspace.value,
       })
       .select()
       .single();
 
-    if (error) {
+    if (error || !data) {
       throw new InternalServerError(error.message);
     }
 
     return IntegrationSchema.parse({
       ...data,
       id: formatId("i", data.id),
+      access: restoreAccessTypes(accessData),
     });
   },
 });
@@ -405,9 +447,9 @@ export const updateIntegration = createTool({
   description: "Update an existing integration",
   inputSchema: z.object({
     id: z.string(),
-    integration: IntegrationSchema,
+    integration: withAccessSchema(IntegrationSchema.partial()),
   }),
-  handler: async ({ id, integration }, c) => {
+  handler: async ({ id, integration: { access, ...integration } }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c.tool.name, c);
 
@@ -417,9 +459,35 @@ export const updateIntegration = createTool({
       throw new UserInputError("Cannot update an agent integration");
     }
 
+    // First get the current integration to check if it exists and get its access_id
+    const { data: existing, error: fetchError } = await c.db
+      .from("deco_chat_integrations")
+      .select("access_id")
+      .eq("id", uuid)
+      .single();
+
+    if (fetchError) {
+      throw new InternalServerError(fetchError.message);
+    }
+
+    if (!existing) {
+      throw new NotFoundError("Integration not found");
+    }
+
+    // Handle access creation/update
+    const accessData = existing.access_id
+      ? await updateAccess(c, existing.access_id, access || ["private"])
+      : await createAccess(c, access || ["private"]); // backwards compatibility
+
+    // Update the integration with the new access_id
     const { data, error } = await c.db
       .from("deco_chat_integrations")
-      .update({ ...integration, id: uuid, workspace: c.workspace.value })
+      .update({
+        ...integration,
+        id: uuid,
+        workspace: c.workspace.value,
+        access_id: accessData.id,
+      })
       .eq("id", uuid)
       .select()
       .single();
@@ -428,13 +496,10 @@ export const updateIntegration = createTool({
       throw new InternalServerError(error.message);
     }
 
-    if (!data) {
-      throw new NotFoundError("Integration not found");
-    }
-
     return IntegrationSchema.parse({
       ...data,
       id: formatId(type, data.id),
+      access: restoreAccessTypes(accessData),
     });
   },
 });

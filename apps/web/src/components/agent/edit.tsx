@@ -24,10 +24,18 @@ import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
 import { toast } from "@deco/ui/components/sonner.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createContext, Suspense, useContext, useEffect, useMemo } from "react";
+import {
+  createContext,
+  lazy,
+  Suspense,
+  useContext,
+  useEffect,
+  useMemo,
+} from "react";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { useBlocker, useParams } from "react-router";
 import { useCreateAgent } from "../../hooks/use-create-agent.ts";
+import { wrapWithUILoadingFallback } from "../../main.tsx";
 import { useFocusChat } from "../agents/hooks.ts";
 import { ChatInput } from "../chat/chat-input.tsx";
 import { ChatMessages } from "../chat/chat-messages.tsx";
@@ -43,8 +51,6 @@ import AgentPreview from "./preview.tsx";
 import ThreadView from "./thread.tsx";
 import Threads from "./threads.tsx";
 import { WhatsAppButton } from "./whatsapp-button.tsx";
-import { lazy } from "react";
-import { wrapWithUILoadingFallback } from "../../main.tsx";
 
 interface Props {
   agentId?: string;
@@ -264,7 +270,7 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
         if (isWellKnownAgent) {
           const id = crypto.randomUUID();
           const agent = { ...data, id };
-          createAgent(agent, {});
+          await createAgent(agent, {});
           const wellKnownAgent =
             WELL_KNOWN_AGENTS[agentId as keyof typeof WELL_KNOWN_AGENTS];
           form.reset(wellKnownAgent);

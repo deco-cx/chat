@@ -25,14 +25,18 @@ export const saveIntegration = (
 export const createIntegration = (
   workspace: string,
   template: Partial<Integration> = {},
+  access: string[] = ["private"],
 ) =>
   MCPClient.forWorkspace(workspace).INTEGRATIONS_CREATE({
-    id: crypto.randomUUID(),
-    name: "New Integration",
-    description: "A new multi-channel platform integration",
-    icon: "",
-    connection: { type: "HTTP", url: "https://example.com/mcp" },
-    ...template,
+    data: {
+      id: crypto.randomUUID(),
+      name: "New Integration",
+      description: "A new multi-channel platform integration",
+      icon: "",
+      connection: { type: "HTTP", url: "https://example.com/mcp" },
+      ...template,
+    },
+    access,
   });
 
 /**

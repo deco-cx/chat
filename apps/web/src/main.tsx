@@ -59,36 +59,28 @@ const IntegrationDetail = lazy(() =>
   wrapWithUILoadingFallback(import("./components/integrations/detail/edit.tsx"))
 );
 
-const IntegrationList = lazy(() =>
-  wrapWithUILoadingFallback(
-    import("./components/integrations/list/installed.tsx"),
-  )
+const IntegrationListPage = lazy(() =>
+  wrapWithUILoadingFallback(import("./components/integrations/list/page.tsx"))
 );
 
-const IntegrationMarketplace = lazy(() =>
-  wrapWithUILoadingFallback(
-    import("./components/integrations/list/marketplace.tsx"),
-  )
+const AgentList = lazy(() =>
+  wrapWithUILoadingFallback(import("./components/agents/list.tsx"))
 );
 
-const AgentList = lazy(
-  () => wrapWithUILoadingFallback(import("./components/agents/list.tsx")),
+const AgentDetail = lazy(() =>
+  wrapWithUILoadingFallback(import("./components/agent/edit.tsx"))
 );
 
-const AgentDetail = lazy(
-  () => wrapWithUILoadingFallback(import("./components/agent/edit.tsx")),
+const PublicChats = lazy(() =>
+  wrapWithUILoadingFallback(import("./components/agent/chats.tsx"))
 );
 
-const PublicChats = lazy(
-  () => wrapWithUILoadingFallback(import("./components/agent/chats.tsx")),
+const AuditList = lazy(() =>
+  wrapWithUILoadingFallback(import("./components/audit/list.tsx"))
 );
 
-const AuditList = lazy(
-  () => wrapWithUILoadingFallback(import("./components/audit/list.tsx")),
-);
-
-const AuditDetail = lazy(
-  () => wrapWithUILoadingFallback(import("./components/audit/detail.tsx")),
+const AuditDetail = lazy(() =>
+  wrapWithUILoadingFallback(import("./components/audit/detail.tsx"))
 );
 
 const MagicLink = lazy(() =>
@@ -272,11 +264,7 @@ const router = createBrowserRouter([
           },
           { path: "agents", Component: AgentList },
           { path: "agent/:id/:threadId", Component: AgentDetail },
-          {
-            path: "integrations/marketplace",
-            Component: IntegrationMarketplace,
-          },
-          { path: "integrations", Component: IntegrationList },
+          { path: "integrations", Component: IntegrationListPage },
           { path: "integration/:id", Component: IntegrationDetail },
           { path: "triggers", Component: TriggerList },
           { path: "trigger/:agentId/:triggerId", Component: TriggerDetails },
