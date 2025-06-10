@@ -1,5 +1,6 @@
-import { useUpdateThreadMessages } from "@deco/sdk";
-import { useCallback } from "react";
+import type { Agent } from "@deco/sdk";
+import { MCPClient, useUpdateThreadMessages } from "@deco/sdk";
+import { useCallback, useState } from "react";
 import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 
 interface AgentNavigationOptions {
@@ -42,4 +43,56 @@ export const useFocusChat = () => {
   );
 
   return navigateToAgent;
+};
+
+interface WorkspaceOption {
+  id: string;
+  label: string;
+  slug: string;
+  isPersonal: boolean;
+  avatarUrl?: string;
+}
+
+export const useCopyAgentToWorkspace = () => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const copyAgent = useCallback(async (agent: Agent, targetWorkspace: WorkspaceOption) => {
+    setIsLoading(true);
+    
+    try {
+      // Determine target workspace string
+      const workspaceId = targetWorkspace.isPersonal 
+        ? `users/${targetWorkspace.id}`
+        : `shared/${targetWorkspace.slug}`;
+
+      // Create MCP client for target workspace
+      const targetClient = MCPClient.forWorkspace(workspaceId);
+
+      // Prepare agent data for copying
+      const copiedAgent = {
+        id: crypto.randomUUID(),
+        name: `${agent.name} (Copy)`,
+        avatar: agent.avatar,
+        description: agent.description,
+        instructions: agent.instructions,
+        model: agent.model,
+        tools_set: agent.tools_set,
+        max_steps: agent.max_steps,
+        max_tokens: agent.max_tokens,
+        memory: agent.memory,
+        views: agent.views,
+        visibility: agent.visibility,
+        access: agent.access,
+      };
+
+      // Create the agent in the target workspace
+      await targetClient.AGENTS_CREATE(copiedAgent);
+      
+      return copiedAgent;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { copyAgent, isLoading };
 };

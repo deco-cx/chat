@@ -56,6 +56,7 @@ import { Tab } from "../dock/index.tsx";
 import { IntegrationIcon } from "../integrations/list/common.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
 import { useFocusChat } from "./hooks.ts";
+import { CopyAgentDialog } from "./copy-agent-dialog.tsx";
 
 export const useDuplicateAgent = (agent: Agent | null) => {
   const [duplicating, setDuplicating] = useState(false);
@@ -163,6 +164,7 @@ function Actions({ agent }: { agent: Agent }) {
   const { duplicate, duplicating } = useDuplicateAgent(agent);
   const removeAgent = useRemoveAgent();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const copyLink = useCopyLink(agent.id);
 
   async function handleDelete() {
@@ -192,6 +194,15 @@ function Actions({ agent }: { agent: Agent }) {
           >
             <Icon name="content_copy" className="mr-2" />
             {duplicating ? "Duplicating..." : "Duplicate"}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              setCopyDialogOpen(true);
+            }}
+          >
+            <Icon name="folder_copy" className="mr-2" />
+            Copy to...
           </DropdownMenuItem>
           {agent.visibility === "PUBLIC" && (
             <DropdownMenuItem
@@ -255,6 +266,11 @@ function Actions({ agent }: { agent: Agent }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <CopyAgentDialog
+        agent={agent}
+        open={copyDialogOpen}
+        onOpenChange={setCopyDialogOpen}
+      />
     </>
   );
 }
