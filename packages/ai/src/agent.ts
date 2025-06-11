@@ -472,26 +472,26 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     const tools: ToolsetsInput = {};
     const serverToolsPromises = mcps.map(async (mcp) => {
       const mcpId = mcp.split("/").slice(-3)[0];
-      const integration : Integration = {
+      const integration: Integration = {
         connection: {
           type: "HTTP",
           url: mcp,
         },
         name: mcpId,
         id: "temp-id",
-      }
+      };
       const serverTools = await mcpServerTools(
         { ...integration, id: mcpId },
         this,
         undefined,
         this.env as any,
       );
-    
+
       return { mcpId, serverTools };
     });
 
     const results = await Promise.all(serverToolsPromises);
-    
+
     for (const { mcpId, serverTools } of results) {
       if (serverTools && Object.keys(serverTools).length > 0) {
         tools[mcpId] = serverTools;
@@ -958,7 +958,6 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
   ): Promise<Response> {
     const tracer = trace.getTracer("stream-tracer");
     const timings = this.metadata?.timings ?? createServerTimings();
-    console.log("options", options?.mcps);
 
     const thread = {
       threadId: options?.threadId ?? this._thread.threadId,
@@ -987,6 +986,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
       thread,
     );
     const inlineMcpsToolsets = await this._withInlineMcps(options?.mcps);
+    console.log("inlineMcpsToolsets", inlineMcpsToolsets);
     const agentOverridesTiming = timings.start("agent-overrides");
     const agent = await this._withAgentOverrides(options);
     agentOverridesTiming.end();

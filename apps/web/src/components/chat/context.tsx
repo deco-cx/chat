@@ -65,8 +65,6 @@ interface Props {
   inlineMcps?: string[];
 }
 
-const ALLOWED_ADDITIONAL_PROPS = ["site", "env"];
-
 const DEFAULT_UI_OPTIONS: IContext["uiOptions"] = {
   showModelSelector: true,
   showThreadTools: true,
