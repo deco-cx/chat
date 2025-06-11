@@ -81,7 +81,7 @@ export function ChatProvider({
   uiOptions,
   initialInput,
   children,
-  additionalProps
+  additionalProps,
 }: PropsWithChildren<Props>) {
   const agentRoot = useAgentRoot(agentId);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -126,13 +126,17 @@ export function ChatProvider({
       const bypassOpenRouter = !preferences.useOpenRouter;
 
       const _additionalProps = Object.fromEntries(
-        Object.entries(additionalProps ?? {}).filter(([key]) => ALLOWED_ADDITIONAL_PROPS.includes(key))
+        Object.entries(additionalProps ?? {}).filter(([key]) =>
+          ALLOWED_ADDITIONAL_PROPS.includes(key)
+        ),
       );
 
-      const instructions = Object.keys(_additionalProps).length > 0 ? [
-        `Additional context: ${JSON.stringify(_additionalProps)}`,
-        agent?.instructions,
-      ].filter(Boolean).join("\n") : agent?.instructions;
+      const instructions = Object.keys(_additionalProps).length > 0
+        ? [
+          `Additional context: ${JSON.stringify(_additionalProps)}`,
+          agent?.instructions,
+        ].filter(Boolean).join("\n")
+        : agent?.instructions;
 
       return {
         args: [messagesWindow, {
