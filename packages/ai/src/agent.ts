@@ -18,6 +18,7 @@ import { Actor } from "@deco/actors";
 import {
   type Agent as Configuration,
   DEFAULT_MODEL,
+  Integration,
   WELL_KNOWN_AGENTS,
 } from "@deco/sdk";
 import { type AuthMetadata, BaseActor } from "@deco/sdk/actors";
@@ -462,6 +463,42 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
       this._configuration?.max_tokens ?? DEFAULT_MAX_TOKENS,
       MAX_TOKENS,
     );
+  }
+
+  private async _withInlineMcps(mcps?: string[]): Promise<ToolsetsInput> {
+    if (!mcps) {
+      return {};
+    }
+    const tools: ToolsetsInput = {};
+    const serverToolsPromises = mcps.map(async (mcp) => {
+      const mcpId = mcp.split("/").slice(-3)[0];
+      const integration: Integration = {
+        connection: {
+          type: "HTTP",
+          url: mcp,
+        },
+        name: mcpId,
+        id: "temp-id",
+      };
+      const serverTools = await mcpServerTools(
+        { ...integration, id: mcpId },
+        this,
+        undefined,
+        this.env as any,
+      );
+
+      return { mcpId, serverTools };
+    });
+
+    const results = await Promise.all(serverToolsPromises);
+
+    for (const { mcpId, serverTools } of results) {
+      if (serverTools && Object.keys(serverTools).length > 0) {
+        tools[mcpId] = serverTools;
+      }
+    }
+
+    return tools;
   }
 
   private async _withToolOverrides(
@@ -948,6 +985,8 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
       timings,
       thread,
     );
+    const inlineMcpsToolsets = await this._withInlineMcps(options?.mcps);
+    console.log("inlineMcpsToolsets", inlineMcpsToolsets);
     const agentOverridesTiming = timings.start("agent-overrides");
     const agent = await this._withAgentOverrides(options);
     agentOverridesTiming.end();
@@ -1005,7 +1044,10 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
       {
         ...thread,
         context,
-        toolsets,
+        toolsets: {
+          ...toolsets,
+          ...inlineMcpsToolsets,
+        },
         instructions: options?.instructions,
         maxSteps: this._maxSteps(),
         maxTokens: this._maxTokens(),

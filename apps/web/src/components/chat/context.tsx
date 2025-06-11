@@ -62,6 +62,7 @@ interface Props {
   threadId: string;
   initialInput?: string;
   uiOptions?: Partial<IContext["uiOptions"]>;
+  inlineMcps?: string[];
 }
 
 const DEFAULT_UI_OPTIONS: IContext["uiOptions"] = {
@@ -78,6 +79,7 @@ export function ChatProvider({
   uiOptions,
   initialInput,
   children,
+  inlineMcps,
 }: PropsWithChildren<Props>) {
   const agentRoot = useAgentRoot(agentId);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -131,6 +133,7 @@ export function ChatProvider({
           lastMessages: 0,
           sendReasoning: true,
           tools: agent?.tools_set,
+          mcps: inlineMcps,
           smoothStream: preferences.smoothStream !== false
             ? { delayInMs: 25, chunk: "word" }
             : undefined,
