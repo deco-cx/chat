@@ -62,7 +62,10 @@ interface Props {
   threadId: string;
   initialInput?: string;
   uiOptions?: Partial<IContext["uiOptions"]>;
+  additionalProps?: Record<string, any>;
 }
+
+const ALLOWED_ADDITIONAL_PROPS = ["site", "env"];
 
 const DEFAULT_UI_OPTIONS: IContext["uiOptions"] = {
   showModelSelector: true,
@@ -78,6 +81,7 @@ export function ChatProvider({
   uiOptions,
   initialInput,
   children,
+  additionalProps
 }: PropsWithChildren<Props>) {
   const agentRoot = useAgentRoot(agentId);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -121,12 +125,21 @@ export function ChatProvider({
 
       const bypassOpenRouter = !preferences.useOpenRouter;
 
+      const _additionalProps = Object.fromEntries(
+        Object.entries(additionalProps ?? {}).filter(([key]) => ALLOWED_ADDITIONAL_PROPS.includes(key))
+      );
+
+      const instructions = Object.keys(_additionalProps).length > 0 ? [
+        `Additional context: ${JSON.stringify(_additionalProps)}`,
+        agent?.instructions,
+      ].filter(Boolean).join("\n") : agent?.instructions;
+
       return {
         args: [messagesWindow, {
           model: options.showModelSelector // use the agent model if selector is not shown on the UI
             ? preferences.defaultModel
             : agent?.model,
-          instructions: agent?.instructions,
+          instructions,
           bypassOpenRouter,
           lastMessages: 0,
           sendReasoning: true,
