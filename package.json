@@ -25,7 +25,6 @@
   "workspace": [
     "./apps/web",
     "./apps/api",
-    "./apps/outbound",
     "./packages/ui",
     "./packages/sdk",
     "./packages/ai"

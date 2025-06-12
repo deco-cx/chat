@@ -24,11 +24,4 @@ jobs:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
           workingDirectory: "./apps/outbound"
-          secrets: |
-            SUPABASE_URL
-            SUPABASE_SERVER_TOKEN
-            ISSUER_JWT_SECRET
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVER_TOKEN: ${{ secrets.SUPABASE_SERVER_TOKEN }}
-          ISSUER_JWT_SECRET: ${{ secrets.ISSUER_JWT_SECRET }}
+

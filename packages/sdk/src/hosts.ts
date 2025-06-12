@@ -3,6 +3,7 @@ export const Hosts = {
   APPS: "deco.page",
   FS: "fs.deco.chat",
   Chat: "deco.chat",
+  APPS_OUTBOUND: "used-for-apps-outbound-requests.deco.chat",
   LOCALHOST: "localhost:3000",
 } as const;
 

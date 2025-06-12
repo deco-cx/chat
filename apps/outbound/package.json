@@ -8,7 +8,6 @@
     "dev:wrangler": "wrangler dev --port 3001"
   },
   "dependencies": {
-    "@deco/sdk": "^0.1.1"
   },
   "devDependencies": {
     "wrangler": "^4.13.2"
