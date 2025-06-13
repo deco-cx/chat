@@ -17,6 +17,7 @@ import {
 import { trackEvent } from "../../hooks/analytics.ts";
 import { useUserPreferences } from "../../hooks/use-user-preferences.ts";
 import { IMAGE_REGEXP, openPreviewPanel } from "./utils/preview.ts";
+import { Toolset } from "../../../../../packages/ai/src/types.ts";
 
 const LAST_MESSAGES_COUNT = 10;
 interface FileData {
@@ -62,7 +63,7 @@ interface Props {
   threadId: string;
   initialInput?: string;
   uiOptions?: Partial<IContext["uiOptions"]>;
-  inlineMcps?: string[];
+  toolsets?: Toolset[];
 }
 
 const DEFAULT_UI_OPTIONS: IContext["uiOptions"] = {
@@ -79,7 +80,7 @@ export function ChatProvider({
   uiOptions,
   initialInput,
   children,
-  inlineMcps,
+  toolsets,
 }: PropsWithChildren<Props>) {
   const agentRoot = useAgentRoot(agentId);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -133,7 +134,7 @@ export function ChatProvider({
           lastMessages: 0,
           sendReasoning: true,
           tools: agent?.tools_set,
-          mcps: inlineMcps,
+          toolsets,
           smoothStream: preferences.smoothStream !== false
             ? { delayInMs: 25, chunk: "word" }
             : undefined,

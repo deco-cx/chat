@@ -8,6 +8,7 @@ import type {
   Message as AIMessage,
 } from "ai";
 import type { AgentMetadata } from "./agent.ts";
+import { MCPConnection } from "../../sdk/src/index.ts";
 export type { TriggerData } from "./triggers/trigger.ts";
 /**
  * Represents a tool that can be used by an AI agent
@@ -54,7 +55,12 @@ export interface GenerateOptions {
   threadId?: string;
   resourceId?: string;
   enableSemanticRecall?: boolean;
-  mcps?: string[];
+  toolsets?: Toolset[];
+}
+
+export interface Toolset {
+  connection: MCPConnection;
+  filters: string[];
 }
 
 export interface StreamOptions extends GenerateOptions {
