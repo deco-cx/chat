@@ -77,7 +77,7 @@ export function IntegrationListItem({
   const enabledCount =
     allTools.filter((tool) => toolsSet[integration.id]?.includes(tool.name))
       .length;
-  const isAll = enabledCount > 0;
+  const hasAny = enabledCount > 0;
   const isEmpty = !isLoading && allTools.length === 0;
 
   function handleAll(checked: boolean) {
@@ -176,13 +176,22 @@ export function IntegrationListItem({
                 <span className="text-xs font-medium text-muted-foreground">
                   {enabledCount}/{total}
                 </span>
-                <Checkbox
-                  id={`select-all-${integration.id}`}
-                  className="cursor-pointer"
-                  checked={isAll}
-                  onCheckedChange={handleAll}
-                  disabled={isLoading}
-                />
+                {
+                  /**
+                   * radix is bubbling up a click event to the parent,
+                   * when "hasAny" loads and is true.
+                   * i stop it here so the toolsOpen state does not start as open
+                   */
+                }
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    id={`select-all-${integration.id}`}
+                    className="cursor-pointer"
+                    checked={hasAny}
+                    onCheckedChange={handleAll}
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
             </div>
           </span>

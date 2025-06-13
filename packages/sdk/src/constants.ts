@@ -64,7 +64,7 @@ const LOGOS = {
     "https://assets.decocache.com/webdraw/15dc381c-23b4-4f6b-9ceb-9690f77a7cf5/openai.svg",
   anthropic:
     "https://assets.decocache.com/webdraw/6ae2b0e1-7b81-48f7-9707-998751698b6f/anthropic.svg",
-  google:
+  gemini:
     "https://assets.decocache.com/webdraw/17df85af-1578-42ef-ae07-4300de0d1723/gemini.svg",
   xai:
     "https://assets.decocache.com/webdraw/7a8003ff-8f2d-4988-8693-3feb20e87eca/xai.svg",
@@ -79,6 +79,17 @@ type Capability =
 
 // First one is the default model for agents, so choose wisely.
 export const WELL_KNOWN_MODELS: Model[] = [
+  {
+    id: "google:gemini-2.5-pro-preview",
+    model: "google:gemini-2.5-pro-preview",
+    name: "Google Gemini Pro 2.5",
+    logo: LOGOS.gemini,
+    capabilities: ["reasoning", "image-upload", "file-upload"],
+    legacyId: "google:gemini-2.5-pro-preview-03-25",
+    byDeco: true,
+    isEnabled: true,
+    hasCustomKey: false,
+  },
   {
     id: "openai:gpt-4.1-mini",
     model: "openai:gpt-4.1-mini",
@@ -107,17 +118,6 @@ export const WELL_KNOWN_MODELS: Model[] = [
     logo: LOGOS.anthropic,
     capabilities: ["reasoning", "image-upload", "file-upload"],
     legacyId: "anthropic:claude-3-7-sonnet-20250219",
-    byDeco: true,
-    isEnabled: true,
-    hasCustomKey: false,
-  },
-  {
-    id: "google:gemini-2.5-pro-preview",
-    model: "google:gemini-2.5-pro-preview",
-    name: "Google Gemini Pro 2.5",
-    logo: LOGOS.google,
-    capabilities: ["reasoning", "image-upload", "file-upload"],
-    legacyId: "google:gemini-2.5-pro-preview-03-25",
     byDeco: true,
     isEnabled: true,
     hasCustomKey: false,
@@ -217,7 +217,7 @@ export const NEW_AGENT_TEMPLATE: Omit<Agent, "id"> = {
   views: [],
   instructions: "",
   max_steps: 10,
-  max_tokens: 4096,
+  max_tokens: 32768,
   memory: {
     last_messages: 10,
   },
@@ -233,13 +233,7 @@ export const WELL_KNOWN_AGENTS = {
     id: "teamAgent",
     ...NEW_AGENT_TEMPLATE,
     tools_set: {
-      DECO_INTEGRATIONS: [
-        "DECO_INTEGRATIONS_SEARCH",
-        "DECO_INTEGRATION_INSTALL",
-        "DECO_INTEGRATION_ENABLE",
-        "DECO_INTEGRATION_DISABLE",
-        "DECO_INTEGRATION_LIST_TOOLS",
-      ],
+      DECO_UTILS: ["SELF_UPDATE"],
     },
   },
   setupAgent: {

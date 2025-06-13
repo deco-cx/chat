@@ -92,6 +92,28 @@ export const RENDER = createInnateTool({
   },
 });
 
+const SelfUpdateInputSchema = z.object({
+  name: z.string().describe("The name of the agent"),
+  instructions: z.string().describe("The new instructions for the agent"),
+});
+
+export const SELF_UPDATE = createInnateTool({
+  id: "SELF_UPDATE",
+  description:
+    "Update the agent's instructions. Use this tool when you need to update your own instructions. " +
+    "This will prompt to the user to accept the changes. " +
+    "Make sure to read your own instructions with a WHO_AM_I tool call before updating them. " +
+    "This should not be used on webhook/external channel contexts. It will not work." +
+    "This is a tool for setting up agents with a conversation, do not call it on other contexts." +
+    "It is not a tool for continuous self-improvement, it is a tool for setting up agents with a conversation." +
+    "Call this tool if you see that the user is talking with you about what you should do, in a setup conversation.",
+  inputSchema: SelfUpdateInputSchema,
+  outputSchema: SelfUpdateInputSchema,
+  execute: () => async ({ context }) => {
+    return await Promise.resolve(context);
+  },
+});
+
 export const FETCH = createInnateTool({
   id: "FETCH",
   description:
@@ -866,4 +888,5 @@ export const tools = {
   CREATE_PRESIGNED_URL,
   WHO_AM_I,
   SPEAK,
+  SELF_UPDATE,
 };

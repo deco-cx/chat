@@ -30,6 +30,7 @@ const CUSTOM_UI_TOOLS = [
   "CONFIRM",
   "CONFIGURE",
   "AGENT_CREATE",
+  "SELF_UPDATE",
 ] as const;
 type CustomUITool = typeof CUSTOM_UI_TOOLS[number];
 
@@ -258,6 +259,38 @@ function CustomToolUI({ tool, isLastMessage }: {
             avatar={tool.result.avatar as string}
             displayLink={tool.toolName === "AGENT_CREATE"}
           />
+        </div>
+      );
+    }
+    case "SELF_UPDATE": {
+      const { name, instructions } = tool.result as { name: string; instructions: string };
+      return (
+        <div className="animate-in slide-in-from-bottom duration-300">
+          <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+            <div className="space-y-2">
+              <h3 className="font-medium">New Agent Configuration</h3>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Name:</p>
+                <p className="text-sm">{name}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Instructions:</p>
+                <p className="text-sm whitespace-pre-wrap">{instructions}</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => {
+                // maybe just use react query state to update the agent?
+                globalThis.dispatchEvent(new CustomEvent("agent-self-update", {
+                  detail: { name, instructions }
+                }));
+              }}
+              disabled={!isLastMessage}
+              className="w-full"
+            >
+              Apply Changes
+            </Button>
+          </div>
         </div>
       );
     }
