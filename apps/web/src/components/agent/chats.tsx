@@ -71,7 +71,6 @@ function Page() {
         filters: [],
       };
     });
-    console.log("toolsetsFront", toolsets);
     if (!workspace || !agentId) {
       throw new Error("Missing required params, workspace, agentId, threadId");
     }
