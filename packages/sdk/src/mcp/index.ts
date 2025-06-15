@@ -128,6 +128,11 @@ export const WORKSPACE_TOOLS = [
   promptsAPI.searchPrompts,
 ] as const;
 
+export const WORKSPACE_RESOURCES = [
+  hostingAPI.listAppsResource,
+  hostingAPI.readAppResource,
+];
+
 export type GlobalTools = typeof GLOBAL_TOOLS;
 export type WorkspaceTools = typeof WORKSPACE_TOOLS;
 export type ToolLike<

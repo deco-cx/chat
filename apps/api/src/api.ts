@@ -7,8 +7,13 @@ import {
   PolicyClient,
   type ToolLike,
   withMCPErrorHandling,
+  WORKSPACE_RESOURCES,
   WORKSPACE_TOOLS,
 } from "@deco/sdk/mcp";
+import {
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { type Context, Hono } from "hono";
 import { env, getRuntimeKey } from "hono/adapter";
@@ -64,6 +69,7 @@ const mapMCPErrorToHTTPExceptionOrThrow = (err: Error) => {
 
   throw err;
 };
+
 /**
  * Creates and sets up an MCP server for the given tools
  */
@@ -75,7 +81,7 @@ const createMCPHandlerFor = (
 
     const server = new McpServer(
       { name: "@deco/api", version: "1.0.0" },
-      { capabilities: { tools: {} } },
+      { capabilities: { tools: {}, resources: {} } },
     );
 
     for (const tool of tools) {
@@ -101,6 +107,63 @@ const createMCPHandlerFor = (
         withMCPErrorHandling(tool.handler),
       );
     }
+
+    server.server.setRequestHandler(ListResourcesRequestSchema, async () => {
+      const appCtx = honoCtxToAppCtx(c);
+      const resource = WORKSPACE_RESOURCES.find((r) =>
+        r.name === "HOSTING_APPS_LIST_RESOURCE"
+      );
+      const result = await State.run(
+        {
+          ...appCtx,
+          resource: { name: resource?.name || "HOSTING_APPS_LIST_RESOURCE" },
+        },
+        () =>
+          resource?.handler({}, {
+            ...appCtx,
+            resource: { name: resource?.name || "HOSTING_APPS_LIST_RESOURCE" },
+          }),
+      );
+      return {
+        resources: result,
+      };
+    });
+
+    server.server.setRequestHandler(ReadResourceRequestSchema, async (req) => {
+      const { uri } = req.params;
+      const appCtx = honoCtxToAppCtx(c);
+      const resource = WORKSPACE_RESOURCES.find((r) =>
+        r.name === "HOSTING_APP_READ_RESOURCE"
+      );
+      const result = await State.run(
+        {
+          ...appCtx,
+          resource: { name: resource?.name || "HOSTING_APP_READ_RESOURCE" },
+        },
+        () =>
+          resource?.handler({ uri }, {
+            ...appCtx,
+            resource: { name: resource?.name || "HOSTING_APP_READ_RESOURCE" },
+          }),
+      );
+
+      const contents = [];
+      if (result?.contents) {
+        for (const [path, content] of result.contents) {
+          contents.push({
+            uri: `${uri}/${path}`,
+            mimeType: path.endsWith(".ts") || path.endsWith(".js")
+              ? "application/javascript"
+              : "text/plain",
+            text: content,
+          });
+        }
+      }
+
+      return {
+        contents,
+      };
+    });
 
     const transport = new HttpServerTransport();
 

@@ -6,6 +6,7 @@ import { link } from "./src/link.ts";
 import { loginCommand } from "./src/login.ts";
 import { deleteSession, getSessionToken } from "./src/session.ts";
 import { whoamiCommand } from "./src/whoami.ts";
+import { readApp } from "./src/hosting/read.ts";
 
 // Placeholder for login command implementation
 const login = new Command()
@@ -42,6 +43,17 @@ const hostingList = new Command()
   .action(async (args) => {
     const authCookie = await getSessionToken();
     await listApps({ ...args, authCookie });
+  });
+
+const hostingRead = new Command()
+  .description("Read a given app in the current workspace.")
+  .option("-w, --workspace <workspace:string>", "Workspace name", {
+    required: true,
+  })
+  .option("-a, --app <app:string>", "App name", { required: true })
+  .action(async (args) => {
+    const authCookie = await getSessionToken();
+    await readApp(args.workspace, authCookie, args.app);
   });
 
 // Placeholder for hosting deploy command implementation
@@ -88,7 +100,8 @@ const linkCmd = new Command()
 const hosting = new Command()
   .description("Manage hosting apps in a workspace.")
   .command("list", hostingList)
-  .command("deploy", hostingDeploy);
+  .command("deploy", hostingDeploy)
+  .command("read", hostingRead);
 
 // Main CLI
 await new Command()

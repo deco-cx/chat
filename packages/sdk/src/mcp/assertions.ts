@@ -20,6 +20,12 @@ export type WithTool<TAppContext extends AppContext = AppContext> =
     tool: { name: string };
   };
 
+export type WithResource<TAppContext extends AppContext = AppContext> =
+  & Omit<TAppContext, "resource">
+  & {
+    resource: { name: string };
+  };
+
 export function assertHasWorkspace<TContext extends AppContext = AppContext>(
   c: Pick<TContext, "workspace"> | Pick<WithWorkspace<TContext>, "workspace">,
 ): asserts c is WithWorkspace<TContext> {
