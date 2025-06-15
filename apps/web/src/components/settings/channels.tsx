@@ -528,22 +528,36 @@ function ConnectionChannels(
     setName: (name: string | undefined) => void;
   },
 ) {
-  const { data: availableChannels, isLoading: isLoadingAvailableChannels } =
+  const { data: availableChannels, isLoading: isLoadingAvailableChannels, error, refetch } =
     useConnectionChannels(binding);
+  
   if (isLoadingAvailableChannels) {
     return (
       <div className="w-full flex items-center gap-2">
         <Spinner size="sm" />
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <p className="text-sm text-muted-foreground">Loading channels...</p>
       </div>
     );
   }
+
   return (
     <div className="w-full">
       <Label htmlFor="discriminator">
         Channel
       </Label>
-      <div className="mt-2 w-full">
+      <div className="mt-2 w-full space-y-2">
+        {error && (
+          <div className="flex items-center gap-2 p-2 text-sm text-orange-600 bg-orange-50 border border-orange-200 rounded">
+            <span>⚠️ Failed to load channels.</span>
+            <button
+              onClick={() => refetch()}
+              className="text-orange-700 underline hover:text-orange-800"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+        
         {availableChannels?.channels?.length && (
           <Select
             onValueChange={(value) => {
@@ -569,13 +583,21 @@ function ConnectionChannels(
             </SelectContent>
           </Select>
         )}
-        {(!availableChannels?.channels && !isLoadingAvailableChannels) && (
-          <Input
-            id="discriminator"
-            placeholder="Enter unique identifier (e.g., phone number for WhatsApp)"
-            value={discriminator}
-            onChange={(e) => setDiscriminator(e.target.value)}
-          />
+        
+        {(!availableChannels?.channels?.length && !isLoadingAvailableChannels) && (
+          <>
+            {!error && (
+              <p className="text-xs text-muted-foreground mb-2">
+                No channels available from {binding.name}. Enter manually:
+              </p>
+            )}
+            <Input
+              id="discriminator"
+              placeholder="Enter unique identifier (e.g., phone number for WhatsApp)"
+              value={discriminator}
+              onChange={(e) => setDiscriminator(e.target.value)}
+            />
+          </>
         )}
       </div>
     </div>
