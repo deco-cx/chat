@@ -1,5 +1,6 @@
 import { JwtIssuer } from "@deco/sdk/auth";
 import { z } from "zod";
+import { JwtIssuer } from "../../auth/jwt.ts";
 import { NotFoundError, UserInputError } from "../../errors.ts";
 import type { Database } from "../../storage/index.ts";
 import {
