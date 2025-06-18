@@ -133,10 +133,13 @@
       @apply whitespace-pre-wrap break-words;
       overflow-wrap: anywhere;
     }
-    
+
     .prose span[data-type="comment"] {
       @apply rounded bg-muted-foreground/10 border border-muted-foreground/20
-      whitespace-pre-wrap px-1 leading-normal block break-words pl-6 relative before:content-['//'] before:absolute before:left-1 before:top-1 text-muted-foreground italic before:text-muted-foreground before:opacity-60 before:text-xs/tight before:font-mono my-1;
+        whitespace-pre-wrap px-1 leading-normal block break-words pl-6 relative
+        before:content-["//"] before:absolute before:left-1 before:top-1
+        text-muted-foreground italic before:text-muted-foreground
+        before:opacity-60 before:text-xs/tight before:font-mono my-1;
       overflow-wrap: anywhere;
     }
 
