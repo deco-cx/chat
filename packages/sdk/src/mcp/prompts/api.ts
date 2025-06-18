@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resolveMentions as resolveMentionsFn } from "../../utils/prompt-mentions.ts";
 import { assertHasWorkspace } from "../assertions.ts";
 import { createTool } from "../context.ts";
 
@@ -105,6 +106,12 @@ export const listPrompts = createTool({
   description: "List prompts for the current workspace",
   inputSchema: z.object({
     ids: z.array(z.string()).optional().describe("Filter prompts by ids"),
+    resolveMentions: z.boolean().optional().describe(
+      "Resolve mentions in the prompts",
+    ),
+    excludeIds: z.array(z.string()).optional().describe(
+      "Exclude prompts by ids",
+    ),
   }),
   handler: async (props, c) => {
     assertHasWorkspace(c);
@@ -114,7 +121,7 @@ export const listPrompts = createTool({
 
     // await assertWorkspaceResourceAccess(c.tool.name, c);
 
-    const { ids = [] } = props;
+    const { ids = [], resolveMentions = false, excludeIds = [] } = props;
 
     let query = c.db
       .from("deco_chat_prompts")
@@ -125,9 +132,28 @@ export const listPrompts = createTool({
       query = query.in("id", ids);
     }
 
+    console.log("excludeIds", excludeIds);
+
+    if (excludeIds.length > 0) {
+      query = query.not("id", "in", `(${excludeIds.join(",")})`);
+    }
+
     const { data, error } = await query;
 
     if (error) throw error;
+
+    if (resolveMentions) {
+      const resolvedPrompts = await Promise.allSettled(
+        data.map((prompt) => resolveMentionsFn(prompt.content, workspace)),
+      );
+
+      return data.map((prompt, index) => ({
+        ...prompt,
+        content: resolvedPrompts[index].status === "fulfilled"
+          ? resolvedPrompts[index].value
+          : prompt.content,
+      }));
+    }
 
     return data;
   },

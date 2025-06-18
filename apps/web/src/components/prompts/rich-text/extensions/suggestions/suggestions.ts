@@ -2,21 +2,30 @@ import type { Prompt } from "@deco/sdk";
 import { ReactRenderer } from "@tiptap/react";
 import type { SuggestionOptions } from "@tiptap/suggestion";
 import tippy from "tippy.js";
-import MentionDropdown from "../mention/dropdown.tsx";
+import MentionDropdown, { type Category } from "./dropdown.tsx";
 
-const suggestion: (items: Prompt[]) => Partial<SuggestionOptions> = (items) => {
+export const suggestion: (
+  items: Prompt[],
+) => Partial<SuggestionOptions<Category>> = (
+  items,
+) => {
   return {
     char: "/",
     items: ({ query }) => {
       return [
         {
           name: "Prompts",
-          options: items.map((item) => ({
-            id: item.id,
-            label: item.name,
-          })).filter((item) =>
-            item.label.toLowerCase().includes(query.toLowerCase())
-          ).slice(0, 5),
+          icon: "library_books",
+          options: items
+            .map((item) => ({
+              icon: "library_books",
+              id: item.id,
+              label: item.name,
+              tooltip: item.content,
+            }))
+            .filter((item) =>
+              item.label.toLowerCase().includes(query?.toLowerCase())
+            ).slice(0, 5),
         },
       ];
     },
@@ -31,7 +40,21 @@ const suggestion: (items: Prompt[]) => Partial<SuggestionOptions> = (items) => {
           }
 
           component = new ReactRenderer(MentionDropdown, {
-            props,
+            props: {
+              ...props,
+              items: props.items.map((item) => ({
+                ...item,
+                options: item.options.map((option) => ({
+                  ...option,
+                  handle: () => {
+                    props.command({
+                      id: option.id,
+                      label: option.label,
+                    });
+                  },
+                })),
+              })),
+            },
             editor: props.editor,
           });
 
@@ -52,7 +75,21 @@ const suggestion: (items: Prompt[]) => Partial<SuggestionOptions> = (items) => {
         },
 
         onUpdate(props) {
-          component?.updateProps(props);
+          component?.updateProps({
+            ...props,
+            items: props.items.map((item) => ({
+              ...item,
+              options: item.options.map((option) => ({
+                ...option,
+                handle: () => {
+                  props.command({
+                    id: option.id,
+                    label: option.label,
+                  });
+                },
+              })),
+            })),
+          });
         },
 
         onKeyDown(props) {
@@ -75,5 +112,3 @@ const suggestion: (items: Prompt[]) => Partial<SuggestionOptions> = (items) => {
     },
   };
 };
-
-export default suggestion;

@@ -104,7 +104,18 @@ export const KEYS = {
     threadId: string,
   ) => ["thread-tools", workspace, threadId],
   PROFILE: () => ["profile"],
-  PROMPTS: (workspace: Workspace) => ["prompts", workspace],
+  PROMPTS: (
+    workspace: Workspace,
+    ids?: string[],
+    resolveMentions?: boolean,
+    excludeIds?: string[],
+  ) => [
+    "prompts",
+    workspace,
+    ...(ids ? ids.sort() : []),
+    `${resolveMentions ?? false}`,
+    ...(excludeIds ? excludeIds.sort() : []),
+  ],
   PROMPT: (workspace: Workspace, id: string) => ["prompts", workspace, id],
   PROMPTS_SEARCH: (
     workspace: Workspace,

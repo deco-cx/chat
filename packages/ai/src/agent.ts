@@ -72,7 +72,7 @@ import { Cloudflare } from "cloudflare";
 import { getRuntimeKey } from "hono/adapter";
 import process from "node:process";
 import { createWalletClient } from "../../sdk/src/mcp/wallet/index.ts";
-import { replacePromptMentions } from "../../sdk/src/utils/prompt-mentions.ts";
+import { resolveMentions } from "../../sdk/src/utils/prompt-mentions.ts";
 import { pickCapybaraAvatar } from "./capybaras.ts";
 import { mcpServerTools } from "./mcp.ts";
 import type {
@@ -420,7 +420,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     this.telemetry.tracer = trace.getTracer("agent");
 
     // Process instructions to replace prompt mentions
-    const processedInstructions = await replacePromptMentions(
+    const processedInstructions = await resolveMentions(
       config.instructions,
       this.workspace,
     );
@@ -1037,7 +1037,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     // Process instructions if provided in options
     let processedInstructions = options?.instructions;
     if (processedInstructions) {
-      processedInstructions = await replacePromptMentions(
+      processedInstructions = await resolveMentions(
         processedInstructions,
         this.workspace,
       );
