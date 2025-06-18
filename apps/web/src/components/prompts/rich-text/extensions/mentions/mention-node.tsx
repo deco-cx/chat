@@ -20,7 +20,7 @@ export default function MentionNode(
     ?.flatMap(
       (item: { options: { id: string }[] }) => item?.options,
     );
-  const prompt = items?.find((item: { id: string }) => item?.id == id) as
+  const prompt = items?.find((item: { id: string }) => item?.id === id) as
     | { id: string; icon: string; label: string; tooltip: string }
     | undefined;
 
