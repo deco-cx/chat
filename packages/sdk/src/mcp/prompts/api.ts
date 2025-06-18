@@ -132,8 +132,6 @@ export const listPrompts = createTool({
       query = query.in("id", ids);
     }
 
-    console.log("excludeIds", excludeIds);
-
     if (excludeIds.length > 0) {
       query = query.not("id", "in", `(${excludeIds.join(",")})`);
     }
