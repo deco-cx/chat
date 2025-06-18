@@ -45,10 +45,6 @@ export const mentions = (
       ];
     },
   }).configure({
-    HTMLAttributes: {
-      class:
-        "inline-flex items-center rounded-md bg-purple-light/20 transition-colors duration-300 hover:bg-purple-light/70 px-2 py-0.5 font-medium text-black border border-purple-light text-xs group relative text-purple-dark",
-    },
     suggestion: suggestion(prompts ?? []),
     renderText({ node }) {
       const prompt = promptMap.get(node.attrs.id) || node.attrs.id;
