@@ -67,10 +67,6 @@ export default function RichTextArea({
     return extensions;
   }, [enableMentions, placeholder, prompts]);
 
-  useEffect(() => {
-    console.log(mentionToTag(value));
-  }, [value]);
-
   const editor = useEditor({
     extensions,
     content: mentionToTag(value),
