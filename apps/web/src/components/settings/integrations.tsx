@@ -18,7 +18,6 @@ import {
 import {
   AddFileToKnowledgeButton,
   AgentKnowledgeBaseFileList,
-  KnowledgeBaseFileList,
   type UploadFile,
   useAgentFiles,
 } from "../agent/upload-knowledge-asset.tsx";

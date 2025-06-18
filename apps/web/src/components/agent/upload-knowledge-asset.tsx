@@ -209,8 +209,10 @@ export function AgentKnowledgeBaseFileList(
   // Combine uploaded files with uploading files (uploading files come after uploaded files)
   // Filter out uploading files that already exist in uploaded files based on file_url
   const allFiles = useMemo(() => {
-    const uploadedFileUrls = new Set(formatedFiles.map(file => file.file_url));
-    
+    const uploadedFileUrls = new Set(
+      formatedFiles.map((file) => file.file_url),
+    );
+
     const filteredUploadingFiles = uploadingFiles
       .filter(({ file_url }) => !file_url || !uploadedFileUrls.has(file_url))
       .map(({ file, uploading, file_url, docIds }) => ({
@@ -224,7 +226,7 @@ export function AgentKnowledgeBaseFileList(
 
     return [
       ...formatedFiles,
-      ...filteredUploadingFiles
+      ...filteredUploadingFiles,
     ];
   }, [formatedFiles, uploadingFiles]);
 
@@ -332,7 +334,7 @@ export function AddFileToKnowledgeButton(
 
       await Promise.all(uploadPromises);
       await refetchAgentKnowledgeFiles();
-      
+
       // Small delay to ensure UI has updated with refetched files before clearing uploading files
       // This prevents the flickering effect where files disappear and reappear
       setTimeout(() => {
@@ -359,7 +361,7 @@ export function AddFileToKnowledgeButton(
       const fileObjects = validFiles.map((file) => ({ file, uploading: true }));
       onAddFile((prev) => [...prev, ...fileObjects]);
 
-          setIsUploading(true);
+      setIsUploading(true);
       // Upload files
       if (!knowledgeIntegration) {
         await createAgentKnowledge();
