@@ -97,9 +97,8 @@ export default function RichTextArea({
   useEffect(() => {
     if (!editor) return;
 
-    const parsedValue = mentionToTag(value);
-    if (parsedValue !== editor.storage.markdown.getMarkdown()) {
-      editor.commands.setContent(parsedValue, false);
+    if (value !== tagToMention(editor.storage.markdown.getMarkdown())) {
+      editor.commands.setContent(value, false);
     }
   }, [value, editor]);
 
