@@ -32,6 +32,7 @@ import {
   isAllowedFileExt,
 } from "@deco/sdk/utils";
 import { useAgentKnowledgeIntegration } from "./hooks/use-agent-knowledge.ts";
+import { useAgentSettingsToolsSet } from "../settings/integrations.tsx";
 
 export interface UploadFile {
   file: File;
@@ -242,10 +243,11 @@ export function AgentKnowledgeBaseFileList(
 interface AddFileToKnowledgeProps {
   agent: Agent;
   onAddFile: Dispatch<SetStateAction<UploadFile[]>>;
+  setIntegrationTools: (integrationId: string, tools: string[]) => void;
 }
 
 export function AddFileToKnowledgeButton(
-  { agent, onAddFile }: AddFileToKnowledgeProps,
+  { agent, onAddFile, setIntegrationTools }: AddFileToKnowledgeProps,
 ) {
   const { refetch: refetchAgentKnowledgeFiles } = useAgentFiles(agent.id);
   const [isUploading, setIsUploading] = useState(false);
@@ -254,9 +256,10 @@ export function AddFileToKnowledgeButton(
   const addFileToKnowledgeBase = useAddFileToKnowledge();
   const readFile = useReadFile();
   const { integration: knowledgeIntegration, createAgentKnowledge } =
-    useAgentKnowledgeIntegration(
+    useAgentKnowledgeIntegration({
       agent,
-    );
+      setIntegrationTools,
+    });
 
   const uploadKnowledgeFiles = async (files: File[]) => {
     try {
