@@ -93,6 +93,16 @@ export default function RichTextArea({
     },
   });
 
+  // sync external value changes to the editor
+  useEffect(() => {
+    if (!editor) return;
+
+    const parsedValue = mentionToTag(value);
+    if (parsedValue !== editor.storage.markdown.getMarkdown()) {
+      editor.commands.setContent(parsedValue, false);
+    }
+  }, [value, editor]);
+
   useEffect(() => {
     editor?.setEditable(!disabled);
   }, [disabled, editor]);
