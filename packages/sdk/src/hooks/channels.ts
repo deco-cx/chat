@@ -169,18 +169,27 @@ export const useConnectionChannels = (binding: Integration) => {
   const { workspace } = useSDK();
 
   const data = useQuery({
-    queryKey: KEYS.CHANNELS(workspace, binding.id),
-    queryFn: async () => {
+    queryKey: ["connection-channels", workspace, binding.id, binding.connection.id],
+    queryFn: async ({ signal }) => {
       const result = await listAvailableChannelsForConnection(
         workspace,
         binding.connection,
-      ).catch((error) => {
-        console.error(error);
-        return { channels: [] };
-      });
+      );
 
       return result;
     },
+    retry: (failureCount, error) => {
+      // Retry up to 3 times for network/server errors
+      if (failureCount < 3) {
+        console.warn(`Retrying channel fetch for ${binding.name} (attempt ${failureCount + 1}/3):`, error);
+        return true;
+      }
+      console.error(`Failed to fetch channels for ${binding.name} after 3 attempts:`, error);
+      return false;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   return data;
