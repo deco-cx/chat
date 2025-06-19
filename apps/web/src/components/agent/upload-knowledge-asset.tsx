@@ -243,10 +243,12 @@ interface AddFileToKnowledgeProps {
   agent: Agent;
   onAddFile: Dispatch<SetStateAction<UploadFile[]>>;
   setIntegrationTools: (integrationId: string, tools: string[]) => void;
+  disabled?: boolean;
 }
 
 export function AddFileToKnowledgeButton(
-  { agent, onAddFile, setIntegrationTools }: AddFileToKnowledgeProps,
+  { agent, onAddFile, setIntegrationTools, disabled = false }:
+    AddFileToKnowledgeProps,
 ) {
   const { refetch: refetchAgentKnowledgeFiles } = useAgentFiles(agent.id);
   const [isUploading, setIsUploading] = useState(false);
@@ -393,7 +395,7 @@ export function AddFileToKnowledgeButton(
         type="button"
         variant="outline"
         onClick={triggerFileInput}
-        disabled={isUploading}
+        disabled={isUploading || disabled}
       >
         <Icon
           name="add"
