@@ -17,10 +17,19 @@ import { InternalServerError } from "../errors.ts";
 import { KEYS } from "./api.ts";
 import { useSDK } from "./store.tsx";
 
-export const usePrompts = (input?: { ids?: string[] }) => {
+export const usePrompts = (input?: {
+  ids?: string[];
+  resolveMentions?: boolean;
+  excludeIds?: string[];
+}) => {
   const { workspace } = useSDK();
   return useSuspenseQuery({
-    queryKey: KEYS.PROMPTS(workspace),
+    queryKey: KEYS.PROMPTS(
+      workspace,
+      input?.ids,
+      input?.resolveMentions,
+      input?.excludeIds,
+    ),
     queryFn: ({ signal }) => listPrompts(workspace, input, { signal }),
     retry: (failureCount, error) =>
       error instanceof InternalServerError && failureCount < 2,
@@ -48,7 +57,9 @@ export function useCreatePrompt() {
   return useMutation({
     mutationFn: (input: CreatePromptInput) => createPrompt(workspace, input),
     onSuccess: (result) => {
-      client.invalidateQueries({ queryKey: KEYS.PROMPTS(workspace) });
+      client.invalidateQueries({
+        queryKey: KEYS.PROMPTS(workspace).slice(0, 2),
+      });
       client.setQueryData(["prompt", result.id], result);
     },
   });
@@ -60,7 +71,9 @@ export function useUpdatePrompt() {
   return useMutation({
     mutationFn: (input: UpdatePromptInput) => updatePrompt(workspace, input),
     onSuccess: (result) => {
-      client.invalidateQueries({ queryKey: KEYS.PROMPTS(workspace) });
+      client.invalidateQueries({
+        queryKey: KEYS.PROMPTS(workspace).slice(0, 2),
+      });
       client.setQueryData(["prompt", result.id], result);
     },
   });
@@ -72,7 +85,9 @@ export function useDeletePrompt() {
   return useMutation({
     mutationFn: (id: string) => deletePrompt(workspace, id),
     onSuccess: () => {
-      client.invalidateQueries({ queryKey: KEYS.PROMPTS(workspace) });
+      client.invalidateQueries({
+        queryKey: KEYS.PROMPTS(workspace).slice(0, 2),
+      });
     },
   });
 }

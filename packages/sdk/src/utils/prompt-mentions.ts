@@ -1,73 +1,96 @@
 import { listPrompts } from "../crud/prompts.ts";
+import { Prompt } from "../index.ts";
 import { unescapeHTML } from "./html.ts";
 
-interface PromptMention {
+export const MENTION_REGEX = /(?:<|&lt;)(\w+):([\w-]+)(?:>|&gt;)/g;
+
+type Mentionables = "prompt";
+
+const mentionableTypes: Mentionables[] = ["prompt"];
+
+interface Mention {
   id: string;
-}
-
-const MENTION_REGEX =
-  /<span\s+data-type="mention"\s+[^>]*?data-id="([^"]+)"[^>]*?>.*?<\/span>/gs;
-const PARTIAL_ESCAPED_MENTION_REGEX =
-  /&lt;span\s+data-type="mention"\s+[^&]*?data-id="([^"]+)"[^&]*?&gt;.*?&lt;\/span&gt;/gs;
-const ESCAPED_MENTION_REGEX =
-  /&lt;span\s+data-type=&quot;mention&quot;\s+[^&]*?data-id=&quot;([^&]+)&quot;[^&]*?&gt;.*?&lt;\/span&gt;/gs;
-
-/**
- * Normalizes mentions in a content string
- * @param content - The content string to normalize
- * @returns The normalized content string
- */
-export function normalizeMentions(content: string): string {
-  const replaceTo = '<span data-type="mention" data-id="$1"></span>';
-
-  return content
-    .replaceAll(MENTION_REGEX, replaceTo)
-    .replaceAll(PARTIAL_ESCAPED_MENTION_REGEX, replaceTo)
-    .replaceAll(ESCAPED_MENTION_REGEX, replaceTo);
+  type: Mentionables;
 }
 
 /**
  * Extracts prompt mentions from a system prompt
  */
-export function extractPromptMentions(systemPrompt: string): PromptMention[] {
+export function extractMentionsFromString(systemPrompt: string): Mention[] {
   const unescapedSystemPrompt = unescapeHTML(systemPrompt);
-  const mentions: PromptMention[] = [];
+  const mentions: Mention[] = [];
   let match;
 
   while ((match = MENTION_REGEX.exec(unescapedSystemPrompt)) !== null) {
-    mentions.push({
-      id: match[1],
-    });
+    const type = match[1] as Mentionables;
+    if (mentionableTypes.includes(type)) {
+      mentions.push({
+        type,
+        id: match[2],
+      });
+    }
   }
 
   return mentions;
 }
 
-/**
- * Replaces prompt mentions with their content
- */
-export async function replacePromptMentions(
-  systemPrompt: string,
-  workspace: string,
-): Promise<string> {
-  const mentions = extractPromptMentions(normalizeMentions(systemPrompt));
-  let result = systemPrompt;
+export function toMention(id: string, type: Mentionables = "prompt") {
+  return `<${type}:${id}>`;
+}
 
-  if (mentions.length === 0) {
-    return result;
+// TODO: Resolve all types of mentions
+export async function resolveMentions(
+  content: string,
+  workspace: string,
+  options?: {
+    /**
+     * The id of the parent prompt. If provided, the resolution will skip the parent id to avoid infinite recursion.
+     */
+    parentPromptId?: string;
+  },
+): Promise<string> {
+  const contentWithoutComments = content.replaceAll(
+    /<span\s+data-type="comment"\s*?[^>]*?>.*?<\/span>/gs,
+    "",
+  );
+
+  const mentions = extractMentionsFromString(content);
+
+  const promptIds = mentions.filter((mention) => mention.type === "prompt").map(
+    (mention) => mention.id,
+  );
+  if (!promptIds.length) {
+    return contentWithoutComments;
   }
 
   const prompts = await listPrompts(workspace, {
-    ids: mentions.map((mention) => mention.id),
-  }).catch(() => []);
+    ids: promptIds,
+    resolveMentions: true,
+  });
 
-  for (const mention of mentions) {
-    const prompt = prompts.find((prompt) => prompt.id === mention.id);
-    result = result.replaceAll(
-      `<span data-type="mention" data-id="${mention.id}"></span>`,
-      prompt?.content ?? "",
-    );
+  if (!prompts.length) {
+    return contentWithoutComments;
   }
 
-  return unescapeHTML(result);
+  const promptMap = new Map<string, Prompt>(
+    prompts.map((prompt) => [prompt.id, prompt]),
+  );
+
+  return contentWithoutComments
+    .replaceAll(MENTION_REGEX, (_match, type, id) => {
+      if (type === "prompt") {
+        if (id === options?.parentPromptId) {
+          return "";
+        }
+
+        const prompt = promptMap.get(id);
+        if (!prompt) {
+          return "";
+        }
+
+        return `\n${prompt.content}\n`;
+      }
+
+      return "";
+    });
 }

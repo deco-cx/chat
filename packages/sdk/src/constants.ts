@@ -39,6 +39,7 @@ export const AUTH_URL_CLI = `http://localhost:${AUTH_PORT_CLI}`;
 export const WELL_KNOWN_AGENT_IDS = {
   teamAgent: "teamAgent",
   setupAgent: "setupAgent",
+  promptAgent: "promptAgent",
 } as const;
 
 export interface Model {
@@ -239,6 +240,30 @@ Also, try running a tool for testing if the integration is working.
 For setting up an agent, you should start by running tools that setup the agent. For instance, you should
 check if the agent is active and configure the agent.
 `,
+  },
+  promptAgent: {
+    id: "promptAgent",
+    name: "Prompt Agent",
+    avatar: "https://assets.webdraw.app/uploads/capy-5.png",
+    description: "I can help you with this prompt.",
+    model: DEFAULT_MODEL.id,
+    visibility: "PUBLIC",
+    tools_set: {
+      "i:workspace-management": [
+        "PROMPTS_GET",
+        "PROMPTS_UPDATE",
+      ],
+    },
+    views: [],
+    instructions: `
+You are an assistant specialized in helping users craft clear, effective prompts for AI models.
+
+Your goal is to guide users step-by-step to create prompts that maximize clarity, context, and desired output quality.
+Ask questions to understand the user's intent, audience, and style preferences.
+Provide examples and suggest improvements until the user confirms the prompt is ready to use.
+
+When user asks for a prompt, you should use the PROMPTS_GET tool to get the actual prompt and then use the PROMPTS_UPDATE tool to update the prompt in question.
+    `,
   },
 } satisfies Record<string, Agent>;
 

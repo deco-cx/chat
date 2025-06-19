@@ -73,6 +73,8 @@ export function DetailForm() {
                   <PromptInput
                     placeholder="The prompt content"
                     className="min-h-[49lvh]"
+                    enableMentions
+                    excludeIds={[form.getValues("id")]}
                     {...field}
                   />
                 </FormControl>
