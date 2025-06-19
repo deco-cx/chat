@@ -4,6 +4,7 @@ import {
   KNOWLEDGE_BASE_DIMENSION,
   useCreateKnowledge,
   useIntegrations,
+  useUpdateAgent,
 } from "@deco/sdk";
 import { getKnowledgeBaseIntegrationId } from "@deco/sdk/utils";
 
@@ -11,8 +12,9 @@ import { getKnowledgeBaseIntegrationId } from "@deco/sdk/utils";
 const parseToValidIndexName = (uuid: string) => `_${uuid.replaceAll("-", "_")}`;
 
 export const useAgentKnowledgeIntegration = (
-  { id: idProp }: Agent,
+  agent: Agent,
 ) => {
+  const { id: idProp } = agent;
   const id = useMemo(() => parseToValidIndexName(idProp), [idProp]);
   const knowledgeIntegrationId = useMemo(
     () => getKnowledgeBaseIntegrationId(id),
@@ -28,6 +30,7 @@ export const useAgentKnowledgeIntegration = (
   );
 
   const createKnowledge = useCreateKnowledge();
+  const updateAgent = useUpdateAgent();
 
   const createAgentKnowledge = async () => {
     if (knowledgeIntegration) {
@@ -36,7 +39,16 @@ export const useAgentKnowledgeIntegration = (
     const kb = await createKnowledge.mutateAsync({ name: id });
     integrations.refetch();
 
-    // Add the knowledge_base_search tool at agent
+    // Add the KNOWLEDGE_BASE_SEARCH tool to the agent
+    const updatedToolsSet = {
+      ...agent.tools_set,
+      [knowledgeIntegrationId]: ["KNOWLEDGE_BASE_SEARCH"],
+    };
+
+    await updateAgent.mutateAsync({
+      ...agent,
+      tools_set: updatedToolsSet,
+    });
 
     return kb;
   };
