@@ -32,7 +32,6 @@ import {
   isAllowedFileExt,
 } from "@deco/sdk/utils";
 import { useAgentKnowledgeIntegration } from "./hooks/use-agent-knowledge.ts";
-import { useAgentSettingsToolsSet } from "../settings/integrations.tsx";
 
 export interface UploadFile {
   file: File;
