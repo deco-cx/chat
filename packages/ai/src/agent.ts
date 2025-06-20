@@ -22,6 +22,7 @@ import {
   DEFAULT_MAX_STEPS,
   DEFAULT_MAX_THINKING_TOKENS,
   DEFAULT_MAX_TOKENS,
+  DEFAULT_MEMORY,
   DEFAULT_MEMORY_LAST_MESSAGES,
   DEFAULT_MIN_THINKING_TOKENS,
   DEFAULT_MODEL,
@@ -49,7 +50,7 @@ import {
   AgentMemory,
   buildMemoryId,
   slugify,
-  toAlphanumericId,
+  toAlphanumericId
 } from "@deco/sdk/memory";
 import { trace } from "@deco/sdk/observability";
 import {
@@ -60,7 +61,7 @@ import {
   createServerTimings,
   type ServerTimingsBuilder,
 } from "@deco/sdk/timings";
-import { type StorageThreadType, Telemetry } from "@mastra/core";
+import { type StorageThreadType, Telemetry, WorkingMemory } from "@mastra/core";
 import type { ToolsetsInput, ToolsInput } from "@mastra/core/agent";
 import { Agent } from "@mastra/core/agent";
 import type { MastraMemory } from "@mastra/core/memory";
@@ -75,6 +76,7 @@ import {
 } from "ai";
 import { Cloudflare } from "cloudflare";
 import { getRuntimeKey } from "hono/adapter";
+import jsonSchemaToZod from "json-schema-to-zod";
 import process from "node:process";
 import { createWalletClient } from "../../sdk/src/mcp/wallet/index.ts";
 import { replacePromptMentions } from "../../sdk/src/utils/prompt-mentions.ts";
@@ -89,9 +91,9 @@ import { AgentWallet } from "./agent/wallet.ts";
 import { pickCapybaraAvatar } from "./capybaras.ts";
 import { mcpServerTools } from "./mcp.ts";
 import type {
-  AIAgent as IIAgent,
-  GenerateOptions,
   Message as AIMessage,
+  GenerateOptions,
+  AIAgent as IIAgent,
   StreamOptions,
   Thread,
   ThreadQueryOptions,
@@ -156,6 +158,26 @@ interface ThreadLocator {
   threadId: string;
   resourceId: string;
 }
+
+const agentWorkingMemoryToWorkingMemoryConfig = (
+  workingMemory: NonNullable<Configuration["memory"]>["working_memory"],
+): WorkingMemory => {
+  if (!workingMemory?.enabled) {
+    return { enabled: false };
+  }
+
+  if ("template" in workingMemory) {
+    return {
+      enabled: true,
+      template: workingMemory.template ??
+        DEFAULT_MEMORY.working_memory.template,
+    };
+  }
+
+  const schema = jsonSchemaToZod(workingMemory.schema);
+
+  return { enabled: true, schema };
+};
 
 @Actor()
 export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
@@ -384,7 +406,11 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
         embedder: this._embedder,
         workspace: this.workspace,
         options: {
-          semanticRecall: false,
+          threads: { generateTitle: true },
+          workingMemory: agentWorkingMemoryToWorkingMemoryConfig(
+            this._configuration?.memory?.working_memory,
+          ),
+          semanticRecall: this._configuration?.memory?.semantic_recall,
           lastMessages: Math.min(
             DEFAULT_MEMORY_LAST_MESSAGES,
             this._configuration?.memory?.last_messages ??
@@ -1048,14 +1074,15 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
             },
           }
           : {},
-        ...(typeof options?.lastMessages === "number"
-          ? {
-            memoryOptions: {
-              lastMessages: options.lastMessages,
-              semanticRecall: options.enableSemanticRecall,
-            },
-          }
-          : {}),
+        memory: {
+          thread: thread.threadId,
+          resource: thread.resourceId,
+          options: {
+            lastMessages: options?.lastMessages ?? DEFAULT_MEMORY_LAST_MESSAGES,
+            semanticRecall: options?.enableSemanticRecall ?? false,
+            workingMemory: { enabled: false },
+          },
+        },
         onChunk: endTtfbSpan,
         onError: (err) => {
           console.error("agent stream error", err);

@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { DEFAULT_MODEL, WELL_KNOWN_MODELS } from "../constants.ts";
+import {
+  DEFAULT_MEMORY_LAST_MESSAGES,
+  DEFAULT_MODEL,
+  WELL_KNOWN_MODELS,
+} from "../constants.ts";
 
 const wellKnownModelIds = [
   ...WELL_KNOWN_MODELS.map((m) => m.id),
@@ -60,6 +64,26 @@ export const AgentSchema = z.object({
     ),
     last_messages: z.number().optional().describe(
       "The number of messages to keep in memory",
+    ),
+    semantic_recall: z.boolean().optional().describe(
+      "Whether to use semantic recall",
+    ),
+    working_memory: z.union([
+      z.object({ enabled: z.literal(false) }),
+      z.object({
+        enabled: z.literal(true),
+        template: z.string().describe(
+          "The template to use for working memory",
+        ),
+      }),
+      z.object({
+        enabled: z.literal(true),
+        schema: z.object({}).describe(
+          "JSON schema compatible object for working memory configuration",
+        ),
+      }),
+    ]).optional().describe(
+      "Working memory to use for the agent",
     ),
   }).optional().describe("Memory to use for the agent"),
   /** Views where the agent can be used */

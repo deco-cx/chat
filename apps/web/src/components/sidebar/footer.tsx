@@ -236,7 +236,7 @@ function UserPreferencesModal({ open, onOpenChange }: {
                     <Input
                       id="lastMessages"
                       type="number"
-                      min={1}
+                      min={0}
                       max={100}
                       defaultValue={DEFAULT_MEMORY_LAST_MESSAGES}
                       value={field.value}
