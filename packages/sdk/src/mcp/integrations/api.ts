@@ -166,9 +166,26 @@ const virtualIntegrationsFor = (
     created_at: new Date().toISOString(),
   };
 
+  // Create a virtual AI Integration
+  const aiIntegrationUrl = new URL(workspaceMcp);
+  aiIntegrationUrl.searchParams.set("group", "AI_INTEGRATION");
+  const aiIntegration = {
+    id: formatId("i", "ai-integration"),
+    name: "AI Integration",
+    description: "Call AI models directly for text and structured object generation",
+    connection: {
+      type: "HTTP",
+      url: aiIntegrationUrl.href,
+    },
+    icon: "https://cdn-icons-png.flaticon.com/512/11865/11865223.png",
+    workspace,
+    created_at: new Date().toISOString(),
+  };
+
   return [
     userManagementIntegration,
     workspaceManagementIntegration,
+    aiIntegration,
     ...knowledgeBases.map((kb) => {
       const url = new URL(workspaceMcp);
       url.searchParams.set("group", KNOWLEDGE_BASE_GROUP);

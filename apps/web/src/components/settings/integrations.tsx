@@ -26,6 +26,7 @@ import {
 const ADVANCED_INTEGRATIONS = [
   "i:user-management",
   "i:workspace-management",
+  "i:ai-integration",
   getKnowledgeBaseIntegrationId("standard"),
   "DECO_INTEGRATIONS",
   "DECO_UTILS",
