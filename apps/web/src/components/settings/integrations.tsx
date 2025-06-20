@@ -12,7 +12,6 @@ import { useAgentSettingsForm } from "../agent/edit.tsx";
 import {
   AddFileToKnowledgeButton,
   AgentKnowledgeBaseFileList,
-  KnowledgeBaseFileList,
   type UploadFile,
   useAgentFiles,
 } from "../agent/upload-knowledge-asset.tsx";
@@ -157,16 +156,24 @@ function KnowledgeHeading() {
   );
 }
 
-// TODO: bring this back. The flow it buggs is adding a file to kb
-// deno-lint-ignore  no-unused-vars
 function Knowledge() {
   const { agent } = useAgentSettingsForm();
-  const [uploadedFiles, setUploadedFiles] = useState<
+  const {
+    setIntegrationTools,
+  } = useAgentSettingsToolsSet();
+  const [uploadingFiles, setUploadedFiles] = useState<
     UploadFile[]
   >([]);
-  const { data: files } = useAgentFiles(agent.id);
+  const { data: files, isLoading } = useAgentFiles(agent.id);
 
-  if (files?.length === 0) {
+  // Show empty view only if there are no uploaded files AND no uploading files
+  const hasNoFiles = (files?.length === 0 || !files) &&
+    uploadingFiles.length === 0;
+
+  // Disable add file button when loading on first request and has no files
+  const shouldDisableAddButton = isLoading && hasNoFiles;
+
+  if (hasNoFiles) {
     return (
       <div className="flex flex-col gap-2" key="empty-kb">
         <KnowledgeHeading />
@@ -182,6 +189,8 @@ function Knowledge() {
           <AddFileToKnowledgeButton
             agent={agent}
             onAddFile={setUploadedFiles}
+            setIntegrationTools={setIntegrationTools}
+            disabled={shouldDisableAddButton}
           />
         </div>
       </div>
@@ -195,24 +204,17 @@ function Knowledge() {
           <KnowledgeHeading />
         </div>
 
-        <AddFileToKnowledgeButton agent={agent} onAddFile={setUploadedFiles} />
-      </div>
-      <AgentKnowledgeBaseFileList agentId={agent.id} />
-
-      <div className="space-y-4">
-        {/* Uploaded Files List */}
-        <KnowledgeBaseFileList
-          agentId={agent.id}
-          files={uploadedFiles.map(({ file, uploading, file_url, docIds }) => ({
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            file_url: file_url,
-            uploading,
-            docIds,
-          }))}
+        <AddFileToKnowledgeButton
+          agent={agent}
+          onAddFile={setUploadedFiles}
+          setIntegrationTools={setIntegrationTools}
+          disabled={shouldDisableAddButton}
         />
       </div>
+      <AgentKnowledgeBaseFileList
+        agentId={agent.id}
+        uploadingFiles={uploadingFiles}
+      />
     </FormItem>
   );
 }
@@ -390,6 +392,7 @@ function ToolsAndKnowledgeTab() {
           >
             <Connections />
             {/* TODO: bring this back. The flow it buggs is adding a file to kb <Knowledge /> */}
+            <Knowledge />
             <MultiAgent />
           </form>
         </div>

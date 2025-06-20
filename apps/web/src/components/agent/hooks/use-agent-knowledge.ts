@@ -7,13 +7,17 @@ import {
 } from "@deco/sdk";
 import { getKnowledgeBaseIntegrationId } from "@deco/sdk/utils";
 
-const convertUUIDToValidAlphanumeric = (uuid: string) =>
-  uuid.replaceAll("-", "");
+/* Must start with a letter or underscore, contain only letters, numbers, or underscores, and be at most 63 characters long. */
+const parseToValidIndexName = (uuid: string) => `_${uuid.replaceAll("-", "_")}`;
 
 export const useAgentKnowledgeIntegration = (
-  { id: idProp }: Agent,
+  { setIntegrationTools, agent }: {
+    agent: Agent;
+    setIntegrationTools: (integrationId: string, tools: string[]) => void;
+  },
 ) => {
-  const id = useMemo(() => convertUUIDToValidAlphanumeric(idProp), [idProp]);
+  const { id: idProp } = agent;
+  const id = useMemo(() => parseToValidIndexName(idProp), [idProp]);
   const knowledgeIntegrationId = useMemo(
     () => getKnowledgeBaseIntegrationId(id),
     [id],
@@ -36,7 +40,7 @@ export const useAgentKnowledgeIntegration = (
     const kb = await createKnowledge.mutateAsync({ name: id });
     integrations.refetch();
 
-    // Add the knowledge_base_search tool at agent
+    setIntegrationTools(knowledgeIntegrationId, ["KNOWLEDGE_BASE_SEARCH"]);
 
     return kb;
   };

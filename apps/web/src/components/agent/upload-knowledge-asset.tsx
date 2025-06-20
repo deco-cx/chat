@@ -185,7 +185,11 @@ export function KnowledgeBaseFileList(
 }
 
 export function AgentKnowledgeBaseFileList(
-  { agentId, integration }: { agentId: string; integration?: Integration },
+  { agentId, integration, uploadingFiles = [] }: {
+    agentId: string;
+    integration?: Integration;
+    uploadingFiles?: UploadFile[];
+  },
 ) {
   const { data: files } = useAgentFiles(agentId);
   const prefix = useAgentKnowledgeRootPath(agentId);
@@ -202,10 +206,34 @@ export function AgentKnowledgeBaseFileList(
       }))
       : [], [prefix, files]);
 
+  // Combine uploaded files with uploading files (uploading files come after uploaded files)
+  // Filter out uploading files that already exist in uploaded files based on file_url
+  const allFiles = useMemo(() => {
+    const uploadedFileUrls = new Set(
+      formatedFiles.map((file) => file.file_url),
+    );
+
+    const filteredUploadingFiles = uploadingFiles
+      .filter(({ file_url }) => !file_url || !uploadedFileUrls.has(file_url))
+      .map(({ file, uploading, file_url, docIds }) => ({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        file_url: file_url,
+        uploading,
+        docIds,
+      }));
+
+    return [
+      ...formatedFiles,
+      ...filteredUploadingFiles,
+    ];
+  }, [formatedFiles, uploadingFiles]);
+
   return (
     <KnowledgeBaseFileList
       agentId={agentId}
-      files={formatedFiles}
+      files={allFiles}
       integration={integration}
     />
   );
@@ -214,10 +242,13 @@ export function AgentKnowledgeBaseFileList(
 interface AddFileToKnowledgeProps {
   agent: Agent;
   onAddFile: Dispatch<SetStateAction<UploadFile[]>>;
+  setIntegrationTools: (integrationId: string, tools: string[]) => void;
+  disabled?: boolean;
 }
 
 export function AddFileToKnowledgeButton(
-  { agent, onAddFile }: AddFileToKnowledgeProps,
+  { agent, onAddFile, setIntegrationTools, disabled = false }:
+    AddFileToKnowledgeProps,
 ) {
   const { refetch: refetchAgentKnowledgeFiles } = useAgentFiles(agent.id);
   const [isUploading, setIsUploading] = useState(false);
@@ -226,13 +257,12 @@ export function AddFileToKnowledgeButton(
   const addFileToKnowledgeBase = useAddFileToKnowledge();
   const readFile = useReadFile();
   const { integration: knowledgeIntegration, createAgentKnowledge } =
-    useAgentKnowledgeIntegration(
+    useAgentKnowledgeIntegration({
       agent,
-    );
+      setIntegrationTools,
+    });
 
   const uploadKnowledgeFiles = async (files: File[]) => {
-    setIsUploading(true);
-
     try {
       // Upload each file using the writeFileMutation
       const uploadPromises = files.map(async (file) => {
@@ -308,12 +338,14 @@ export function AddFileToKnowledgeButton(
 
       await Promise.all(uploadPromises);
       await refetchAgentKnowledgeFiles();
-      onAddFile([]);
-      console.log("All files uploaded successfully");
+
+      // Small delay to ensure UI has updated with refetched files before clearing uploading files
+      // This prevents the flickering effect where files disappear and reappear
+      setTimeout(() => {
+        onAddFile([]);
+      }, 100);
     } catch (error) {
       console.error("Failed to upload some knowledge files:", error);
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -333,12 +365,14 @@ export function AddFileToKnowledgeButton(
       const fileObjects = validFiles.map((file) => ({ file, uploading: true }));
       onAddFile((prev) => [...prev, ...fileObjects]);
 
+      setIsUploading(true);
       // Upload files
       if (!knowledgeIntegration) {
         await createAgentKnowledge();
       }
 
       await uploadKnowledgeFiles(validFiles);
+      setIsUploading(false);
     }
   };
 
@@ -361,7 +395,7 @@ export function AddFileToKnowledgeButton(
         type="button"
         variant="outline"
         onClick={triggerFileInput}
-        disabled={isUploading}
+        disabled={isUploading || disabled}
       >
         <Icon
           name="add"
