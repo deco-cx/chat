@@ -1,4 +1,3 @@
-import type { LanguageModelV1FinishReason } from "ai";
 import { useChat } from "@ai-sdk/react";
 import {
   DECO_CHAT_API,
