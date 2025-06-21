@@ -24,12 +24,16 @@ import {
 } from "@deco/ui/components/dropdown-menu.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
-import { useReducer, useState } from "react";
+import { useReducer, useState, useEffect, useRef } from "react";
 import { useNavigateWorkspace } from "../../../hooks/use-navigate-workspace.ts";
 import { EmptyState } from "../../common/empty-state.tsx";
 import { Table, type TableColumn } from "../../common/table/index.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../../layout.tsx";
 import { Header } from "./common.tsx";
+import { Badge } from "@deco/ui/components/badge.tsx";
+
+const DATE_TIME_PROMPT_NAME = "Date/Time Now";
+const DATE_TIME_PROMPT_CONTENT = '<span data-type="datetime"></span>';
 
 interface ListState {
   filter: string;
@@ -142,8 +146,14 @@ function ListPromptsLayout() {
 interface PromptActionsProps {
   onDelete: () => void;
   disabled?: boolean;
+  isNativePrompt?: boolean;
 }
-function PromptActions({ onDelete, disabled }: PromptActionsProps) {
+function PromptActions({ onDelete, disabled, isNativePrompt }: PromptActionsProps) {
+  // Don't show actions for native prompts
+  if (isNativePrompt) {
+    return null;
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -177,16 +187,29 @@ function PromptCard({
   onConfigure: (prompt: Prompt) => void;
   onDelete: (promptId: string) => void;
 }) {
+  const isNativePrompt = prompt.name === DATE_TIME_PROMPT_NAME;
+  
   return (
     <Card
-      className="group cursor-pointer hover:shadow-md transition-shadow rounded-xl relative border-border"
-      onClick={() => onConfigure(prompt)}
+      className={`group transition-shadow rounded-xl relative border-border ${
+        isNativePrompt 
+          ? "cursor-default" 
+          : "cursor-pointer hover:shadow-md"
+      }`}
+      onClick={isNativePrompt ? undefined : () => onConfigure(prompt)}
     >
       <CardContent className="p-4">
         <div className="grid grid-cols-[1fr_min-content] gap-4 items-start">
           <div className="flex flex-col gap-1 min-w-0">
-            <div className="text-base font-semibold truncate">
-              {prompt.name}
+            <div className="flex items-center gap-2">
+              <div className="text-base font-semibold truncate">
+                {prompt.name}
+              </div>
+              {prompt.name === DATE_TIME_PROMPT_NAME && (
+                <Badge variant="secondary" className="text-xs">
+                  Dynamic
+                </Badge>
+              )}
             </div>
             <div className="text-sm text-muted-foreground line-clamp-3">
               {prompt.description || prompt.content}
@@ -194,11 +217,51 @@ function PromptCard({
           </div>
 
           <div onClick={(e) => e.stopPropagation()}>
-            <PromptActions onDelete={() => onDelete(prompt.id)} />
+            <PromptActions 
+              onDelete={() => onDelete(prompt.id)} 
+              isNativePrompt={prompt.name === DATE_TIME_PROMPT_NAME}
+            />
           </div>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function PromptSection({
+  title,
+  description,
+  prompts,
+  onConfigure,
+  onDelete,
+}: {
+  title: string;
+  description?: string;
+  prompts: Prompt[];
+  onConfigure: (prompt: Prompt) => void;
+  onDelete: (promptId: string) => void;
+}) {
+  if (prompts.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      <div className="border-b pb-2">
+        <h3 className="text-lg font-semibold">{title}</h3>
+        {description && (
+          <p className="text-sm text-muted-foreground">{description}</p>
+        )}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        {prompts.map((prompt) => (
+          <PromptCard
+            key={prompt.id}
+            prompt={prompt}
+            onConfigure={onConfigure}
+            onDelete={onDelete}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -209,16 +272,27 @@ function CardsView(
     onDelete: (promptId: string) => void;
   },
 ) {
+  // Separate native and custom prompts
+  const nativePrompts = prompts.filter(p => p.name === DATE_TIME_PROMPT_NAME);
+  const customPrompts = prompts.filter(p => p.name !== DATE_TIME_PROMPT_NAME);
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 peer">
-      {prompts.map((prompt) => (
-        <PromptCard
-          key={prompt.id}
-          prompt={prompt}
-          onConfigure={onConfigure}
-          onDelete={onDelete}
-        />
-      ))}
+    <div className="space-y-8 peer">
+      <PromptSection
+        title="Native Prompts"
+        description="Add or reference these utility prompts in your agents and chats"
+        prompts={nativePrompts}
+        onConfigure={onConfigure}
+        onDelete={onDelete}
+      />
+      
+      <PromptSection
+        title="Custom Prompts"
+        description="Your custom prompts and templates"
+        prompts={customPrompts}
+        onConfigure={onConfigure}
+        onDelete={onDelete}
+      />
     </div>
   );
 }
@@ -249,7 +323,16 @@ function TableView(
     {
       id: "name",
       header: "Name",
-      render: (prompt) => prompt.name,
+      render: (prompt) => (
+        <div className="flex items-center gap-2">
+          <span>{prompt.name}</span>
+          {prompt.name === DATE_TIME_PROMPT_NAME && (
+            <Badge variant="secondary" className="text-xs">
+              Dynamic
+            </Badge>
+          )}
+        </div>
+      ),
       sortable: true,
     },
     {
@@ -264,7 +347,10 @@ function TableView(
       header: "",
       render: (prompt) => (
         <div onClick={(e) => e.stopPropagation()}>
-          <PromptActions onDelete={() => onDelete(prompt.id)} />
+          <PromptActions 
+            onDelete={() => onDelete(prompt.id)} 
+            isNativePrompt={prompt.name === DATE_TIME_PROMPT_NAME}
+          />
         </div>
       ),
     },
@@ -279,6 +365,14 @@ function TableView(
     }
   }
 
+  const handleRowClick = (prompt: Prompt) => {
+    // Don't allow clicking on native prompts
+    if (prompt.name === DATE_TIME_PROMPT_NAME) {
+      return;
+    }
+    onConfigure(prompt);
+  };
+
   return (
     <Table
       columns={columns}
@@ -286,7 +380,7 @@ function TableView(
       sortKey={sortKey}
       sortDirection={sortDirection}
       onSort={handleSort}
-      onRowClick={onConfigure}
+      onRowClick={handleRowClick}
     />
   );
 }
@@ -300,6 +394,26 @@ function ListPrompts() {
   const navigateWorkspace = useNavigateWorkspace();
 
   const { filter, deleteDialogOpen, promptToDelete, deleting } = state;
+
+  const dateTimeCreationAttemptedRef = useRef(false);
+
+  // Auto-create Date/Time Now prompt if it doesn't exist in main library
+  useEffect(() => {
+    if (prompts && !prompts.find(p => p.name === DATE_TIME_PROMPT_NAME) && 
+        !create.isPending && !dateTimeCreationAttemptedRef.current) {
+      
+      dateTimeCreationAttemptedRef.current = true;
+      create.mutateAsync({
+        name: DATE_TIME_PROMPT_NAME,
+        description: "Adds the current date and time to your prompt",
+        content: DATE_TIME_PROMPT_CONTENT,
+      }).catch((error) => {
+        console.error('Failed to create Date/Time prompt in main library:', error);
+        // Reset flag on error so it can be retried
+        dateTimeCreationAttemptedRef.current = false;
+      });
+    }
+  }, [prompts, create]);
 
   const filteredPrompts =
     prompts?.filter((prompt) =>
@@ -360,9 +474,12 @@ function ListPrompts() {
           ? (
             <EmptyState
               icon="local_library"
-              title="No prompts yet"
-              description="Create a prompt to get started."
-              buttonProps={{
+              title={filter ? "No prompts found" : "No prompts yet"}
+              description={filter 
+                ? `No prompts found for "${filter}"`
+                : "Create a prompt to get started."
+              }
+              buttonProps={filter ? undefined : {
                 children: "Create a prompt",
                 onClick: handleCreate,
               }}

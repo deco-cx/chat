@@ -12,18 +12,30 @@ const PARTIAL_ESCAPED_MENTION_REGEX =
 const ESCAPED_MENTION_REGEX =
   /&lt;span\s+data-type=&quot;mention&quot;\s+[^&]*?data-id=&quot;([^&]+)&quot;[^&]*?&gt;.*?&lt;\/span&gt;/gs;
 
+// DateTime span regex patterns
+const DATETIME_REGEX =
+  /<span\s+data-type="datetime"[^>]*?>.*?<\/span>/gs;
+const PARTIAL_ESCAPED_DATETIME_REGEX =
+  /&lt;span\s+data-type="datetime"[^&]*?&gt;.*?&lt;\/span&gt;/gs;
+const ESCAPED_DATETIME_REGEX =
+  /&lt;span\s+data-type=&quot;datetime&quot;[^&]*?&gt;.*?&lt;\/span&gt;/gs;
+
 /**
- * Normalizes mentions in a content string
+ * Normalizes mentions and datetime spans in a content string
  * @param content - The content string to normalize
  * @returns The normalized content string
  */
 export function normalizeMentions(content: string): string {
-  const replaceTo = '<span data-type="mention" data-id="$1"></span>';
+  const mentionReplaceTo = '<span data-type="mention" data-id="$1"></span>';
+  const datetimeReplaceTo = '<span data-type="datetime"></span>';
 
   return content
-    .replaceAll(MENTION_REGEX, replaceTo)
-    .replaceAll(PARTIAL_ESCAPED_MENTION_REGEX, replaceTo)
-    .replaceAll(ESCAPED_MENTION_REGEX, replaceTo);
+    .replaceAll(MENTION_REGEX, mentionReplaceTo)
+    .replaceAll(PARTIAL_ESCAPED_MENTION_REGEX, mentionReplaceTo)
+    .replaceAll(ESCAPED_MENTION_REGEX, mentionReplaceTo)
+    .replaceAll(DATETIME_REGEX, datetimeReplaceTo)
+    .replaceAll(PARTIAL_ESCAPED_DATETIME_REGEX, datetimeReplaceTo)
+    .replaceAll(ESCAPED_DATETIME_REGEX, datetimeReplaceTo);
 }
 
 /**
@@ -44,6 +56,20 @@ export function extractPromptMentions(systemPrompt: string): PromptMention[] {
 }
 
 /**
+ * Replaces datetime spans with current date/time
+ */
+export function replaceDateTimeSpans(content: string): string {
+  const currentDateTime = `Current date and time: ${
+    new Date().toLocaleString()
+  }`;
+
+  return content.replaceAll(
+    '<span data-type="datetime"></span>',
+    currentDateTime,
+  );
+}
+
+/**
  * Replaces prompt mentions with their content
  */
 export async function replacePromptMentions(
@@ -52,6 +78,9 @@ export async function replacePromptMentions(
 ): Promise<string> {
   const mentions = extractPromptMentions(normalizeMentions(systemPrompt));
   let result = systemPrompt;
+
+  // First replace datetime spans
+  result = replaceDateTimeSpans(result);
 
   if (mentions.length === 0) {
     return result;

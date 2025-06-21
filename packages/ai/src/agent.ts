@@ -78,6 +78,7 @@ import { getRuntimeKey } from "hono/adapter";
 import process from "node:process";
 import { createWalletClient } from "../../sdk/src/mcp/wallet/index.ts";
 import { replacePromptMentions } from "../../sdk/src/utils/prompt-mentions.ts";
+import { processAgentInstructions } from "../../sdk/src/utils/agent-instructions.ts";
 import { convertToAIMessage } from "./agent/ai-message.ts";
 import { createAgentOpenAIVoice } from "./agent/audio.ts";
 import {
@@ -413,9 +414,9 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     this.telemetry = Telemetry.init({ serviceName: "agent" });
     this.telemetry.tracer = trace.getTracer("agent");
 
-    // Process instructions to replace prompt mentions
-    const processedInstructions = await replacePromptMentions(
-      config.instructions,
+    // Process instructions to replace prompt mentions and append additional prompts
+    const processedInstructions = await processAgentInstructions(
+      config,
       this.workspace,
     );
 
@@ -519,12 +520,19 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
       });
 
       // TODO(@mcandeia) for now, token limiter is not being used because we are avoiding instantiating a new memory.
+      const processedInstructions = await processAgentInstructions(
+        this._configuration ?? {
+          instructions: ANONYMOUS_INSTRUCTIONS,
+          additional_prompts: [],
+        } as any,
+        this.workspace,
+      );
+      
       agent = new Agent({
         memory: this._memory,
         name: this._configuration?.name ?? ANONYMOUS_NAME,
         model: llm,
-        instructions: this._configuration?.instructions ??
-          ANONYMOUS_INSTRUCTIONS,
+        instructions: processedInstructions,
         voice: this.env.OPENAI_API_KEY
           ? createAgentOpenAIVoice({ apiKey: this.env.OPENAI_API_KEY })
           : undefined,
