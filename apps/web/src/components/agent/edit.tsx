@@ -43,6 +43,8 @@ import AgentPreview from "./preview.tsx";
 import ThreadView from "./thread.tsx";
 import Threads from "./threads.tsx";
 import { WhatsAppButton } from "./whatsapp-button.tsx";
+import { SpaceSelector } from "./space-selector.tsx";
+import { useSpaces } from "./hooks/use-spaces.ts";
 import { lazy } from "react";
 import { wrapWithUILoadingFallback } from "../../main.tsx";
 import { useTabsForAgent } from "./preview.tsx";
@@ -179,15 +181,31 @@ function ActionButtons({
   discardChanges,
   numberOfChanges,
   isWellKnownAgent,
+  spaces,
+  currentSpace,
+  onSpaceChange,
+  onSaveSpace,
 }: {
   discardChanges: () => void;
   numberOfChanges: number;
   isWellKnownAgent: boolean;
+  spaces: Record<string, any>;
+  currentSpace: string;
+  onSpaceChange: (spaceId: string) => void;
+  onSaveSpace: (spaceId: string, spaceName: string) => void;
 }) {
   const { form, hasChanges, handleSubmit } = useAgentSettingsForm();
 
   return (
     <div className="flex items-center gap-2 bg-sidebar transition-opacity">
+      <SpaceSelector
+        spaces={spaces}
+        currentSpace={currentSpace}
+        onSpaceChange={onSpaceChange}
+        onSaveSpace={onSaveSpace}
+        className="mr-2"
+      />
+      
       {!isWellKnownAgent && (
         <Button
           type="button"
@@ -237,8 +255,6 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
   const updateAgentCache = useUpdateAgentCache();
   const createAgent = useCreateAgent();
 
-  const tabs = useTabsForAgent(agent, TABS);
-
   const isWellKnownAgent = Boolean(
     WELL_KNOWN_AGENTS[agentId as keyof typeof WELL_KNOWN_AGENTS],
   );
@@ -247,6 +263,21 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
     defaultValues: agent,
     resolver: zodResolver(AgentSchema),
   });
+
+  // Initialize spaces management
+  const {
+    spaces,
+    currentSpace,
+    tabsForSpace,
+    changeSpace,
+    saveSpace,
+  } = useSpaces({
+    agent,
+    baseTabs: TABS,
+  });
+
+  // Combine base tabs with dynamic view tabs and space configuration
+  const tabs = useTabsForAgent(agent, tabsForSpace);
 
   const numberOfChanges = Object.keys(form.formState.dirtyFields).length;
   const hasChanges = numberOfChanges > 0;
@@ -295,6 +326,16 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
     blocked.proceed?.();
   }
 
+  const handleSaveSpace = async (spaceId: string, spaceName: string) => {
+    try {
+      // Here we would capture the current dock layout and save it
+      await saveSpace(spaceId, spaceName);
+      toast.success(`Space "${spaceName}" saved successfully`);
+    } catch (error) {
+      toast.error("Failed to save space");
+    }
+  };
+
   return (
     <>
       <AlertDialog open={blocked.state === "blocked"}>
@@ -341,12 +382,16 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
         >
           <PageLayout
             tabs={tabs}
-            key={agentId}
+            key={`${agentId}-${currentSpace}`}
             actionButtons={
               <ActionButtons
                 discardChanges={discardChanges}
                 numberOfChanges={numberOfChanges}
                 isWellKnownAgent={isWellKnownAgent}
+                spaces={spaces}
+                currentSpace={currentSpace}
+                onSpaceChange={changeSpace}
+                onSaveSpace={handleSaveSpace}
               />
             }
             breadcrumb={

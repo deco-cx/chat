@@ -18,6 +18,18 @@ const ModelSchema = z.union([
 ]);
 
 /**
+ * Schema for a space configuration
+ */
+const SpaceSchema = z.object({
+  /** Name of the space */
+  title: z.string().describe("Name of the space"),
+  /** Dock/tab layout configuration */
+  viewSetup: z.record(z.any()).describe("Dock/tab layout configuration"),
+  /** Theme configuration for this space */
+  theme: z.record(z.string()).optional().describe("Theme configuration for this space"),
+});
+
+/**
  * Zod schema for an AI Agent
  */
 export const AgentSchema = z.object({
@@ -77,9 +89,18 @@ export const AgentSchema = z.object({
   access: z.string().optional().nullable().describe(
     "Access control by role",
   ),
+  /** Saved spaces configurations */
+  spaces: z.record(SpaceSchema).optional().describe(
+    "Saved spaces configurations for different editing layouts",
+  ),
 });
 
 /**
  * Type representing an AI Agent derived from the Zod schema
  */
 export type Agent = z.infer<typeof AgentSchema>;
+
+/**
+ * Type representing a Space configuration
+ */
+export type Space = z.infer<typeof SpaceSchema>;

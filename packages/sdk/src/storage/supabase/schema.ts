@@ -363,6 +363,7 @@ export type Database = {
           memory: Json | null;
           model: string;
           name: string;
+          spaces: Json | null;
           tools_set: Json;
           views: Json;
           visibility: Database["public"]["Enums"]["visibility_type"];
@@ -381,6 +382,7 @@ export type Database = {
           memory?: Json | null;
           model: string;
           name: string;
+          spaces?: Json | null;
           tools_set: Json;
           views: Json;
           visibility?: Database["public"]["Enums"]["visibility_type"];
@@ -399,6 +401,7 @@ export type Database = {
           memory?: Json | null;
           model?: string;
           name?: string;
+          spaces?: Json | null;
           tools_set?: Json;
           views?: Json;
           visibility?: Database["public"]["Enums"]["visibility_type"];
