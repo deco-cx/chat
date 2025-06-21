@@ -30,6 +30,7 @@ import { withContextMiddleware } from "./middlewares/context.ts";
 import { setUserMiddleware } from "./middlewares/user.ts";
 import { type AppContext, type AppEnv, State } from "./utils/context.ts";
 import { handleStripeWebhook } from "./webhooks/stripe.ts";
+import { parseBodyFromRequestToObject } from "./utils/parse-req-body.ts";
 
 export const app = new Hono<AppEnv>();
 export const honoCtxToAppCtx = (c: Context<AppEnv>): AppContext => {
@@ -139,7 +140,7 @@ const createToolCallHandlerFor = <
   return async (c: Context) => {
     const client = createMCPToolsStub({ tools });
     const tool = c.req.param("tool");
-    const args = await c.req.json();
+    const args = await parseBodyFromRequestToObject(c.req);
 
     const t = toolMap.get(tool as TDefinition[number]["name"]);
     if (!t) {
