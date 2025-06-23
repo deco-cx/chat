@@ -7,6 +7,7 @@ export interface UserPreferences {
   sendReasoning: boolean;
   defaultModel: string;
   lastMessages: number;
+  activityPageSize: number;
 }
 
 const USER_PREFERENCES_KEY = "user-preferences";
@@ -23,6 +24,7 @@ export function useUserPreferences() {
       useOpenRouter: true,
       smoothStream: true,
       sendReasoning: true,
+      activityPageSize: 20,
     },
   });
 

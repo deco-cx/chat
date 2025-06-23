@@ -17,6 +17,7 @@ import { Suspense, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { ErrorBoundary } from "../../error-boundary.tsx";
 import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
+import { useUserPreferences } from "../../hooks/use-user-preferences.ts";
 import type { Tab } from "../dock/index.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
 import { AuditFilters } from "./audit-filters.tsx";
@@ -36,8 +37,6 @@ const SORT_OPTIONS: { value: AuditOrderBy; label: string }[] = [
   { value: "updatedAt_desc", label: "Recently Updated" },
   { value: "updatedAt_asc", label: "Least Recently Updated" },
 ];
-
-const limit = 11;
 
 function AuditListErrorFallback() {
   return (
@@ -70,6 +69,9 @@ export function AuditListContent({
   const [sort, setSort] = useState<AuditOrderBy>(SORT_OPTIONS[0].value);
   // Cursor-based pagination state
   const navigate = useNavigateWorkspace();
+  
+  // User preferences for page size
+  const { preferences, setPreferences } = useUserPreferences();
 
   // Fetch agents for filter dropdown
   const { data: agents = [] } = useAgents();
@@ -99,7 +101,7 @@ export function AuditListContent({
     resourceId: filters?.resourceId ?? selectedUser,
     orderBy: filters?.orderBy ?? sort,
     cursor: filters?.cursor ?? currentCursor,
-    limit: filters?.limit ?? limit,
+    limit: filters?.limit ?? preferences.activityPageSize,
   });
 
   // Pagination logic
@@ -118,6 +120,13 @@ export function AuditListContent({
   }
   function handleSortChange(newSort: string) {
     setSort(newSort as AuditOrderBy);
+    setSearchParams({ [CURSOR_PAGINATION_SEARCH_PARAM]: "" });
+  }
+  function handlePageSizeChange(newPageSize: number) {
+    setPreferences({
+      ...preferences,
+      activityPageSize: newPageSize,
+    });
     setSearchParams({ [CURSOR_PAGINATION_SEARCH_PARAM]: "" });
   }
   function handleNextPage() {
@@ -151,8 +160,10 @@ export function AuditListContent({
           members={members}
           selectedAgent={selectedAgent}
           selectedUser={selectedUser}
+          pageSize={preferences.activityPageSize}
           onAgentChange={handleAgentChange}
           onUserChange={handleUserChange}
+          onPageSizeChange={handlePageSizeChange}
         />
       )}
       {/* Empty state */}

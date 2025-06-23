@@ -13,8 +13,10 @@ interface AuditFiltersProps {
   members: Member[];
   selectedAgent?: string;
   selectedUser?: string;
+  pageSize: number;
   onAgentChange: (value: string) => void;
   onUserChange: (value: string) => void;
+  onPageSizeChange: (value: number) => void;
 }
 
 export function AuditFilters({
@@ -22,8 +24,10 @@ export function AuditFilters({
   members,
   selectedAgent,
   selectedUser,
+  pageSize,
   onAgentChange,
   onUserChange,
+  onPageSizeChange,
 }: AuditFiltersProps) {
   // Ordenar membros por nome
   const sortedMembers = [...(members ?? [])].sort((a, b) => {
@@ -80,6 +84,21 @@ export function AuditFilters({
           </Select>
         </div>
       )}
+      <div className="flex flex-col gap-2 min-w-[120px]">
+        <Select
+          value={pageSize.toString()}
+          onValueChange={(value) => onPageSizeChange(Number(value))}
+        >
+          <SelectTrigger id="page-size-select" className="w-full">
+            <SelectValue placeholder="Page size" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="20">20 per page</SelectItem>
+            <SelectItem value="50">50 per page</SelectItem>
+            <SelectItem value="100">100 per page</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }
