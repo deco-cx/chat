@@ -3,6 +3,10 @@ import { Button } from "@deco/ui/components/button.tsx";
 import { providers } from "./providers.tsx";
 import { Link, useSearchParams } from "react-router";
 import { trackEvent } from "../../hooks/analytics.ts";
+import { toast } from "@deco/ui/components/sonner.tsx";
+import { useEffect } from "react";
+
+const LAST_LOGIN_METHOD_KEY = "deco-chat-last-login-method";
 
 function Login() {
   const [searchParams] = useSearchParams();
@@ -13,7 +17,34 @@ function Login() {
     trackEvent("deco_chat_login_provider_click", {
       provider: providerName,
     });
+    
+    // Store the selected login method for next time
+    try {
+      localStorage.setItem(LAST_LOGIN_METHOD_KEY, providerName);
+    } catch (error) {
+      // Ignore localStorage errors (e.g., in private/incognito mode)
+      console.debug("Could not save last login method:", error);
+    }
   };
+
+  // Show toast with last used login method when page loads
+  useEffect(() => {
+    try {
+      const lastMethod = localStorage.getItem(LAST_LOGIN_METHOD_KEY);
+      if (lastMethod) {
+        const provider = providers.find(p => p.name === lastMethod);
+        if (provider) {
+          toast(`Last time you used ${provider.name} to sign in`, {
+            duration: 5000,
+            description: "You can continue with the same method or choose a different one.",
+          });
+        }
+      }
+    } catch (error) {
+      // Ignore localStorage errors
+      console.debug("Could not read last login method:", error);
+    }
+  }, []);
 
   return (
     <SplitScreenLayout>
