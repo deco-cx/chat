@@ -197,7 +197,7 @@ export const INNATE_INTEGRATIONS = {
 } satisfies Record<string, Integration>;
 
 export const MAX_MAX_STEPS = 100;
-export const DEFAULT_MAX_STEPS = 3;
+export const DEFAULT_MAX_STEPS = 10;
 export const DEFAULT_MAX_TOKENS = 8192;
 export const DEFAULT_MAX_THINKING_TOKENS = 12000;
 export const DEFAULT_MIN_THINKING_TOKENS = 1024;
