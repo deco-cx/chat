@@ -9,6 +9,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deco/ui/components/tooltip.tsx";
+import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 
 type Thread = {
   id: string;
@@ -23,7 +24,6 @@ interface AuditTableProps {
   threads: Thread[];
   sort: string;
   onSortChange: (sort: string) => void;
-  onRowClick?: (threadId: string) => void;
   columnsDenyList?: Set<string>;
 }
 
@@ -37,8 +37,9 @@ function getSortKeyAndDirection(
 }
 
 export function AuditTable(
-  { threads, sort, onSortChange, onRowClick, columnsDenyList }: AuditTableProps,
+  { threads, sort, onSortChange, columnsDenyList }: AuditTableProps,
 ) {
+  const workspaceLink = useNavigateWorkspace();
   const { key: sortKey, direction: sortDirection } = getSortKeyAndDirection(
     sort,
   );
@@ -99,14 +100,14 @@ export function AuditTable(
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-x-auto">
+    <div className="flex-1 min-h-0 flex flex-col">
       <Table
         columns={columns}
         data={threads}
         sortKey={sortKey}
         sortDirection={sortDirection}
         onSort={handleSort}
-        onRowClick={onRowClick ? (row) => onRowClick(row.id) : undefined}
+        getRowHref={(row) => workspaceLink(`/audit/${row.id}`)}
       />
     </div>
   );

@@ -146,17 +146,24 @@ export function DateTimeCell({
   className = "",
 }: DateTimeCellProps) {
   if (!value) {
-    return <span className={className}>-</span>;
+    return <span className={`text-muted-foreground text-sm ${className}`}>-</span>;
   }
+  
   const dateObj = typeof value === "string" ? new Date(value) : value;
+  
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) {
+    return <span className={`text-muted-foreground text-sm ${className}`}>Invalid Date</span>;
+  }
+  
   return (
     <div
       className={`flex flex-col items-start text-left leading-tight ${className}`}
     >
-      <span className="font-medium text-foreground">
+      <span className="font-medium text-foreground text-sm">
         {format(dateObj, dateFormat)}
       </span>
-      <span className="font-normal text-muted-foreground">
+      <span className="font-normal text-muted-foreground text-xs">
         {format(dateObj, timeFormat)}
       </span>
     </div>

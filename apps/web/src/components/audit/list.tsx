@@ -61,14 +61,6 @@ export function AuditListContent({
   columnsDenyList,
   filters,
 }: AuditListContentProps) {
-  const [selectedAgent, setSelectedAgent] = useState<string | undefined>(
-    undefined,
-  );
-  const [selectedUser, setSelectedUser] = useState<string | undefined>(
-    undefined,
-  );
-  const [sort, setSort] = useState<AuditOrderBy>(SORT_OPTIONS[0].value);
-  // Cursor-based pagination state
   const navigate = useNavigateWorkspace();
 
   // Fetch agents for filter dropdown
@@ -77,6 +69,11 @@ export function AuditListContent({
   // Get teamId from teams and params
   const params = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Get filter state from URL params, with fallbacks
+  const selectedAgent = searchParams.get("agent") || undefined;
+  const selectedUser = searchParams.get("user") || undefined;
+  const sort = (searchParams.get("sort") as AuditOrderBy) || SORT_OPTIONS[0].value;
   const getSafeCursor = (cursor: string | null) => {
     if (!cursor) return;
     try {
@@ -108,30 +105,43 @@ export function AuditListContent({
 
   // Handlers
   function handleAgentChange(value: string) {
-    setSelectedAgent(value === "all" ? undefined : value);
-    setSearchParams({ [CURSOR_PAGINATION_SEARCH_PARAM]: "" });
+    const newParams = new URLSearchParams(searchParams);
+    if (value === "all") {
+      newParams.delete("agent");
+    } else {
+      newParams.set("agent", value);
+    }
+    newParams.delete(CURSOR_PAGINATION_SEARCH_PARAM);
+    setSearchParams(newParams);
   }
   function handleUserChange(value: string) {
-    setSelectedUser(value === "all" ? undefined : value);
-
-    setSearchParams({ [CURSOR_PAGINATION_SEARCH_PARAM]: "" });
+    const newParams = new URLSearchParams(searchParams);
+    if (value === "all") {
+      newParams.delete("user");
+    } else {
+      newParams.set("user", value);
+    }
+    newParams.delete(CURSOR_PAGINATION_SEARCH_PARAM);
+    setSearchParams(newParams);
   }
   function handleSortChange(newSort: string) {
-    setSort(newSort as AuditOrderBy);
-    setSearchParams({ [CURSOR_PAGINATION_SEARCH_PARAM]: "" });
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("sort", newSort);
+    newParams.delete(CURSOR_PAGINATION_SEARCH_PARAM);
+    setSearchParams(newParams);
   }
   function handleNextPage() {
     if (pagination?.hasMore && pagination?.nextCursor) {
-      setSearchParams({
-        [CURSOR_PAGINATION_SEARCH_PARAM]: pagination.nextCursor,
-      });
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set(CURSOR_PAGINATION_SEARCH_PARAM, pagination.nextCursor);
+      setSearchParams(newParams);
     }
   }
   function handlePrevPage() {
     if (pagination?.prevCursor) {
-      setSearchParams({
-        [CURSOR_PAGINATION_SEARCH_PARAM]: pagination?.prevCursor,
-      });
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set(CURSOR_PAGINATION_SEARCH_PARAM, pagination.prevCursor);
+      setSearchParams(newParams);
     }
   }
 
@@ -144,7 +154,7 @@ export function AuditListContent({
   }
 
   return (
-    <div className="flex flex-col gap-4 overflow-x-auto w-full">
+    <div className="flex flex-col gap-4 w-full">
       {showFilters && (
         <AuditFilters
           agents={agents}
@@ -169,7 +179,6 @@ export function AuditListContent({
               sort={sort}
               columnsDenyList={columnsDenyList}
               onSortChange={handleSortChange}
-              onRowClick={(threadId) => navigate(`/audit/${threadId}`)}
             />
             {/* Pagination */}
             <div className="flex justify-center mt-4">
@@ -214,7 +223,7 @@ export function AuditListContent({
 
 function AuditList() {
   return (
-    <div className="h-full text-foreground px-6 py-6 overflow-x-auto w-full">
+    <div className="h-full text-foreground px-6 py-6 w-full">
       <ErrorBoundary fallback={<AuditListErrorFallback />}>
         <Suspense
           fallback={
