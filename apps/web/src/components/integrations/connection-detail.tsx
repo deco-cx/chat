@@ -32,7 +32,7 @@ import {
   useTools,
 } from "@deco/sdk";
 import { useEffect, useRef, useState } from "react";
-import { useIntegrationDisplayName } from "../../hooks/use-integration-display-name.ts";
+
 import {
   RemoveConnectionAlert,
   useRemoveConnection,
@@ -491,8 +491,6 @@ function ConnectionInstanceItem(
   const { deletingId, performDelete, setDeletingId, isDeletionPending } =
     useRemoveConnection();
   const instanceRef = useRef<HTMLDivElement>(null);
-  const displayName = useIntegrationDisplayName(instance);
-
   // Smooth scroll to this instance when connectionId matches
   useEffect(() => {
     setTimeout(() => {
@@ -540,7 +538,7 @@ function ConnectionInstanceItem(
         className="h-10 w-10"
       />
       <div className="h-12 flex flex-col gap-1 flex-1 min-w-0">
-        <h5 className="text-sm font-medium truncate">{displayName}</h5>
+        <h5 className="text-sm font-medium truncate">{instance.name}</h5>
         <p className="text-sm text-muted-foreground truncate">
           {instance.description}
         </p>
@@ -895,14 +893,13 @@ function ToolsInspector({ data, selectedConnectionId }: {
 
   // Create a helper component for displaying instance names
   const InstanceSelectItem = ({ instance }: { instance: Integration }) => {
-    const displayName = useIntegrationDisplayName(instance);
     return (
       <SelectItem key={instance.id} value={instance.id}>
         <IntegrationIcon
           icon={instance.icon}
           className="w-8 h-8 flex-shrink-0"
         />
-        {displayName}
+        {instance.name}
       </SelectItem>
     );
   };

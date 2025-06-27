@@ -16,7 +16,8 @@ import {
 } from "../crud/mcp.ts";
 import { InternalServerError } from "../errors.ts";
 import { MCPClient } from "../fetcher.ts";
-import type { Binder, Integration } from "../models/mcp.ts";
+import type { Agent, Binder, Integration } from "../models/index.ts";
+import { applyDisplayNameToIntegration } from "../utils/integration-display-name.ts";
 import { KEYS } from "./api.ts";
 import { listTools, type MCPTool } from "./index.ts";
 import { useSDK } from "./store.tsx";
@@ -29,17 +30,20 @@ export const useCreateIntegration = () => {
     mutationFn: (mcp: Partial<Integration>) =>
       createIntegration(workspace, mcp),
     onSuccess: (result) => {
+      const agents = client.getQueryData<Agent[]>(KEYS.AGENT(workspace));
+      const processedResult = applyDisplayNameToIntegration(result, agents);
+
       // update item
       const itemKey = KEYS.INTEGRATION(workspace, result.id);
       client.cancelQueries({ queryKey: itemKey });
-      client.setQueryData<Integration>(itemKey, result);
+      client.setQueryData<Integration>(itemKey, processedResult);
 
       // update list
       const listKey = KEYS.INTEGRATION(workspace);
       client.cancelQueries({ queryKey: listKey });
       client.setQueryData<Integration[]>(
         listKey,
-        (old) => !old ? [result] : [result, ...old],
+        (old) => !old ? [processedResult] : [processedResult, ...old],
       );
     },
   });
@@ -60,10 +64,13 @@ export const useUpdateIntegration = ({
   const update = useMutation({
     mutationFn: (mcp: Integration) => saveIntegration(workspace, mcp),
     onSuccess: (result) => {
+      const agents = client.getQueryData<Agent[]>(KEYS.AGENT(workspace));
+      const processedResult = applyDisplayNameToIntegration(result, agents);
+
       // Update the individual MCP in cache
       const itemKey = KEYS.INTEGRATION(workspace, result.id);
       client.cancelQueries({ queryKey: itemKey });
-      client.setQueryData<Integration>(itemKey, result);
+      client.setQueryData<Integration>(itemKey, processedResult);
 
       // Update the list
       const listKey = KEYS.INTEGRATION(workspace);
@@ -72,8 +79,8 @@ export const useUpdateIntegration = ({
         listKey,
         (old) =>
           !old
-            ? [result]
-            : old.map((mcp) => mcp.id === result.id ? result : mcp),
+            ? [processedResult]
+            : old.map((mcp) => mcp.id === result.id ? processedResult : mcp),
       );
 
       onSuccess?.(result);
@@ -150,8 +157,12 @@ export const useBindings = (binder: Binder) => {
           });
           clearTimeout(timeoutId);
 
+          const agents = client.getQueryData<Agent[]>(KEYS.AGENT(workspace));
           const itemKey = KEYS.INTEGRATION(workspace, item.id);
-          client.setQueryData<Integration>(itemKey, item);
+          client.setQueryData<Integration>(
+            itemKey,
+            applyDisplayNameToIntegration(item, agents),
+          );
 
           return {
             integration: item,
@@ -241,14 +252,19 @@ export const useIntegrations = () => {
     queryFn: async ({ signal }) => {
       const items = await listIntegrations(workspace, {}, signal);
 
-      for (const item of items) {
+      const agents = client.getQueryData<Agent[]>(KEYS.AGENT(workspace));
+      const processedItems = items.map((item) =>
+        applyDisplayNameToIntegration(item, agents)
+      );
+
+      for (const item of processedItems) {
         const itemKey = KEYS.INTEGRATION(workspace, item.id);
 
         client.cancelQueries({ queryKey: itemKey });
         client.setQueryData<Integration>(itemKey, item);
       }
 
-      return items;
+      return processedItems;
     },
   });
 
@@ -355,17 +371,23 @@ export const useInstallFromMarketplace = () => {
         return;
       }
 
+      const agents = client.getQueryData<Agent[]>(KEYS.AGENT(workspace));
+      const processedIntegration = applyDisplayNameToIntegration(
+        integration,
+        agents,
+      );
+
       // update item
       const itemKey = KEYS.INTEGRATION(workspace, integration.id);
       client.cancelQueries({ queryKey: itemKey });
-      client.setQueryData<Integration>(itemKey, integration);
+      client.setQueryData<Integration>(itemKey, processedIntegration);
 
       // update list
       const listKey = KEYS.INTEGRATION(workspace);
       client.cancelQueries({ queryKey: listKey });
       client.setQueryData<Integration[]>(
         listKey,
-        (old) => !old ? [integration] : [integration, ...old],
+        (old) => !old ? [processedIntegration] : [processedIntegration, ...old],
       );
     },
   });

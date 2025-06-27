@@ -14,7 +14,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@deco/ui/components/dropdown-menu.tsx";
-import { useIntegrationDisplayName } from "../../hooks/use-integration-display-name.ts";
 
 interface ToolsMap {
   [integrationId: string]: string[];
@@ -73,7 +72,6 @@ export function IntegrationListItem({
 }) {
   const [toolsOpen, setToolsOpen] = useState(false);
   const { data: toolsData, isLoading } = useTools(integration.connection);
-  const displayName = useIntegrationDisplayName(integration);
 
   const total = toolsData?.tools?.length ?? 0;
 
@@ -136,7 +134,7 @@ export function IntegrationListItem({
           </div>
           <div className="flex flex-col gap-1 w-full">
             <span className="text-sm font-semibold text-left truncate">
-              {displayName}
+              {integration.name}
             </span>
           </div>
         </div>

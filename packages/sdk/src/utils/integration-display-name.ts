@@ -1,11 +1,6 @@
-import { useMemo } from "react";
-import {
-  type Agent,
-  type Integration,
-  useAgents,
-  WELL_KNOWN_KNOWLEDGE_BASE_CONNECTION_ID_STARTSWITH,
-} from "@deco/sdk";
-import { extractAgentUuidFromKnowledgeBaseId } from "@deco/sdk/utils";
+import type { Agent, Integration } from "../models/index.ts";
+import { WELL_KNOWN_KNOWLEDGE_BASE_CONNECTION_ID_STARTSWITH } from "../constants.ts";
+import { extractAgentUuidFromKnowledgeBaseId } from "./knowledge.ts";
 
 /**
  * Interface for providing custom names for integrations.
@@ -70,7 +65,7 @@ export class KnowledgeBaseNameProvider implements IntegrationNameProvider {
  * Add new providers here to extend the integration naming system.
  * Providers are evaluated in order, so more specific providers should come first.
  */
-function createNameProviders(
+export function createNameProviders(
   agents: Agent[] | undefined,
 ): IntegrationNameProvider[] {
   return [
@@ -79,22 +74,33 @@ function createNameProviders(
 }
 
 /**
- * Hook to get the display name for integrations, with extensible provider system
+ * Extended integration type that includes original name backup
  */
-export function useIntegrationDisplayName(integration: Integration): string {
-  const { data: agents } = useAgents();
-  const providers = useMemo(() => createNameProviders(agents), [agents]);
+export type IntegrationWithDisplayName = Integration & { _name?: string };
 
-  return useMemo(() => {
-    // Try each provider in order
-    for (const provider of providers) {
-      if (provider.canHandle(integration)) {
-        const customName = provider.getDisplayName(integration);
-        return customName ?? integration.name;
+/**
+ * Applies display name logic to an integration using the provider system
+ */
+export function applyDisplayNameToIntegration(
+  integration: Integration,
+  agents?: Agent[],
+): IntegrationWithDisplayName {
+  const providers = createNameProviders(agents);
+
+  // Try each provider in order
+  for (const provider of providers) {
+    if (provider.canHandle(integration)) {
+      const customName = provider.getDisplayName(integration);
+      if (customName) {
+        return {
+          ...integration,
+          name: customName,
+          _name: integration.name,
+        };
       }
     }
+  }
 
-    // Fallback to original name if no provider handles it
-    return integration.name;
-  }, [integration.id, integration.name, providers]);
+  // Fallback to original name if no provider handles it
+  return integration;
 }
