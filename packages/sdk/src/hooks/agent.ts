@@ -155,3 +155,80 @@ export const useAgentRoot = (agentId: string) => {
 
   return root;
 };
+
+/**
+ * Hook para listagem paginada, ordenada e filtrada de agents
+ */
+export interface UseAgentsListParams {
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  filters?: Record<string, unknown>;
+}
+
+export interface UseAgentsListResult {
+  agents: Agent[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export function useAgentsList({
+  page = 1,
+  pageSize = 20,
+  sortBy = 'lastUsed',
+  sortOrder = 'desc',
+  filters = {},
+}: UseAgentsListParams = {}): UseAgentsListResult {
+  const { workspace } = useSDK();
+  const client = useQueryClient();
+
+  // Por enquanto, busca todos e faz paginação/ordenação/filtro no client
+  const data = useSuspenseQuery({
+    queryKey: [KEYS.AGENT(workspace), page, pageSize, sortBy, sortOrder, filters],
+    queryFn: async ({ signal }) => {
+      const items = await listAgents(workspace, signal);
+      // Filtro por nome
+      let filtered = items;
+      if (filters.name) {
+        filtered = filtered.filter((a) => a.name.toLowerCase().includes(String(filters.name).toLowerCase()));
+      }
+      // Filtro por tags (quando implementado)
+      if (filters.tags && Array.isArray(filters.tags)) {
+        filtered = filtered.filter((a) => Array.isArray((a as any).tags) && (a as any).tags.some((tag: string) => filters.tags.includes(tag)));
+      }
+      // Ordenação
+      let sorted = filtered;
+      if (sortBy === 'lastUsed') {
+        const recentIds = (() => {
+          try {
+            return JSON.parse(localStorage.getItem('recentAgents') || '[]');
+          } catch {
+            return [];
+          }
+        })();
+        sorted = [
+          ...filtered.filter((a) => recentIds.includes(a.id)).sort((a, b) => recentIds.indexOf(a.id) - recentIds.indexOf(b.id)),
+          ...filtered.filter((a) => !recentIds.includes(a.id)),
+        ];
+      } else if (sortBy === 'name') {
+        sorted = [...filtered].sort((a, b) => sortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+      }
+      // Paginação
+      const total = sorted.length;
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+      const paged = sorted.slice(start, end);
+      // Atualiza cache individual
+      for (const item of paged) {
+        const itemKey = KEYS.AGENT(workspace, item.id);
+        client.cancelQueries({ queryKey: itemKey });
+        client.setQueryData<Agent>(itemKey, item);
+      }
+      return { agents: paged, total, page, pageSize };
+    },
+  });
+
+  return data.data;
+}

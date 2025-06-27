@@ -5,6 +5,7 @@ import {
   useRemoveAgent,
   useSDK,
   WELL_KNOWN_AGENT_IDS,
+  useAgentsList,
 } from "@deco/sdk";
 import {
   AlertDialog,
@@ -439,92 +440,85 @@ function List() {
   const [state, dispatch] = useReducer(listReducer, initialState);
   const { handleCreate } = useContext(Context)!;
   const { filter } = state;
-  const { data: agents } = useAgents();
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const { value: visibility, update: setVisibility } = useLocalStorage<
     Visibility
   >({ key: "agents-visibility", defaultValue: "all" });
 
-  const agentsByVisibility = useMemo(() => {
-    const initial = Object.fromEntries(
-      VISIBILITIES.map((v) => [v, []] as [string, Agent[]]),
-    );
+  // Paginação e ordenação
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [sortBy, setSortBy] = useState<string>("lastUsed");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-    return agents?.reduce((acc, agent) => {
-      acc["all"].push(agent);
-      acc[agent.visibility.toLowerCase()]?.push(agent);
+  // Filtros
+  const filters = { name: filter };
 
-      return acc;
-    }, initial);
-  }, [agents]);
+  // Hook de listagem paginada/ordenada/filtrada
+  const { agents, total, page: currentPage, pageSize: currentPageSize } = useAgentsList({
+    page,
+    pageSize,
+    sortBy,
+    sortOrder,
+    filters,
+  });
 
-  const filteredAgents =
-    agentsByVisibility[visibility]?.filter((agent) =>
-      agent.name.toLowerCase().includes(filter.toLowerCase())
-    ) ?? [];
-
+  // UI de paginação, ordenação e filtro
   return (
     <div className="flex flex-col h-full gap-4 p-4">
+      <div className="flex items-center gap-4 mb-2">
+        <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="border rounded px-2 py-1">
+          <option value="lastUsed">Mais recente</option>
+          <option value="name">Nome</option>
+        </select>
+        <button onClick={() => setSortOrder(o => o === "asc" ? "desc" : "asc")}
+          className="border rounded px-2 py-1">
+          {sortOrder === "asc" ? "↑" : "↓"}
+        </button>
+        <span className="ml-auto">Página {currentPage} de {Math.max(1, Math.ceil(total / currentPageSize))}</span>
+        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="border rounded px-2 py-1">Anterior</button>
+        <button onClick={() => setPage(p => p + 1)} disabled={currentPage * currentPageSize >= total} className="border rounded px-2 py-1">Próxima</button>
+        <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }} className="border rounded px-2 py-1">
+          {[10, 20, 50].map(size => <option key={size} value={size}>{size}/página</option>)}
+        </select>
+      </div>
       <ListPageHeader
         filter={{
           items: VISIBILITIES.map((v) => ({
             id: v,
             active: visibility === v,
             label: VISIBILITY_LABELS[v],
-            count: agentsByVisibility[v].length,
+            count: 0, // pode ser ajustado depois
           })),
           onClick: (item) => setVisibility(item.id as Visibility),
         }}
         input={{
           placeholder: "Search agent",
           value: filter,
-          onChange: (e) =>
-            dispatch({ type: "SET_FILTER", payload: e.target.value }),
+          onChange: (e) => {
+            dispatch({ type: "SET_FILTER", payload: e.target.value });
+            setPage(1); // resetar página ao filtrar
+          },
         }}
         view={{ viewMode, onChange: setViewMode }}
       />
-
-      {filteredAgents.length > 0
+      {agents.length > 0
         ? (
           <div className="flex-1 min-h-0 overflow-x-auto">
             {viewMode === "table"
-              ? <TableView agents={filteredAgents} />
-              : <CardsView agents={filteredAgents} />}
+              ? <TableView agents={agents} />
+              : <CardsView agents={agents} />}
           </div>
         )
-        : (
-          <EmptyState
-            icon={agents.length === 0 ? "robot_2" : visibility === "public" &&
-                agentsByVisibility["public"].length === 0
-              ? "public"
-              : visibility === "workspace" &&
-                  agentsByVisibility["workspace"].length === 0
-              ? "groups"
-              : "search_off"}
-            title={agents.length === 0
-              ? "No agents yet"
-              : visibility === "public" &&
-                  agentsByVisibility["public"].length === 0
-              ? "No public agents available"
-              : visibility === "workspace" &&
-                  agentsByVisibility["workspace"].length === 0
-              ? "No team agents yet"
-              : "No agents match your filter"}
-            description={agents.length === 0
-              ? "You haven't created any agents yet. Create one to get started."
-              : visibility === "public" &&
-                  agentsByVisibility["public"].length === 0
-              ? "Once agents are shared publicly, they'll appear here for anyone to explore and try out."
-              : visibility === "workspace" &&
-                  agentsByVisibility["workspace"].length === 0
-              ? "Agents shared with your team will show up here. Create one to start collaborating."
-              : "Try adjusting your search. If you still can't find what you're looking for, you can create a new agent."}
+        : <EmptyState
+            icon="search_off"
+            title="No agents match your filter"
+            description="Try adjusting your search or create a new agent."
             buttonProps={{
               children: "New Agent",
               onClick: handleCreate,
             }}
-          />
-        )}
+          />}
     </div>
   );
 }
