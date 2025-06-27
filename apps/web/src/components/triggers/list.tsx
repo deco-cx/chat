@@ -1,6 +1,6 @@
 import { useListTriggers } from "@deco/sdk";
 import { Skeleton } from "@deco/ui/components/skeleton.tsx";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 import { ListPageHeader } from "../common/list-page-header.tsx";
 import { Table, type TableColumn } from "../common/table/index.tsx";
@@ -106,7 +106,26 @@ export function ListTriggers() {
 function ListTriggersSuspended() {
   const { data, isLoading } = useListTriggers();
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("table");
+  
+  // Default to cards on mobile, table on desktop
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 768 ? "cards" : "table";
+    }
+    return "cards";
+  });
+
+  // Update view mode based on screen size changes
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768 && viewMode === "table") {
+        setViewMode("cards");
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [viewMode]);
 
   const triggers = (data?.triggers || []) as z.infer<
     typeof TriggerOutputSchema

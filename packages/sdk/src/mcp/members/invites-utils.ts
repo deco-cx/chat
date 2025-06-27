@@ -1,5 +1,6 @@
 import type { Client } from "../../storage/index.ts";
 import { type AppContext, getEnv } from "../context.ts";
+import { getInviteEmailTemplate } from "./invite-email-template.ts";
 
 // Email sending functionality
 
@@ -37,42 +38,11 @@ export function generateEmailBody(
 
   const formattedRoles = formatRoles([...roles]);
 
-  const emailHTML = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<title>Email Template</title>
-</head>
-<body>
-<!-- Main Table -->
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; margin: 0 auto; text-align: center;">
-  <!-- Logo Row -->
-  <tr>
-    <td style="padding: 24px;">
-      <img width="144px" height="40px" style="width:144px;height:40px;" src="https://deco.chat/img/deco-chat-logo.png" alt="deco.chat logo"/>
-    </td>
-  </tr>
-
-  <!-- Message Row -->
-  <tr>
-    <td style="color: #000; font-size: 24px; padding: 16px;">
-      <strong>${cleanInviter}</strong> has invited you to join the team <strong>${cleanTeamName}</strong> as <strong>${formattedRoles}</strong>.
-    </td>
-  </tr>
-
-  <!-- Button Row -->
-  <tr>
-    <td style="padding-bottom: 24px; padding-top: 12px;">
-      <!-- Use a link instead of a button for better email client support -->
-      <a href="https://deco.chat/invites" target="_blank" style="display: inline;   color: #fff;   font-size: 18px;   font-weight: 700;   line-height: 24px;    text-decoration: none;    border-radius: 8px;   background: #0d1717; padding: 13px 32px;">Join team</a>
-    </td>
-  </tr>
-
- </table>
-<!-- End Main Table -->
-</body>
-</html>
-`;
+  const emailHTML = getInviteEmailTemplate({
+    cleanInviter,
+    cleanTeamName,
+    formattedRoles,
+  });
 
   return emailHTML;
 }
