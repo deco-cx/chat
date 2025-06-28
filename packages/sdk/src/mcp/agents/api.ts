@@ -79,6 +79,7 @@ export const listAgents = createTool({
   name: "AGENTS_LIST",
   description: "List all agents",
   inputSchema: z.object({}),
+  outputSchema: z.array(AgentSchema),
   handler: async (_, c: WithTool<AppContext>) => {
     assertHasWorkspace(c);
 
@@ -114,6 +115,7 @@ export const getAgent = createTool({
   name: "AGENTS_GET",
   description: "Get an agent by id",
   inputSchema: z.object({ id: z.string() }),
+  outputSchema: AgentSchema,
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
 
@@ -156,6 +158,7 @@ export const createAgent = createTool({
   name: "AGENTS_CREATE",
   description: "Create a new agent",
   inputSchema: AgentSchema.partial(),
+  outputSchema: AgentSchema,
   handler: async (agent, c) => {
     assertHasWorkspace(c);
 
@@ -197,6 +200,7 @@ export const updateAgent = createAgentSetupTool({
     id: z.string(),
     agent: AgentSchema.partial(),
   }),
+  outputSchema: AgentSchema,
   handler: async ({ id, agent }, c) => {
     assertHasWorkspace(c);
 
@@ -225,6 +229,9 @@ export const deleteAgent = createTool({
   name: "AGENTS_DELETE",
   description: "Delete an agent by id",
   inputSchema: z.object({ id: z.string() }),
+  outputSchema: z.object({
+    deleted: z.boolean().describe("Whether the agent was successfully deleted"),
+  }),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
 
