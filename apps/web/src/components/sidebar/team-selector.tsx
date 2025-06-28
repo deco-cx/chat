@@ -11,10 +11,14 @@ import {
 } from "@deco/ui/components/responsive-dropdown.tsx";
 import { SidebarMenuButton } from "@deco/ui/components/sidebar.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { useUser } from "../../hooks/use-user.ts";
 import { useWorkspaceLink } from "../../hooks/use-navigate-workspace.ts";
+import {
+  addWorkspaceToActivity,
+  getWorkspaceActivity,
+} from "../../hooks/use-workspace-activity.ts";
 import { Avatar } from "../common/avatar/index.tsx";
 import { CreateTeamDialog } from "./create-team-dialog.tsx";
 import { InviteTeamMembersDialog } from "../common/invite-team-members-dialog.tsx";
@@ -47,6 +51,13 @@ export function useCurrentTeam(): CurrentTeam {
   const { teamSlug } = useParams();
   const userTeam = useUserTeam();
   const { data: teamData } = useTeam(teamSlug);
+
+  useEffect(() => {
+    if (teamSlug) {
+      addWorkspaceToActivity(teamSlug);
+    }
+  }, [teamSlug]);
+
   if (!teamSlug) {
     return userTeam;
   }
@@ -63,6 +74,7 @@ function useUserTeams() {
   const { data: teams } = useTeams();
   const personalTeam = useUserTeam();
   const { slug: currentSlug } = useCurrentTeam();
+  const workspaceActivity = getWorkspaceActivity();
 
   const allTeams: CurrentTeam[] = [
     personalTeam,
@@ -73,7 +85,25 @@ function useUserTeams() {
       id: team.id,
       theme: team.theme,
     })),
-  ];
+  ].sort((a, b) => {
+    const aIndex = workspaceActivity.indexOf(a.slug);
+    const bIndex = workspaceActivity.indexOf(b.slug);
+
+    // If neither team is in activity list, maintain original order
+    if (aIndex === -1 && bIndex === -1) {
+      return 0;
+    }
+    // If only 'a' is not in activity list, put it after 'b'
+    if (aIndex === -1) {
+      return 1;
+    }
+    // If only 'b' is not in activity list, put it after 'a'
+    if (bIndex === -1) {
+      return -1;
+    }
+    // Both are in activity list, sort by activity order (lower index = more recent)
+    return aIndex - bIndex;
+  });
 
   const teamsWithoutCurrentTeam = allTeams.filter((team) =>
     team.slug !== currentSlug
