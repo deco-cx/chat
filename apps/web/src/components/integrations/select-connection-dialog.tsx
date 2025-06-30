@@ -27,6 +27,7 @@ import {
   useWorkspaceLink,
 } from "../../hooks/use-navigate-workspace.ts";
 import { OAuthCompletionDialog } from "./oauth-completion-dialog.tsx";
+import { Tabs, TabsList, TabsTrigger } from "@deco/ui/components/tabs.tsx";
 
 export function ConfirmMarketplaceInstallDialog({
   integration,
@@ -179,7 +180,6 @@ function AddConnectionDialogContent({
     url: string;
     integrationName: string;
   }>({ open: false, url: "", integrationName: "" });
-  const navigateWorkspace = useNavigateWorkspace();
   const showEmptyState = search.length > 0;
 
   return (
@@ -187,59 +187,31 @@ function AddConnectionDialogContent({
       className="p-0 min-w-[80vw] min-h-[80vh] gap-0"
       closeButtonClassName="top-5 right-4"
     >
-      <DialogHeader className="flex flex-row justify-between items-center p-2 h-14 px-5 pr-12">
-        <DialogTitle>{title}</DialogTitle>
+      <DialogHeader className="flex flex-row items-center p-2 h-auto px-5 pt-8 pb-2">
+        <DialogTitle className="text-left w-full">{title}</DialogTitle>
       </DialogHeader>
-      <div className="flex h-[calc(100vh-10rem)]">
-        {!forceTab && (
-          <aside className="w-56 flex flex-col p-4 gap-1">
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full justify-start text-muted-foreground",
-                tab === "my-connections" && "bg-muted text-foreground",
-              )}
-              onClick={() => setTab("my-connections")}
-            >
-              <Icon
-                name="widgets"
-                size={16}
-                className="text-muted-foreground"
-              />
-              <span>My integrations</span>
-            </Button>
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full justify-start text-muted-foreground",
-                tab === "new-connection" && "bg-muted text-foreground",
-              )}
-              onClick={() => setTab("new-connection")}
-            >
-              <Icon name="add" size={16} className="text-muted-foreground" />
-              <span>New integration</span>
-            </Button>
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full justify-start text-muted-foreground group",
-              )}
-              onClick={() => navigateWorkspace("/connections")}
-            >
-              <Icon name="arrow_outward" size={16} />
-              <span className="group-hover:underline">Manage integrations</span>
-            </Button>
-            {/* Filters will go here */}
-          </aside>
-        )}
-
-        <div className="h-full overflow-y-hidden p-4 pb-20 w-full">
-          <Input
-            placeholder="Find integration..."
-            value={search}
-            className="mb-4"
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      {!forceTab && (
+        <div className="flex justify-center w-full mt-2 mb-4">
+          <Tabs
+            value={tab}
+            onValueChange={(v) => setTab(v as "my-connections" | "new-connection")}
+            className="w-fit"
+          >
+            <TabsList>
+              <TabsTrigger value="new-connection" className="w-48">New integration</TabsTrigger>
+              <TabsTrigger value="my-connections" className="w-48">Connected</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+      )}
+      <div className="flex flex-col h-[calc(100vh-14rem)] w-full px-8 pb-4">
+        <Input
+          placeholder="Find integration..."
+          value={search}
+          className="mb-4 w-full"
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <div className="flex-1 overflow-y-auto w-full">
           {tab === "new-connection" && (
             <Marketplace
               filter={search}
