@@ -11,7 +11,11 @@ import { IntegrationInfo } from "../common/table/table-cells.tsx";
 import { type GroupedApp, useGroupedApps } from "./apps.ts";
 import { Header } from "./breadcrumb.tsx";
 import { IntegrationIcon } from "./common.tsx";
-import { SelectConnectionDialog } from "./select-connection-dialog.tsx";
+import {
+  SelectConnectionDialog,
+  useOAuthInstall,
+} from "./select-connection-dialog.tsx";
+import { OAuthInstallDialog } from "./oauth-install-dialog.tsx";
 
 function AppCard({
   app,
@@ -160,6 +164,7 @@ export function ConnectedAppsList() {
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [filter, setFilter] = useState<string>("");
   const navigateWorkspace = useNavigateWorkspace();
+  const { installingIntegration, setInstallingIntegration } = useOAuthInstall();
   const apps = useGroupedApps({
     filter,
   });
@@ -193,7 +198,14 @@ export function ConnectedAppsList() {
               title="No connected integrations yet"
               description="Connect services to expand what your agents can do."
               buttonComponent={
-                <SelectConnectionDialog forceTab="new-connection" />
+                <SelectConnectionDialog
+                  forceTab="new-connection"
+                  onEvent={(event) => {
+                    if (event.type === "start_oauth") {
+                      setInstallingIntegration(event.integration);
+                    }
+                  }}
+                />
               }
             />
           )
@@ -213,6 +225,13 @@ export function ConnectedAppsList() {
               )
           )}
       </div>
+
+      <OAuthInstallDialog
+        installingIntegration={installingIntegration}
+        onCancel={() => setInstallingIntegration(null)}
+        onOAuthSuccess={() => {}}
+        onOAuthError={() => {}}
+      />
     </div>
   );
 }

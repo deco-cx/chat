@@ -71,7 +71,7 @@ import {
   ConfirmMarketplaceInstallDialog,
 } from "./select-connection-dialog.tsx";
 import type { MarketplaceIntegration } from "./marketplace.tsx";
-import { OAuthCompletionDialog } from "./oauth-completion-dialog.tsx";
+import { OAuthInstallDialog } from "./oauth-install-dialog.tsx";
 
 function ConnectionInstanceActions({
   onConfigure,
@@ -620,6 +620,8 @@ function Overview({ data, appKey }: {
     });
   };
 
+  console.log(data.info?.icon);
+
   return (
     <div className="w-full p-4 flex items-center justify-between gap-2">
       <div className="flex items-center gap-4 h-12">
@@ -664,7 +666,7 @@ function Overview({ data, appKey }: {
         }}
       />
 
-      <OAuthCompletionDialog
+      <OAuthInstallDialog
         open={oauthCompletionDialog.open}
         onOpenChange={(open) =>
           setOauthCompletionDialog((prev) => ({ ...prev, open }))}

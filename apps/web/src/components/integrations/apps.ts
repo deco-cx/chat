@@ -17,10 +17,7 @@ import {
   WellKnownMcpGroupIds,
 } from "@deco/sdk";
 import { useEffect, useMemo } from "react";
-import {
-  INTEGRATION_CHANNEL,
-  type IntegrationMessage,
-} from "../../lib/broadcast-channels.ts";
+import {} from "../../lib/broadcast-channels.ts";
 import { LEGACY_INTEGRATIONS } from "../../constants.ts";
 
 export interface GroupedApp {
@@ -181,16 +178,16 @@ export function useRefetchIntegrationsOnNotification() {
   const { refetch: refetchIntegrations } = useIntegrations();
 
   useEffect(() => {
-    const handleMessage = (event: MessageEvent<IntegrationMessage>) => {
-      if (event.data.type === "INTEGRATION_UPDATED") {
-        refetchIntegrations();
-      }
-    };
+    // const handleMessage = (event: MessageEvent<IntegrationMessage>) => {
+    //   if (event.data.type === "INTEGRATION_UPDATED") {
+    //     refetchIntegrations();
+    //   }
+    // };
 
-    INTEGRATION_CHANNEL.addEventListener("message", handleMessage);
-    return () => {
-      INTEGRATION_CHANNEL.removeEventListener("message", handleMessage);
-    };
+    // INTEGRATION_CHANNEL.addEventListener("message", handleMessage);
+    // return () => {
+    //   INTEGRATION_CHANNEL.removeEventListener("message", handleMessage);
+    // };
   }, [refetchIntegrations]);
 }
 

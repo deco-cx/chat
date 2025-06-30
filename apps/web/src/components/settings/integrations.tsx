@@ -41,7 +41,13 @@ function AddConnectionButton() {
   const { enableAllTools } = useAgentSettingsToolsSet();
   return (
     <SelectConnectionDialog
-      onSelect={(integration) => enableAllTools(integration.id)}
+      onEvent={(event) => {
+        if (event.type === "select_connections") {
+          event.integrations.forEach((integration) =>
+            enableAllTools(integration.id)
+          );
+        }
+      }}
       filter={connectionFilter}
       trigger={
         <Button variant="outline">
@@ -250,8 +256,13 @@ function AddAgentConnectionButton() {
           </div>
         </div>
       }
-      onSelect={(integration) =>
-        setIntegrationTools(integration.id, ["AGENT_GENERATE_TEXT"])}
+      onEvent={(event) => {
+        if (event.type === "select_connections") {
+          event.integrations.forEach((integration) =>
+            setIntegrationTools(integration.id, ["AGENT_GENERATE_TEXT"])
+          );
+        }
+      }}
       trigger={
         <Button variant="outline">
           <Icon name="add" /> Add agent

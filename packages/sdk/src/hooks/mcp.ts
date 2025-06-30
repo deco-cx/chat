@@ -299,6 +299,39 @@ const WELL_KNOWN_DECO_OAUTH_INTEGRATIONS = [
   "slack",
 ];
 
+export const useDecoOAuthInstall = () => {
+  const { workspace } = useSDK();
+
+  const getAuthUrl = async ({ installId, appName, returnUrl }: {
+    installId: string;
+    appName: string;
+    returnUrl: string;
+  }) => {
+    let redirectUrl: string | null = null;
+
+    if (!WELL_KNOWN_DECO_OAUTH_INTEGRATIONS.includes(appName.toLowerCase())) {
+      throw new Error("App name is not a well known deco oauth integration");
+    }
+
+    const result = await MCPClient
+      .forWorkspace(workspace)
+      .DECO_INTEGRATION_OAUTH_START({
+        appName: appName,
+        returnUrl,
+        installId,
+      });
+
+    redirectUrl = result?.redirectUrl;
+    if (!redirectUrl) {
+      throw new Error("No redirect URL found");
+    }
+
+    return { redirectUrl };
+  };
+
+  return { getAuthUrl };
+};
+
 export const useInstallFromMarketplace = () => {
   const { workspace } = useSDK();
   const client = useQueryClient();

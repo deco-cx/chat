@@ -15,13 +15,25 @@ import { ListPageHeader } from "../common/list-page-header.tsx";
 import type { ViewModeSwitcherProps } from "../common/view-mode-switcher.tsx";
 import type { Tab } from "../dock/index.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
-import { SelectConnectionDialog } from "./select-connection-dialog.tsx";
+import {
+  SelectConnectionDialog,
+  useOAuthInstall,
+} from "./select-connection-dialog.tsx";
+import { OAuthInstallDialog } from "./oauth-install-dialog.tsx";
 
 export function IntegrationPageLayout({ tabs }: { tabs: Record<string, Tab> }) {
   const [error, setError] = useState<string | null>(null);
+  const { installingIntegration, setInstallingIntegration } = useOAuthInstall();
 
   return (
     <>
+      <OAuthInstallDialog
+        installingIntegration={installingIntegration}
+        onCancel={() => setInstallingIntegration(null)}
+        onOAuthSuccess={() => {}}
+        onOAuthError={() => {}}
+      />
+
       <PageLayout
         hideViewsButton
         breadcrumb={
@@ -29,7 +41,16 @@ export function IntegrationPageLayout({ tabs }: { tabs: Record<string, Tab> }) {
             items={[{ label: "Integrations", link: "/connections" }]}
           />
         }
-        actionButtons={<SelectConnectionDialog forceTab="new-connection" />}
+        actionButtons={
+          <SelectConnectionDialog
+            onEvent={(event) => {
+              if (event.type === "start_oauth") {
+                setInstallingIntegration(event.integration);
+              }
+            }}
+            forceTab="new-connection"
+          />
+        }
         tabs={tabs}
       />
       <AlertDialog open={!!error} onOpenChange={() => setError(null)}>
