@@ -2,48 +2,8 @@ import { type Thread, useThreads } from "@deco/sdk";
 import { cn } from "@deco/ui/lib/utils.ts";
 import { useUser } from "../../hooks/use-user.ts";
 import { useFocusChat } from "../agents/hooks.ts";
-
-interface GroupedThreads {
-  today: Thread[];
-  yesterday: Thread[];
-  older: { [key: string]: Thread[] };
-}
-
-const formatDate = (date: Date): string => {
-  return date.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-  });
-};
-
-export const groupThreadsByDate = (threads: Thread[]): GroupedThreads => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  const sortedThreads = threads.sort((a, b) =>
-    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-
-  return sortedThreads.reduce((groups, thread) => {
-    const threadDate = new Date(thread.createdAt);
-    threadDate.setHours(0, 0, 0, 0);
-
-    if (threadDate.getTime() === today.getTime()) {
-      if (!groups.today) groups.today = [];
-      groups.today.push(thread);
-    } else if (threadDate.getTime() === yesterday.getTime()) {
-      if (!groups.yesterday) groups.yesterday = [];
-      groups.yesterday.push(thread);
-    } else {
-      const dateKey = formatDate(threadDate);
-      if (!groups.older[dateKey]) groups.older[dateKey] = [];
-      groups.older[dateKey].push(thread);
-    }
-    return groups;
-  }, { today: [], yesterday: [], older: {} } as GroupedThreads);
-};
+import { Skeleton } from "@deco/ui/components/skeleton.tsx";
+import { groupThreadsByDate } from "../../utils/group-threads.ts";
 
 function Item(
   { agentId, thread }: { agentId: string; thread: Thread },
@@ -71,7 +31,7 @@ function Category({ children }: { children: React.ReactNode }) {
   return <h2 className="text-xs font-semibold px-2 py-1.5">{children}</h2>;
 }
 
-function App({ agentId }: { agentId: string }) {
+export function Threads({ agentId }: { agentId: string }) {
   const user = useUser();
   const { data } = useThreads({ agentId, resourceId: user?.id ?? "" });
 
@@ -85,11 +45,7 @@ function App({ agentId }: { agentId: string }) {
     olderDates.length === 0;
 
   return (
-    <div
-      className={cn(
-        "p-4 text-foreground w-full max-w-2xl mx-auto space-y-4 inline-block",
-      )}
-    >
+    <div>
       {hasNoThreads
         ? (
           <div className="text-center py-12">
@@ -147,4 +103,12 @@ function App({ agentId }: { agentId: string }) {
   );
 }
 
-export default App;
+Threads.Skeleton = () => (
+  <div className="flex flex-col gap-4">
+    {Array.from({ length: 4 }).map((_, index) => (
+      <div key={index} className="w-full h-10 px-2">
+        <Skeleton className="h-full bg-muted rounded-sm" />
+      </div>
+    ))}
+  </div>
+);

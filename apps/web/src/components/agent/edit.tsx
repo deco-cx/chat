@@ -10,6 +10,7 @@ import {
   useUpdateAgentCache,
   WELL_KNOWN_AGENTS,
 } from "@deco/sdk";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@deco/ui/components/dialog.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,7 @@ import {
 } from "@deco/ui/components/alert-dialog.tsx";
 import { Button } from "@deco/ui/components/button.tsx";
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
+import { Icon } from "@deco/ui/components/icon.tsx";
 import { toast } from "@deco/ui/components/sonner.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,13 +42,42 @@ import AdvancedTab from "../settings/advanced.tsx";
 import AgentProfileTab from "../settings/agent-profile.tsx";
 import ToolsAndKnowledgeTab from "../settings/integrations.tsx";
 import { AgentTriggers } from "../triggers/agent-triggers.tsx";
+import { useState } from "react";
 import { AgentBreadcrumbSegment } from "./breadcrumb-segment.tsx";
 import AgentPreview, { useTabsForAgent } from "./preview.tsx";
 import ThreadView from "./thread.tsx";
-import Threads from "./threads.tsx";
 import { WhatsAppButton } from "./whatsapp-button.tsx";
 import { isFilePath } from "../../utils/path.ts";
 import { useDocumentMetadata } from "../../hooks/use-document-metadata.ts";
+import { Threads } from "./agent-threads.tsx";
+
+function ThreadsDialog({
+  open,
+  onOpenChange,
+  agentId,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  agentId: string;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Threads</DialogTitle>
+          <DialogDescription>
+            Manage your threads
+          </DialogDescription>
+        </DialogHeader>
+        <ScrollArea className="h-full w-full">
+          <Suspense fallback={<Threads.Skeleton />}>
+            <Threads agentId={agentId} />
+          </Suspense>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 interface Props {
   agentId?: string;
@@ -59,13 +90,19 @@ const Chat = () => {
   const { chat: { messages } } = useChatContext();
   const { hasChanges } = useAgentSettingsForm();
   const focusChat = useFocusChat();
+  const [threadsDialogOpen, setThreadsDialogOpen] = useState(false);
 
   return (
     <div className="flex flex-col h-full min-w-[320px]">
+      <ThreadsDialog
+        agentId={agentId}
+        open={threadsDialogOpen}
+        onOpenChange={setThreadsDialogOpen}
+      />
       <div className="flex-none p-4">
         <div className="justify-self-start flex items-center gap-3 text-muted-foreground w-full">
           {chat.messages.length > 0 && (
-            <div className="flex justify-between items-center gap-2 w-full">
+            <div className="flex justify-between items-center gap-2 w-full h-10">
               <div className="flex items-center gap-2 w-full">
                 <div className="w-8 h-8 rounded-[10px] overflow-hidden flex items-center justify-center">
                   <AgentAvatar
@@ -80,16 +117,26 @@ const Chat = () => {
               </div>
               <Button
                 className={messages.length > 0 && !hasChanges
-                  ? "inline-flex text-xs"
+                  ? "inline-flex"
                   : "hidden"}
-                variant="outline"
-                size="sm"
+                variant="secondary"
+                size="icon"
+                onClick={() => setThreadsDialogOpen(true)}
+              >
+                <Icon name="manage_search" size={16} />
+              </Button>
+              <Button
+                className={messages.length > 0 && !hasChanges
+                  ? "inline-flex"
+                  : "hidden"}
+                variant="secondary"
+                size="icon"
                 onClick={() =>
                   focusChat(agentId, crypto.randomUUID(), {
                     history: false,
                   })}
               >
-                New Thread
+                <Icon name="edit_square" size={16} />
               </Button>
             </div>
           )}
@@ -123,11 +170,6 @@ const TABS: Record<string, Tab> = {
     initialOpen: "left",
     initialWidth: 600,
     active: true,
-  },
-  audit: {
-    Component: Threads,
-    title: "Threads",
-    initialOpen: "within",
   },
   // Right side group
   profile: {

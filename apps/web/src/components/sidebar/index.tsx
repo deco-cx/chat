@@ -49,7 +49,7 @@ import { useUser } from "../../hooks/use-user.ts";
 import { useWorkspaceLink } from "../../hooks/use-navigate-workspace.ts";
 import { useFocusChat } from "../agents/hooks.ts";
 import { AgentAvatar } from "../common/avatar/index.tsx";
-import { groupThreadsByDate } from "../threads/index.tsx";
+import { groupThreadsByDate } from "../../utils/group-threads.ts";
 import { SidebarFooter } from "./footer.tsx";
 import { Header as SidebarHeader } from "./header.tsx";
 import { useUserPreferences } from "../../hooks/use-user-preferences.ts";
