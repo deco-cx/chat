@@ -1,6 +1,7 @@
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  ListObjectsCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -120,14 +121,13 @@ export const listFiles = createTool({
       assertWorkspaceResourceAccess(c.tool.name, c),
     ]);
 
-    const { data: assets } = await c.db.from("deco_chat_assets").select(
-      "file_url, metadata",
-    ).eq("workspace", c.workspace.value).ilike("file_url", `${prefix}%`)
-      .overrideTypes<
-        { file_url: string; metadata?: Record<string, string | string[]> }[]
-      >();
+    const s3Client = getS3Client(c);
+    const listCommand = new ListObjectsCommand({
+      Bucket: bucketName,
+      Prefix: prefix,
+    });
 
-    return assets ?? [];
+    return s3Client.send(listCommand);
   },
 });
 
@@ -220,26 +220,13 @@ export const writeFile = createTool({
       Bucket: bucketName,
       Key: path,
       ContentType: contentType,
+      Metadata: metadata,
     });
 
     const url = await getSignedUrl(s3Client, putCommand, {
       expiresIn,
       signableHeaders: new Set(["content-type"]),
     });
-
-    const { data: newFile, error } = await c.db.from("deco_chat_assets").upsert(
-      {
-        file_url: path,
-        workspace: c.workspace.value,
-        metadata,
-      },
-    ).select().single();
-
-    if (!newFile || error) {
-      await deleteFile.handler({ path });
-
-      return {};
-    }
 
     return { url };
   },
