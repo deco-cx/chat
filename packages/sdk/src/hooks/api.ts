@@ -183,4 +183,8 @@ export const KEYS = {
     workflowName,
     instanceId,
   ],
+  KNOWLEDGE_FILES: (
+    workspace: Workspace,
+    connectionUrl: string,
+  ) => ["knowledge", workspace, connectionUrl],
 };

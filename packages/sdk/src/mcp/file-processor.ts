@@ -1,23 +1,29 @@
 import { MDocument } from "@mastra/rag";
 import { extname } from "@std/path/posix";
 import {
-  type ContentType,
   type FileExt,
-  isAllowedContentType,
+  FileExtSchema,
+  getExtensionFromContentType,
   isAllowedFileExt,
 } from "../utils/knowledge.ts";
+import { z } from "zod";
+
+export { FileExtSchema } from "../utils/knowledge.ts";
+
+export const FileMetadataSchema = z.object({
+  fileSize: z.number(),
+  chunkCount: z.number(),
+  // ".pdf" | ".txt" | ".md" | ".csv" | ".json"
+  fileType: FileExtSchema,
+  fileHash: z.string(),
+});
 
 // File processing types
 interface ProcessedDocument {
   filename: string;
   content: string;
   chunks: Awaited<ReturnType<ReturnType<typeof MDocument.fromText>["chunk"]>>;
-  metadata: {
-    fileType: FileExt;
-    fileSize: number;
-    chunkCount: number;
-    fileHash: string;
-  };
+  metadata: z.infer<typeof FileMetadataSchema>;
 }
 
 interface FileProcessorConfig {
@@ -139,19 +145,7 @@ export class FileProcessor {
    * Get file extension from content-type header
    */
   private getExtensionFromContentType(_contentType: string | null): FileExt {
-    const contentType = _contentType?.toLowerCase() ?? "";
-    if (!contentType || !isAllowedContentType(contentType)) return ".txt";
-
-    const typeMap: Record<ContentType, FileExt> = {
-      "application/pdf": ".pdf",
-      "text/plain": ".txt",
-      "text/markdown": ".md",
-      "text/csv": ".csv",
-      "application/csv": ".csv",
-      "application/json": ".json",
-    };
-
-    return typeMap[contentType];
+    return getExtensionFromContentType(_contentType);
   }
 
   /**

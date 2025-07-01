@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import {
   type Integration,
   useDeleteFile,
-  useRemoveFromKnowledge,
+  useKnowledgeDeleteFile,
 } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
@@ -20,13 +20,7 @@ import {
   isAllowedContentType,
   isAllowedFileExt,
 } from "@deco/sdk/utils";
-import { type UploadFile, useAgentFiles } from "./hooks/use-agent-knowledge.ts";
-
-const agentKnowledgeBasePath = (agentId: string) =>
-  `agent/${agentId}/knowledge`;
-
-const useAgentKnowledgeRootPath = (agentId: string) =>
-  useMemo(() => agentKnowledgeBasePath(agentId), [agentId]);
+import { agentKnowledgeBasePath } from "./hooks/use-agent-knowledge.ts";
 
 function FileIcon({ filename }: { filename: string }) {
   const ext = useMemo<FileExt>(() => extname(filename) as FileExt, [filename]);
@@ -56,17 +50,21 @@ function FileIcon({ filename }: { filename: string }) {
   );
 }
 
+export interface KnowledgeFile {
+  fileSize: number;
+  fileType: ".pdf" | ".txt" | ".md" | ".csv" | ".json";
+  path?: string | undefined;
+  agentId?: string | undefined;
+  fileUrl: string;
+  name: string;
+
+  uploading?: boolean;
+}
+
 interface KnowledgeBaseFileListProps {
   integration?: Integration;
   agentId: string;
-  files: {
-    name: string;
-    type: string;
-    uploading?: boolean;
-    size?: number;
-    file_url?: string;
-    docIds?: string[];
-  }[];
+  files: KnowledgeFile[];
 }
 
 export function KnowledgeBaseFileList(
@@ -74,7 +72,7 @@ export function KnowledgeBaseFileList(
 ) {
   const prefix = agentKnowledgeBasePath(agentId);
   const removeFile = useDeleteFile();
-  const removeFromKnowledge = useRemoveFromKnowledge();
+  const knowledgeDeleteFile = useKnowledgeDeleteFile();
 
   if (files.length === 0) return null;
 
@@ -82,12 +80,12 @@ export function KnowledgeBaseFileList(
     <div className="max-h-40 overflow-y-auto border rounded-lg divide-y">
       {files.map((file) => (
         <div
-          key={file.file_url ?? file.name}
+          key={file.name ?? file.fileUrl}
           className="flex items-center gap-3 justify-between p-2 h-14"
         >
           {/* icon */}
           <div className="w-10 h-10 p-2 rounded bg-primary/10 flex-shrink-0">
-            <FileIcon filename={file.file_url ?? file.name} />
+            <FileIcon filename={file.name ?? file.fileUrl} />
           </div>
 
           {/* name */}
@@ -96,9 +94,9 @@ export function KnowledgeBaseFileList(
               {file.name}
             </span>
             <div className="flex items-center gap-2">
-              {file.size && (
+              {file.fileSize && (
                 <span className="text-xs text-muted-foreground">
-                  {formatFileSize(file.size)}
+                  {formatFileSize(file.fileSize)}
                 </span>
               )}
               {file.uploading && (
@@ -108,7 +106,7 @@ export function KnowledgeBaseFileList(
               )}
 
               {removeFile.isPending &&
-                removeFile.variables.path === file.file_url && (
+                removeFile.variables.path === file.fileUrl && (
                 <span className="text-xs text-primary">
                   removing...
                 </span>
@@ -123,7 +121,7 @@ export function KnowledgeBaseFileList(
                 variant="ghost"
                 size="sm"
                 className="flex-shrink-0 h-8 w-8 p-0"
-                disabled={!file.file_url}
+                disabled={!file.fileUrl}
               >
                 <Icon name="more_horiz" size={16} />
               </Button>
@@ -131,19 +129,17 @@ export function KnowledgeBaseFileList(
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 disabled={removeFile.isPending &&
-                  removeFile.variables.path === file.file_url}
+                  removeFile.variables.path === file.fileUrl}
                 onClick={() => {
-                  if (removeFromKnowledge.isPending) return;
-                  file.file_url &&
-                    removeFile.mutateAsync({
-                      root: prefix,
-                      path: file.file_url,
-                    });
-                  file.docIds &&
-                    removeFromKnowledge.mutateAsync({
-                      docIds: file.docIds,
-                      connection: integration?.connection,
-                    });
+                  if (knowledgeDeleteFile.isPending || !file.fileUrl) return;
+                  removeFile.mutateAsync({
+                    root: prefix,
+                    path: file.fileUrl,
+                  });
+                  knowledgeDeleteFile.mutateAsync({
+                    fileUrl: file.fileUrl,
+                    connection: integration?.connection,
+                  });
                 }}
                 className="text-destructive focus:text-destructive"
               >
@@ -155,61 +151,6 @@ export function KnowledgeBaseFileList(
         </div>
       ))}
     </div>
-  );
-}
-
-export function AgentKnowledgeBaseFileList(
-  { agentId, integration, uploadingFiles = [] }: {
-    agentId: string;
-    integration?: Integration;
-    uploadingFiles?: UploadFile[];
-  },
-) {
-  const { data: files } = useAgentFiles(agentId);
-  const prefix = useAgentKnowledgeRootPath(agentId);
-  const formatedFiles = useMemo(() =>
-    files
-      ? files.map((file) => ({
-        file_url: file.file_url,
-        name: file.file_url.replace(prefix + "/", ""),
-        type: file.metadata?.type as string ?? "",
-        docIds: file.metadata?.docIds as string[] ?? [] as string[],
-        size: typeof file.metadata?.bytes === "string"
-          ? Number(file.metadata.bytes)
-          : undefined,
-      }))
-      : [], [prefix, files]);
-
-  // Combine uploaded files with uploading files (uploading files come after uploaded files)
-  // Filter out uploading files that already exist in uploaded files based on file_url
-  const allFiles = useMemo(() => {
-    const uploadedFileUrls = new Set(
-      formatedFiles.map((file) => file.file_url),
-    );
-
-    const filteredUploadingFiles = uploadingFiles
-      .filter(({ file_url }) => !file_url || !uploadedFileUrls.has(file_url))
-      .map(({ file, uploading, file_url, docIds }) => ({
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        file_url: file_url,
-        uploading,
-        docIds,
-      }));
-
-    return [
-      ...formatedFiles,
-      ...filteredUploadingFiles,
-    ];
-  }, [formatedFiles, uploadingFiles]);
-
-  return (
-    <KnowledgeBaseFileList
-      agentId={agentId}
-      files={allFiles}
-      integration={integration}
-    />
   );
 }
 

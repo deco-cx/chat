@@ -14,13 +14,38 @@ import {
   createToolFactory,
   createToolGroup,
 } from "../context.ts";
-import { FileProcessor } from "../file-processor.ts";
+import { FileMetadataSchema, FileProcessor } from "../file-processor.ts";
+import type { Json } from "../../storage/supabase/schema.ts";
 
 export interface KnowledgeBaseContext extends AppContext {
   name: string;
 }
 export const KNOWLEDGE_BASE_GROUP = "knowledge_base";
 export const DEFAULT_KNOWLEDGE_BASE_NAME = "standard";
+const KNOWLEDGE_BASE_METADATA_KEY = "knowledgeBase";
+
+export const KnowledgeFileMetadataSchema = z.object({
+  docIds: z.array(z.string()),
+  knowledgeBase: z.string(),
+  path: z.string().optional(),
+  agentId: z.string().optional(),
+}).merge(FileMetadataSchema);
+
+interface DocIdsMetadata {
+  docIds: string[];
+}
+
+function assertDocIds(
+  metadata: unknown,
+): asserts metadata is DocIdsMetadata {
+  if (
+    !metadata || typeof metadata !== "object" || Array.isArray(metadata) ||
+    !("docIds" in metadata)
+  ) {
+    throw new InternalServerError("Missing docIds");
+  }
+}
+
 const createKnowledgeBaseTool = createToolFactory<
   WithTool<KnowledgeBaseContext>
 >((c) =>
@@ -57,7 +82,7 @@ async function getVector(c: AppContext) {
 async function batchUpsertVectorContent(
   items: Array<{
     content: string;
-    metadata?: Record<string, string>;
+    metadata?: Record<string, unknown>;
     docId?: string;
   }>,
   c: WithTool<KnowledgeBaseContext>,
@@ -271,19 +296,21 @@ export const search = createKnowledgeBaseTool({
   },
 });
 
-export const addFileToKnowledgeBase = createKnowledgeBaseTool({
+export const addFile = createKnowledgeBaseTool({
   name: "KNOWLEDGE_BASE_ADD_FILE",
   description: "Add a file content into knowledge base",
   inputSchema: z.object({
     fileUrl: z.string(),
-    path: z.string(),
+    path: z.string().describe(
+      "File path from file added using workspace fs_write tool",
+    ).optional(),
     metadata: z.record(z.string(), z.union([z.string(), z.boolean()]))
       .optional(),
   }),
   handler: async (
-    { fileUrl, metadata, path },
+    { fileUrl, metadata: _metadata, path },
     c,
-  ): Promise<{ docIds: string[] }> => {
+  ) => {
     await assertWorkspaceResourceAccess(c.tool.name, c);
     const fileProcessor = new FileProcessor({
       chunkSize: 500,
@@ -293,10 +320,10 @@ export const addFileToKnowledgeBase = createKnowledgeBaseTool({
     const proccessedFile = await fileProcessor.processFile(fileUrl);
 
     const fileMetadata = {
-      ...metadata, // metadata has path that is used to get full file path
+      ..._metadata,
       ...proccessedFile.metadata,
-      fileSize: proccessedFile.metadata.fileSize.toString(),
-      chunkCount: proccessedFile.metadata.chunkCount.toString(),
+      fileSize: proccessedFile.metadata.fileSize,
+      chunkCount: proccessedFile.metadata.chunkCount,
     };
 
     const contentItems = proccessedFile.chunks.map((
@@ -312,15 +339,107 @@ export const addFileToKnowledgeBase = createKnowledgeBaseTool({
     const docIds = await batchUpsertVectorContent(contentItems, c);
 
     assertHasWorkspace(c);
-    if (path) {
-      await c.db.from("deco_chat_assets").update({
-        metadata: {
-          ...metadata,
-          docIds,
-        },
-      }).eq("workspace", c.workspace.value).eq("file_url", path);
+
+    const metadata: z.infer<typeof KnowledgeFileMetadataSchema> = {
+      ...fileMetadata,
+      ...(path ? { path } : {}),
+      docIds,
+      [KNOWLEDGE_BASE_METADATA_KEY]: c.name,
+    };
+
+    const { data: newFile, error } = await c.db.from("deco_chat_assets").upsert(
+      {
+        file_url: fileUrl,
+        workspace: c.workspace.value,
+        metadata,
+      },
+    ).select().single();
+
+    if (!newFile || error) {
+      throw new InternalServerError("Failed to update file metadata");
     }
 
-    return { docIds };
+    return { fileUrl, metadata };
+  },
+});
+
+export const listFiles = createKnowledgeBaseTool({
+  name: "KNOWLEDGE_BASE_LIST_FILES",
+  description: "List all files in the knowledge base",
+  inputSchema: z.object({}),
+  handler: async (
+    _,
+    c,
+  ) => {
+    await assertWorkspaceResourceAccess(c.tool.name, c);
+    assertHasWorkspace(c);
+
+    const { data: files } = await c.db.from("deco_chat_assets")
+      .select(
+        "fileUrl:file_url, metadata",
+      ).eq("workspace", c.workspace.value)
+      .eq(
+        "metadata->>" + KNOWLEDGE_BASE_METADATA_KEY,
+        c.name,
+      ).overrideTypes<
+      {
+        fileUrl: string;
+        metadata: z.infer<typeof KnowledgeFileMetadataSchema>;
+      }[]
+    >();
+
+    return files?.filter((file) => {
+      try {
+        return KnowledgeFileMetadataSchema.parse(file.metadata);
+      } catch (e) {
+        console.log("error", e, file);
+        return false;
+      }
+    }) ?? [];
+  },
+});
+
+export const deleteFile = createKnowledgeBaseTool({
+  name: "KNOWLEDGE_BASE_DELETE_FILE",
+  description: "Delete a file from the knowledge base",
+  inputSchema: z.object({
+    fileUrl: z.string(),
+  }),
+  handler: async (
+    { fileUrl },
+    c,
+  ) => {
+    await assertWorkspaceResourceAccess(c.tool.name, c);
+    assertHasWorkspace(c);
+
+    const { data: file } = await c.db.from("deco_chat_assets")
+      .select(
+        "file_url, metadata",
+      ).eq("workspace", c.workspace.value)
+      .eq("file_url", fileUrl)
+      .single();
+
+    const metadata: Json | DocIdsMetadata | undefined = file?.metadata;
+
+    assertDocIds(metadata);
+    const docIds = metadata.docIds;
+
+    if (!docIds) {
+      return {};
+    }
+
+    await forget.handler({ docIds });
+    const { error } = await c.db.from("deco_chat_assets").delete().eq(
+      "file_url",
+      fileUrl,
+    );
+
+    if (error) {
+      throw new InternalServerError(
+        "Failed to delete file from knowledge base",
+      );
+    }
+
+    return { file, docIds };
   },
 });

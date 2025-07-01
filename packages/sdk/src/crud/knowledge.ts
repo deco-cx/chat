@@ -1,12 +1,13 @@
 import { MCPClient } from "../fetcher.ts";
 import type { Integration, Workspace } from "../index.ts";
+import type { WorkspaceTools } from "../mcp/index.ts";
 
 interface FromWorkspace {
   workspace: Workspace;
 }
 
 interface ForConnection {
-  connection: Integration["connection"];
+  connection?: Integration["connection"];
 }
 
 const getClientFor = (
@@ -14,18 +15,18 @@ const getClientFor = (
   connection?: Integration["connection"],
 ) => {
   return connection
-    ? MCPClient.forConnection(connection)
+    ? MCPClient.forConnection<WorkspaceTools>(connection)
     : MCPClient.forWorkspace(workspace);
 };
 
-interface AddFileToKnowledgeParams
-  extends FromWorkspace, Partial<ForConnection> {
+interface KnowledgeAddFileParams extends FromWorkspace, ForConnection {
   fileUrl: string;
   path: string;
   metadata?: Record<string, string>;
 }
-export const addFileToKnowledge = (
-  { fileUrl, workspace, metadata, path, connection }: AddFileToKnowledgeParams,
+
+export const knowledgeAddFile = (
+  { fileUrl, workspace, metadata, path, connection }: KnowledgeAddFileParams,
 ) =>
   getClientFor(workspace, connection).KNOWLEDGE_BASE_ADD_FILE({
     fileUrl,
@@ -33,13 +34,20 @@ export const addFileToKnowledge = (
     path,
   });
 
-interface RemoveFromKnowledgeParams
-  extends FromWorkspace, Partial<ForConnection> {
-  docIds: string[];
+interface KnowledgeListFilesParams extends FromWorkspace, ForConnection {}
+
+export const knowledgeListFiles = (
+  { workspace, connection }: KnowledgeListFilesParams,
+) => getClientFor(workspace, connection).KNOWLEDGE_BASE_LIST_FILES({});
+
+interface KnowledgeDeleteFileParams extends FromWorkspace, ForConnection {
+  fileUrl: string;
 }
-export const removeFromKnowledge = (
-  { docIds, workspace, connection }: RemoveFromKnowledgeParams,
-) => getClientFor(workspace, connection).KNOWLEDGE_BASE_FORGET({ docIds });
+
+export const knowledgeDeleteFile = (
+  { workspace, connection, fileUrl }: KnowledgeDeleteFileParams,
+) =>
+  getClientFor(workspace, connection).KNOWLEDGE_BASE_DELETE_FILE({ fileUrl });
 
 interface CreateKnowledgeParams extends FromWorkspace {
   name: string;
