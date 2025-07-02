@@ -342,7 +342,7 @@ export const addFile = createKnowledgeBaseTool({
 
     const metadata: z.infer<typeof KnowledgeFileMetadataSchema> = {
       ...fileMetadata,
-      ...(path ? { path } : {}),
+      path,
       docIds,
       [KNOWLEDGE_BASE_METADATA_KEY]: c.name,
     };
