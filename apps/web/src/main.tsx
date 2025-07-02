@@ -282,6 +282,12 @@ const router = createBrowserRouter([
         Component: SalesDeck,
       },
       {
+        path: "/terms-of-use",
+      },
+      {
+        path: "/privacy-policy",
+      },
+      {
         path: "/chats",
         Component: PublicChats,
       },
