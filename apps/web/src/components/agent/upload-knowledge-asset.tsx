@@ -105,8 +105,8 @@ export function KnowledgeBaseFileList(
                 </span>
               )}
 
-              {removeFile.isPending &&
-                removeFile.variables.path === file.fileUrl && (
+              {knowledgeDeleteFile.isPending &&
+                knowledgeDeleteFile.variables.fileUrl === file.fileUrl && (
                 <span className="text-xs text-primary">
                   removing...
                 </span>
