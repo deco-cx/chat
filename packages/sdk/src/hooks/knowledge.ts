@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSDK } from "./index.ts";
 import {
   createKnowledge,
@@ -8,6 +8,9 @@ import {
 } from "../crud/knowledge.ts";
 import type { Integration } from "../index.ts";
 import { KEYS } from "./api.ts";
+
+const getConnectionUrl = ({ connection }: ForConnection) =>
+  connection && "url" in connection ? connection.url : "";
 
 interface ForConnection {
   connection?: Integration["connection"];
@@ -31,12 +34,21 @@ interface AddFileToKnowledgeParams extends ForConnection {
 
 export const useKnowledgeAddFile = () => {
   const { workspace } = useSDK();
+  const client = useQueryClient();
 
   return useMutation({
     mutationFn: (
       { fileUrl, metadata, path, connection }: AddFileToKnowledgeParams,
     ) => knowledgeAddFile({ workspace, fileUrl, metadata, path, connection }),
-    // TODO: on settle add file from query client
+    onSuccess: (fileResponse, { connection }) => {
+      const connectionUrl = getConnectionUrl({ connection });
+      const knowledgeFilesKey = KEYS.KNOWLEDGE_FILES(workspace, connectionUrl);
+      client.cancelQueries({ queryKey: knowledgeFilesKey });
+      client.setQueryData<Awaited<ReturnType<typeof knowledgeListFiles>>>(
+        knowledgeFilesKey,
+        (old) => !old ? [fileResponse] : [fileResponse, ...old],
+      );
+    },
   });
 };
 
@@ -46,11 +58,21 @@ interface KnowledgeDeleteFileParams extends ForConnection {
 
 export const useKnowledgeDeleteFile = () => {
   const { workspace } = useSDK();
+  const client = useQueryClient();
 
   return useMutation({
     mutationFn: ({ connection, fileUrl }: KnowledgeDeleteFileParams) =>
       knowledgeDeleteFile({ workspace, fileUrl, connection }),
-    // TODO: on settle remove files from query client
+    onSuccess: (_, { fileUrl, connection }) => {
+      const connectionUrl = getConnectionUrl({ connection });
+      const knowledgeFilesKey = KEYS.KNOWLEDGE_FILES(workspace, connectionUrl);
+
+      client.cancelQueries({ queryKey: knowledgeFilesKey });
+      client.setQueryData<Awaited<ReturnType<typeof knowledgeListFiles>>>(
+        knowledgeFilesKey,
+        (old) => !old ? [] : old.filter((file) => file.fileUrl !== fileUrl),
+      );
+    },
   });
 };
 
@@ -61,7 +83,7 @@ export const useKnowledgeListFiles = (
 ) => {
   const { workspace } = useSDK();
   const { connection } = params;
-  const connectionUrl = connection && "url" in connection ? connection.url : "";
+  const connectionUrl = getConnectionUrl(params);
   const hasConnection = "connection" in params;
 
   return useQuery({

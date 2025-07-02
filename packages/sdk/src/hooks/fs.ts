@@ -23,7 +23,6 @@ export const useReadFile = () => {
     });
 };
 
-// TODO: remove it
 export const useFiles = (
   { root }: { root: string },
 ) => {

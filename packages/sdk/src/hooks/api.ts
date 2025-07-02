@@ -186,5 +186,5 @@ export const KEYS = {
   KNOWLEDGE_FILES: (
     workspace: Workspace,
     connectionUrl: string,
-  ) => ["knowledge", workspace, connectionUrl],
+  ) => ["knowledge_files", workspace, connectionUrl],
 };

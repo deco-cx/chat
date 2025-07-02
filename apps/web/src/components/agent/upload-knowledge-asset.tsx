@@ -131,12 +131,12 @@ export function KnowledgeBaseFileList(
                 disabled={removeFile.isPending &&
                   removeFile.variables.path === file.fileUrl}
                 onClick={() => {
-                  if (knowledgeDeleteFile.isPending || !file.fileUrl) return;
-                  removeFile.mutateAsync({
+                  if (knowledgeDeleteFile.isPending) return;
+                  file.path && removeFile.mutateAsync({
                     root: prefix,
-                    path: file.fileUrl,
+                    path: file.path,
                   });
-                  knowledgeDeleteFile.mutateAsync({
+                  file.fileUrl && knowledgeDeleteFile.mutateAsync({
                     fileUrl: file.fileUrl,
                     connection: integration?.connection,
                   });

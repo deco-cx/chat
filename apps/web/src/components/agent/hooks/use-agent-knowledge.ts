@@ -13,7 +13,6 @@ import {
   useDeleteFile,
   useIntegrations,
   useKnowledgeAddFile,
-  useKnowledgeListFiles,
   useReadFile,
   useWriteFile,
 } from "@deco/sdk";
@@ -114,9 +113,6 @@ export const useUploadAgentKnowledgeFiles = (
       agent,
       setIntegrationTools,
     });
-  const { refetch: refetchAgentKnowledgeFiles } = useKnowledgeListFiles(
-    { connection: knowledgeIntegration?.connection },
-  );
   const writeFileMutation = useWriteFile();
   const addFileToKnowledgeBase = useKnowledgeAddFile();
   const readFile = useReadFile();
@@ -210,7 +206,6 @@ export const useUploadAgentKnowledgeFiles = (
       });
 
       await Promise.all(uploadPromises);
-      await refetchAgentKnowledgeFiles();
 
       // Small delay to ensure UI has updated with refetched files before clearing uploading files
       // This prevents the flickering effect where files disappear and reappear
