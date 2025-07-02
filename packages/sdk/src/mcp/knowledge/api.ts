@@ -328,11 +328,13 @@ export const addFile = createKnowledgeBaseTool({
 
     const contentItems = proccessedFile.chunks.map((
       chunk: { text: string; metadata: Record<string, string> },
+      idx,
     ) => ({
       content: chunk.text,
       metadata: {
         ...fileMetadata,
         ...chunk.metadata,
+        chunkIndex: idx,
       },
     }));
 
