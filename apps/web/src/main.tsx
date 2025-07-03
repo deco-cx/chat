@@ -1,5 +1,5 @@
 import "./polyfills.ts";
-import { scan } from "react-scan";
+import { scan } from "react-scan/all-environments";
 
 import {
   ForbiddenError,
@@ -19,6 +19,9 @@ import {
 } from "react-router";
 import { EmptyState } from "./components/common/empty-state.tsx";
 import { useWorkspaceLink } from "./hooks/use-navigate-workspace.ts";
+scan({
+  enabled: true,
+});
 
 type LazyComp<P> = Promise<{
   default: React.ComponentType<P>;
