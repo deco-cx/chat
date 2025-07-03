@@ -180,6 +180,8 @@ export const useUploadAgentKnowledgeFiles = (
             path,
             filename: file.name,
           });
+
+          onAddFile((prev) => prev.filter((fileObj) => fileObj.file !== file));
         } catch (error) {
           console.error(`Failed to upload ${file.name}:`, error);
 
@@ -207,12 +209,6 @@ export const useUploadAgentKnowledgeFiles = (
       });
 
       await Promise.all(uploadPromises);
-
-      // Small delay to ensure UI has updated with refetched files before clearing uploading files
-      // This prevents the flickering effect where files disappear and reappear
-      setTimeout(() => {
-        onAddFile([]);
-      }, 100);
     } catch (error) {
       console.error("Failed to upload some knowledge files:", error);
     }

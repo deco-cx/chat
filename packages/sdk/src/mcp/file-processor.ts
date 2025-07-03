@@ -13,7 +13,6 @@ export { FileExtSchema } from "../utils/knowledge.ts";
 export const FileMetadataSchema = z.object({
   fileSize: z.number(),
   chunkCount: z.number(),
-  // ".pdf" | ".txt" | ".md" | ".csv" | ".json"
   fileType: FileExtSchema,
   fileHash: z.string(),
 });

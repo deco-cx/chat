@@ -1,4 +1,4 @@
-import { type Integration, listTools, useIntegrations } from "@deco/sdk";
+import { type Integration, listTools, useIntegrations, useKnowledgeListFiles } from "@deco/sdk";
 import {
   getExtensionFromContentType,
   getKnowledgeBaseIntegrationId,
@@ -29,7 +29,6 @@ import {
 } from "../integrations/apps.ts";
 import { SelectConnectionDialog } from "../integrations/select-connection-dialog.tsx";
 import { IntegrationListItem } from "../toolsets/selector.tsx";
-import { useKnowledgeListFiles } from "../../../../../packages/sdk/src/hooks/index.ts";
 
 const ADVANCED_INTEGRATIONS = [
   ...LEGACY_INTEGRATIONS,
