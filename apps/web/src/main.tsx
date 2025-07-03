@@ -1,4 +1,5 @@
 import "./polyfills.ts";
+import { scan } from "react-scan";
 
 import {
   ForbiddenError,

@@ -57,6 +57,7 @@
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react-swc": "^3.8.0",
     "tailwindcss": "^4.1.1",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "react-scan": "0.4.3"
   }
 }
