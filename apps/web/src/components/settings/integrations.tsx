@@ -1,4 +1,9 @@
-import { type Integration, listTools, useIntegrations, useKnowledgeListFiles } from "@deco/sdk";
+import {
+  type Integration,
+  listTools,
+  useIntegrations,
+  useKnowledgeListFiles,
+} from "@deco/sdk";
 import {
   getExtensionFromContentType,
   getKnowledgeBaseIntegrationId,
