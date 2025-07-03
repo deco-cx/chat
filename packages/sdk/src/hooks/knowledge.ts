@@ -29,6 +29,7 @@ export const useCreateKnowledge = () => {
 interface AddFileToKnowledgeParams extends ForConnection {
   fileUrl: string;
   path: string;
+  filename?: string;
   metadata?: Record<string, string>;
 }
 
@@ -38,8 +39,8 @@ export const useKnowledgeAddFile = () => {
 
   return useMutation({
     mutationFn: (
-      { fileUrl, metadata, path, connection }: AddFileToKnowledgeParams,
-    ) => knowledgeAddFile({ workspace, fileUrl, metadata, path, connection }),
+      { fileUrl, metadata, path, filename, connection }: AddFileToKnowledgeParams,
+    ) => knowledgeAddFile({ workspace, fileUrl, metadata, path, filename, connection }),
     onSuccess: (fileResponse, { connection }) => {
       const connectionUrl = getConnectionUrl({ connection });
       const knowledgeFilesKey = KEYS.KNOWLEDGE_FILES(workspace, connectionUrl);

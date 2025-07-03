@@ -51,12 +51,15 @@ function FileIcon({ filename }: { filename: string }) {
 }
 
 export interface KnowledgeFile {
-  fileSize: number;
-  fileType: ".pdf" | ".txt" | ".md" | ".csv" | ".json";
+  fileSize?: number;
+  fileType?: ".pdf" | ".txt" | ".md" | ".csv" | ".json";
   path?: string | undefined;
   agentId?: string | undefined;
+  docIds?: string[];
+  filename?: string;
   fileUrl: string;
   name: string;
+  metadata?: Record<string, unknown>;
 
   uploading?: boolean;
 }

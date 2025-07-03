@@ -22,16 +22,18 @@ const getClientFor = (
 interface KnowledgeAddFileParams extends FromWorkspace, ForConnection {
   fileUrl: string;
   path: string;
+  filename?: string;
   metadata?: Record<string, string>;
 }
 
 export const knowledgeAddFile = (
-  { fileUrl, workspace, metadata, path, connection }: KnowledgeAddFileParams,
+  { fileUrl, workspace, metadata, path, filename, connection }: KnowledgeAddFileParams,
 ) =>
   getClientFor(workspace, connection).KNOWLEDGE_BASE_ADD_FILE({
     fileUrl,
     metadata,
     path,
+    filename,
   });
 
 interface KnowledgeListFilesParams extends FromWorkspace, ForConnection {}

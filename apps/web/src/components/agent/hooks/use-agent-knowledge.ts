@@ -178,6 +178,7 @@ export const useUploadAgentKnowledgeFiles = (
               agentId: agent.id,
             },
             path,
+            filename: file.name,
           });
         } catch (error) {
           console.error(`Failed to upload ${file.name}:`, error);

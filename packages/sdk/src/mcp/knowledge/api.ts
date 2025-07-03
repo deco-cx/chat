@@ -1,6 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { embed, embedMany } from "ai";
 import { z } from "zod";
+import { basename } from "@std/path";
 import { KNOWLEDGE_BASE_DIMENSION } from "../../constants.ts";
 import { InternalServerError } from "../../errors.ts";
 import { WorkspaceMemory } from "../../memory/memory.ts";
@@ -15,36 +16,32 @@ import {
   createToolGroup,
 } from "../context.ts";
 import { FileMetadataSchema, FileProcessor } from "../file-processor.ts";
-import type { Json } from "../../storage/supabase/schema.ts";
+import { Json } from "../../storage/index.ts";
 
 export interface KnowledgeBaseContext extends AppContext {
   name: string;
 }
 export const KNOWLEDGE_BASE_GROUP = "knowledge_base";
 export const DEFAULT_KNOWLEDGE_BASE_NAME = "standard";
-const KNOWLEDGE_BASE_METADATA_KEY = "knowledgeBase";
 
+// Legacy schema for backward compatibility during migration
 export const KnowledgeFileMetadataSchema = z.object({
-  docIds: z.array(z.string()),
-  knowledgeBase: z.string(),
-  path: z.string().optional(),
   agentId: z.string().optional(),
 }).merge(FileMetadataSchema);
 
-interface DocIdsMetadata {
-  docIds: string[];
-}
-
-function assertDocIds(
-  metadata: unknown,
-): asserts metadata is DocIdsMetadata {
-  if (
-    !metadata || typeof metadata !== "object" || Array.isArray(metadata) ||
-    !("docIds" in metadata)
-  ) {
-    throw new InternalServerError("Missing docIds");
-  }
-}
+const addFileDefaults = (file: {
+  fileUrl: string;
+  metadata: Json;
+  path: string | null;
+  docIds: string[] | null;
+  filename: string | null;
+}) => ({
+  ...file,
+  metadata: (file.metadata || {}) as z.infer<typeof KnowledgeFileMetadataSchema>,
+  docIds: file.docIds || [],
+  filename: file.filename ?? "",
+  path: file.path ?? "",
+})
 
 const createKnowledgeBaseTool = createToolFactory<
   WithTool<KnowledgeBaseContext>
@@ -304,11 +301,12 @@ export const addFile = createKnowledgeBaseTool({
     path: z.string().describe(
       "File path from file added using workspace fs_write tool",
     ).optional(),
+    filename: z.string().describe("The name of the file").optional(),
     metadata: z.record(z.string(), z.union([z.string(), z.boolean()]))
       .optional(),
   }),
   handler: async (
-    { fileUrl, metadata: _metadata, path },
+    { fileUrl, metadata: _metadata, path, filename },
     c,
   ) => {
     await assertWorkspaceResourceAccess(c.tool.name, c);
@@ -335,6 +333,8 @@ export const addFile = createKnowledgeBaseTool({
         ...fileMetadata,
         ...chunk.metadata,
         chunkIndex: idx,
+        fileUrl: fileUrl,
+        path: path,
       },
     }));
 
@@ -342,26 +342,29 @@ export const addFile = createKnowledgeBaseTool({
 
     assertHasWorkspace(c);
 
-    const metadata: z.infer<typeof KnowledgeFileMetadataSchema> = {
-      ...fileMetadata,
-      path,
-      docIds,
-      [KNOWLEDGE_BASE_METADATA_KEY]: c.name,
-    };
+    // Add fallback logic for filename
+    const finalFilename = filename ?? 
+      (path ? basename(path) : undefined) ?? 
+      fileUrl;
 
     const { data: newFile, error } = await c.db.from("deco_chat_assets").upsert(
       {
         file_url: fileUrl,
         workspace: c.workspace.value,
-        metadata,
+        index_name: c.name,
+        path,
+        doc_ids: docIds,
+        filename: finalFilename,
+        metadata: fileMetadata,
       },
-    ).select().single();
+    ).select("fileUrl:file_url, metadata, path, docIds:doc_ids, filename")
+      .single();
 
     if (!newFile || error) {
       throw new InternalServerError("Failed to update file metadata");
     }
 
-    return { fileUrl, metadata };
+    return addFileDefaults(newFile);
   },
 });
 
@@ -378,26 +381,11 @@ export const listFiles = createKnowledgeBaseTool({
 
     const { data: files } = await c.db.from("deco_chat_assets")
       .select(
-        "fileUrl:file_url, metadata",
+        "fileUrl:file_url, metadata, path, docIds:doc_ids, filename",
       ).eq("workspace", c.workspace.value)
-      .eq(
-        "metadata->>" + KNOWLEDGE_BASE_METADATA_KEY,
-        c.name,
-      ).overrideTypes<
-      {
-        fileUrl: string;
-        metadata: z.infer<typeof KnowledgeFileMetadataSchema>;
-      }[]
-    >();
+      .eq("index_name", c.name);
 
-    return files?.filter((file) => {
-      try {
-        return KnowledgeFileMetadataSchema.parse(file.metadata);
-      } catch (e) {
-        console.log("error", e, file);
-        return false;
-      }
-    }) ?? [];
+    return files?.map(addFileDefaults) ?? [];
   },
 });
 
@@ -414,17 +402,14 @@ export const deleteFile = createKnowledgeBaseTool({
     await assertWorkspaceResourceAccess(c.tool.name, c);
     assertHasWorkspace(c);
 
-    const { data: file } = await c.db.from("deco_chat_assets")
+    const { data: file } = await (c.db.from("deco_chat_assets") as any)
       .select(
-        "file_url, metadata",
+        "file_url, metadata, doc_ids",
       ).eq("workspace", c.workspace.value)
       .eq("file_url", fileUrl)
       .single();
 
-    const metadata: Json | DocIdsMetadata | undefined = file?.metadata;
-
-    assertDocIds(metadata);
-    const docIds = metadata.docIds;
+    const docIds = file?.doc_ids;
 
     if (!docIds) {
       return {};
