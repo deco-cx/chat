@@ -16,7 +16,7 @@ import {
   createToolGroup,
 } from "../context.ts";
 import { FileMetadataSchema, FileProcessor } from "../file-processor.ts";
-import { Json } from "../../storage/index.ts";
+import type { Json } from "../../storage/index.ts";
 
 export interface KnowledgeBaseContext extends AppContext {
   name: string;
@@ -37,11 +37,13 @@ const addFileDefaults = (file: {
   filename: string | null;
 }) => ({
   ...file,
-  metadata: (file.metadata || {}) as z.infer<typeof KnowledgeFileMetadataSchema>,
+  metadata: (file.metadata || {}) as z.infer<
+    typeof KnowledgeFileMetadataSchema
+  >,
   docIds: file.docIds || [],
   filename: file.filename ?? "",
   path: file.path ?? "",
-})
+});
 
 const createKnowledgeBaseTool = createToolFactory<
   WithTool<KnowledgeBaseContext>
@@ -343,8 +345,8 @@ export const addFile = createKnowledgeBaseTool({
     assertHasWorkspace(c);
 
     // Add fallback logic for filename
-    const finalFilename = filename ?? 
-      (path ? basename(path) : undefined) ?? 
+    const finalFilename = filename ??
+      (path ? basename(path) : undefined) ??
       fileUrl;
 
     const { data: newFile, error } = await c.db.from("deco_chat_assets").upsert(
@@ -402,7 +404,7 @@ export const deleteFile = createKnowledgeBaseTool({
     await assertWorkspaceResourceAccess(c.tool.name, c);
     assertHasWorkspace(c);
 
-    const { data: file } = await (c.db.from("deco_chat_assets") as any)
+    const { data: file } = await c.db.from("deco_chat_assets")
       .select(
         "file_url, metadata, doc_ids",
       ).eq("workspace", c.workspace.value)

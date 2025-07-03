@@ -39,8 +39,17 @@ export const useKnowledgeAddFile = () => {
 
   return useMutation({
     mutationFn: (
-      { fileUrl, metadata, path, filename, connection }: AddFileToKnowledgeParams,
-    ) => knowledgeAddFile({ workspace, fileUrl, metadata, path, filename, connection }),
+      { fileUrl, metadata, path, filename, connection }:
+        AddFileToKnowledgeParams,
+    ) =>
+      knowledgeAddFile({
+        workspace,
+        fileUrl,
+        metadata,
+        path,
+        filename,
+        connection,
+      }),
     onSuccess: (fileResponse, { connection }) => {
       const connectionUrl = getConnectionUrl({ connection });
       const knowledgeFilesKey = KEYS.KNOWLEDGE_FILES(workspace, connectionUrl);

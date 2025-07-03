@@ -27,7 +27,8 @@ interface KnowledgeAddFileParams extends FromWorkspace, ForConnection {
 }
 
 export const knowledgeAddFile = (
-  { fileUrl, workspace, metadata, path, filename, connection }: KnowledgeAddFileParams,
+  { fileUrl, workspace, metadata, path, filename, connection }:
+    KnowledgeAddFileParams,
 ) =>
   getClientFor(workspace, connection).KNOWLEDGE_BASE_ADD_FILE({
     fileUrl,
