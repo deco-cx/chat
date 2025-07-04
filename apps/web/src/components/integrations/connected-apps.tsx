@@ -80,16 +80,28 @@ function TableView(
   const [sortKey, setSortKey] = useState<string>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  function getSortValue(row: GroupedApp, key: string): string {
+  function getSortValue(row: GroupedApp, key: string): string | number {
     if (key === "description") return row.description?.toLowerCase() || "";
+    if (key === "instance-count") return row.instances;
     return row.name?.toLowerCase() || "";
   }
 
   const sortedApps = [...apps].sort((a, b) => {
     const aVal = getSortValue(a, sortKey);
     const bVal = getSortValue(b, sortKey);
-    if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
-    if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+    
+    // Handle numeric sorting for instance-count
+    if (sortKey === "instance-count") {
+      const aNum = aVal as number;
+      const bNum = bVal as number;
+      return sortDirection === "asc" ? aNum - bNum : bNum - aNum;
+    }
+    
+    // Handle string sorting for other columns
+    const aStr = aVal as string;
+    const bStr = bVal as string;
+    if (aStr < bStr) return sortDirection === "asc" ? -1 : 1;
+    if (aStr > bStr) return sortDirection === "asc" ? 1 : -1;
     return 0;
   });
 
@@ -108,6 +120,7 @@ function TableView(
           {app.instances} Instance{app.instances > 1 ? "s" : ""}
         </Badge>
       ),
+      sortable: true,
     },
     {
       id: "used-by",
@@ -153,6 +166,12 @@ function TableView(
       sortDirection={sortDirection}
       onSort={handleSort}
       onRowClick={onClick}
+      emptyState={{
+        icon: "conversion_path",
+        title: "No connected integrations yet",
+        description: "Connect services to expand what your agents can do.",
+        buttonComponent: <SelectConnectionDialog forceTab="new-connection" />
+      }}
     />
   );
 }

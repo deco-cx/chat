@@ -71,7 +71,7 @@ const Chat = () => {
                   <AgentAvatar
                     name={agent.name}
                     avatar={agent.avatar}
-                    className="rounded-lg text-xs"
+                    className="w-full h-full rounded-[10px] text-xs"
                   />
                 </div>
                 <h1 className="text-sm font-medium tracking-tight">

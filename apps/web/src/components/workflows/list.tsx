@@ -25,7 +25,7 @@ import { Table, type TableColumn } from "../common/table/index.tsx";
 import type { Tab } from "../dock/index.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
 
-// Instead, define the Workflow type here to match the API response
+// Define the Workflow type to match the API response
 interface Workflow {
   workflowName: string;
   runId: string;
@@ -163,7 +163,7 @@ function WorkflowsTab() {
   const { data, refetch, isRefetching } = useWorkflows(page, per_page);
   const navigateWorkspace = useNavigateWorkspace();
 
-  const workflows: Workflow[] = data.workflows as Workflow[];
+  const workflows: Workflow[] = data.workflows as unknown as Workflow[];
   const filteredWorkflows = useMemo(() => {
     if (!filter) return workflows;
     return workflows.filter((w) =>

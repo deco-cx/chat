@@ -75,7 +75,9 @@ function PromptTab() {
   };
 
   const triggerFileInput = () => {
-    fileInputRef.current?.click();
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
   };
 
   return (
@@ -100,6 +102,7 @@ function PromptTab() {
                           accept="image/*"
                           className="hidden"
                           onChange={handleFileChange}
+                          disabled={isUploading}
                         />
                         <FormControl>
                           <div
@@ -119,6 +122,7 @@ function PromptTab() {
                                   <AgentAvatar
                                     name={agent.name}
                                     avatar={field.value || agent.avatar}
+                                    className="w-full h-full rounded-xl"
                                   />
                                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                                     <Icon

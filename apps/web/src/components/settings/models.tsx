@@ -266,8 +266,8 @@ type ModelForm = z.infer<typeof modelFormSchema>;
 function TableView(
   { models }: { models: Model[] },
 ) {
-  const [sortKey, setSortKey] = useState<SortKey>("active");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const { isOpen: modalOpen, setIsOpen: setModalOpen } = useModal();
   const [logo, setLogo] = useState<string | undefined>(undefined);
   const modelRef = useRef<Model | undefined>(undefined);
@@ -327,6 +327,8 @@ function TableView(
     {
       id: "active",
       header: "",
+      headerClassName: "w-14",
+      cellClassName: "w-14",
       render: (model) => (
         <Switch
           className="cursor-pointer"
@@ -378,6 +380,8 @@ function TableView(
     {
       id: "actions",
       header: "",
+      headerClassName: "w-16",
+      cellClassName: "w-16",
       render: (model) => (
         <ModelActions
           model={model}

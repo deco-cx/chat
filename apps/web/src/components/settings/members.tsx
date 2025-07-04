@@ -43,27 +43,30 @@ import { InviteTeamMembersDialog } from "../common/invite-team-members-dialog.ts
 import { toast } from "@deco/ui/components/sonner.tsx";
 import { RolesDropdown } from "../common/roles-dropdown.tsx";
 
-function MemberTitle() {
-  return (
-    <div className="items-center justify-between hidden md:flex">
-      <h2 className="text-2xl">Members</h2>
-    </div>
-  );
-}
+
 
 function MemberTableHeader(
-  { onChange, disabled }: {
+  { onChange, disabled, teamId }: {
     disabled?: boolean;
     onChange: (value: string) => void;
+    teamId?: number;
   },
 ) {
   return (
-    <div className="">
+    <div className="flex items-center justify-between gap-4">
       <Input
         placeholder="Search"
         onChange={(e) => onChange(e.currentTarget.value)}
         className="w-80"
         disabled={disabled}
+      />
+      <InviteTeamMembersDialog
+        teamId={teamId}
+        trigger={
+          <Button variant="default">
+            Invite members
+          </Button>
+        }
       />
     </div>
   );
@@ -72,8 +75,7 @@ function MemberTableHeader(
 function MembersViewLoading() {
   return (
     <div className="px-6 py-10 flex flex-col gap-6">
-      <MemberTitle />
-      <MemberTableHeader disabled onChange={() => {}} />
+      <MemberTableHeader disabled onChange={() => {}} teamId={undefined} />
       <div className="flex justify-center p-8">
         <Spinner />
         <span className="ml-2">Loading members...</span>
@@ -82,57 +84,65 @@ function MembersViewLoading() {
   );
 }
 
-function AddTeamMemberButton({ teamId }: { teamId?: number }) {
-  return (
-    <InviteTeamMembersDialog
-      teamId={teamId}
-      trigger={
-        <Button variant="ghost" size="icon">
-          <span className="sr-only">Invite team members</span>
-          <Icon name="add" />
-        </Button>
-      }
-    />
-  );
-}
-
 type Columns = "name" | "role" | "lastActivity";
 type SortDir = "asc" | "desc";
 type Sort = `${Columns}_${SortDir}`;
 
-const getMemberName = (member: Member) =>
-  member.profiles.metadata.full_name ||
-  member.profiles.email;
-
-const compareMemberActivity = (a: Member, b: Member) => {
-  const aD = a.lastActivity ? new Date(a.lastActivity).getTime() : Infinity;
-  const bD = b.lastActivity ? new Date(b.lastActivity).getTime() : Infinity;
-
-  return aD - bD;
+// Union type for members and invites
+type MemberOrInvite = Member | {
+  type: 'invite';
+  id: string;
+  email: string;
+  roles: { id: number; name: string }[];
 };
 
-const getMemberRoleName = (a: Member) =>
-  a.roles.map((r) => r.name).sort().join(",");
-const compareMemberRole = (a: Member, b: Member) =>
-  getMemberRoleName(a).localeCompare(
-    getMemberRoleName(b),
-  );
+const getMemberName = (member: Member) =>
+  member.profiles.metadata.full_name ||
+  member.profiles.email ||
+  "Unknown";
+
+const getItemName = (item: MemberOrInvite): string => {
+  if ('type' in item && item.type === 'invite') {
+    return item.email;
+  }
+  return getMemberName(item as Member);
+};
+
+const getItemRoleName = (item: MemberOrInvite): string => {
+  return item.roles.map((r) => r.name).sort().join(",");
+};
+
+const compareMemberActivity = (a: Member, b: Member) => {
+  const aActivity = a.lastActivity ? new Date(a.lastActivity).getTime() : Infinity;
+  const bActivity = b.lastActivity ? new Date(b.lastActivity).getTime() : Infinity;
+  return aActivity - bActivity;
+};
 
 const sortFnS: Record<
   Columns,
-  Partial<Record<SortDir, (a: Member, b: Member) => number>>
+  Partial<Record<SortDir, (a: MemberOrInvite, b: MemberOrInvite) => number>>
 > = {
   name: {
-    asc: (a, b) => getMemberName(a).localeCompare(getMemberName(b)),
-    desc: (a, b) => -getMemberName(a).localeCompare(getMemberName(b)),
+    asc: (a, b) => getItemName(a).localeCompare(getItemName(b)),
+    desc: (a, b) => -getItemName(a).localeCompare(getItemName(b)),
   },
   role: {
-    asc: (a, b) => compareMemberRole(a, b),
-    desc: (a, b) => -compareMemberRole(a, b),
+    asc: (a, b) => getItemRoleName(a).localeCompare(getItemRoleName(b)),
+    desc: (a, b) => -getItemRoleName(a).localeCompare(getItemRoleName(b)),
   },
   lastActivity: {
-    asc: (a, b) => compareMemberActivity(a, b),
-    desc: (a, b) => -compareMemberActivity(a, b),
+    asc: (a, b) => {
+      // Invites always go to the end for activity sorting
+      if ('type' in a && a.type === 'invite') return 1;
+      if ('type' in b && b.type === 'invite') return -1;
+      return compareMemberActivity(a as Member, b as Member);
+    },
+    desc: (a, b) => {
+      // Invites always go to the end for activity sorting
+      if ('type' in a && a.type === 'invite') return 1;
+      if ('type' in b && b.type === 'invite') return -1;
+      return -compareMemberActivity(a as Member, b as Member);
+    },
   },
 } as const;
 
@@ -141,46 +151,29 @@ function TableHeadSort(
     { onClick: () => void; sort?: SortDir; mode?: SortDir }
   >,
 ) {
-  const hasBothArrows = mode === undefined;
-  const hasAsc = hasBothArrows || mode === "asc";
-  const hasDesc = hasBothArrows || mode === "desc";
+  const isActive = sort !== undefined;
+  
   return (
-    <TableHead className="px-2 text-left bg-muted font-semibold text-foreground text-sm h-10">
-      <button
-        type="button"
-        className="flex items-center gap-1 cursor-pointer select-none"
+    <TableHead className="px-4 text-left font-normal text-foreground text-sm h-12 cursor-pointer group hover:bg-transparent">
+      <div
+        className="flex items-center cursor-pointer select-none w-full"
         onClick={onClick}
       >
         {children}
-        <span
-          className={cn(
-            "inline-flex items-center transition-transform",
-          )}
-        >
-          {hasAsc && (
-            <Icon
-              key="desc"
-              name="arrow_upward"
-              size={16}
-              className={cn(
-                "transition-colors",
-                sort === "asc" ? "text-foreground" : "text-muted-foreground",
-              )}
-            />
-          )}
-          {hasDesc && (
-            <Icon
-              key="up"
-              name="arrow_upward"
-              size={16}
-              className={cn(
-                "transition-colors rotate-180 text-muted-foreground",
-                sort === "desc" ? "text-foreground" : "text-muted-foreground",
-              )}
-            />
-          )}
-        </span>
-      </button>
+        {isActive ? (
+          <Icon
+            name={sort === "asc" ? "arrow_downward" : "arrow_upward"}
+            size={16}
+            className="text-foreground group-hover:text-muted-foreground ml-2 transition-colors"
+          />
+        ) : (
+          <Icon
+            name="arrow_downward"
+            size={16}
+            className="text-muted-foreground ml-2 opacity-0 group-hover:opacity-100 transition-opacity"
+          />
+        )}
+      </div>
     </TableHead>
   );
 }
@@ -199,25 +192,43 @@ function MembersViewContent() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("name_asc");
   const deferredQuery = useDeferredValue(query);
-  const filteredMembers = useMemo(
+
+  // Combine members and invites into a single list
+  const allItems: MemberOrInvite[] = useMemo(() => {
+    const memberItems: MemberOrInvite[] = members;
+    const inviteItems: MemberOrInvite[] = invites.map(invite => ({
+      type: 'invite' as const,
+      id: invite.id,
+      email: invite.email,
+      roles: invite.roles,
+    }));
+    return [...memberItems, ...inviteItems];
+  }, [members, invites]);
+
+  const filteredItems = useMemo(
     () =>
       deferredQuery
-        ? members.filter((member) =>
-          member.profiles.metadata.full_name?.toLowerCase().includes(
-            deferredQuery,
-          ) ||
-          member.profiles.email.toLowerCase().includes(deferredQuery)
-        )
-        : members,
-    [members, deferredQuery],
+        ? allItems.filter((item) => {
+            if ('type' in item && item.type === 'invite') {
+              return item.email.toLowerCase().includes(deferredQuery);
+            }
+            const member = item as Member;
+            return member.profiles.metadata.full_name?.toLowerCase().includes(
+              deferredQuery,
+            ) ||
+            member.profiles.email.toLowerCase().includes(deferredQuery);
+          })
+        : allItems,
+    [allItems, deferredQuery],
   );
+
   const sortInfo = useMemo(() => sort.split("_") as [Columns, SortDir], [sort]);
-  const sortMembers = useMemo(() => {
+  const sortedItems = useMemo(() => {
     const [col, sortDir] = sortInfo;
     const fn = sortFnS[col][sortDir] ?? sortFnS.name.asc;
 
-    return filteredMembers.sort(fn);
-  }, [sort, filteredMembers]);
+    return filteredItems.sort(fn);
+  }, [sort, filteredItems]);
 
   const isMobile = useIsMobile();
 
@@ -266,15 +277,14 @@ function MembersViewContent() {
 
   return (
     <div className="px-6 py-10 flex flex-col gap-6">
-      <MemberTitle />
-
       <div className="flex flex-col gap-4">
-        <MemberTableHeader onChange={setQuery} />
+        <MemberTableHeader onChange={setQuery} teamId={teamId} />
         <Table>
-          <TableHeader>
-            <TableRow className="h-14">
+          <TableHeader className="border-b border-border">
+            <TableRow className="h-12 hover:bg-transparent">
               <TableHeadSort
-                onClick={() => setSort("name_asc")}
+                onClick={() =>
+                  setSort(sort === "name_asc" ? "name_desc" : "name_asc")}
                 sort={col === "name" ? sortDir : undefined}
                 mode="asc"
               >
@@ -301,17 +311,16 @@ function MembersViewContent() {
                     Last active
                   </TableHeadSort>
                 )}
-              <TableHead className="px-2 text-left bg-muted font-semibold text-foreground text-sm h-10 w-12.5">
-                <AddTeamMemberButton teamId={teamId} />
+              <TableHead className="px-4 text-left font-normal text-foreground text-sm h-12 w-12.5">
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {members.length === 0
+            {allItems.length === 0
               ? (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={isMobile ? 3 : 4}
                     className="text-center py-8 text-muted-foreground "
                   >
                     No members found. Add team members to get started.
@@ -320,155 +329,156 @@ function MembersViewContent() {
               )
               : (
                 <>
-                  {invites.map((invite) => (
-                    <TableRow key={invite.id} className="px-4 py-1.5">
-                      {/* Profile */}
-                      <TableCell>
-                        <span className="flex gap-2 items-center w-43 md:w-56">
-                          <span className="flex flex-col gap-1 min-w-0">
-                            <span className="font-semibold text-xs truncate">
-                              {invite.email}
+                  {sortedItems.map((item) => {
+                    if ('type' in item && item.type === 'invite') {
+                      // Render invite row
+                      return (
+                        <TableRow key={`invite-${item.id}`} className="px-4 py-1.5 hover:bg-transparent">
+                          <TableCell>
+                            <span className="flex gap-2 items-center w-43 md:w-56">
+                              <span>
+                                <div className="size-10 bg-muted border border-dashed border-border rounded-full flex items-center justify-center">
+                                  <span className="text-base font-medium text-muted-foreground">
+                                    {item.email.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                              </span>
+                              <span className="flex flex-col gap-0 min-w-0">
+                                <span className="text-sm font-medium text-foreground truncate">
+                                  {item.email}
+                                </span>
+                                <span className="text-sm font-normal text-muted-foreground truncate">
+                                  Pending
+                                </span>
+                              </span>
                             </span>
-                            <span className="text-[10px] leading-3.5 text-muted-foreground truncate">
-                              Pending
+                          </TableCell>
+                          <TableCell>
+                            <span className="inline-flex gap-2">
+                              {item.roles.map((role) => (
+                                <Badge variant="outline" key={role.id}>
+                                  {role.name}
+                                </Badge>
+                              ))}
                             </span>
-                          </span>
-                        </span>
-                      </TableCell>
-                      {/* Roles */}
-                      <TableCell>
-                        <span className="inline-flex gap-2">
-                          {invite.roles.map((role) => (
-                            <Badge variant="outline" key={role.id}>
-                              {role.name}
-                            </Badge>
-                          ))}
-                        </span>
-                      </TableCell>
-
-                      {!isMobile && <TableCell></TableCell>}
-
-                      {/* Menu */}
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                            >
-                              <span className="sr-only">Open menu</span>
-                              <Icon name="more_horiz" />
-                            </Button>
-                          </DropdownMenuTrigger>
-
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onClick={() =>
-                                rejectInvite.mutateAsync({
-                                  id: invite.id,
-                                  teamId,
-                                })}
-                              disabled={removeMemberMutation.isPending}
-                            >
-                              <Icon name="delete" />
-                              {rejectInvite.isPending &&
-                                  rejectInvite.variables.id ===
-                                    invite.id
-                                ? "Removing..."
-                                : "Remove invite"}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {sortMembers.map((member) => (
-                    <TableRow key={member.id} className="px-4 py-1.5">
-                      {/* Profile */}
-                      <TableCell>
-                        <span className="flex gap-2 items-center w-43 md:w-56">
-                          <span>
-                            <Avatar
-                              url={member.profiles.metadata.avatar_url}
-                              fallback={member.profiles.metadata.full_name}
-                              className="w-8 h-8"
-                            />
-                          </span>
-
-                          <span className="flex flex-col gap-1 min-w-0">
-                            <span className="font-semibold text-xs truncate">
-                              {getMemberName(member)}
+                          </TableCell>
+                          {!isMobile && <TableCell></TableCell>}
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                >
+                                  <span className="sr-only">Open menu</span>
+                                  <Icon name="more_horiz" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  variant="destructive"
+                                  onClick={() =>
+                                    rejectInvite.mutateAsync({
+                                      id: item.id,
+                                      teamId,
+                                    })}
+                                  disabled={removeMemberMutation.isPending}
+                                >
+                                  <Icon name="delete" />
+                                  {rejectInvite.isPending &&
+                                      rejectInvite.variables.id === item.id
+                                    ? "Removing..."
+                                    : "Remove invite"}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    } else {
+                      // Render member row
+                      const member = item as Member;
+                      return (
+                        <TableRow key={`member-${member.id}`} className="px-4 py-1.5 hover:bg-transparent">
+                          <TableCell>
+                            <span className="flex gap-2 items-center w-43 md:w-56">
+                              <span>
+                                <Avatar
+                                  url={member.profiles.metadata.avatar_url}
+                                  fallback={member.profiles.metadata.full_name}
+                                  className="size-10 border border-border"
+                                />
+                              </span>
+                              <span className="flex flex-col gap-0 min-w-0">
+                                <span className="text-sm font-medium text-foreground truncate">
+                                  {getMemberName(member)}
+                                </span>
+                                <span className="text-sm font-normal text-muted-foreground truncate">
+                                  {member.profiles.email || "N/A"}
+                                </span>
+                              </span>
                             </span>
-                            <span className="text-[10px] leading-3.5 text-muted-foreground truncate">
-                              {member.profiles.email || "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            <span className="inline-flex gap-2">
+                              {member.roles.slice(0, 3).map((role) => (
+                                <Badge variant="outline" key={role.id}>
+                                  {role.name}
+                                </Badge>
+                              ))}
+                              <RolesDropdown
+                                roles={roles}
+                                selectedRoles={member.roles}
+                                onRoleClick={(role, checked) => {
+                                  handleUpdateMemberRole(
+                                    member.user_id,
+                                    role,
+                                    checked,
+                                  );
+                                }}
+                                disabled={updateRoleMutation.isPending}
+                              />
                             </span>
-                          </span>
-                        </span>
-                      </TableCell>
-                      {/* Roles */}
-                      <TableCell>
-                        <span className="inline-flex gap-2">
-                          {member.roles.slice(0, 3).map((role) => (
-                            <Badge variant="outline" key={role.id}>
-                              {role.name}
-                            </Badge>
-                          ))}
-                          <RolesDropdown
-                            roles={roles}
-                            selectedRoles={member.roles}
-                            onRoleClick={(role, checked) => {
-                              handleUpdateMemberRole(
-                                member.user_id,
-                                role,
-                                checked,
-                              );
-                            }}
-                            disabled={updateRoleMutation.isPending}
-                          />
-                        </span>
-                      </TableCell>
-
-                      {/* Last Activity */}
-                      {!isMobile && (
-                        <TableCell>
-                          {member.lastActivity
-                            ? timeAgo(member.lastActivity)
-                            : "N/A"}
-                        </TableCell>
-                      )}
-
-                      {/* Menu */}
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                            >
-                              <span className="sr-only">Open menu</span>
-                              <Icon name="more_horiz" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onClick={() =>
-                                handleRemoveMember(member.id)}
-                              disabled={removeMemberMutation.isPending}
-                            >
-                              <Icon name="delete" />
-                              {removeMemberMutation.isPending &&
-                                  removeMemberMutation.variables?.memberId ===
-                                    member.id
-                                ? "Removing..."
-                                : "Remove Member"}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          </TableCell>
+                          {!isMobile && (
+                            <TableCell>
+                              {member.lastActivity
+                                ? timeAgo(member.lastActivity)
+                                : "N/A"}
+                            </TableCell>
+                          )}
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                >
+                                  <span className="sr-only">Open menu</span>
+                                  <Icon name="more_horiz" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  variant="destructive"
+                                  onClick={() =>
+                                    handleRemoveMember(member.id)}
+                                  disabled={removeMemberMutation.isPending}
+                                >
+                                  <Icon name="waving_hand" />
+                                  {removeMemberMutation.isPending &&
+                                      removeMemberMutation.variables?.memberId ===
+                                        member.id
+                                    ? "Removing..."
+                                    : "Remove Member"}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }
+                  })}
                 </>
               )}
           </TableBody>

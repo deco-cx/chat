@@ -12,16 +12,16 @@ import { isFilePath } from "../../../utils/path.ts";
 
 // Predefined color palette for avatar backgrounds
 const AVATAR_COLORS = [
-  "bg-red-100 text-red-800",
-  "bg-green-100 text-green-800",
-  "bg-blue-100 text-blue-800",
-  "bg-yellow-100 text-yellow-800",
-  "bg-purple-100 text-purple-800",
-  "bg-pink-100 text-pink-800",
-  "bg-indigo-100 text-indigo-800",
-  "bg-orange-100 text-orange-800",
-  "bg-teal-100 text-teal-800",
-  "bg-cyan-100 text-cyan-800",
+  "bg-gradient-to-br from-red-100 to-red-300 text-red-800 shadow-lg shadow-red-300/40 ring-1 ring-red-300/30",
+  "bg-gradient-to-br from-green-100 to-green-300 text-green-800 shadow-lg shadow-green-300/40 ring-1 ring-green-300/30",
+  "bg-gradient-to-br from-blue-100 to-blue-300 text-blue-800 shadow-lg shadow-blue-300/40 ring-1 ring-blue-300/30",
+  "bg-gradient-to-br from-yellow-100 to-yellow-300 text-yellow-800 shadow-lg shadow-yellow-300/40 ring-1 ring-yellow-300/30",
+  "bg-gradient-to-br from-purple-100 to-purple-300 text-purple-800 shadow-lg shadow-purple-300/40 ring-1 ring-purple-300/30",
+  "bg-gradient-to-br from-pink-100 to-pink-300 text-pink-800 shadow-lg shadow-pink-300/40 ring-1 ring-pink-300/30",
+  "bg-gradient-to-br from-indigo-100 to-indigo-300 text-indigo-800 shadow-lg shadow-indigo-300/40 ring-1 ring-indigo-300/30",
+  "bg-gradient-to-br from-orange-100 to-orange-300 text-orange-800 shadow-lg shadow-orange-300/40 ring-1 ring-orange-300/30",
+  "bg-gradient-to-br from-teal-100 to-teal-300 text-teal-800 shadow-lg shadow-teal-300/40 ring-1 ring-teal-300/30",
+  "bg-gradient-to-br from-cyan-100 to-cyan-300 text-cyan-800 shadow-lg shadow-cyan-300/40 ring-1 ring-cyan-300/30",
 ];
 
 /**
@@ -78,10 +78,10 @@ export function Avatar({
   fallbackClassName,
   ...props
 }: AvatarProps) {
-  // Extract initials from string fallback (first two characters)
+  // Extract first letter from string fallback
   const fallbackContent = useMemo(() => {
     if (typeof fallback === "string") {
-      return fallback.substring(0, 2).toUpperCase();
+      return fallback.substring(0, 1).toUpperCase();
     }
     return fallback;
   }, [fallback]);
@@ -95,6 +95,47 @@ export function Avatar({
     return AVATAR_COLORS[0];
   }, [fallback]);
 
+  // Determine font size based on avatar size
+  const fontSize = useMemo(() => {
+    if (!className) return "text-sm";
+    
+    // Extract size information from className
+    if (className.includes("size-6") || className.includes("w-6") || className.includes("h-6")) {
+      return "text-xs"; // 12px for 24px avatar
+    }
+    if (className.includes("size-8") || className.includes("w-8") || className.includes("h-8")) {
+      return "text-sm"; // 14px for 32px avatar  
+    }
+    if (className.includes("size-10") || className.includes("w-10") || className.includes("h-10")) {
+      return "text-base"; // 16px for 40px avatar
+    }
+    if (className.includes("w-24") || className.includes("h-24")) {
+      return "text-2xl"; // 24px for 96px avatar
+    }
+    
+    return "text-sm"; // default
+  }, [className]);
+
+  // Determine border radius based on avatar className
+  const borderRadius = useMemo(() => {
+    if (!className) return "rounded-lg";
+    
+    if (className.includes("rounded-full")) {
+      return "rounded-full";
+    }
+    if (className.includes("rounded-xl")) {
+      return "rounded-xl";
+    }
+    if (className.includes("rounded-lg")) {
+      return "rounded-lg";
+    }
+    if (className.includes("rounded-md")) {
+      return "rounded-md";
+    }
+    
+    return "rounded-lg"; // default
+  }, [className]);
+
   return (
     <AvatarUI className={cn(className)} {...props}>
       <AvatarImage
@@ -105,7 +146,7 @@ export function Avatar({
         )}
       />
       <AvatarFallback
-        className={cn(fallbackColor, "rounded-lg", fallbackClassName)}
+        className={cn(fallbackColor, fontSize, borderRadius, "font-medium drop-shadow-lg", fallbackClassName)}
       >
         {fallbackContent}
       </AvatarFallback>
@@ -123,7 +164,7 @@ function FileAvatar(
       fallback={
         <Skeleton
           className={cn(
-            "w-full h-full rounded-lg",
+            "w-full h-full",
             className,
           )}
         />
@@ -131,9 +172,9 @@ function FileAvatar(
     >
       <Avatar
         url={typeof fileUrl === "string" ? fileUrl : undefined}
-        fallback={name.substring(0, 2)}
+        fallback={name.substring(0, 1)}
         className={cn(
-          "w-full h-full rounded-lg",
+          "w-full h-full",
           className,
         )}
       />
@@ -177,9 +218,9 @@ function AgentAvatarContent(
   return (
     <Avatar
       url={avatar}
-      fallback={name.substring(0, 2)}
+      fallback={name.substring(0, 1)}
       className={cn(
-        "w-full h-full rounded-lg",
+        "w-full h-full",
         className,
       )}
     />
@@ -198,7 +239,7 @@ export const AgentAvatar = (
       fallback={
         <Skeleton
           className={cn(
-            "w-full h-full rounded-lg",
+            "w-full h-full",
             className,
           )}
         />

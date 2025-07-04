@@ -187,7 +187,7 @@ function TeamsToSwitch({ query }: { query: string }) {
               className="w-full flex items-center gap-2 cursor-pointer"
             >
               <Avatar
-                className="w-6 h-6"
+                className="size-6"
                 url={team.avatarUrl}
                 fallback={team.label}
                 objectFit="contain"

@@ -294,7 +294,7 @@ function LoggedUser() {
           <Avatar
             url={userAvatarURL}
             fallback={userName}
-            className="w-6 h-6"
+            className="size-6"
           />
           <span className="text-xs grow">{user.metadata?.full_name}</span>
 
