@@ -48,7 +48,7 @@ export const hooks: TriggerHooks<TriggerData & { type: "webhook" }> = {
     }
 
     if (("callTool" in data)) {
-      return await trigger._callTool(data.callTool);
+      return await trigger._callTool(data.callTool, args);
     }
     const url = trigger.metadata?.reqUrl
       ? new URL(trigger.metadata.reqUrl)

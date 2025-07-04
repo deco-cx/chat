@@ -180,7 +180,7 @@ export class Trigger {
     };
   }
 
-  public async _callTool(tool: CallTool) {
+  public async _callTool(tool: CallTool, args?: unknown) {
     const integration = await this.mcpClient.INTEGRATIONS_GET({
       id: tool.integrationId,
     });
@@ -188,7 +188,7 @@ export class Trigger {
       connection: integration.connection,
       params: {
         name: tool.toolName,
-        arguments: tool.arguments,
+        arguments: tool.arguments ?? args,
       },
     });
   }

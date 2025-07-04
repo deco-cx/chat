@@ -42,7 +42,7 @@ export const CallToolSchema = z.object({
   toolName: z.string().describe("The tool name"),
   arguments: z.record(z.string(), z.unknown()).describe(
     "The arguments to pass to the tool",
-  ),
+  ).optional(),
 });
 export type CallTool = z.infer<typeof CallToolSchema>;
 
