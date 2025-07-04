@@ -25,7 +25,9 @@ export function PlanBadge() {
   return (
     <div className="w-full bg-accent rounded-lg p-2 flex items-start flex-col gap-2">
       <p className="text-sm font-medium">Plan: {plan.title}</p>
-      <p className="text-xs text-muted-foreground">{seatCount}/{seatLimit} used seats</p>
+      <p className="text-xs text-muted-foreground">
+        {seatCount}/{seatLimit} used seats
+      </p>
     </div>
   );
 }

@@ -15,7 +15,7 @@ import {
 import { createCheckoutSession as createStripeCheckoutSession } from "./stripe/checkout.ts";
 import { getPlan } from "./plans.ts";
 
-const getWalletClient = (c: AppContext) => {
+export const getWalletClient = (c: AppContext) => {
   if (!c.envVars.WALLET_API_KEY) {
     throw new InternalServerError("WALLET_API_KEY is not set");
   }
