@@ -20,44 +20,73 @@ export const PromptSchema = z.object({
 /**
  * Schema for cron trigger validation
  */
-export const CronTriggerSchema = z.object({
+export const CronBaseTriggerSchema = z.object({
   title: z.string().describe("The title of the trigger"),
   description: z.string().optional().describe(
     "The description of the trigger",
   ),
   cronExp: z.string(),
-  prompt: PromptSchema,
   type: z.literal("cron"),
-  url: z.string().describe("The URL of the webhook").optional(),
-  bindingId: z.string().optional().describe(
-    "The id of the binding to use for the cron trigger",
-  ),
 });
 
 /**
- * Schema for webhook trigger validation
+ * Schema for cron trigger validation
  */
-export const WebhookTriggerSchema = z.object({
+export const CronTriggerPromptAgentSchema = CronBaseTriggerSchema.extend({
+  prompt: PromptSchema,
+  url: z.string().describe("The URL of the webhook").optional(),
+});
+
+export const CallToolSchema = z.object({
+  integrationId: z.string().describe("The integration ID"),
+  toolName: z.string().describe("The tool name"),
+  arguments: z.record(z.string(), z.unknown()).describe(
+    "The arguments to pass to the tool",
+  ),
+});
+export type CallTool = z.infer<typeof CallToolSchema>;
+
+export const CronTriggerCallToolSchema = CronBaseTriggerSchema.extend({
+  callTool: CallToolSchema,
+});
+
+export const CronTriggerSchema = z.union([
+  CronTriggerPromptAgentSchema,
+  CronTriggerCallToolSchema,
+]);
+
+export const WebhookBaseTriggerSchema = z.object({
   title: z.string().describe("The title of the trigger"),
   description: z.string().optional().describe(
     "The description of the trigger",
   ),
   type: z.literal("webhook"),
   passphrase: z.string().optional().describe("The passphrase for the webhook"),
+  whatsappEnabled: z.boolean().optional().describe(
+    "Whether the webhook is enabled for WhatsApp",
+  ),
+});
+
+/**
+ * Schema for webhook trigger validation
+ */
+export const WebhookTriggerOutputToolSchema = WebhookBaseTriggerSchema.extend({
   outputTool: z.string().optional(),
   schema: z.record(z.string(), z.unknown()).optional().describe(
     "The JSONSchema of the returning of the webhook.\n\n" +
       "By default this webhook returns the LLM generate text response.\n\n" +
       "If a JSONSchema is specified, it returns a JSON with the specified schema.\n\n",
   ),
-  whatsappEnabled: z.boolean().optional().describe(
-    "Whether the webhook is enabled for WhatsApp",
-  ),
-  url: z.string().describe("The URL of the webhook").optional(),
-  bindingId: z.string().optional().describe(
-    "The id of the binding to use for the webhook",
-  ),
 });
+
+export const WebhookTriggerCallToolSchema = WebhookBaseTriggerSchema.extend({
+  callTool: CallToolSchema,
+});
+
+export const WebhookTriggerSchema = z.union([
+  WebhookTriggerOutputToolSchema,
+  WebhookTriggerCallToolSchema,
+]);
 
 export const WebhookTriggerOutputSchema = z.object({
   title: z.string().describe("The title of the trigger"),

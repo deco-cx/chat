@@ -25,6 +25,7 @@ import {
   type WorkspaceTools,
 } from "@deco/sdk/mcp";
 import type { Callbacks } from "@deco/sdk/mcp/binder";
+import type { CallTool } from "@deco/sdk/models";
 import { getTwoFirstSegments, type Workspace } from "@deco/sdk/path";
 import type { Json } from "@deco/sdk/storage";
 import { createServerClient } from "@supabase/ssr";
@@ -177,6 +178,19 @@ export class Trigger {
       policy: policyClient,
       authorization: authorizationClient,
     };
+  }
+
+  public async _callTool(tool: CallTool) {
+    const integration = await this.mcpClient.INTEGRATIONS_GET({
+      id: tool.integrationId,
+    });
+    return this.mcpClient.INTEGRATIONS_CALL_TOOL({
+      connection: integration.connection,
+      params: {
+        name: tool.toolName,
+        arguments: tool.arguments,
+      },
+    });
   }
 
   private _createMCPClient() {

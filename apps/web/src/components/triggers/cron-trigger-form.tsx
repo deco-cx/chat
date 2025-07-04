@@ -1,5 +1,5 @@
 import {
-  CronTriggerSchema,
+  CronTriggerPromptAgentSchema,
   type TriggerOutputSchema,
   useCreateTrigger,
   useUpdateTrigger,
@@ -154,9 +154,9 @@ function CronSelectInput({ value, onChange, required, error }: {
   );
 }
 
-type CronTriggerFormType = z.infer<typeof CronTriggerSchema>;
+type CronTriggerFormType = z.infer<typeof CronTriggerPromptAgentSchema>;
 
-type CronTriggerData = z.infer<typeof CronTriggerSchema>;
+type CronTriggerData = z.infer<typeof CronTriggerPromptAgentSchema>;
 
 export function CronTriggerForm({ agentId, onSuccess, initialValues }: {
   agentId: string;
@@ -176,19 +176,18 @@ export function CronTriggerForm({ agentId, onSuccess, initialValues }: {
     ? initialValues.data as CronTriggerData
     : undefined;
 
-  const form = useForm<CronTriggerFormType & { bindingId?: string }>({
-    resolver: zodResolver(CronTriggerSchema),
+  const form = useForm<CronTriggerFormType>({
+    resolver: zodResolver(CronTriggerPromptAgentSchema),
     defaultValues: {
       title: initialValues?.data.title || "",
       description: initialValues?.data.description || "",
       cronExp: cronData?.cronExp || cronPresets[0].value,
       prompt: cronData?.prompt || { messages: [{ role: "user", content: "" }] },
       type: "cron",
-      bindingId: initialValues?.data.bindingId || "",
     },
   });
 
-  const onSubmit = (data: CronTriggerFormType & { bindingId?: string }) => {
+  const onSubmit = (data: CronTriggerFormType) => {
     if (!data.prompt?.messages?.[0]?.content?.trim()) {
       form.setError("prompt", { message: "Prompt is required" });
       return;
@@ -210,7 +209,6 @@ export function CronTriggerForm({ agentId, onSuccess, initialValues }: {
         }],
       },
       type: "cron" as const,
-      bindingId: data.bindingId || undefined,
     };
     if (initialValues) {
       updateTrigger(

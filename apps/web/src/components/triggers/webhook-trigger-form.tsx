@@ -1,9 +1,8 @@
 import {
   type TriggerOutputSchema,
   useCreateTrigger,
-  useIntegrations,
   useUpdateTrigger,
-  WebhookTriggerSchema,
+  WebhookTriggerOutputToolSchema,
 } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import {
@@ -19,11 +18,9 @@ import { Input } from "@deco/ui/components/input.tsx";
 import { Textarea } from "@deco/ui/components/textarea.tsx";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Ajv from "ajv";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { IntegrationIcon } from "../integrations/common.tsx";
-import { BindingSelector } from "../toolsets/binding-selector.tsx";
 import { SingleToolSelector } from "../toolsets/single-selector.tsx";
 
 function JsonSchemaInput({ value, onChange }: {
@@ -93,13 +90,13 @@ function JsonSchemaInput({ value, onChange }: {
   );
 }
 
-const FormSchema = WebhookTriggerSchema.extend({
+const FormSchema = WebhookTriggerOutputToolSchema.extend({
   schema: z.string().optional(),
 });
 
 type WebhookTriggerFormType = z.infer<typeof FormSchema>;
 
-type WebhookTriggerData = z.infer<typeof WebhookTriggerSchema>;
+type WebhookTriggerData = z.infer<typeof WebhookTriggerOutputToolSchema>;
 
 export function WebhookTriggerForm({
   agentId,
@@ -113,8 +110,6 @@ export function WebhookTriggerForm({
   const { mutate: createTrigger, isPending: isCreating } = useCreateTrigger(
     agentId,
   );
-  const [open, setOpen] = useState(false);
-
   const { mutate: updateTrigger, isPending: isUpdating } = useUpdateTrigger(
     agentId,
   );
@@ -128,7 +123,6 @@ export function WebhookTriggerForm({
   const form = useForm<WebhookTriggerFormType>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      bindingId: initialValues?.data.bindingId || "",
       title: initialValues?.data.title || "",
       description: initialValues?.data.description || "",
       passphrase: webhookData?.passphrase || "",
@@ -167,7 +161,6 @@ export function WebhookTriggerForm({
             passphrase: data.passphrase || undefined,
             schema: schemaObj as Record<string, unknown> | undefined,
             outputTool: data.outputTool || undefined,
-            bindingId: data.bindingId,
           },
         },
         {
@@ -191,7 +184,6 @@ export function WebhookTriggerForm({
           passphrase: data.passphrase || undefined,
           schema: schemaObj as Record<string, unknown> | undefined,
           outputTool: data.outputTool || undefined,
-          bindingId: data.bindingId,
         },
         {
           onSuccess: () => {
@@ -207,15 +199,6 @@ export function WebhookTriggerForm({
       );
     }
   };
-
-  const { data: integrations = [] } = useIntegrations();
-
-  const selected = useMemo(() => {
-    const bindingId = form.watch("bindingId");
-    if (!bindingId) return null;
-    const integration = integrations.find((i) => i.id === bindingId);
-    return integration ? { integration } : null;
-  }, [form.watch("bindingId"), integrations]);
 
   return (
     <Form {...form}>
@@ -294,78 +277,6 @@ export function WebhookTriggerForm({
                   onChange={handleOutputSchemaChange}
                 />
               </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="bindingId"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex flex-col gap-1 px-1 justify-between">
-                <FormLabel>Binding</FormLabel>
-                <span className="text-xs text-muted-foreground">
-                  When selected, this webhook trigger will use the selected
-                  binding
-                </span>
-              </div>
-              <div className="flex flex-col gap-2 justify-center w-min">
-                <FormControl>
-                  <div>
-                    {open
-                      ? (
-                        <BindingSelector
-                          open={open}
-                          onOpenChange={setOpen}
-                          onIntegrationSelected={field.onChange}
-                          initialSelectedIntegration={field.value || null}
-                          binder="Channel"
-                        />
-                      )
-                      : (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full justify-between truncate"
-                          onClick={() => setOpen(true)}
-                        >
-                          <span className="text-muted-foreground">
-                            Select a binding...
-                          </span>
-                          <Icon
-                            name="expand_more"
-                            size={18}
-                            className="ml-2 text-muted-foreground"
-                          />
-                        </Button>
-                      )}
-                  </div>
-                </FormControl>
-                {field.value && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="flex items-center gap-2 px-2 py-1 h-auto"
-                    onClick={() => field.onChange("")}
-                  >
-                    <Icon
-                      name="close"
-                      size={12}
-                      className="text-muted-foreground"
-                    />
-                    <span className="flex items-center gap-2">
-                      <IntegrationIcon
-                        icon={selected?.integration.icon}
-                        className="h-8 w-8"
-                      />
-                      <span className="truncate overflow-hidden whitespace-nowrap max-w-[350px]">
-                        {selected?.integration.name}
-                      </span>
-                    </span>
-                  </Button>
-                )}
-              </div>
               <FormMessage />
             </FormItem>
           )}

@@ -46,6 +46,10 @@ export const hooks: TriggerHooks<TriggerData & { type: "webhook" }> = {
         error: "Invalid passphrase",
       };
     }
+
+    if (("callTool" in data)) {
+      return await trigger._callTool(data.callTool);
+    }
     const url = trigger.metadata?.reqUrl
       ? new URL(trigger.metadata.reqUrl)
       : undefined;
@@ -107,23 +111,18 @@ export const hooks: TriggerHooks<TriggerData & { type: "webhook" }> = {
       });
     }
 
+    const schema = "schema" in data && data.schema
+      ? data.schema
+      : (typeof args === "object" && args !== null &&
+          "schema" in args && typeof args.schema === "object"
+        ? args.schema
+        : undefined);
     if (
-      data.schema ||
-      (typeof args === "object" &&
-        args !== null &&
-        "schema" in args &&
-        typeof args.schema === "object")
+      schema
     ) {
-      // deno-lint-ignore no-explicit-any
-      const schema = data.schema || (args as { schema: any }).schema;
-      try {
-        const result = await agent
-          .generateObject(messages, schema)
-          .then((r) => r.object);
-        return result;
-      } catch (error) {
-        throw error;
-      }
+      return await agent
+        .generateObject(messages, schema)
+        .then((r) => r.object);
     }
 
     return useStream

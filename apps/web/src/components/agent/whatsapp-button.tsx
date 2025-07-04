@@ -101,7 +101,9 @@ export function WhatsAppButton({ isMobile = false }: { isMobile?: boolean }) {
             if (newTrigger) {
               upsertWhatsAppUser(
                 {
-                  triggerUrl: newTrigger.data.url ?? "",
+                  triggerUrl: "url" in newTrigger.data
+                    ? newTrigger.data.url ?? ""
+                    : "",
                   triggerId: newTrigger.id,
                   triggers: [...(whatsappUser?.triggers ?? [])],
                 },
@@ -124,10 +126,10 @@ export function WhatsAppButton({ isMobile = false }: { isMobile?: boolean }) {
         },
       );
     } else {
+      const data = currentWhatsAppRouterTrigger?.data ?? anyTrigger?.data;
       upsertWhatsAppUser(
         {
-          triggerUrl: currentWhatsAppRouterTrigger?.data.url ??
-            anyTrigger?.data.url ?? "",
+          triggerUrl: "url" in data ? data.url ?? "" : "",
           triggerId: currentWhatsAppRouterTrigger?.id ?? anyTrigger?.id,
           triggers: [...(whatsappUser?.triggers ?? [])],
         },
