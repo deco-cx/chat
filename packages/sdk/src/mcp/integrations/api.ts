@@ -79,6 +79,7 @@ export const callTool = createIntegrationManagementTool({
   inputSchema: IntegrationSchema.pick({
     connection: true,
   }).merge(CallToolRequestSchema.pick({ params: true })),
+  outputSchema: CallToolResultSchema,
   handler: async ({ connection: reqConnection, params: toolCall }, c) => {
     c.resourceAccess.grant();
 
@@ -130,6 +131,14 @@ export const listTools = createIntegrationManagementTool({
   description: "List tools of a given integration",
   inputSchema: IntegrationSchema.pick({
     connection: true,
+  }),
+  outputSchema: z.object({
+    tools: z.array(z.object({
+      name: z.string(),
+      description: z.string().optional(),
+      inputSchema: z.record(z.any()).optional(),
+    })).optional(),
+    error: z.string().optional(),
   }),
   handler: async ({ connection }, c) => {
     c.resourceAccess.grant();
@@ -234,6 +243,7 @@ export const listIntegrations = createIntegrationManagementTool({
   inputSchema: z.object({
     binder: BindingsSchema.optional(),
   }),
+  outputSchema: z.array(IntegrationSchema),
   handler: async ({ binder }, c) => {
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
@@ -339,6 +349,7 @@ export const getIntegration = createIntegrationManagementTool({
   inputSchema: z.object({
     id: z.string(),
   }),
+  outputSchema: IntegrationSchema,
   handler: async ({ id }, c) => {
     // preserve the logic of the old canAccess
     const isInnate =
@@ -417,6 +428,7 @@ export const createIntegration = createIntegrationManagementTool({
   name: "INTEGRATIONS_CREATE",
   description: "Create a new integration",
   inputSchema: IntegrationSchema.partial(),
+  outputSchema: IntegrationSchema,
   handler: async (integration, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c.tool.name, c);
@@ -457,6 +469,7 @@ export const updateIntegration = createIntegrationManagementTool({
     id: z.string(),
     integration: IntegrationSchema,
   }),
+  outputSchema: IntegrationSchema,
   handler: async ({ id, integration }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c.tool.name, c);
@@ -495,6 +508,9 @@ export const deleteIntegration = createIntegrationManagementTool({
   description: "Delete an integration by id",
   inputSchema: z.object({
     id: z.string(),
+  }),
+  outputSchema: z.object({
+    success: z.boolean().describe("Whether the deletion was successful"),
   }),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
@@ -620,6 +636,11 @@ export const DECO_INTEGRATION_OAUTH_START = createIntegrationManagementTool({
       "The install id of the integration to start the OAuth flow for",
     ),
   }),
+  outputSchema: z.object({
+    redirectUrl: z.string().describe(
+      "The URL to redirect the user to for OAuth authentication",
+    ),
+  }),
   handler: async ({ appName, returnUrl, installId }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c.tool.name, c);
@@ -672,6 +693,11 @@ export const COMPOSIO_INTEGRATION_OAUTH_START = createIntegrationManagementTool(
     description: "Start the OAuth flow for a Composio integration",
     inputSchema: z.object({
       url: z.string().describe("The url of the Composio MCP server"),
+    }),
+    outputSchema: z.object({
+      redirectUrl: z.string().nullable().describe(
+        "The URL to redirect the user to for OAuth authentication, or null if auto-connection is not possible",
+      ),
     }),
     handler: async ({ url }, c) => {
       assertHasWorkspace(c);
