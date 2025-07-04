@@ -11,9 +11,9 @@ import {
 } from "../assertions.ts";
 import { type AppContext, createToolGroup } from "../context.ts";
 import { userFromDatabase } from "../user.ts";
-import { getPlan } from "../wallet/api.ts";
 import {
   checkAlreadyExistUserIdInTeam,
+  enrichPlanWithTeamMetadata,
   getInviteIdByEmailAndTeam,
   getTeamById,
   insertInvites,
@@ -140,7 +140,7 @@ export const getTeamMembers = createTool({
           name,
           email,
           metadata:users_meta_data_view(id, raw_user_meta_data)
-        ), 
+        ),
         member_roles(roles(id, name))
       `)
         .eq("team_id", teamId)
@@ -426,9 +426,6 @@ export const inviteTeamMembers = createTool({
 
     await assertTeamResourceAccess(c.tool.name, teamIdAsNum, c);
 
-    const plan = await getPlan(c);
-    plan.assertHasFeature("invite-to-workspace");
-
     // Check for valid inputs
     if (!invitees || !teamId || Number.isNaN(teamIdAsNum)) {
       throw new UserInputError("Missing or invalid information");
@@ -482,14 +479,20 @@ export const inviteTeamMembers = createTool({
     }
 
     // Get team data
-    const { data: teamData, error: teamError } = await getTeamById(teamId, db);
-
-    if (!teamData || teamError) {
-      throw new NotFoundError("Team not found");
-    }
+    const teamData = await getTeamById(teamId, db);
+    const plan = enrichPlanWithTeamMetadata({
+      team: teamData,
+      plan: teamData.plan,
+    });
 
     if (!userBelongsToTeam(teamData, user.id)) {
       throw new ForbiddenError(`You don't have access to team ${teamId}`);
+    }
+
+    if (inviteesToInvite.length > plan.remainingSeats) {
+      throw new UserInputError(
+        `You don't have enough remaining seats to invite ${inviteesToInvite.length} users`,
+      );
     }
 
     // Create invites

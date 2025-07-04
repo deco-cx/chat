@@ -64,8 +64,9 @@ function InviteTeamMembersDialogFeatureWall() {
           <h3 className="text-lg font-medium text-foreground">
             Upgrade Required
           </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Inviting team members is only available on paid workspaces
+          <p className="mt-2 text-sm text-muted-foreground max-w-2/3 mx-auto">
+            This team has reached its seat limit. Upgrade your plan to invite
+            more members.
           </p>
         </div>
       </div>
@@ -213,7 +214,7 @@ export function InviteTeamMembersDialog({
       {wrappedTrigger}
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <Protect
-          feature="invite-to-workspace"
+          check={(plan) => !plan.isAtSeatLimit}
           fallback={<InviteTeamMembersDialogFeatureWall />}
         >
           <DialogContent className="sm:max-w-2xl">

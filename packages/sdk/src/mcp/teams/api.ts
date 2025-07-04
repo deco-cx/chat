@@ -3,6 +3,7 @@ import { NotFoundError, UserInputError } from "../../errors.ts";
 import type { Json } from "../../storage/index.ts";
 import type { Theme } from "../../theme.ts";
 import {
+  assertHasWorkspace,
   assertPrincipalIsUser,
   assertTeamResourceAccess,
 } from "../assertions.ts";
@@ -13,6 +14,8 @@ import {
 } from "../fs/api.ts";
 import { createTool } from "../members/api.ts";
 import { mergeThemes } from "./merge-theme.ts";
+import { getWalletClient } from "../wallet/api.ts";
+import { getTeamBySlug } from "../members/invites-utils.ts";
 
 const OWNER_ROLE_ID = 1;
 
@@ -158,6 +161,15 @@ export const buildSignedUrlCreator = ({
   };
 };
 
+const ensureMonthlyPlanCreditsReward = async (c: AppContext) => {
+  assertHasWorkspace(c);
+  const _wallet = getWalletClient(c);
+  const team = await getTeamBySlug(c.workspace.value, c.db);
+  const _monthlyReward = team.plan.monthly_credit_in_dollars;
+  // TODO: ensure a well known transaction with month is done for the team,
+  // using the monthly plan credits reward.
+};
+
 export const getTeam = createTool({
   name: "TEAMS_GET",
   description: "Get a team by slug",
@@ -180,6 +192,8 @@ export const getTeam = createTool({
     if (!teamData) {
       throw new NotFoundError("Team not found or user does not have access");
     }
+
+    await ensureMonthlyPlanCreditsReward(c);
 
     try {
       const workspace = `/shared/${slug}`;

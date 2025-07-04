@@ -1,27 +1,17 @@
-export const FEATURES = [
-  /**
-   * Invite members to workspace.
-   * Personal workspaces don't have this feature.
-   */
-  "invite-to-workspace",
-  /**
-   * AI wallet for managing credits.
-   * Free workspaces start with 2.00 USD, and need
-   * to upgrade to a paid plan to deposit more.
-   */
-  "ai-wallet-deposit",
-  /**
-   * Marks a workspace as a trial workspace.
-   */
-  "trial-usage",
-] as const;
+import type { Database } from "./storage/supabase/schema.ts";
 
-export type Feature = (typeof FEATURES)[number];
+export type Plan = Database["public"]["Tables"]["deco_chat_plans"]["Row"];
 
-export type Plan = "free" | "trial" | "pro";
+export interface PlanWithTeamMetadata extends Plan {
+  isAtSeatLimit: boolean;
+  remainingSeats: number;
+}
 
-export const PLANS_FEATURES: Record<Plan, Feature[]> = {
-  free: [],
-  trial: ["invite-to-workspace", "trial-usage"],
-  pro: ["invite-to-workspace", "ai-wallet-deposit"],
-} as const;
+export const WELL_KNOWN_PLANS = {
+  FREE: "00000000-0000-0000-0000-000000000001",
+  STARTER: "00000000-0000-0000-0000-000000000002",
+  GROWTH: "00000000-0000-0000-0000-000000000003",
+  SCALE: "00000000-0000-0000-0000-000000000004",
+};
+
+export const WELL_KNOWN_PLAN_IDS = new Set(Object.values(WELL_KNOWN_PLANS));

@@ -42,6 +42,7 @@ import { useCurrentTeam } from "../sidebar/team-selector.tsx";
 import { InviteTeamMembersDialog } from "../common/invite-team-members-dialog.tsx";
 import { toast } from "@deco/ui/components/sonner.tsx";
 import { RolesDropdown } from "../common/roles-dropdown.tsx";
+import { PlanBadge } from "../wallet/plan.tsx";
 
 function MemberTitle() {
   return (
@@ -58,13 +59,16 @@ function MemberTableHeader(
   },
 ) {
   return (
-    <div className="">
+    <div className="flex items-center justify-between gap-2">
       <Input
         placeholder="Search"
         onChange={(e) => onChange(e.currentTarget.value)}
         className="w-80"
         disabled={disabled}
       />
+      <div className="w-full max-w-xs">
+        <PlanBadge />
+      </div>
     </div>
   );
 }

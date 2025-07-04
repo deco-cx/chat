@@ -14,16 +14,16 @@ import {
   WellKnownWallets,
 } from "../wallet/index.ts";
 import { InternalServerError, SupabaseLLMVault } from "../index.ts";
-import { getPlan } from "../wallet/api.ts";
+import { getPlan } from "../wallet/plans.ts";
 import type { Transaction } from "../wallet/client.ts";
 import type { LanguageModelUsage } from "ai";
-import type { Plan } from "../../plan.ts";
+import type { PlanWithTeamMetadata } from "../../plan.ts";
 
 const createLLMUsageTransaction = (opts: {
   usage: LanguageModelUsage;
   model: string;
   modelId: string;
-  plan: Plan;
+  plan: PlanWithTeamMetadata;
   userId: string;
   workspace: string;
 }): Transaction => {
@@ -38,14 +38,7 @@ const createLLMUsageTransaction = (opts: {
       type: "user",
       id: opts.userId,
     },
-    payer: opts.plan === "trial"
-      ? {
-        type: "wallet",
-        id: WellKnownWallets.build(
-          ...WellKnownWallets.workspace.trialCredits(opts.workspace),
-        ),
-      }
-      : undefined,
+    // TODO: MARKUP!
     vendor: {
       type: "vendor",
       id: opts.modelId,
@@ -197,7 +190,7 @@ export const aiGenerate = createTool({
       usage: result.usage,
       model: modelId,
       modelId,
-      plan: plan.id,
+      plan,
       userId: typeof c.user.id === "string"
         ? c.user.id
         : `apikey-${c.workspace.value}`,

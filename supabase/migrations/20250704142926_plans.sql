@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS deco_chat_plans (
+    id UUID PRIMARY KEY,
+    title TEXT NOT NULL,
+    markup INTEGER NOT NULL,
+    user_seats INTEGER NOT NULL,
+    monthly_credit_in_dollars INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE public.deco_chat_plans ENABLE ROW LEVEL SECURITY;
+
+INSERT INTO deco_chat_plans (id, title, markup, user_seats, monthly_credit_in_dollars) VALUES
+    ('00000000-0000-0000-0000-000000000001', 'Free', 20, 1, 0),
+    ('00000000-0000-0000-0000-000000000002', 'Starter', 15, 10, 500),
+    ('00000000-0000-0000-0000-000000000003', 'Growth', 10, 50, 2500),
+    ('00000000-0000-0000-0000-000000000004', 'Scale', 5, 100, 5000)
+ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE teams ADD COLUMN IF NOT EXISTS plan_id UUID NOT NULL REFERENCES deco_chat_plans(id) DEFAULT '00000000-0000-0000-0000-000000000001';

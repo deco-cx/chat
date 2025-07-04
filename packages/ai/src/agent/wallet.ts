@@ -9,7 +9,7 @@ import {
 } from "@deco/sdk/mcp/wallet";
 import type { LanguageModelUsage } from "ai";
 import { WebCache } from "@deco/sdk/cache";
-import type { Plan } from "@deco/sdk";
+import type { PlanWithTeamMetadata } from "@deco/sdk";
 
 export interface AgentWalletConfig {
   wallet: ClientOf<WalletAPI>;
@@ -24,7 +24,7 @@ export interface ComputeAgentUsageOpts {
   threadId: string;
   model: string;
   modelId: string;
-  plan: Plan;
+  plan: PlanWithTeamMetadata;
 }
 
 interface CreateUsageTransactionOpts extends ComputeAgentUsageOpts {
@@ -69,14 +69,7 @@ function createAgentUsageTransaction({
     },
     generatedBy,
     vendor,
-    payer: plan === "trial"
-      ? {
-        type: "wallet" as const,
-        id: WellKnownWallets.build(
-          ...WellKnownWallets.workspace.trialCredits(workspace),
-        ),
-      }
-      : undefined,
+    // TODO: MARKUP!
     metadata: {
       ...usageData,
       ...usage,

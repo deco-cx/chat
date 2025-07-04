@@ -450,20 +450,32 @@ export type Database = {
       deco_chat_assets: {
         Row: {
           created_at: string;
+          doc_ids: string[] | null;
           file_url: string;
+          filename: string | null;
+          index_name: string | null;
           metadata: Json | null;
+          path: string | null;
           workspace: string;
         };
         Insert: {
           created_at?: string;
+          doc_ids?: string[] | null;
           file_url: string;
+          filename?: string | null;
+          index_name?: string | null;
           metadata?: Json | null;
+          path?: string | null;
           workspace: string;
         };
         Update: {
           created_at?: string;
+          doc_ids?: string[] | null;
           file_url?: string;
+          filename?: string | null;
+          index_name?: string | null;
           metadata?: Json | null;
+          path?: string | null;
           workspace?: string;
         };
         Relationships: [];
@@ -681,6 +693,36 @@ export type Database = {
           },
         ];
       };
+      deco_chat_plans: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          markup: number;
+          monthly_credit_in_dollars: number;
+          title: string;
+          updated_at: string | null;
+          user_seats: number;
+        };
+        Insert: {
+          created_at?: string | null;
+          id: string;
+          markup: number;
+          monthly_credit_in_dollars: number;
+          title: string;
+          updated_at?: string | null;
+          user_seats: number;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          markup?: number;
+          monthly_credit_in_dollars?: number;
+          title?: string;
+          updated_at?: string | null;
+          user_seats?: number;
+        };
+        Relationships: [];
+      };
       deco_chat_prompts: {
         Row: {
           content: string;
@@ -717,27 +759,27 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           id: string;
-          version_name: string | null;
           name: string | null;
           prompt_id: string;
+          version_name: string | null;
         };
         Insert: {
           content?: string | null;
           created_at?: string;
           created_by?: string | null;
           id?: string;
-          version_name?: string | null;
           name?: string | null;
           prompt_id: string;
+          version_name?: string | null;
         };
         Update: {
           content?: string | null;
           created_at?: string;
           created_by?: string | null;
           id?: string;
-          version_name?: string | null;
           name?: string | null;
           prompt_id?: string;
+          version_name?: string | null;
         };
         Relationships: [];
       };
@@ -2682,6 +2724,7 @@ export type Database = {
           id: number;
           name: string;
           plan: string | null;
+          plan_id: string;
           slug: string | null;
           stripe_subscription_id: string | null;
           theme: Json | null;
@@ -2691,6 +2734,7 @@ export type Database = {
           id?: number;
           name: string;
           plan?: string | null;
+          plan_id?: string;
           slug?: string | null;
           stripe_subscription_id?: string | null;
           theme?: Json | null;
@@ -2700,11 +2744,20 @@ export type Database = {
           id?: number;
           name?: string;
           plan?: string | null;
+          plan_id?: string;
           slug?: string | null;
           stripe_subscription_id?: string | null;
           theme?: Json | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "teams_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "deco_chat_plans";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       temp_webdraw_community_apps: {
         Row: {

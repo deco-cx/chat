@@ -6,7 +6,6 @@ import { Skeleton } from "@deco/ui/components/skeleton.tsx";
 import { Suspense } from "react";
 import { ErrorBoundary } from "../../error-boundary.tsx";
 import { DepositDialog } from "../wallet/deposit-dialog.tsx";
-import { Protect } from "../wallet/plan.tsx";
 import { VoucherDialog } from "../wallet/voucher-dialog.tsx";
 import { EmptyStateCard } from "./usage.tsx";
 
@@ -47,14 +46,9 @@ function BalanceCard() {
           </Suspense>
         </div>
         <div className="flex items-center gap-2">
-          <Protect
-            feature="ai-wallet-deposit"
-            fallback={null}
-          >
-            <div className="w-1/2">
-              <DepositDialog />
-            </div>
-          </Protect>
+          <div className="w-1/2">
+            <DepositDialog />
+          </div>
           <div className="w-full">
             <VoucherDialog />
           </div>

@@ -1,3 +1,5 @@
+import { NotFoundError } from "../../errors.ts";
+import type { Plan, PlanWithTeamMetadata } from "../../plan.ts";
 import type { Client } from "../../storage/index.ts";
 import { type AppContext, getEnv } from "../context.ts";
 import { getInviteEmailTemplate } from "./invite-email-template.ts";
@@ -157,13 +159,77 @@ export async function insertInvites(
   return { data, error: null, status: 201 };
 }
 
+export function enrichPlanWithTeamMetadata({
+  team,
+  plan,
+}: {
+  team: {
+    members: Array<{
+      user_id: string | null;
+      profile: {
+        email: string;
+      } | null;
+    }>;
+  };
+  plan: Plan;
+}): PlanWithTeamMetadata {
+  const extractOptionalProfile = (member: typeof team.members[number]) =>
+    member.profile;
+  const filterExistingEmail = (
+    member: { email: string } | null,
+  ): member is { email: string } => Boolean(member?.email);
+
+  /**
+   * Developers from deco can sometimes join user teams to provide support,
+   * so we don't want to count those as seats.
+   */
+  const excludeDevEmails = (member: { email: string }) =>
+    !member.email.endsWith("@deco.cx");
+
+  const members = team.members.map(extractOptionalProfile).filter(
+    filterExistingEmail,
+  ).filter(excludeDevEmails);
+
+  const remainingSeats = Math.max(
+    plan.user_seats - members.length,
+    0,
+  );
+
+  return {
+    ...plan,
+    remainingSeats,
+    isAtSeatLimit: remainingSeats === 0,
+  };
+}
+
+export async function getTeamBySlug(slug: string, db: Client) {
+  const { data: team, error } = await db.from("teams")
+    .select(
+      "id, name, slug, members(user_id, profile:profiles(email)), plan_id, plan:deco_chat_plans(*)",
+    )
+    .eq("slug", slug)
+    .single();
+
+  if (!team || error || !team.plan) {
+    throw new NotFoundError("Could not find team");
+  }
+
+  return team;
+}
+
 export async function getTeamById(teamId: string, db: Client) {
-  const { data, error } = await db.from("teams")
-    .select("id, name, members(user_id)")
+  const { data: team, error } = await db.from("teams")
+    .select(
+      "id, name, members(user_id, profile:profiles(email)), plan_id, plan:deco_chat_plans(*)",
+    )
     .eq("id", Number(teamId))
     .single();
 
-  return { data, error };
+  if (!team || error || !team.plan) {
+    throw new NotFoundError("Could not find team");
+  }
+
+  return team;
 }
 
 export function userBelongsToTeam(
