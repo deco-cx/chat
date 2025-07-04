@@ -1,15 +1,16 @@
-import { type Feature, usePlanHasFeature } from "@deco/sdk";
+import { type PlanWithTeamMetadata, usePlan } from "@deco/sdk";
 
 export function Protect(
-  { feature, fallback, children }: {
-    feature: Feature;
+  { check, fallback, children }: {
+    check: (plan: PlanWithTeamMetadata) => boolean;
     fallback?: React.ReactNode;
     children: React.ReactNode;
   },
 ) {
-  const hasFeature = usePlanHasFeature(feature);
+  const plan = usePlan();
+  const canShow = check(plan);
 
-  if (!hasFeature) {
+  if (!canShow) {
     return fallback;
   }
 
