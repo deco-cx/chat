@@ -1,6 +1,8 @@
 import { WELL_KNOWN_KNOWLEDGE_BASE_CONNECTION_ID_STARTSWITH } from "../constants.ts";
+import { z } from "zod";
 
-export type FileExt = ".pdf" | ".txt" | ".md" | ".csv" | ".json";
+export const FileExtSchema = z.enum([".pdf", ".txt", ".md", ".csv", ".json"]);
+export type FileExt = z.infer<typeof FileExtSchema>;
 const allowedTypes: FileExt[] = [".pdf", ".txt", ".md", ".csv", ".json"];
 
 export const isAllowedFileExt = (ext: string): ext is FileExt =>
@@ -25,6 +27,24 @@ const allowedContentTypes = [
 export const isAllowedContentType = (
   contentType: string,
 ): contentType is ContentType => allowedContentTypes.includes(contentType);
+
+export const getExtensionFromContentType = (
+  _contentType: string | null,
+): FileExt => {
+  const contentType = _contentType?.toLowerCase() ?? "";
+  if (!contentType || !isAllowedContentType(contentType)) return ".txt";
+
+  const typeMap: Record<ContentType, FileExt> = {
+    "application/pdf": ".pdf",
+    "text/plain": ".txt",
+    "text/markdown": ".md",
+    "text/csv": ".csv",
+    "application/csv": ".csv",
+    "application/json": ".json",
+  };
+
+  return typeMap[contentType];
+};
 
 export const formatFileSize = (bytes: number) => {
   if (bytes === 0 || Number.isNaN(bytes)) return "0 Bytes";

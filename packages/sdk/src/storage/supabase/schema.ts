@@ -450,20 +450,32 @@ export type Database = {
       deco_chat_assets: {
         Row: {
           created_at: string;
+          doc_ids: string[] | null;
           file_url: string;
+          filename: string | null;
+          index_name: string | null;
           metadata: Json | null;
+          path: string | null;
           workspace: string;
         };
         Insert: {
           created_at?: string;
+          doc_ids?: string[] | null;
           file_url: string;
+          filename?: string | null;
+          index_name?: string | null;
           metadata?: Json | null;
+          path?: string | null;
           workspace: string;
         };
         Update: {
           created_at?: string;
+          doc_ids?: string[] | null;
           file_url?: string;
+          filename?: string | null;
+          index_name?: string | null;
           metadata?: Json | null;
+          path?: string | null;
           workspace?: string;
         };
         Relationships: [];

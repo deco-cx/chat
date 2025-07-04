@@ -1,5 +1,13 @@
-import { type Integration, listTools, useIntegrations } from "@deco/sdk";
-import { getKnowledgeBaseIntegrationId } from "@deco/sdk/utils";
+import {
+  type Integration,
+  listTools,
+  useIntegrations,
+  useKnowledgeListFiles,
+} from "@deco/sdk";
+import {
+  getExtensionFromContentType,
+  getKnowledgeBaseIntegrationId,
+} from "@deco/sdk/utils";
 import { Button } from "@deco/ui/components/button.tsx";
 import {
   Form,
@@ -10,17 +18,18 @@ import {
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Input } from "@deco/ui/components/input.tsx";
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
-import { useCallback, useDeferredValue, useState } from "react";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import { LEGACY_INTEGRATIONS } from "../../constants.ts";
 import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 import { useAgentSettingsForm } from "../agent/edit.tsx";
 import {
   AddFileToKnowledgeButton,
-  AgentKnowledgeBaseFileList,
+  KnowledgeBaseFileList,
+  type KnowledgeFile,
 } from "../agent/upload-knowledge-asset.tsx";
 import {
   type UploadFile,
-  useAgentFiles,
+  useAgentKnowledgeIntegration,
   useUploadAgentKnowledgeFiles,
 } from "../agent/hooks/use-agent-knowledge.ts";
 import {
@@ -172,12 +181,52 @@ function Knowledge() {
   const [uploadingFiles, setUploadedFiles] = useState<
     UploadFile[]
   >([]);
-  const { data: files, isLoading } = useAgentFiles(agent.id);
+  const { integration } = useAgentKnowledgeIntegration({ agent });
+  const { data: files, isLoading } = useKnowledgeListFiles({
+    connection: integration?.connection,
+  });
   const { uploadKnowledgeFiles } = useUploadAgentKnowledgeFiles({
     agent,
     onAddFile: setUploadedFiles,
     setIntegrationTools,
   });
+
+  const formatedFiles = useMemo<KnowledgeFile[]>(
+    () =>
+      files
+        ? files.map((file) => ({
+          fileUrl: file.fileUrl,
+          ...file.metadata,
+          name: file.filename,
+        }))
+        : [],
+    [files],
+  );
+
+  // Combine uploaded files with uploading files (uploading files come after uploaded files)
+  // Filter out uploading files that already exist in uploaded files based on file_url
+  const allFiles = useMemo<KnowledgeFile[]>(() => {
+    const uploadedFileUrls = new Set(
+      formatedFiles.map((file) => file.fileUrl),
+    );
+
+    const filteredUploadingFiles = uploadingFiles
+      .filter(({ fileUrl: file_url }) =>
+        !file_url || !uploadedFileUrls.has(file_url)
+      )
+      .map(({ file, uploading, fileUrl }): KnowledgeFile => ({
+        name: file.name,
+        fileType: getExtensionFromContentType(file.type),
+        fileSize: file.size,
+        fileUrl: fileUrl ?? file.name,
+        uploading,
+      }));
+
+    return [
+      ...formatedFiles,
+      ...filteredUploadingFiles,
+    ];
+  }, [formatedFiles, uploadingFiles]);
 
   // Show empty view only if there are no uploaded files AND no uploading files
   const hasNoFiles = (files?.length === 0 || !files) &&
@@ -220,9 +269,10 @@ function Knowledge() {
           disabled={shouldDisableAddButton}
         />
       </div>
-      <AgentKnowledgeBaseFileList
+      <KnowledgeBaseFileList
         agentId={agent.id}
-        uploadingFiles={uploadingFiles}
+        files={allFiles}
+        integration={integration}
       />
     </FormItem>
   );

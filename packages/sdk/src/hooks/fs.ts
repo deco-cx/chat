@@ -39,14 +39,12 @@ export const useWriteFile = () => {
   const { workspace } = useSDK();
 
   return useMutation({
-    mutationFn: ({ path, content, contentType, metadata, skipWrite }: {
+    mutationFn: ({ path, content, contentType, metadata }: {
       path: string;
       content: Uint8Array;
       contentType: string;
       metadata?: Record<string, string | string[]>;
-      skipWrite?: boolean;
-    }) =>
-      writeFile({ path, workspace, content, contentType, metadata, skipWrite }),
+    }) => writeFile({ path, workspace, content, contentType, metadata }),
     onMutate: async ({ path, content, contentType, metadata }) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: KEYS.FILE(workspace, path) });

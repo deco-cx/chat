@@ -1,6 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { embed, embedMany } from "ai";
 import { z } from "zod";
+import { basename } from "@std/path";
 import { KNOWLEDGE_BASE_DIMENSION } from "../../constants.ts";
 import { InternalServerError } from "../../errors.ts";
 import { WorkspaceMemory } from "../../memory/memory.ts";
@@ -14,13 +15,36 @@ import {
   createToolFactory,
   createToolGroup,
 } from "../context.ts";
-import { FileProcessor } from "../file-processor.ts";
+import { FileMetadataSchema, FileProcessor } from "../file-processor.ts";
+import type { Json } from "../../storage/index.ts";
 
 export interface KnowledgeBaseContext extends AppContext {
   name: string;
 }
 export const KNOWLEDGE_BASE_GROUP = "knowledge_base";
 export const DEFAULT_KNOWLEDGE_BASE_NAME = "standard";
+
+// Legacy schema for backward compatibility during migration
+export const KnowledgeFileMetadataSchema = z.object({
+  agentId: z.string().optional(),
+}).merge(FileMetadataSchema);
+
+const addFileDefaults = (file: {
+  fileUrl: string;
+  metadata: Json;
+  path: string | null;
+  docIds: string[] | null;
+  filename: string | null;
+}) => ({
+  ...file,
+  metadata: (file.metadata || {}) as z.infer<
+    typeof KnowledgeFileMetadataSchema
+  >,
+  docIds: file.docIds || [],
+  filename: file.filename ?? "",
+  path: file.path ?? "",
+});
+
 const createKnowledgeBaseTool = createToolFactory<
   WithTool<KnowledgeBaseContext>
 >((c) =>
@@ -57,7 +81,7 @@ async function getVector(c: AppContext) {
 async function batchUpsertVectorContent(
   items: Array<{
     content: string;
-    metadata?: Record<string, string>;
+    metadata?: Record<string, unknown>;
     docId?: string;
   }>,
   c: WithTool<KnowledgeBaseContext>,
@@ -271,19 +295,22 @@ export const search = createKnowledgeBaseTool({
   },
 });
 
-export const addFileToKnowledgeBase = createKnowledgeBaseTool({
+export const addFile = createKnowledgeBaseTool({
   name: "KNOWLEDGE_BASE_ADD_FILE",
   description: "Add a file content into knowledge base",
   inputSchema: z.object({
     fileUrl: z.string(),
-    path: z.string(),
+    path: z.string().describe(
+      "File path from file added using workspace fs_write tool",
+    ).optional(),
+    filename: z.string().describe("The name of the file").optional(),
     metadata: z.record(z.string(), z.union([z.string(), z.boolean()]))
       .optional(),
   }),
   handler: async (
-    { fileUrl, metadata, path },
+    { fileUrl, metadata: _metadata, path, filename },
     c,
-  ): Promise<{ docIds: string[] }> => {
+  ) => {
     await assertWorkspaceResourceAccess(c.tool.name, c);
     const fileProcessor = new FileProcessor({
       chunkSize: 500,
@@ -293,34 +320,115 @@ export const addFileToKnowledgeBase = createKnowledgeBaseTool({
     const proccessedFile = await fileProcessor.processFile(fileUrl);
 
     const fileMetadata = {
-      ...metadata, // metadata has path that is used to get full file path
+      ..._metadata,
       ...proccessedFile.metadata,
-      fileSize: proccessedFile.metadata.fileSize.toString(),
-      chunkCount: proccessedFile.metadata.chunkCount.toString(),
+      fileSize: proccessedFile.metadata.fileSize,
+      chunkCount: proccessedFile.metadata.chunkCount,
     };
 
     const contentItems = proccessedFile.chunks.map((
       chunk: { text: string; metadata: Record<string, string> },
+      idx,
     ) => ({
       content: chunk.text,
       metadata: {
         ...fileMetadata,
         ...chunk.metadata,
+        chunkIndex: idx,
+        fileUrl: fileUrl,
+        path: path,
       },
     }));
 
     const docIds = await batchUpsertVectorContent(contentItems, c);
 
     assertHasWorkspace(c);
-    if (path) {
-      await c.db.from("deco_chat_assets").update({
-        metadata: {
-          ...metadata,
-          docIds,
-        },
-      }).eq("workspace", c.workspace.value).eq("file_url", path);
+
+    // Add fallback logic for filename
+    const finalFilename = filename ??
+      (path ? basename(path) : undefined) ??
+      fileUrl;
+
+    const { data: newFile, error } = await c.db.from("deco_chat_assets").upsert(
+      {
+        file_url: fileUrl,
+        workspace: c.workspace.value,
+        index_name: c.name,
+        path,
+        doc_ids: docIds,
+        filename: finalFilename,
+        metadata: fileMetadata,
+      },
+    ).select("fileUrl:file_url, metadata, path, docIds:doc_ids, filename")
+      .single();
+
+    if (!newFile || error) {
+      throw new InternalServerError("Failed to update file metadata");
     }
 
-    return { docIds };
+    return addFileDefaults(newFile);
+  },
+});
+
+export const listFiles = createKnowledgeBaseTool({
+  name: "KNOWLEDGE_BASE_LIST_FILES",
+  description: "List all files in the knowledge base",
+  inputSchema: z.object({}),
+  handler: async (
+    _,
+    c,
+  ) => {
+    await assertWorkspaceResourceAccess(c.tool.name, c);
+    assertHasWorkspace(c);
+
+    const { data: files } = await c.db.from("deco_chat_assets")
+      .select(
+        "fileUrl:file_url, metadata, path, docIds:doc_ids, filename",
+      ).eq("workspace", c.workspace.value)
+      .eq("index_name", c.name);
+
+    return files?.map(addFileDefaults) ?? [];
+  },
+});
+
+export const deleteFile = createKnowledgeBaseTool({
+  name: "KNOWLEDGE_BASE_DELETE_FILE",
+  description: "Delete a file from the knowledge base",
+  inputSchema: z.object({
+    fileUrl: z.string(),
+  }),
+  handler: async (
+    { fileUrl },
+    c,
+  ) => {
+    await assertWorkspaceResourceAccess(c.tool.name, c);
+    assertHasWorkspace(c);
+
+    const { data: file } = await c.db.from("deco_chat_assets")
+      .select(
+        "file_url, metadata, doc_ids",
+      ).eq("workspace", c.workspace.value)
+      .eq("file_url", fileUrl)
+      .single();
+
+    const docIds = file?.doc_ids;
+
+    if (!docIds) {
+      return {};
+    }
+
+    await forget.handler({ docIds });
+    const { error } = await c.db.from("deco_chat_assets").delete().eq(
+      "file_url",
+      fileUrl,
+    );
+
+    if (error) {
+      throw new InternalServerError(
+        "Failed to delete file from knowledge base",
+      );
+    }
+
+    return { file, docIds };
   },
 });
