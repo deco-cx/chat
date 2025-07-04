@@ -5,13 +5,14 @@ import {
 } from "@deco/sdk";
 import { useFocusChat } from "../components/agents/hooks.ts";
 import { trackEvent } from "./analytics.ts";
+import { useCallback } from "react";
 
 export const useCreateAgent = () => {
   const createAgent = useCreateAgentSDK();
   const updateThreadMessages = useUpdateThreadMessages();
   const focusEditAgent = useFocusChat();
 
-  const create = async (
+  const create = useCallback(async (
     agent: Partial<Agent>,
     { eventName }: { eventName?: string },
   ) => {
@@ -22,7 +23,7 @@ export const useCreateAgent = () => {
       success: true,
       data: agent,
     });
-  };
+  }, [createAgent.mutateAsync, updateThreadMessages, focusEditAgent]);
 
   return create;
 };

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { AgentVisibility } from "../common/agent-visibility.tsx";
 import { AgentAvatar } from "../common/avatar/index.tsx";
 import { ErrorBoundary } from "../../error-boundary.tsx";
+import { useAgentSettingsForm } from "./edit.tsx";
 
 interface Props {
   agentId: string;
@@ -36,7 +37,12 @@ AgentBreadcrumbSegment.UI = (
     variant: "default" | "summary";
   },
 ) => {
-  const { data: agent } = useAgent(agentId);
+  console.log("render breadcrumb");
+  // const { data: agent } = useAgent(agentId);
+  const { form } = useAgentSettingsForm();
+  form.watch('name');
+  form.watch('avatar');
+  const agent = form.getValues();
 
   return (
     <div className="flex items-center gap-2">

@@ -19,6 +19,7 @@ import { InternalServerError } from "../errors.ts";
 import type { Agent } from "../models/agent.ts";
 import { KEYS } from "./api.ts";
 import { useSDK } from "./store.tsx";
+import { useCallback } from "react";
 
 export const useCreateAgent = () => {
   const client = useQueryClient();
@@ -49,7 +50,7 @@ export const useUpdateAgentCache = () => {
   const client = useQueryClient();
   const { workspace } = useSDK();
 
-  const update = (agent: Agent) => {
+  const update = useCallback((agent: Agent) => {
     // Update the individual agent in cache
     const itemKey = KEYS.AGENT(workspace, agent.id);
     client.cancelQueries({ queryKey: itemKey });
@@ -62,7 +63,7 @@ export const useUpdateAgentCache = () => {
       listKey,
       (old) => !old ? [agent] : old.map((a) => a.id === agent.id ? agent : a),
     );
-  };
+  }, [client, workspace]);
 
   return update;
 };
@@ -73,7 +74,7 @@ export const useUpdateAgent = () => {
 
   const update = useMutation({
     mutationFn: (agent: Agent) => updateAgent(workspace, agent),
-    onSuccess: (result) => updateAgentCache(result),
+    onSuccess: updateAgentCache,
   });
 
   return update;

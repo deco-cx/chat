@@ -25,7 +25,14 @@ import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
 import { toast } from "@deco/ui/components/sonner.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createContext, Suspense, useContext, useEffect, useMemo } from "react";
+import {
+  createContext,
+  Suspense,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+} from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { useBlocker, useParams } from "react-router";
 import { useCreateAgent } from "../../hooks/use-create-agent.ts";
@@ -186,6 +193,7 @@ function ActionButtons({
   numberOfChanges: number;
   isWellKnownAgent: boolean;
 }) {
+  console.log("render action buttons");
   const { form, hasChanges, handleSubmit } = useAgentSettingsForm();
 
   return (
@@ -239,7 +247,7 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
   );
   const { data: installedIntegrations } = useIntegrations();
   const updateAgent = useUpdateAgent();
-  const updateAgentCache = useUpdateAgentCache();
+  // const updateAgentCache = useUpdateAgentCache();
   const createAgent = useCreateAgent();
 
   const tabs = useTabsForAgent(agent, TABS);
@@ -267,18 +275,17 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
   const numberOfChanges = Object.keys(form.formState.dirtyFields).length;
   const hasChanges = numberOfChanges > 0;
 
-  // Use deferred values for better UX - updates cache at lower priority
-  const values = form.watch();
-  useEffect(() => {
-    const timeout = setTimeout(() => updateAgentCache(values as Agent), 200);
+  // // Use deferred values for better UX - updates cache at lower priority
+  // const values = form.watch();
+  // useEffect(() => {
+  //   const timeout = setTimeout(() => updateAgentCache(values as Agent), 200);
 
-    return () => clearTimeout(timeout);
-  }, [values, updateAgentCache]);
+  //   return () => clearTimeout(timeout);
+  // }, [values, updateAgentCache]);
 
   const blocked = useBlocker(hasChanges && !isWellKnownAgent);
 
-  const handleSubmit = form.handleSubmit(
-    async (data: Agent) => {
+  const handleSubmit = useCallback(async (data: Agent) => {
       try {
         if (isWellKnownAgent) {
           const id = crypto.randomUUID();
@@ -287,7 +294,7 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
           const wellKnownAgent =
             WELL_KNOWN_AGENTS[agentId as keyof typeof WELL_KNOWN_AGENTS];
           form.reset(wellKnownAgent);
-          updateAgentCache(wellKnownAgent);
+          // updateAgentCache(wellKnownAgent);
           return;
         }
 
@@ -298,18 +305,54 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
           error instanceof Error ? error.message : "Failed to update agent",
         );
       }
-    },
-  );
+    },[form, updateAgent.mutateAsync, createAgent, isWellKnownAgent, agentId]);
 
   function handleCancel() {
     blocked.reset?.();
   }
 
-  function discardChanges() {
+  const discardChanges = useCallback(function discardChanges() {
     form.reset();
-    updateAgentCache(form.getValues() as Agent);
+    // updateAgentCache(form.getValues() as Agent);
     blocked.proceed?.();
-  }
+  }, [form, blocked]);
+
+  const breadcrumbItems = useMemo(() => {
+    return [
+      { link: "/agents", label: "Agents" },
+      {
+        label: (
+          <AgentBreadcrumbSegment
+            agentId={agentId}
+            variant="summary"
+          />
+        ),
+      },
+    ];
+  }, [agentId]);
+
+  const installedIntegrationsMemo = useMemo(() => {
+    return installedIntegrations.filter(
+      (i) => !i.id.includes(agentId),
+    );
+  }, [agentId, installedIntegrations]);
+  const chatUIOptions = useMemo(() => {
+    return {
+      showThreadTools: false,
+      showEditAgent: false,
+      showModelSelector: false,
+    };
+  }, []);
+  const agentSettingsFormContextValue = useMemo(() => {
+    console.log("agent settings form context value changed");
+    return {
+      form: form as UseFormReturn<Agent>,
+      hasChanges: hasChanges,
+      handleSubmit,
+      installedIntegrations: installedIntegrationsMemo,
+      agent,
+    };
+  }, [form, hasChanges, handleSubmit, installedIntegrationsMemo, agent]);
 
   return (
     <>
@@ -338,48 +381,28 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
       <ChatProvider
         agentId={agentId}
         threadId={threadId}
-        uiOptions={{
-          showThreadTools: false,
-          showEditAgent: false,
-          showModelSelector: false,
-        }}
+        uiOptions={chatUIOptions}
       >
         <AgentSettingsFormContext.Provider
-          value={{
-            form: form as UseFormReturn<Agent>,
-            hasChanges: hasChanges,
-            handleSubmit,
-            installedIntegrations: installedIntegrations.filter(
-              (i) => !i.id.includes(agentId),
-            ),
-            agent,
-          }}
+          value={agentSettingsFormContextValue}
         >
           <PageLayout
             tabs={tabs}
             key={agentId}
-            actionButtons={
+            // check if need memo
+            actionButtons={useMemo(() => (
               <ActionButtons
                 discardChanges={discardChanges}
                 numberOfChanges={numberOfChanges}
                 isWellKnownAgent={isWellKnownAgent}
               />
-            }
-            breadcrumb={
+            ), [discardChanges, numberOfChanges, isWellKnownAgent])}
+            // check if need memo
+            breadcrumb={useMemo(() => (
               <DefaultBreadcrumb
-                items={[
-                  { link: "/agents", label: "Agents" },
-                  {
-                    label: (
-                      <AgentBreadcrumbSegment
-                        agentId={agentId}
-                        variant="summary"
-                      />
-                    ),
-                  },
-                ]}
+                items={breadcrumbItems}
               />
-            }
+            ), [breadcrumbItems])}
           />
         </AgentSettingsFormContext.Provider>
       </ChatProvider>
