@@ -24,7 +24,7 @@ import {
   assertWorkspaceResourceAccess,
 } from "../assertions.ts";
 import { createToolGroup } from "../context.ts";
-import { convertFromDatabase, parseId } from "../integrations/api.ts";
+import { convertFromDatabase } from "../integrations/api.ts";
 import { userFromDatabase } from "../user.ts";
 
 const SELECT_TRIGGER_QUERY = `
@@ -164,7 +164,7 @@ export const upsertTrigger = createTool({
         buildWebhookUrl(
           triggerPath,
           data.passphrase,
-          data.outputTool,
+          "outputTool" in data ? data.outputTool : undefined,
         );
     }
 
@@ -175,8 +175,6 @@ export const upsertTrigger = createTool({
       await stub(Trigger).new(triggerPath).delete();
     }
 
-    const bindingId = data.bindingId ? parseId(data.bindingId).uuid : undefined;
-
     // Update database
     const { data: trigger, error } = await db.from("deco_chat_triggers")
       .upsert({
@@ -184,7 +182,6 @@ export const upsertTrigger = createTool({
         workspace,
         agent_id: agentId,
         user_id: userId,
-        binding_id: bindingId,
         metadata: data as Json,
       })
       .select(SELECT_TRIGGER_QUERY)
@@ -200,7 +197,6 @@ export const upsertTrigger = createTool({
         ...data,
         id,
         resourceId: userId,
-        binding: trigger.binding ? convertFromDatabase(trigger.binding) : null,
       },
     );
 
@@ -446,7 +442,6 @@ export const activateTrigger = createTool({
           ...data.metadata as z.infer<typeof TriggerSchema>,
           id: data.id,
           resourceId: typeof user.id === "string" ? user.id : undefined,
-          binding: data.binding ? convertFromDatabase(data.binding) : null,
         },
       );
 

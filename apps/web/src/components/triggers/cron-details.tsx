@@ -1,4 +1,7 @@
-import type { CronTriggerSchema, TriggerOutputSchema } from "@deco/sdk";
+import type {
+  CronTriggerPromptAgentSchema,
+  TriggerOutputSchema,
+} from "@deco/sdk";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import cronstrue from "cronstrue";
 import type { z } from "zod";
@@ -7,7 +10,9 @@ import { CodeBlock } from "./code-block.tsx";
 export function CronDetails(
   { trigger }: { trigger: z.infer<typeof TriggerOutputSchema> },
 ) {
-  const triggerData = trigger.data as z.infer<typeof CronTriggerSchema>;
+  const triggerData = trigger.data as z.infer<
+    typeof CronTriggerPromptAgentSchema
+  >;
   return (
     <div className="space-y-4 border p-4 rounded-md bg-muted">
       <div className="flex items-center gap-2">

@@ -1,8 +1,4 @@
-import type {
-  CreateTriggerInput,
-  IntegrationSchema,
-  ListTriggersOutputSchema,
-} from "@deco/sdk";
+import type { CreateTriggerInput, ListTriggersOutputSchema } from "@deco/sdk";
 import { Hosts } from "@deco/sdk/hosts";
 import type { z } from "zod";
 import { Trigger } from "./trigger.ts";
@@ -18,7 +14,6 @@ export type TriggerData = CreateTriggerInput & {
     email: string;
     avatar: string;
   };
-  binding?: z.infer<typeof IntegrationSchema> | null;
 };
 
 export interface TriggerListResult {
