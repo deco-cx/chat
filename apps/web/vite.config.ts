@@ -26,4 +26,9 @@ export default defineConfig({
       target: "es2022",
     },
   },
+  build: {
+    rollupOptions: {
+      external: ["cloudflare:workers"],
+    },
+  },
 });
