@@ -170,7 +170,7 @@ export class FileProcessor {
 
     if (lines.length === 0) return "";
 
-    const headers = lines[0].split(",").map((h) => h.trim());
+    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
     const rows = lines.slice(1).map((line) => {
       const values = line.split(",").map((v) => v.trim());
       const obj: Record<string, string> = {};
@@ -181,11 +181,7 @@ export class FileProcessor {
     });
 
     // Convert to readable format
-    return rows.map((row) =>
-      Object.entries(row)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(", ")
-    ).join("\n");
+    return this.chunkLongStringsInObject(rows);
   }
 
   /**
@@ -199,44 +195,53 @@ export class FileProcessor {
     const processedData = await this.chunkLongStringsInObject(data);
 
     // Convert JSON to readable text format
-    return this.jsonToText(processedData);
+    return processedData;
   }
 
   /**
    * Recursively process an object to chunk long string properties
    */
   // deno-lint-ignore no-explicit-any
-  private async chunkLongStringsInObject(obj: any): Promise<any> {
-    if (typeof obj === "string") {
-      // If it's a string longer than chunk size, chunk it
-      if (obj.length > this.config.chunkSize) {
-        const chunks = await MDocument.fromText(obj).chunk({
-          maxSize: this.config.chunkSize,
-        });
-        return chunks.map((chunk) => chunk.text);
+  private chunkLongStringsInObject(json: any): string {
+    const parts: string[] = [];
+
+    for (const [key, value] of Object.entries(json)) {
+      if (value === null || value === undefined) continue;
+
+      if (Array.isArray(value)) {
+        if (value.length === 0) continue;
+
+        // Array of primitives
+        if (value.every((v) => typeof v !== 'object' || v === null)) {
+          parts.push(`${this.capitalize(key)}: ${value.join(', ')}`);
+        }
+        // Array of objects
+        else {
+          const objectItems = value
+            .map((item, i) => {
+              if (typeof item === 'object' && item !== null) {
+                const inner = this.chunkLongStringsInObject(item);
+                return `(${inner})`;
+              }
+              return String(item);
+            })
+            .join(', ');
+          parts.push(`${this.capitalize(key)}: ${objectItems}`);
+        }
+      } else if (typeof value === "object") {
+        // Recursively flatten nested objects
+        parts.push(`${this.capitalize(key)}: ${this.chunkLongStringsInObject(value)}`);
+      } else {
+        // Primitive values
+        parts.push(`${this.capitalize(key)}: ${value}`);
       }
-      return obj;
     }
 
-    if (Array.isArray(obj)) {
-      // Process each item in the array
-      return await Promise.all(
-        obj.map((item) => this.chunkLongStringsInObject(item)),
-      );
-    }
+    return parts.join(". ") + ".";
+  }
 
-    if (obj && typeof obj === "object") {
-      // Process each property in the object
-      // deno-lint-ignore no-explicit-any
-      const result: Record<string, any> = {};
-      for (const [key, value] of Object.entries(obj)) {
-        result[key] = await this.chunkLongStringsInObject(value);
-      }
-      return result;
-    }
-
-    // For primitives (numbers, booleans, null), return as-is
-    return obj;
+  private capitalize(str: string) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
   /**
@@ -252,22 +257,13 @@ export class FileProcessor {
       }
       case ".txt":
       case ".csv":
+      case ".json":
       case ".pdf": {
         return MDocument.fromText(text).chunk({
           maxSize: this.config.chunkSize,
         });
       }
-      case ".json": {
-        return MDocument.fromJSON(text).chunk({
-          maxSize: this.config.chunkSize,
-          convertLists: true,
-        });
-      }
-    }
-  }
 
-  // deno-lint-ignore no-explicit-any
-  private jsonToText(obj: Record<any, any>): string {
-    return JSON.stringify(obj);
+    }
   }
 }
