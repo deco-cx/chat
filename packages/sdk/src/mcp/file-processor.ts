@@ -14,7 +14,6 @@ export const FileMetadataSchema = z.object({
   fileSize: z.number(),
   chunkCount: z.number(),
   fileType: FileExtSchema,
-  fileHash: z.string(),
 });
 
 // File processing types
@@ -72,8 +71,6 @@ export class FileProcessor {
       );
     }
 
-    const fileHash = await this.generateFileHash(file);
-
     let content = "";
 
     switch (fileExt) {
@@ -102,7 +99,6 @@ export class FileProcessor {
         fileType: fileExt,
         fileSize: file.size,
         chunkCount: chunks.length,
-        fileHash,
       },
     };
   }
@@ -268,13 +264,6 @@ export class FileProcessor {
         });
       }
     }
-  }
-
-  private async generateFileHash(file: File): Promise<string> {
-    const arrayBuffer = await file.arrayBuffer();
-    const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
   }
 
   // deno-lint-ignore no-explicit-any

@@ -317,3 +317,6 @@ export const WELL_KNOWN_PROMPT_IDS = {
 
 export const isWellKnownPromptId = (id: string): boolean =>
   (Object.values(WELL_KNOWN_PROMPT_IDS) as string[]).includes(id);
+
+export const KNOWLEDGE_BASE_GROUP = "knowledge_base";
+export const DEFAULT_KNOWLEDGE_BASE_NAME = "standard";

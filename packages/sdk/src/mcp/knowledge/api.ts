@@ -2,7 +2,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { embed, embedMany } from "ai";
 import { z } from "zod";
 import { basename } from "@std/path";
-import { KNOWLEDGE_BASE_DIMENSION } from "../../constants.ts";
+import { DEFAULT_KNOWLEDGE_BASE_NAME, KNOWLEDGE_BASE_DIMENSION, KNOWLEDGE_BASE_GROUP } from "../../constants.ts";
 import { InternalServerError } from "../../errors.ts";
 import { WorkspaceMemory } from "../../memory/memory.ts";
 import {
@@ -15,14 +15,13 @@ import {
   createToolFactory,
   createToolGroup,
 } from "../context.ts";
-import { FileMetadataSchema, FileProcessor } from "../file-processor.ts";
+import { FileMetadataSchema } from "../file-processor.ts";
 import type { Json } from "../../storage/index.ts";
+import { callTool } from "../integrations/api.ts";
 
 export interface KnowledgeBaseContext extends AppContext {
   name: string;
 }
-export const KNOWLEDGE_BASE_GROUP = "knowledge_base";
-export const DEFAULT_KNOWLEDGE_BASE_NAME = "standard";
 
 // Legacy schema for backward compatibility during migration
 export const KnowledgeFileMetadataSchema = z.object({
@@ -312,55 +311,88 @@ export const addFile = createKnowledgeBaseTool({
     c,
   ) => {
     await assertWorkspaceResourceAccess(c.tool.name, c);
-    const fileProcessor = new FileProcessor({
-      chunkSize: 500,
-      chunkOverlap: 50,
-    });
 
-    const proccessedFile = await fileProcessor.processFile(fileUrl);
-
-    const fileMetadata = {
-      ..._metadata,
-      ...proccessedFile.metadata,
-      fileSize: proccessedFile.metadata.fileSize,
-      chunkCount: proccessedFile.metadata.chunkCount,
-    };
-
-    const contentItems = proccessedFile.chunks.map((
-      chunk: { text: string; metadata: Record<string, string> },
-      idx,
-    ) => ({
-      content: chunk.text,
-      metadata: {
-        ...fileMetadata,
-        ...chunk.metadata,
-        chunkIndex: idx,
-        fileUrl: fileUrl,
-        path: path,
-      },
-    }));
-
-    const docIds = await batchUpsertVectorContent(contentItems, c);
-
+    // TODO: insert file_url, workspace, index_name, path, filename, metadata into the database.
+    // Also create a new column called status: "processing", "completed", "failed".
     assertHasWorkspace(c);
 
-    // Add fallback logic for filename
-    const finalFilename = filename ??
-      (path ? basename(path) : undefined) ??
-      fileUrl;
-
+    const finalFilename =
+        filename ||
+        (path ? basename(path) : undefined) ||
+        fileUrl;
     const { data: newFile, error } = await c.db.from("deco_chat_assets").upsert(
       {
         file_url: fileUrl,
         workspace: c.workspace.value,
         index_name: c.name,
         path,
-        doc_ids: docIds,
         filename: finalFilename,
-        metadata: fileMetadata,
       },
+      { onConflict: "workspace,file_url" }
     ).select("fileUrl:file_url, metadata, path, docIds:doc_ids, filename")
       .single();
+
+    await callTool.handler({
+      "connection": {
+        "type": "HTTP",
+        "url": "https://localhost-c97526ef.deco.host/mcp"
+      },
+      "params": {
+        "name": "DECO_CHAT_WORKFLOWS_START_FILE_PROCESSING",
+        "arguments": { fileUrl, metadata: _metadata, path, filename, workspace: c.workspace.value, knowledgeBaseName: c.name }
+      }
+    })
+
+    // // Call to start workflow here and move the steps to the workflow.
+    // // Workflow step1: chunk file and create metadata;
+    // const fileProcessor = new FileProcessor({
+    //   chunkSize: 500,
+    //   chunkOverlap: 50,
+    // });
+
+    // const proccessedFile = await fileProcessor.processFile(fileUrl);
+
+    // const fileMetadata = {
+    //   ..._metadata,
+    //   ...proccessedFile.metadata,
+    //   fileSize: proccessedFile.metadata.fileSize,
+    //   chunkCount: proccessedFile.metadata.chunkCount,
+    // };
+    // // Finish step1
+
+    // // Workflow step2: generate embeddings;
+    // const contentItems = proccessedFile.chunks.map((
+    //   chunk: { text: string; metadata: Record<string, string> },
+    //   idx,
+    // ) => ({
+    //   content: chunk.text,
+    //   metadata: {
+    //     ...fileMetadata,
+    //     ...chunk.metadata,
+    //     chunkIndex: idx,
+    //     fileUrl: fileUrl,
+    //     path: path,
+    //   },
+    // }));
+    // // Move the embedding part from batchUpsertVectorContent to this step 
+    // // Finish step2
+
+    // const docIds = await batchUpsertVectorContent(contentItems, c);
+
+    // // Workflow step3: store vectors in vector database;
+    // // Decouple the insert into vector database from the embedding part and put in this step
+    // // Finish step3
+
+    // // Workflow step4: update asset record and set status to "completed"
+
+
+    // // Add fallback logic for filename
+    // const finalFilename = filename ??
+    //   (path ? basename(path) : undefined) ??
+    //   fileUrl;
+
+    // // Finish step4
+
 
     if (!newFile || error) {
       throw new InternalServerError("Failed to update file metadata");
@@ -411,13 +443,7 @@ export const deleteFile = createKnowledgeBaseTool({
       .eq("file_url", fileUrl)
       .single();
 
-    const docIds = file?.doc_ids;
-
-    if (!docIds) {
-      return {};
-    }
-
-    await forget.handler({ docIds });
+    file?.doc_ids && await forget.handler({ docIds: file.doc_ids });
     const { error } = await c.db.from("deco_chat_assets").delete().eq(
       "file_url",
       fileUrl,
@@ -429,6 +455,6 @@ export const deleteFile = createKnowledgeBaseTool({
       );
     }
 
-    return { file, docIds };
+    return { file, docIds: file?.doc_ids ?? [] };
   },
 });

@@ -35,8 +35,9 @@ import {
   NotFoundError,
   WellKnownBindings,
 } from "../index.ts";
-import { KNOWLEDGE_BASE_GROUP, listKnowledgeBases } from "../knowledge/api.ts";
+import { listKnowledgeBases } from "../knowledge/api.ts";
 import { getRegistryApp, listRegistryApps } from "../registry/api.ts";
+import { KNOWLEDGE_BASE_GROUP } from "../../constants.ts";
 import { createServerClient } from "../utils.ts";
 
 // Tool factories for each group

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "knowledge-base-file-process": {
+      "type": "http",
+      "url": "https://localhost-c97526ef.deco.host/mcp"
+    }
+  }
+}

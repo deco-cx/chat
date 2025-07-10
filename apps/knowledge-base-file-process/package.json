@@ -1,0 +1,17 @@
+{
+  "name": "knowledge-base-file-process",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "dependencies": {
+    "@deco/workers-runtime": "npm:@jsr/deco__workers-runtime@^0.2.20-beta.1",
+    "@deco/sdk": "^0.1.1",
+    "@std/path": "npm:@jsr/std__path@1.1.0",
+    "zod": "^3.25.51"
+  },
+  "scripts": {
+    "dev": "deco dev",
+    "deploy": "wrangler deploy --dry-run --outdir ./dist && deco deploy ./dist"
+  }
+}

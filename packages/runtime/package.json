@@ -13,7 +13,8 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./proxy": "./src/proxy.ts"
+    "./proxy": "./src/proxy.ts",
+    "./mastra": "./src/mastra.ts"
   },
   "devDependencies": {
     "wrangler": "^4.13.2"

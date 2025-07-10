@@ -1,0 +1,26 @@
+name = "knowledge-base-file-process"
+main = "main.ts"
+compatibility_date = "2025-06-04"
+compatibility_flags = [ "nodejs_compat" ]
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[deco]
+app = "knowledge-base-file-process"
+workspace = "/users/4303e36f-f179-4ac6-a0bf-d3c95d28b02b"
+enable_workflows = true
+
+[deco.integration]
+description = "File processing workflows for knowledge base management"
+icon = "https://assets.decocache.com/mcp/knowledge-base-icon.png"
+
+[durable_objects]
+[[durable_objects.bindings]]
+name = "DECO_CHAT_WORKFLOW_DO"
+class_name = "Workflow"
+
+[[migrations]]
+tag = "v1"
+new_classes = [ "Workflow" ]
