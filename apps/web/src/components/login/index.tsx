@@ -3,22 +3,13 @@ import { Button } from "@deco/ui/components/button.tsx";
 import { providers } from "./providers.tsx";
 import { Link, useSearchParams } from "react-router";
 import { trackEvent } from "../../hooks/analytics.ts";
-import { useEffect, useState } from "react";
 
 function Login() {
   const [searchParams] = useSearchParams();
   const next = searchParams.get("next");
   const cli = searchParams.has("cli");
 
-  // State for last used login method
-  const [lastLoginMethod, setLastLoginMethod] = useState<string | null>(null);
-
-  useEffect(() => {
-    setLastLoginMethod(localStorage.getItem("lastLoginMethod"));
-  }, []);
-
   const handleProviderClick = (providerName: string) => {
-    localStorage.setItem("lastLoginMethod", providerName);
     trackEvent("deco_chat_login_provider_click", {
       provider: providerName,
     });
@@ -41,13 +32,10 @@ function Login() {
         </div>
         <div className="flex flex-col items-center gap-2.5">
           {providers.map((provider) => {
-            const isLastUsed = provider.name === lastLoginMethod;
             return (
               <div
                 key={provider.name}
-                className={isLastUsed
-                  ? "relative w-full min-w-80 border-2 border-primary rounded-lg bg-primary/5"
-                  : "w-full min-w-80"}
+                className="w-full min-w-80"
               >
                 <Button
                   variant="outline"
@@ -73,11 +61,6 @@ function Login() {
                     <span className="text-sm font-semibold">
                       Continue with {provider.name}
                     </span>
-                    {isLastUsed && (
-                      <span className="ml-3 text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">
-                        Last used
-                      </span>
-                    )}
                   </Link>
                 </Button>
               </div>
