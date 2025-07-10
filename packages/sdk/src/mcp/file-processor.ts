@@ -173,15 +173,10 @@ export class FileProcessor {
     const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
     const rows = lines.slice(1).map((line) => {
       const values = line.split(",").map((v) => v.trim());
-      const obj: Record<string, string> = {};
-      headers.forEach((header, index) => {
-        obj[header] = values[index] || "";
-      });
-      return obj;
+      return values.map((v, i) => `${headers[i]}: ${v}`).join(". ");
     });
 
-    // Convert to readable format
-    return this.chunkLongStringsInObject(rows);
+    return rows.join("\n");
   }
 
   /**
@@ -192,7 +187,7 @@ export class FileProcessor {
     const data = JSON.parse(text);
 
     // Deep recursion to convert all string properties higher than this.config.chunkSize into array of strings
-    const processedData = await this.chunkLongStringsInObject(data);
+    const processedData = this.chunkLongStringsInObject(data);
 
     // Convert JSON to readable text format
     return processedData;
@@ -261,6 +256,7 @@ export class FileProcessor {
       case ".pdf": {
         return MDocument.fromText(text).chunk({
           maxSize: this.config.chunkSize,
+          separators: fileExt === ".csv" ? ["\n"] : undefined,
         });
       }
 
