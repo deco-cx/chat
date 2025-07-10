@@ -179,17 +179,19 @@ export class FileProcessor {
       const values = line.split(",").map((v) => v.trim());
       const obj: Record<string, string> = {};
       headers.forEach((header, index) => {
-        obj[header] = values[index] || "";
+        if (values[index]) {
+          obj[header] = values[index];
+        }
       });
       return obj;
     });
 
+    const processedAsJson = await this.chunkLongStringsInObject(
+      rows,
+    );
+
     // Convert to readable format
-    return rows.map((row) =>
-      Object.entries(row)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(", ")
-    ).join("\n");
+    return this.jsonToText(processedAsJson);
   }
 
   /**
@@ -255,12 +257,12 @@ export class FileProcessor {
         });
       }
       case ".txt":
-      case ".csv":
       case ".pdf": {
         return MDocument.fromText(text).chunk({
           maxSize: this.config.chunkSize,
         });
       }
+      case ".csv":
       case ".json": {
         return MDocument.fromJSON(text).chunk({
           maxSize: this.config.chunkSize,
