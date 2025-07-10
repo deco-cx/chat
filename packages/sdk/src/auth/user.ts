@@ -51,20 +51,22 @@ export async function getUserBySupabaseCookie(
       supabaseServerToken,
     )
     : { supabase: supabaseServerToken };
-  const [{ data: _user }, jwt] = await Promise.all([
-    supabase.auth.getUser(accessToken),
-    jwtIssuer.verify(sessionToken).then((jwt) => {
-      if (!jwt && accessToken) {
-        return jwtIssuer.verify(accessToken);
-      }
-      return jwt;
-    }),
-  ]);
+  const jwt = await jwtIssuer.verify(sessionToken).then((jwt) => {
+    if (!jwt && accessToken) {
+      return jwtIssuer.verify(accessToken);
+    }
+    return jwt;
+  });
 
+  if (jwt) {
+    return jwt;
+  }
+  const { data: _user } = await supabase.auth.getUser(accessToken);
   const user = _user?.user;
   if (!user) {
     return jwt;
   }
+
   let cachettl = undefined;
   if (sessionToken) {
     const { data: session } = await supabase.auth.getSession();
