@@ -22,6 +22,7 @@ import {
 } from "../context.ts";
 import { FileMetadataSchema } from "../file-processor.ts";
 import type { Json } from "../../storage/index.ts";
+import { sendKbFileProcessorMessage } from "../../queues/file-processor/batch-file-processor.ts";
 
 export interface KnowledgeBaseContext extends AppContext {
   name: string;
@@ -316,9 +317,6 @@ export const addFile = createKnowledgeBaseTool({
   ) => {
     await assertWorkspaceResourceAccess(c.tool.name, c);
     assertKbFileProcessor(c);
-
-    // TODO: insert file_url, workspace, index_name, path, filename, metadata into the database.
-    // Also create a new column called status: "processing", "completed", "failed".
     assertHasWorkspace(c);
 
     const finalFilename = filename ||
@@ -336,60 +334,11 @@ export const addFile = createKnowledgeBaseTool({
     ).select("fileUrl:file_url, metadata, path, docIds:doc_ids, filename")
       .single();
 
-    // // Call to start workflow here and move the steps to the workflow.
-    // // Workflow step1: chunk file and create metadata;
-    // const fileProcessor = new FileProcessor({
-    //   chunkSize: 500,
-    //   chunkOverlap: 50,
-    // });
-
-    // const proccessedFile = await fileProcessor.processFile(fileUrl);
-
-    // const fileMetadata = {
-    //   ..._metadata,
-    //   ...proccessedFile.metadata,
-    //   fileSize: proccessedFile.metadata.fileSize,
-    //   chunkCount: proccessedFile.metadata.chunkCount,
-    // };
-    // // Finish step1
-
-    // // Workflow step2: generate embeddings;
-    // const contentItems = proccessedFile.chunks.map((
-    //   chunk: { text: string; metadata: Record<string, string> },
-    //   idx,
-    // ) => ({
-    //   content: chunk.text,
-    //   metadata: {
-    //     ...fileMetadata,
-    //     ...chunk.metadata,
-    //     chunkIndex: idx,
-    //     fileUrl: fileUrl,
-    //     path: path,
-    //   },
-    // }));
-    // // Move the embedding part from batchUpsertVectorContent to this step
-    // // Finish step2
-
-    // const docIds = await batchUpsertVectorContent(contentItems, c);
-
-    // // Workflow step3: store vectors in vector database;
-    // // Decouple the insert into vector database from the embedding part and put in this step
-    // // Finish step3
-
-    // // Workflow step4: update asset record and set status to "completed"
-
-    // // Add fallback logic for filename
-    // const finalFilename = filename ??
-    //   (path ? basename(path) : undefined) ??
-    //   fileUrl;
-
-    // // Finish step4
-
     if (!newFile || error) {
       throw new InternalServerError("Failed to update file metadata");
     }
 
-    await c.kbFileProcessor?.send({
+    await sendKbFileProcessorMessage(c, {
       fileUrl,
       metadata: _metadata,
       path,
@@ -397,16 +346,6 @@ export const addFile = createKnowledgeBaseTool({
       workspace: c.workspace.value,
       knowledgeBaseName: c.name,
     });
-    // await callTool.handler({
-    //   "connection": {
-    //     "type": "HTTP",
-    //     "url": "https://localhost-c97526ef.deco.host/mcp"
-    //   },
-    //   "params": {
-    //     "name": "DECO_CHAT_WORKFLOWS_START_FILE_PROCESSING",
-    //     "arguments": { fileUrl, metadata: _metadata, path, filename, workspace: c.workspace.value, knowledgeBaseName: c.name }
-    //   }
-    // })
 
     return addFileDefaults(newFile);
   },

@@ -7,9 +7,9 @@ import { getRuntimeKey } from "hono/adapter";
 import { default as app } from "./src/app.ts";
 import { email } from "./src/email.ts";
 import {
+  type KbFileProcessorMessage,
   queueHandler as kbFileProcessorQueueHandler,
-  type QueueMessage,
-} from "./src/queue/kb-file-processor/queue-handler.ts";
+} from "./src/queues/kb-file-processor-handler.ts";
 
 const { env } = await import("cloudflare:workers");
 
@@ -89,9 +89,9 @@ export default {
   },
   queue: (batch: MessageBatch, env: any, ctx: ExecutionContext) => {
     switch (batch.queue) {
-      case "KB_FILE_PROCESSOR":
+      case "kb-file-processor":
         return kbFileProcessorQueueHandler(
-          batch as MessageBatch<QueueMessage>,
+          batch as MessageBatch<KbFileProcessorMessage>,
           env,
           ctx,
         );

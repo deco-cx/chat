@@ -18,8 +18,7 @@ type WithWorkspace<TAppContext extends AppContext = AppContext> =
 type WithKbFileProcessor<TAppContext extends AppContext = AppContext> =
   & Omit<TAppContext, "kbFileProcessor">
   & {
-    // deno-lint-ignore no-explicit-any
-    kbFileProcessor: { send: (message: any) => Promise<void> };
+    kbFileProcessor: import("../queues/file-processor/batch-file-processor.ts").KbFileProcessorQueue;
   };
 
 export type WithTool<TAppContext extends AppContext = AppContext> =

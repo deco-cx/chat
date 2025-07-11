@@ -74,6 +74,7 @@
     "./utils": "./src/utils/index.ts",
     "./mcp/bindings": "./src/mcp/bindings/index.ts",
     "./mcp/binder": "./src/mcp/bindings/binder.ts",
-    "./models": "./src/models/index.ts"
+    "./models": "./src/models/index.ts",
+    "./queues": "./src/queues/index.ts"
   }
 }
