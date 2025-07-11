@@ -2,11 +2,16 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { embed, embedMany } from "ai";
 import { z } from "zod";
 import { basename } from "@std/path";
-import { DEFAULT_KNOWLEDGE_BASE_NAME, KNOWLEDGE_BASE_DIMENSION, KNOWLEDGE_BASE_GROUP } from "../../constants.ts";
+import {
+  DEFAULT_KNOWLEDGE_BASE_NAME,
+  KNOWLEDGE_BASE_DIMENSION,
+  KNOWLEDGE_BASE_GROUP,
+} from "../../constants.ts";
 import { InternalServerError } from "../../errors.ts";
 import { WorkspaceMemory } from "../../memory/memory.ts";
 import {
   assertHasWorkspace,
+  assertKbFileProcessor,
   assertWorkspaceResourceAccess,
   type WithTool,
 } from "../assertions.ts";
@@ -17,7 +22,6 @@ import {
 } from "../context.ts";
 import { FileMetadataSchema } from "../file-processor.ts";
 import type { Json } from "../../storage/index.ts";
-import { callTool } from "../integrations/api.ts";
 
 export interface KnowledgeBaseContext extends AppContext {
   name: string;
@@ -311,15 +315,15 @@ export const addFile = createKnowledgeBaseTool({
     c,
   ) => {
     await assertWorkspaceResourceAccess(c.tool.name, c);
+    assertKbFileProcessor(c);
 
     // TODO: insert file_url, workspace, index_name, path, filename, metadata into the database.
     // Also create a new column called status: "processing", "completed", "failed".
     assertHasWorkspace(c);
 
-    const finalFilename =
-        filename ||
-        (path ? basename(path) : undefined) ||
-        fileUrl;
+    const finalFilename = filename ||
+      (path ? basename(path) : undefined) ||
+      fileUrl;
     const { data: newFile, error } = await c.db.from("deco_chat_assets").upsert(
       {
         file_url: fileUrl,
@@ -328,7 +332,7 @@ export const addFile = createKnowledgeBaseTool({
         path,
         filename: finalFilename,
       },
-      { onConflict: "workspace,file_url" }
+      { onConflict: "workspace,file_url" },
     ).select("fileUrl:file_url, metadata, path, docIds:doc_ids, filename")
       .single();
 
@@ -363,7 +367,7 @@ export const addFile = createKnowledgeBaseTool({
     //     path: path,
     //   },
     // }));
-    // // Move the embedding part from batchUpsertVectorContent to this step 
+    // // Move the embedding part from batchUpsertVectorContent to this step
     // // Finish step2
 
     // const docIds = await batchUpsertVectorContent(contentItems, c);
@@ -374,7 +378,6 @@ export const addFile = createKnowledgeBaseTool({
 
     // // Workflow step4: update asset record and set status to "completed"
 
-
     // // Add fallback logic for filename
     // const finalFilename = filename ??
     //   (path ? basename(path) : undefined) ??
@@ -382,12 +385,11 @@ export const addFile = createKnowledgeBaseTool({
 
     // // Finish step4
 
-
     if (!newFile || error) {
       throw new InternalServerError("Failed to update file metadata");
     }
 
-    await c.kbFileProcessor.send({
+    await c.kbFileProcessor?.send({
       fileUrl,
       metadata: _metadata,
       path,

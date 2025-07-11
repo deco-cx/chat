@@ -9,15 +9,15 @@ import { WorkflowInputSchema, WorkflowOutputSchema } from "../types/schemas.ts";
 import { bailWorkflowAndUpdateFileStatus } from "../utils/workflow-error-handler.ts";
 import { createKnowledgeBaseSupabaseClient } from "../utils/supabase-client.ts";
 import { basename } from "@std/path/posix";
-
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import type { Workspace } from "@deco/sdk/path";
 
 /**
  * Get vector client for the workspace
  */
+// deno-lint-ignore no-explicit-any
 async function getVectorClient(env: any, workspace: string) {
   const mem = await WorkspaceMemory.create({
-    workspace: workspace as any, // Cast to avoid type issues in workflow context
+    workspace: workspace as Workspace, // Cast to avoid type issues in workflow context
     tursoAdminToken: env.TURSO_ADMIN_TOKEN,
     tursoOrganization: env.TURSO_ORGANIZATION,
     tokenStorage: env.TURSO_GROUP_DATABASE_TOKEN,
@@ -38,6 +38,7 @@ const DEFAULT_VECTOR_BATCH_SIZE = 50;
 /**
  * Get vector batch size from environment variable or use default
  */
+// deno-lint-ignore no-explicit-any
 const getVectorBatchSize = (env: any): number => {
   const envBatchSize = env.VECTOR_BATCH_SIZE;
   if (envBatchSize) {
@@ -51,7 +52,7 @@ const getVectorBatchSize = (env: any): number => {
 
 export const combinedFileProcessingStep = createStep({
   id: "COMBINED_FILE_PROCESSING",
-  inputSchema:  WorkflowInputSchema.extend({
+  inputSchema: WorkflowInputSchema.extend({
     totalPages: z.number().optional(),
     batchPage: z.number().optional(),
   }),
@@ -62,7 +63,17 @@ export const combinedFileProcessingStep = createStep({
    * are stored in vector db are huge, that's the workaround at moment.
    */
   async execute(context) {
-    const { fileUrl, path, filename, metadata, workspace, knowledgeBaseName, batchPage = 0, totalPages } = context.inputData;
+    const {
+      fileUrl,
+      path,
+      filename,
+      metadata,
+      workspace,
+      knowledgeBaseName,
+      batchPage = 0,
+      totalPages,
+    } = context.inputData;
+    // deno-lint-ignore no-explicit-any
     const env = context.runtimeContext.get("env") as any;
     const batchSize = getVectorBatchSize(env);
 
@@ -90,12 +101,15 @@ export const combinedFileProcessingStep = createStep({
 
       const start = batchPage * batchSize;
       // Convert chunks to the expected format with enriched metadata
-      const enrichedChunks = processedFile.chunks.slice(start, start + batchSize).map((chunk, index) => ({
+      const enrichedChunks = processedFile.chunks.slice(
+        start,
+        start + batchSize,
+      ).map((chunk, index) => ({
         text: chunk.text,
         metadata: {
           ...fileMetadata,
           ...chunk.metadata,
-          chunkIndex: start +index,
+          chunkIndex: start + index,
         },
       }));
 
@@ -130,15 +144,14 @@ export const combinedFileProcessingStep = createStep({
         })),
       });
 
-      allStoredIds = batchResult
+      allStoredIds = batchResult;
 
       console.log(`Successfully stored batch ${batchPage} of ${totalPages}`);
 
       const supabase = createKnowledgeBaseSupabaseClient(env);
 
       // Add fallback logic for filename - matching original handler logic
-      const finalFilename =
-        filename ||
+      const finalFilename = filename ||
         (path ? basename(path) : undefined) ||
         fileUrl;
 
@@ -151,8 +164,8 @@ export const combinedFileProcessingStep = createStep({
         .single();
 
       const docIds = previousAsset?.doc_ids ?? [];
-        
-      allStoredIds = [...docIds, ...batchResult]
+
+      allStoredIds = [...docIds, ...batchResult];
       const { error } = await supabase
         .from("deco_chat_assets")
         .update({
@@ -168,7 +181,8 @@ export const combinedFileProcessingStep = createStep({
         throw error;
       }
 
-      const _totalPages = totalPages ?? Math.ceil(processedFile.metadata.chunkCount / batchSize);
+      const _totalPages = totalPages ??
+        Math.ceil(processedFile.metadata.chunkCount / batchSize);
       return {
         ...context.inputData,
         hasMore: batchPage + 1 < _totalPages,
@@ -176,11 +190,20 @@ export const combinedFileProcessingStep = createStep({
         totalPages: _totalPages,
       };
     } catch (error) {
-      await Promise.all(allStoredIds.map(docId => vector.deleteVector({ indexName: knowledgeBaseName, id: docId })))
+      await Promise.all(
+        allStoredIds.map((docId) =>
+          vector.deleteVector({ indexName: knowledgeBaseName, id: docId })
+        ),
+      );
 
-      console.error(`Combined file processing failed for ${path || filename || fileUrl}:`, error);
+      console.error(
+        `Combined file processing failed for ${path || filename || fileUrl}:`,
+        error,
+      );
       await bailWorkflowAndUpdateFileStatus(context, {
-        message: `Combined file processing failed: ${error instanceof Error ? error.message : String(error)}`,
+        message: `Combined file processing failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       });
 
       // This will never be reached due to context.bail(), but TypeScript needs it

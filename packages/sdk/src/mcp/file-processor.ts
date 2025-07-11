@@ -173,7 +173,9 @@ export class FileProcessor {
     const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
     const rows = lines.slice(1).map((line) => {
       const values = line.split(",").map((v) => v.trim());
-      return values.map((v, i) => !v ? "" : `${headers[i]}: ${v}`).filter(Boolean).join(". ");
+      return values.map((v, i) => !v ? "" : `${headers[i]}: ${v}`).filter(
+        Boolean,
+      ).join(". ");
     });
 
     return rows.join("\n");
@@ -207,25 +209,26 @@ export class FileProcessor {
         if (value.length === 0) continue;
 
         // Array of primitives
-        if (value.every((v) => typeof v !== 'object' || v === null)) {
-          parts.push(`${this.capitalize(key)}: ${value.join(', ')}`);
-        }
-        // Array of objects
+        if (value.every((v) => typeof v !== "object" || v === null)) {
+          parts.push(`${this.capitalize(key)}: ${value.join(", ")}`);
+        } // Array of objects
         else {
           const objectItems = value
-            .map((item, i) => {
-              if (typeof item === 'object' && item !== null) {
+            .map((item) => {
+              if (typeof item === "object" && item !== null) {
                 const inner = this.chunkLongStringsInObject(item);
                 return `(${inner})`;
               }
               return String(item);
             })
-            .join(', ');
+            .join(", ");
           parts.push(`${this.capitalize(key)}: ${objectItems}`);
         }
       } else if (typeof value === "object") {
         // Recursively flatten nested objects
-        parts.push(`${this.capitalize(key)}: ${this.chunkLongStringsInObject(value)}`);
+        parts.push(
+          `${this.capitalize(key)}: ${this.chunkLongStringsInObject(value)}`,
+        );
       } else {
         // Primitive values
         parts.push(`${this.capitalize(key)}: ${value}`);
@@ -259,7 +262,6 @@ export class FileProcessor {
           separators: fileExt === ".csv" ? ["\n"] : undefined,
         });
       }
-
     }
   }
 }

@@ -47,7 +47,7 @@ export interface Vars {
   cf: Cloudflare;
   walletBinding?: { fetch: typeof fetch };
   immutableRes?: boolean;
-  kbFileProcessor: { send: (message: any) => Promise<void> };
+  kbFileProcessor?: { send: (message: any) => Promise<void> };
   stub: <
     Constructor extends
       | ActorConstructor<Trigger>

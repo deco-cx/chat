@@ -15,6 +15,7 @@ export type Bindings = EnvVars & {
       metadata?: { outbound?: TOutbound },
     ) => { fetch: typeof fetch };
   };
+  KB_FILE_PROCESSOR?: { send: (message: any) => Promise<void> };
 };
 
 export type AppEnv = {

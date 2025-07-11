@@ -6,4 +6,4 @@ const { Workflow, ...app } = withRuntime({
 });
 
 export { Workflow };
-export default app; 
+export default app;
