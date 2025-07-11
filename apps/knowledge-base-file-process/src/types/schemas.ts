@@ -15,10 +15,9 @@ export const WorkflowInputSchema = z.object({
 
 // Workflow Output Schema
 export const WorkflowOutputSchema = z.object({
-  success: z.boolean(),
-  docIds: z.array(z.string()).optional(),
-  chunksProcessed: z.number().optional(),
-  error: z.string().optional(),
+  hasMore: z.boolean(),
+  batchPage: z.number(),
+  totalPages: z.number(),
 });
 
 export type WorkflowInput = z.infer<typeof WorkflowInputSchema>;

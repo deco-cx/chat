@@ -332,17 +332,6 @@ export const addFile = createKnowledgeBaseTool({
     ).select("fileUrl:file_url, metadata, path, docIds:doc_ids, filename")
       .single();
 
-    await callTool.handler({
-      "connection": {
-        "type": "HTTP",
-        "url": "https://localhost-c97526ef.deco.host/mcp"
-      },
-      "params": {
-        "name": "DECO_CHAT_WORKFLOWS_START_FILE_PROCESSING",
-        "arguments": { fileUrl, metadata: _metadata, path, filename, workspace: c.workspace.value, knowledgeBaseName: c.name }
-      }
-    })
-
     // // Call to start workflow here and move the steps to the workflow.
     // // Workflow step1: chunk file and create metadata;
     // const fileProcessor = new FileProcessor({
@@ -397,6 +386,17 @@ export const addFile = createKnowledgeBaseTool({
     if (!newFile || error) {
       throw new InternalServerError("Failed to update file metadata");
     }
+
+    await callTool.handler({
+      "connection": {
+        "type": "HTTP",
+        "url": "https://localhost-c97526ef.deco.host/mcp"
+      },
+      "params": {
+        "name": "DECO_CHAT_WORKFLOWS_START_FILE_PROCESSING",
+        "arguments": { fileUrl, metadata: _metadata, path, filename, workspace: c.workspace.value, knowledgeBaseName: c.name }
+      }
+    })
 
     return addFileDefaults(newFile);
   },

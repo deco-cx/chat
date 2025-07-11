@@ -33,7 +33,7 @@ async function getVectorClient(env: any, workspace: string) {
   return vector;
 }
 
-const DEFAULT_VECTOR_BATCH_SIZE = 10;
+const DEFAULT_VECTOR_BATCH_SIZE = 50;
 
 /**
  * Get vector batch size from environment variable or use default
@@ -51,7 +51,10 @@ const getVectorBatchSize = (env: any): number => {
 
 export const combinedFileProcessingStep = createStep({
   id: "COMBINED_FILE_PROCESSING",
-  inputSchema: WorkflowInputSchema,
+  inputSchema:  WorkflowInputSchema.extend({
+    totalPages: z.number().optional(),
+    batchPage: z.number().optional(),
+  }),
   outputSchema: WorkflowOutputSchema,
   /**
    * @author: igorbrasileiro
@@ -59,11 +62,11 @@ export const combinedFileProcessingStep = createStep({
    * are stored in vector db are huge, that's the workaround at moment.
    */
   async execute(context) {
-    const { fileUrl, path, filename, metadata, workspace, knowledgeBaseName } = context.inputData;
+    const { fileUrl, path, filename, metadata, workspace, knowledgeBaseName, batchPage = 0, totalPages } = context.inputData;
     const env = context.runtimeContext.get("env") as any;
     const batchSize = getVectorBatchSize(env);
 
-    const allStoredIds: string[] = [];
+    let allStoredIds: string[] = [];
     const vector = await getVectorClient(env, workspace);
 
     try {
@@ -85,13 +88,14 @@ export const combinedFileProcessingStep = createStep({
         ...(path ? { path } : { fileUrl }),
       };
 
+      const start = batchPage * batchSize;
       // Convert chunks to the expected format with enriched metadata
-      const enrichedChunks = processedFile.chunks.map((chunk, index) => ({
+      const enrichedChunks = processedFile.chunks.slice(start, start + batchSize).map((chunk, index) => ({
         text: chunk.text,
         metadata: {
           ...fileMetadata,
           ...chunk.metadata,
-          chunkIndex: index,
+          chunkIndex: start +index,
         },
       }));
 
@@ -104,17 +108,10 @@ export const combinedFileProcessingStep = createStep({
       });
       const embedder = openai.embedding("text-embedding-3-small");
 
-      // Generate docIds for items
-      const itemsWithIds = enrichedChunks.map((chunk) => ({
-        content: chunk.text,
-        metadata: chunk.metadata,
-        docId: crypto.randomUUID(),
-      }));
-
       // Create embeddings for all items using embedMany (handles batching internally)
       const { embeddings } = await embedMany({
         model: embedder,
-        values: itemsWithIds.map((item) => item.content),
+        values: enrichedChunks.map((item) => item.text),
       });
 
       console.log(`Generated ${embeddings.length} embeddings.`);
@@ -122,33 +119,20 @@ export const combinedFileProcessingStep = createStep({
       // Step 3: Store vectors in database
       console.log("Storing vectors in database...");
 
-      // Process vectors in batches
-      for (let i = 0; i < embeddings.length; i += batchSize) {
-        console.log("Storing batch", i, i + batchSize);
-        const batchEmbeddings = embeddings.slice(i, i + batchSize);
-        const batchItems = itemsWithIds.slice(i, i + batchSize);
+      const batchResult = await vector.upsert({
+        indexName: knowledgeBaseName,
+        vectors: embeddings,
+        metadata: enrichedChunks.map((item) => ({
+          metadata: {
+            ...item.metadata,
+            content: item.text,
+          },
+        })),
+      });
 
-        // Store this batch using the vector client
-        const batchResult = await vector.upsert({
-          indexName: knowledgeBaseName,
-          vectors: batchEmbeddings,
-          metadata: batchItems.map((item) => ({
-            metadata: {
-              ...item.metadata,
-              content: item.content,
-            },
-          })),
-        });
+      allStoredIds = batchResult
 
-        allStoredIds.push(...batchResult);
-
-        // Small delay between batches to avoid overwhelming the database
-        if (i + batchSize < embeddings.length) {
-          await sleep(1e3);          
-        }
-      }
-
-      console.log(`Successfully stored ${allStoredIds.length} vectors.`);
+      console.log(`Successfully stored batch ${batchPage} of ${totalPages}`);
 
       const supabase = createKnowledgeBaseSupabaseClient(env);
 
@@ -159,7 +143,17 @@ export const combinedFileProcessingStep = createStep({
         fileUrl;
 
       // Upsert the asset record using typed Supabase client
-      const {  error } = await supabase
+      const { data: previousAsset } = await supabase
+        .from("deco_chat_assets")
+        .select("doc_ids")
+        .eq("workspace", workspace)
+        .eq("file_url", fileUrl)
+        .single();
+
+      const docIds = previousAsset?.doc_ids ?? [];
+        
+      allStoredIds = [...docIds, ...batchResult]
+      const { error } = await supabase
         .from("deco_chat_assets")
         .update({
           doc_ids: allStoredIds,
@@ -174,11 +168,12 @@ export const combinedFileProcessingStep = createStep({
         throw error;
       }
 
+      const _totalPages = totalPages ?? Math.ceil(processedFile.metadata.chunkCount / batchSize);
       return {
-        success: true,
-        fileUrl,
-        workspace,
-        path
+        ...context.inputData,
+        hasMore: batchPage + 1 < _totalPages,
+        batchPage: batchPage + 1,
+        totalPages: _totalPages,
       };
     } catch (error) {
       await Promise.all(allStoredIds.map(docId => vector.deleteVector({ indexName: knowledgeBaseName, id: docId })))
@@ -192,4 +187,4 @@ export const combinedFileProcessingStep = createStep({
       throw error;
     }
   },
-}); 
+});

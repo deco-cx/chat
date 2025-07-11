@@ -173,7 +173,7 @@ export class FileProcessor {
     const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
     const rows = lines.slice(1).map((line) => {
       const values = line.split(",").map((v) => v.trim());
-      return values.map((v, i) => `${headers[i]}: ${v}`).join(". ");
+      return values.map((v, i) => !v ? "" : `${headers[i]}: ${v}`).filter(Boolean).join(". ");
     });
 
     return rows.join("\n");

@@ -10,5 +10,7 @@ export const createFileProcessingWorkflow = () =>
         outputSchema: WorkflowOutputSchema,
     })
         // Combined step: Process file, generate embeddings, and store vectors
-        .then(combinedFileProcessingStep)        
+        .dowhile(combinedFileProcessingStep, ({ inputData }) => {
+            return Promise.resolve(inputData.hasMore)
+        })
         .commit();
