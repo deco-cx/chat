@@ -165,6 +165,7 @@ export const useUploadAgentKnowledgeFiles = (
 
           const fileUrl = await readFile(
             path,
+            { expiresIn: 60 * 60  } // 1 hour days
           );
 
           if (!fileUrl) {

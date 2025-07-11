@@ -16,10 +16,10 @@ export const useReadFile = () => {
   const queryClient = useQueryClient();
   const { workspace } = useSDK();
 
-  return (path: string) =>
+  return (path: string, { expiresIn }: { expiresIn?: number } = {}) =>
     queryClient.fetchQuery({
       queryKey: KEYS.FILE(workspace, path),
-      queryFn: () => readFile({ workspace, path }),
+      queryFn: () => readFile({ workspace, path, expiresIn }),
     });
 };
 
