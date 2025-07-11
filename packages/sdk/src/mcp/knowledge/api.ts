@@ -387,16 +387,24 @@ export const addFile = createKnowledgeBaseTool({
       throw new InternalServerError("Failed to update file metadata");
     }
 
-    await callTool.handler({
-      "connection": {
-        "type": "HTTP",
-        "url": "https://localhost-c97526ef.deco.host/mcp"
-      },
-      "params": {
-        "name": "DECO_CHAT_WORKFLOWS_START_FILE_PROCESSING",
-        "arguments": { fileUrl, metadata: _metadata, path, filename, workspace: c.workspace.value, knowledgeBaseName: c.name }
-      }
-    })
+    await c.kbFileProcessor.send({
+      fileUrl,
+      metadata: _metadata,
+      path,
+      filename,
+      workspace: c.workspace.value,
+      knowledgeBaseName: c.name,
+    });
+    // await callTool.handler({
+    //   "connection": {
+    //     "type": "HTTP",
+    //     "url": "https://localhost-c97526ef.deco.host/mcp"
+    //   },
+    //   "params": {
+    //     "name": "DECO_CHAT_WORKFLOWS_START_FILE_PROCESSING",
+    //     "arguments": { fileUrl, metadata: _metadata, path, filename, workspace: c.workspace.value, knowledgeBaseName: c.name }
+    //   }
+    // })
 
     return addFileDefaults(newFile);
   },

@@ -48,3 +48,15 @@ new_classes = ["TestDO"]
 [[migrations]]
 tag = "v3"
 deleted_classes = ["TestDO"]
+
+# Queue bindings for knowledge base file processing
+[[queues.consumers]]
+queue = "kb-file-processor"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 2
+dead_letter_queue = "kb-file-processor-dlq"
+
+[[queues.producers]]
+queue = "kb-file-processor"
+binding = "KB_FILE_PROCESSOR"

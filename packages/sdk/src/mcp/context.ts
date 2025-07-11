@@ -18,7 +18,6 @@ import { ForbiddenError, type HttpError } from "../errors.ts";
 import type { WithTool } from "./assertions.ts";
 import type { ResourceAccess } from "./auth/index.ts";
 import { addGroup, type GroupIntegration } from "./groups.ts";
-
 export type UserPrincipal = Pick<SupaUser, "id" | "email" | "is_anonymous">;
 
 export interface JWTPrincipal extends JWTPayload {
@@ -48,6 +47,7 @@ export interface Vars {
   cf: Cloudflare;
   walletBinding?: { fetch: typeof fetch };
   immutableRes?: boolean;
+  kbFileProcessor: { send: (message: any) => Promise<void> };
   stub: <
     Constructor extends
       | ActorConstructor<Trigger>
