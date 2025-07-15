@@ -1,6 +1,6 @@
 import type { Client, Json } from "@deco/sdk/storage";
 import { WebCache } from "../cache/index.ts";
-import { UserPrincipal } from "../mcp/index.ts";
+import type { UserPrincipal } from "../mcp/index.ts";
 import { z } from "zod";
 
 // Cache duration in seconds (WebCache expects seconds)
@@ -575,11 +575,15 @@ export class AuthorizationClient {
     resource: string,
     ctx: Partial<AuthContext> = {},
   ): boolean {
-    const fn = statement.matchCondition
-      ? MatcherFunctions[statement.matchCondition.resource].handler
+    const matchFn = statement.matchCondition
+      ? MatcherFunctions[statement.matchCondition.resource]
       : undefined;
 
-    const matched = fn?.(statement.matchCondition!, ctx) ?? true;
+    const matched = matchFn?.handler?.(
+      // deno-lint-ignore no-explicit-any
+      matchFn?.schema.parse(statement.matchCondition!) as unknown as any,
+      ctx,
+    ) ?? true;
 
     return matched && statement.resource === resource;
   }
@@ -587,6 +591,7 @@ export class AuthorizationClient {
 
 interface AuthContext {
   user?: UserPrincipal;
+  integrationId?: string;
 }
 
 interface MatchFunction<TSchema extends z.ZodTypeAny = z.ZodTypeAny> {
@@ -603,8 +608,10 @@ const createMatchFn = <TSchema extends z.ZodTypeAny>(
 ): MatchFunction<TSchema> => def;
 
 const MatcherFunctions = {
-  is_not_user: createMatchFn({
-    schema: z.object({ userId: z.string() }),
-    handler: ({ userId }, c) => !!c.user && c.user.id !== userId,
+  access_integration_tool: createMatchFn({
+    schema: z.object({ integrationId: z.string() }),
+    handler: ({ integrationId }, c) => {
+      return c.integrationId === integrationId;
+    },
   }),
 };
