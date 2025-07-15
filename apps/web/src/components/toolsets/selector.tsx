@@ -60,6 +60,7 @@ export function IntegrationListItem({
   onRemove,
   onConfigure,
   hideTools,
+  hideActions,
   searchTerm = "",
 }: {
   toolsSet: ToolsMap;
@@ -68,6 +69,7 @@ export function IntegrationListItem({
   onConfigure: (integration: Integration) => void;
   onRemove: (integrationId: string) => void;
   hideTools?: boolean;
+  hideActions?: boolean;
   searchTerm?: string;
 }) {
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -139,11 +141,13 @@ export function IntegrationListItem({
             </span>
           </div>
         </div>
-        <IntegrationListItemActions
-          integration={integration}
-          onConfigure={() => onConfigure(integration)}
-          onRemove={onRemove}
-        />
+        {!hideActions && (
+          <IntegrationListItemActions
+            integration={integration}
+            onConfigure={() => onConfigure(integration)}
+            onRemove={onRemove}
+          />
+        )}
       </div>
       {isEmpty && (
         <div

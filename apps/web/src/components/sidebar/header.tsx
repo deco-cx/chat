@@ -18,20 +18,18 @@ export function Header() {
         <SidebarMenuItem className="flex items-center justify-between">
           <TeamSelector />
 
-          <SidebarMenuButton asChild>
-            <Button
-              data-open={open}
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="size-8"
-            >
-              <Icon
-                name={isMobile ? "menu" : "dock_to_right"}
-                size={16}
-                className="text-muted-foreground"
-              />
-            </Button>
+          <SidebarMenuButton
+            data-open={open}
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="size-8"
+          >
+            <Icon
+              name={isMobile ? "menu" : "dock_to_right"}
+              size={16}
+              className="text-muted-foreground"
+            />
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
