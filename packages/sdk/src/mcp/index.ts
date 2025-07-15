@@ -103,6 +103,7 @@ export const WORKSPACE_TOOLS = [
   walletAPI.getWalletAccount,
   walletAPI.getThreadsUsage,
   walletAPI.getAgentsUsage,
+  walletAPI.getToolsUsage,
   walletAPI.createCheckoutSession,
   walletAPI.redeemWalletVoucher,
   walletAPI.createWalletVoucher,
@@ -158,6 +159,8 @@ export const WORKSPACE_TOOLS = [
   apiKeysAPI.validateApiKey,
   databasesAPI.runSql,
   aiAPI.aiGenerate,
+  aiAPI.aiGenerateImage,
+  aiAPI.listPrices,
 ] as const;
 
 export const AGENT_TOOLS = [
@@ -168,6 +171,8 @@ export const AGENT_TOOLS = [
 
 export const AI_TOOLS = [
   aiAPI.aiGenerate,
+  aiAPI.aiGenerateImage,
+  aiAPI.listPrices,
 ] as const;
 
 export type GlobalTools = typeof GLOBAL_TOOLS;

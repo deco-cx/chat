@@ -4,6 +4,7 @@ import {
   useAgents,
   useTeamMembersBySlug,
   useUsagePerAgent,
+  useUsagePerTool,
   useUsagePerThread,
   WELL_KNOWN_AGENTS,
 } from "@deco/sdk";
@@ -392,6 +393,96 @@ CreditsUsedPerThread.Fallback = () => (
   </Card>
 );
 
+
+function CreditsUsedPerTool({
+}: {
+}) {
+  const [range, setRange] = useState<"day" | "week" | "month">("week");
+  const tools = useUsagePerTool({ range });
+
+  const enrichedTools = tools.items.map((tool) => {
+    return {
+      ...tool,
+    };
+  });
+
+  return (
+    <Card className="bg-background w-full h-full flex flex-col rounded-md border-none gap-0">
+      <div className="w-full text-sm p-4 border-b border-border flex justify-between items-center">
+        <span>Credits Used Per Tool</span>
+        <Select
+          value={range}
+          onValueChange={(value: "day" | "week" | "month") => setRange(value)}
+        >
+          <SelectTrigger className="!h-7 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="day" className="text-xs">Today</SelectItem>
+            <SelectItem value="week" className="text-xs">This Week</SelectItem>
+            <SelectItem value="month" className="text-xs">
+              This Month
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-3 pb-8 pt-3">
+        {enrichedTools.length === 0
+          ? (
+            <EmptyStateCard
+              title="No tool data"
+              description="There haven't been any tools used during this time period."
+            />
+          )
+          : (
+            enrichedTools.map((tool) => (
+              <Dialog key={tool.id}>
+                <DialogTrigger asChild>
+                  <div className="flex items-center justify-between p-4 mb-2 rounded-lg hover:bg-muted transition-colors cursor-pointer">
+                    <div className="flex items-center gap-4">
+                      <div className="flex flex-col gap-1">
+                        <span>
+                          {tool.id}
+                        </span>
+                        <span className="text-sm font-medium text-foreground">
+                          {tool.toolId}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {tool.total}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground">
+                        {tool.total}
+                      </span>
+                    </div>
+                  </div>
+                </DialogTrigger>
+              </Dialog>
+            ))
+          )}
+      </div>
+    </Card>
+  );
+}
+
+CreditsUsedPerTool.Fallback = () => (
+  <Card className="bg-background w-full h-full flex flex-col rounded-md border-none gap-0">
+    <div className="w-full text-sm p-4 border-b border-border flex justify-between items-center">
+      <span>Credits Used Per Tool</span>
+    </div>
+    <CardContent className="flex flex-col items-center justify-center gap-2 p-3 overflow-y-auto">
+      {Array.from({ length: 10 }).map((_, index) => (
+        <div key={index} className="w-full h-[72px] bg-muted rounded-md" />
+      ))}
+    </CardContent>
+  </Card>
+);
+
 interface ThreadDetailsProps {
   thread: {
     agent?: Agent;
@@ -540,6 +631,11 @@ export default function Usage() {
   return (
     <div className="h-full text-foreground bg-background">
       <div className="flex flex-col items-center h-full gap-4 w-full">
+        <div className="w-full h-full max-h-[400px]">
+          <Suspense fallback={<CreditsUsedPerTool.Fallback />}>
+            <CreditsUsedPerTool />
+          </Suspense>
+        </div>
         <div className="w-full flex items-center justify-center">
           <Suspense fallback={<CreditsUsedPerAgentCard.Fallback />}>
             <CreditsUsedPerAgentCard agents={agents} />

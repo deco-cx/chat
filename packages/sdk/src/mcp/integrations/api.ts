@@ -41,6 +41,12 @@ import { listKnowledgeBases } from "../knowledge/api.ts";
 import { getRegistryApp, listRegistryApps } from "../registry/api.ts";
 import { KNOWLEDGE_BASE_GROUP } from "../../constants.ts";
 import { createServerClient } from "../utils.ts";
+import { WalletBinding } from "../bindings/binder.ts";  
+import { getWalletClient, createToolCallTransaction } from "../ai/api.ts"; 
+import {
+  MicroDollar,
+  WellKnownWallets,
+} from "../wallet/index.ts";
 
 // Tool factories for each group
 
@@ -106,7 +112,104 @@ export const callTool = createIntegrationManagementTool({
       return { error: "Failed to create client" };
     }
 
+    const binding = WalletBinding.forConnection(connection);
+
     try {
+      console.log({toolCall})
+      if (binding && toolCall.name !== "DECO_LIST_PRICES") {
+        console.log({binding})
+        const workspace = '/users/d9064704-4fdd-45e1-9ae5-df90b6be42e3'
+        console.log({workspace})
+        const prices = await binding.DECO_LIST_PRICES({});
+
+        console.log({prices})
+
+        if (!prices) return {
+          error: "No prices found",
+        }
+
+        const pricesArray = prices.structuredContent.prices
+
+        console.log({pricesArray, toolCall})
+
+        if (pricesArray?.some((p: { name: string; cost: number }) => p.name === toolCall.name)) {
+          const wallet = getWalletClient(c);
+          const workspaceWalletId = WellKnownWallets.build(
+            ...WellKnownWallets.workspace.genCredits(workspace),
+          );
+          
+          const balanceResponse = await wallet["GET /accounts/:id"]({
+            id: encodeURIComponent(workspaceWalletId),
+          });
+      
+          if (balanceResponse.status === 404) {
+            throw new InternalServerError("Insufficient funds");
+          }
+      
+          if (!balanceResponse.ok) {
+            throw new InternalServerError("Failed to check wallet balance");
+          }
+      
+          const balanceData = await balanceResponse.json();
+          const balance = MicroDollar.fromMicrodollarString(balanceData.balance);
+
+          console.log({balance, toolCall})
+      
+          if (balance.toDollars() < balance.isNegative() || balance.isZero()) {
+            throw new InternalServerError("Insufficient funds");
+          }
+
+          const result = await client.callTool({
+            name: toolCall.name,
+            arguments: toolCall.arguments || {},
+            // @ts-expect-error TODO: remove this once this is merged: https://github.com/modelcontextprotocol/typescript-sdk/pull/528
+          }, CallToolResultSchema);
+
+          if (balance.toDollars() < (result.structuredContent as any).cost) {
+            throw new InternalServerError("Insufficient funds: expected " + (result.structuredContent as any).cost + " but only have " + balance.toDollars());
+          }
+
+          console.log({result})
+    
+          await client.close();
+    
+          if ((result.structuredContent as any).cost)  { 
+            const transaction = createToolCallTransaction({
+              toolId: "image-generation",
+              mcpId: "openai",
+              amount: (result.structuredContent as any).cost,
+              workspace,
+            });
+        
+            const response = await wallet["POST /transactions"]({}, {
+              body: transaction,
+            });
+        
+            if (!response.ok) {
+              console.error(
+                "Failed to create transaction",
+                response,
+                await response.text(),
+              );
+              throw new InternalServerError("Failed to create transaction");
+            }
+        
+            const transactionData = await response.json();
+            const transactionId = transactionData.id;
+    
+            if (!transactionId) {
+              throw new InternalServerError("Failed to create transaction for paid tool call");
+            }
+    
+            console.log({transactionId})
+
+            return result
+          }
+        }
+      }
+
+      console.log({toolCall})
+
       const result = await client.callTool({
         name: toolCall.name,
         arguments: toolCall.arguments || {},

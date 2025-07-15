@@ -36,7 +36,7 @@ export interface Vars {
   };
   resourceAccess: ResourceAccess;
   /** Current tool being executed definitions */
-  tool?: { name: string };
+  tool?: { name: string, cost?: number };
   cookie?: string;
   token?: string;
   db: Client;
@@ -145,11 +145,13 @@ export const isToolCallResultError = <T>(
 export interface ToolDefinition<
   TAppContext extends AppContext = AppContext,
   TName extends string = string,
+  TCost extends number | undefined = undefined,
   TInput = any,
   TReturn extends object | null | boolean = object,
 > {
   annotations?: ToolAnnotations;
   group?: string;
+  cost?: TCost;
   name: TName;
   description: string;
   inputSchema: z.ZodType<TInput>;
@@ -158,12 +160,14 @@ export interface ToolDefinition<
 }
 
 export interface Tool<
+  TCost extends number | undefined = undefined,
   TName extends string = string,
   TInput = any,
   TReturn extends object | null | boolean = object,
 > {
   annotations?: ToolAnnotations;
   group?: string;
+  cost?: TCost;
   name: TName;
   description: string;
   inputSchema: z.ZodType<TInput>;
@@ -211,19 +215,20 @@ export const createToolFactory = <
   integration?: GroupIntegration,
 ) =>
 <
+  TCost extends number | undefined = undefined,
   TName extends string = string,
   TInput = any,
   TReturn extends object | null | boolean = object,
 >(
-  def: ToolDefinition<TAppContext, TName, TInput, TReturn>,
-): Tool<TName, TInput, TReturn> => {
+  def: ToolDefinition<TAppContext, TName, TCost, TInput, TReturn>,
+): Tool<TCost, TName, TInput, TReturn> => {
   group && integration && addGroup(group, integration);
   return {
     group,
     ...def,
     handler: async (props: TInput): Promise<TReturn> => {
       const context = contextFactory(State.getStore());
-      context.tool = { name: def.name };
+      context.tool = { name: def.name, cost: def.cost };
 
       const result = await def.handler(props, context);
 

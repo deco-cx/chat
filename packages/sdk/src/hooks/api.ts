@@ -150,6 +150,10 @@ export const KEYS = {
     workspace: Workspace,
     range: "day" | "week" | "month",
   ) => ["wallet-usage-agents", workspace, range],
+  WALLET_USAGE_TOOLS: (
+    workspace: Workspace,
+    range: "day" | "week" | "month",
+  ) => ["wallet-usage-tools", workspace, range],
   WALLET_USAGE_THREADS: (
     workspace: Workspace,
     range: "day" | "week" | "month",

@@ -104,6 +104,10 @@ export const ChannelBinding = bindingClient(
   WellKnownBindings.Channel,
 );
 
+export const WalletBinding = bindingClient(
+  WellKnownBindings.Wallet,
+);
+
 export type { Callbacks } from "./channels.ts";
 export * from "./index.ts";
 

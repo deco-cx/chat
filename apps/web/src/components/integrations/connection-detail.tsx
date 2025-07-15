@@ -820,6 +820,11 @@ function Tool({ tool, connection }: ToolProps) {
               <div className="font-medium text-sm truncate">
                 {formatToolName(tool.name)}
               </div>
+              {tool.cost && (
+                <div className="text-xs text-muted-foreground">
+                  {tool.cost}
+                </div>
+              )}
               {tool.description && (
                 <div
                   className="text-sm font-normal text-muted-foreground line-clamp-2"

@@ -291,11 +291,26 @@ const handleMCPResponse = async (client: Client) => {
   const capabilities = client.getServerCapabilities();
   const version = client.getServerVersion();
 
+  if (result.tools.find((tool) => tool.name === "DECO_LIST_PRICES")) {
+    const {content} = await client.callTool({
+      name: "DECO_LIST_PRICES",
+      arguments: {},
+    });
+    const pricedTools = JSON.parse(content[0].text);
+    console.log({ pricedTools, prices: pricedTools.prices });
+    const toolsWithCost = result.tools.map((tool) => ({
+      ...tool,
+      cost: pricedTools.prices.find((price) => price.name === tool.name)?.cost,
+    }));
+    return { tools: toolsWithCost, instructions, capabilities, version };
+  }
+
   return { tools: result.tools, instructions, capabilities, version };
 };
 export const swrMCPMetadata = (
   mcpServer: Pick<Integration, "connection" | "name">,
 ) => {
+  console.log({ mcpServer });
   const fetch = async () => {
     const client = await createServerClient(mcpServer);
     return handleMCPResponse(client).finally(() => client.close());

@@ -10,7 +10,7 @@ import {
 } from "../assertions.ts";
 import { type AppContext, createToolGroup } from "../context.ts";
 import { InternalServerError, SupabaseLLMVault } from "../index.ts";
-import type { Transaction } from "../wallet/client.ts";
+import type { Payer, Transaction, Vendor } from "../wallet/client.ts";
 import {
   createWalletClient,
   MicroDollar,
@@ -47,7 +47,28 @@ const createLLMUsageTransaction = (opts: {
   };
 };
 
-const getWalletClient = (c: AppContext) => {
+export const createToolCallTransaction = (opts: {
+  toolId: string;
+  mcpId: string;
+  amount: number | string;
+  payer?: Payer;
+  vendor?: Vendor;
+  workspace: string;
+}): Transaction => {
+  return {
+    type: "ToolCall" as const,
+    toolId: opts.toolId,
+    mcpId: opts.mcpId,
+    amount: opts.amount,
+    payer: opts.payer,
+    vendor: opts.vendor,
+    workspace: opts.workspace,
+    metadata: opts,
+    timestamp: new Date(),
+  };
+};
+
+export const getWalletClient = (c: AppContext) => {
   if (!c.envVars.WALLET_API_KEY) {
     throw new InternalServerError("WALLET_API_KEY is not set");
   }
@@ -223,5 +244,57 @@ export const aiGenerate = createTool({
       },
       finishReason: result.finishReason,
     };
+  },
+});
+
+export const aiGenerateImage = createTool({
+  name: "AI_GENERATE_IMAGE",
+  description: "Generate an image using AI models directly without agent context (stateless)",
+  inputSchema: z.object({
+    prompt: z.string().describe("The prompt to generate the image"),
+  }),
+  outputSchema: z.object({
+    image: z.string().describe("The generated image"),
+    transactionId: z.string().describe("The transaction ID"),
+    cost: z.number().describe("The cost of the transaction"),
+  }),
+  handler: async (_input, c) => {
+    assertHasWorkspace(c);
+    await assertWorkspaceResourceAccess(c.tool.name, c)
+
+    return {
+      image: "https://assets.decocache.com/mcp/6e1418f7-c962-406b-aceb-137197902709/ai-gateway.png",
+      cost: 100,
+    };
+  },
+});
+
+export const listPrices = createTool({
+  name: "DECO_LIST_PRICES",
+  description: "List the prices of the paid tools",
+  inputSchema: z.object({}),
+  outputSchema: z.object({
+    prices: z.array(z.object({
+      name: z.string().describe("The name of the tool"),
+      cost: z.number().describe("The cost of the tool"),
+    })),
+  }),
+  handler: async (_input, c) => {
+    assertHasWorkspace(c);
+    await c.resourceAccess.grant();
+    await assertWorkspaceResourceAccess(c.tool.name, c);
+
+    return {
+      prices: [
+        {
+          name: "AI_GENERATE",
+          cost: 10,
+        },
+        {
+          name: "AI_GENERATE_IMAGE",
+          cost: 10000,
+        },
+      ],
+    }
   },
 });

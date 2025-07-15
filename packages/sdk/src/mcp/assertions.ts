@@ -24,7 +24,7 @@ type WithKbFileProcessor<TAppContext extends AppContext = AppContext> =
 export type WithTool<TAppContext extends AppContext = AppContext> =
   & Omit<TAppContext, "tool">
   & {
-    tool: { name: string };
+    tool: { name: string, cost?: number };
   };
 
 export function assertHasWorkspace<TContext extends AppContext = AppContext>(
