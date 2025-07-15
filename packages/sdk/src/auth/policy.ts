@@ -23,6 +23,7 @@ type MatchCondition<
 
 // Typed interfaces
 export interface Statement {
+  effect: "allow" | "deny";
   resource: string;
   matchCondition?: MatchCondition;
 }
