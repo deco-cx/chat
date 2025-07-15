@@ -39,4 +39,5 @@ const plugin: Deno.lint.Plugin = {
     },
   },
 };
+
 export default plugin;
