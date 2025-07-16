@@ -347,14 +347,7 @@ export class PolicyClient {
     }
 
     // Invalidate all caches for this user
-    await Promise.all([
-      this.userPolicyCache.delete(
-        this.getUserPoliceCacheKey(profile.user_id, teamId),
-      ),
-      this.userRolesCache.delete(
-        this.getUserRolesCacheKey(profile.user_id, teamId),
-      ),
-    ]);
+    await this.deleteUserRolesCache(teamId, [profile.user_id]);
 
     // Update the role assignment
     if (params.action === "grant") {
@@ -379,40 +372,230 @@ export class PolicyClient {
 
   async createPolicyForTeamResource(
     teamIdOrSlug: string | number,
-    partialPolicy: { name: string; statements: Statement[] },
+    policy: Partial<Policy> & Pick<Policy, "name">,
   ) {
     this.assertDb(this.db);
     const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
 
-    const policy = {
-      name: `${teamId}_${partialPolicy.name}`,
+    const policyData = {
+      name: policy.name,
       team_id: teamId,
-      statements: partialPolicy.statements as unknown as Json[],
+      statements: policy.statements as unknown as Json[],
     };
 
-    const teamPolicies = await this.getTeamPolicies(teamId);
-    //  check if one already exists with policy.name, if yes, throw an error saying policy already exists
-    if (teamPolicies.some((p) => p.name === policy.name)) return null;
-
-    const { data } = await this.db.from("policies").insert(policy).select();
+    const { data } = await this.db.from("policies").insert(policyData).select().single();
     await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
     return data;
   }
 
   async deletePolicyForTeamResource(
     teamIdOrSlug: string | number,
-    policyName: string,
+    policyIds: number[],
+  ) {
+    this.assertDb(this.db);
+    const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
+    const { data } = await this.db.from("policies").delete().in("id", policyIds).eq("team_id", teamId).select();
+    await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
+    return data;
+  }
+
+  private async updatePolicyForTeamResource(
+    teamIdOrSlug: string | number,
+    policy: Partial<Policy> & Pick<Policy, "id">,
+  ) {
+    this.assertDb(this.db);
+    const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
+    const { data } = await this.db
+      .from("policies")
+      .update({
+        ...policy,
+        statements: policy.statements as unknown as Json[],
+        team_id: teamId,
+      })
+      .eq("id", policy.id)
+      .eq("team_id", teamId)
+      .select()
+      .single();
+
+    await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
+    return data;
+  }
+
+  async createRole(
+    teamIdOrSlug: string | number,
+    role: Partial<Role> & Pick<Role, "name">,
+    policies?: Partial<Policy> & Pick<Policy, "name">[],
   ) {
     this.assertDb(this.db);
     const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
 
-    const { data } = await this.db.from("policies").delete().eq(
-      "team_id",
-      teamId,
-    ).eq("name", policyName).select();
+    const { data } = await this.db
+      .from("roles")
+      .insert({
+        ...role,
+        team_id: teamId,
+      })
+      .select()
+      .single();
+    if (!data) {
+      throw new Error("Failed to create role");
+    }
+    await this.teamRolesCache.delete(this.getTeamRolesCacheKey(teamId));
 
-    await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
+    if (policies) {
+      const policiesData = (await Promise.all(policies.map(async (p) => {
+        return await this.createPolicyForTeamResource(teamId, p);
+      }))).filter((p) => p !== null);
+
+      await this.createRolePolicies(policiesData, data.id);
+      await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
+    }
+
     return data;
+  }
+
+  private async createRolePolicies(policies: Pick<Policy, "id">[], roleId: number) {
+    this.assertDb(this.db);
+    return await this.db.from("role_policies").upsert(policies.map((p) => ({
+      policy_id: p.id,
+      role_id: roleId,
+    }), { onConflict: "role_id, policy_id" }));
+  }
+
+  async updateRole(
+    teamIdOrSlug: string | number,
+    role: Partial<Role> & Pick<Role, "id">,
+    policies?: Partial<Policy> & Pick<Policy, "name">[],
+  ) {
+    this.assertDb(this.db);
+    const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
+
+    // check if role.team_id
+    const { data } = await this.db
+      .from("roles")
+      .update({
+        ...role,
+        team_id: teamId,
+      })
+      .eq("id", role.id)
+      .eq("team_id", teamId)
+      .select()
+      .single();
+
+    await this.teamRolesCache.delete(this.getTeamRolesCacheKey(teamId));
+
+    if (policies) {
+      const policiesData = (await Promise.all(policies.map(async (p) => {
+        if ('id' in p) {
+          return await this.updatePolicyForTeamResource(teamId, p as Partial<Policy> & Pick<Policy, "id">);
+        }
+        return await this.createPolicyForTeamResource(teamId, p);
+      }))).filter((p) => p !== null);
+
+      await this.createRolePolicies(policiesData, role.id);
+      await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
+    }
+
+    return data;
+  }
+
+  async deleteRole(teamIdOrSlug: string | number, roleId: number) {
+    this.assertDb(this.db);
+    const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
+
+    // Only allow deletion of team-specific roles (not system roles)
+    const { data: role } = await this.db
+      .from("roles")
+      .select("id, team_id")
+      .eq("id", roleId)
+      .eq("team_id", teamId)
+      .single();
+
+    if (!role) {
+      throw new Error("Role not found");
+    }
+
+    if (role.team_id === null) {
+      throw new Error("Cannot delete system roles");
+    }
+
+    if (role.team_id !== teamId) {
+      throw new Error("Role does not belong to this team");
+    }
+
+    // delete all role_policies
+    const { data: policiesIds } = await this.db.from("role_policies").delete().eq("role_id", role.id).select('policy_id');
+
+    if (policiesIds) {
+      await this.deletePolicyForTeamResource(teamId, policiesIds.map((p) => p.policy_id));
+    }
+
+    // delete all member_roles
+    const { data: memberIds } = await this.db.from("member_roles").delete().eq("role_id", role.id).select('member_id');
+    // remove cache for all users
+    if (memberIds) {
+      const { data: _members } = await this.db.from("members").select("user_id").in("id", memberIds.map((m) => m.member_id));
+      const members = _members?.filter((m): m is { user_id: string } => m.user_id !== null) ?? [];
+      await this.deleteUserRolesCache(teamId, members.map(m => m.user_id));
+    }
+
+    // Delete the role
+    const { data } = await this.db
+      .from("roles")
+      .delete()
+      .eq("id", role.id)
+      .eq("team_id", teamId)
+      .select();
+
+    await this.teamRolesCache.delete(this.getTeamRolesCacheKey(teamId));
+    return data;
+  }
+
+  async getRoleWithPolicies(
+    teamIdOrSlug: string | number,
+    roleId: number,
+  ): Promise<RoleWithPolicies | null> {
+    this.assertDb(this.db);
+    const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
+
+    const { data } = await this.db
+      .from("roles")
+      .select(`
+        id,
+        name,
+        description,
+        team_id,
+        role_policies (
+          policies (
+            id,
+            name,
+            team_id,
+            statements
+          )
+        )
+      `)
+      .eq("id", roleId)
+      .or(`team_id.eq.${teamId},team_id.is.null`)
+      .single();
+
+    if (!data) {
+      return null;
+    }
+
+    const policies: Policy[] = data.role_policies.map((rp: any) => ({
+      id: rp.policies.id,
+      name: rp.policies.name,
+      team_id: rp.policies.team_id,
+      statements: rp.policies.statements as Statement[],
+    }));
+
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      team_id: data.team_id,
+      policies,
+    };
   }
 
   private async getTeamPolicies(
@@ -484,6 +667,11 @@ export class PolicyClient {
       // filter admin policies
       statements: policy.statements.filter((r) => !r.resource.endsWith(".ts")),
     }));
+  }
+
+  private async deleteUserRolesCache(teamId: number, userIds: string[]) {
+    await Promise.all(userIds.map((u) => this.userPolicyCache.delete(this.getUserPoliceCacheKey(u, teamId))));
+    await Promise.all(userIds.map((u) => this.userRolesCache.delete(this.getUserRolesCacheKey(u, teamId))));
   }
 
   public filterTeamRoles<R extends Pick<Role, "id">>(roles: R[]): R[] {
@@ -608,7 +796,7 @@ const createMatchFn = <TSchema extends z.ZodTypeAny>(
 ): MatchFunction<TSchema> => def;
 
 const MatcherFunctions = {
-  access_integration_tool: createMatchFn({
+  is_integration: createMatchFn({
     schema: z.object({ integrationId: z.string() }),
     handler: ({ integrationId }, c) => {
       return c.integrationId === integrationId;
