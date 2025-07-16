@@ -20,7 +20,7 @@ const WELL_KNOWN_VIEW_ICONS = {
   "members": "group",
   "models": "batch_prediction",
   "usage": "monitoring",
-  "wallet": "wallet",
+  "billing": "wallet",
   "audit": "forum",
   "advanced": "settings",
 };
