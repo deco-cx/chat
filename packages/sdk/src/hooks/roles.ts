@@ -1,30 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createTeamRole, updateTeamRole, deleteTeamRole, getTeamRole } from "../crud/roles.ts";
-import { getTeamRoles } from "../crud/members.ts";
-import type { 
-  CreateTeamRoleParams, 
-  UpdateTeamRoleParams, 
-  DeleteTeamRoleParams, 
-  GetTeamRoleParams,
-  TeamRole 
+import {
+  createTeamRole,
+  deleteTeamRole,
+  getTeamRole,
+  updateTeamRole,
 } from "../crud/roles.ts";
+import type { GetTeamRoleParams, TeamRole } from "../crud/roles.ts";
 
 // Query keys
 export const ROLE_KEYS = {
   all: ["roles"] as const,
   team: (teamId: number) => [...ROLE_KEYS.all, "team", teamId] as const,
-  role: (teamId: number, roleId: number) => [...ROLE_KEYS.team(teamId), "role", roleId] as const,
+  role: (teamId: number, roleId: number) =>
+    [...ROLE_KEYS.team(teamId), "role", roleId] as const,
 } as const;
-
-
 
 /**
  * Hook to get a specific team role
  */
 export function useTeamRole(params: GetTeamRoleParams | null) {
   return useQuery({
-    queryKey: params ? ROLE_KEYS.role(params.teamId, params.roleId) : ["roles", "null"],
-    queryFn: () => params ? getTeamRole(params) : Promise.resolve(null),
+    queryKey: params
+      ? ROLE_KEYS.role(params.teamId, params.roleId)
+      : ["roles", "null"],
+    queryFn: (): Promise<TeamRole | null> =>
+      params ? getTeamRole(params) : Promise.resolve(null),
     enabled: params !== null,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -43,11 +43,11 @@ export function useCreateTeamRole() {
       queryClient.invalidateQueries({
         queryKey: ROLE_KEYS.team(data.team_id || 0),
       });
-      
+
       // Set the new role in cache
       queryClient.setQueryData(
         ROLE_KEYS.role(data.team_id || 0, data.id),
-        data
+        data,
       );
     },
   });
@@ -66,11 +66,11 @@ export function useUpdateTeamRole() {
       queryClient.invalidateQueries({
         queryKey: ROLE_KEYS.team(variables.teamId),
       });
-      
+
       // Update the specific role in cache
       queryClient.setQueryData(
         ROLE_KEYS.role(variables.teamId, variables.roleId),
-        data
+        data,
       );
     },
   });
@@ -84,16 +84,16 @@ export function useDeleteTeamRole() {
 
   return useMutation({
     mutationFn: deleteTeamRole,
-    onSuccess: (data, variables) => {
+    onSuccess: (_, variables) => {
       // Invalidate and refetch team roles
       queryClient.invalidateQueries({
         queryKey: ROLE_KEYS.team(variables.teamId),
       });
-      
+
       // Remove the deleted role from cache
       queryClient.removeQueries({
         queryKey: ROLE_KEYS.role(variables.teamId, variables.roleId),
       });
     },
   });
-} 
+}

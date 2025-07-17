@@ -11,7 +11,7 @@ export interface TeamRole {
   members: string[];
 }
 
-export type { ToolPermission, RoleFormData };
+export type { RoleFormData, ToolPermission };
 
 export interface CreateTeamRoleParams {
   teamId: number;
@@ -37,29 +37,35 @@ export interface GetTeamRoleParams {
 /**
  * Create a new team role with associated policies and permissions
  */
-export async function createTeamRole(params: CreateTeamRoleParams): Promise<TeamRole> {
+export async function createTeamRole(
+  params: CreateTeamRoleParams,
+): Promise<TeamRole> {
   return await MCPClient.TEAM_ROLE_CREATE(params) as TeamRole;
 }
 
 /**
  * Update an existing team role and its associated policies
  */
-export async function updateTeamRole(params: UpdateTeamRoleParams): Promise<TeamRole> {
+export async function updateTeamRole(
+  params: UpdateTeamRoleParams,
+): Promise<TeamRole> {
   return await MCPClient.TEAM_ROLE_UPDATE(params) as TeamRole;
 }
 
 /**
  * Delete a team role and its associated policies
  */
-export async function deleteTeamRole(params: DeleteTeamRoleParams): Promise<{ success: boolean; deletedRoleId: number }> {
+export async function deleteTeamRole(
+  params: DeleteTeamRoleParams,
+): Promise<{ success: boolean; deletedRoleId: number }> {
   return await MCPClient.TEAM_ROLE_DELETE(params);
 }
 
 /**
  * Get detailed information about a specific team role
  */
-export async function getTeamRole(params: GetTeamRoleParams): Promise<TeamRole> {
+export async function getTeamRole(
+  params: GetTeamRoleParams,
+): Promise<TeamRole> {
   return await MCPClient.TEAM_ROLE_GET(params) as TeamRole;
 }
-
- 
