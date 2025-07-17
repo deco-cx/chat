@@ -7,9 +7,8 @@ import {
 } from "react";
 import {
   type Member,
-  type Role,
-  type User,
   useInviteTeamMember,
+  type User,
   useRejectInvite,
   useRemoveTeamMember,
   useTeamMembers,
@@ -72,12 +71,17 @@ function getMemberName(member: Member): string {
 }
 
 // Components
-function MemberTableHeader(
-  { onChange, disabled, teamId }: MemberTableHeaderProps,
-) {
-  const handleChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    onChange(e.currentTarget.value);
-  }, [onChange]);
+function MemberTableHeader({
+  onChange,
+  disabled,
+  teamId,
+}: MemberTableHeaderProps) {
+  const handleChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      onChange(e.currentTarget.value);
+    },
+    [onChange],
+  );
 
   return (
     <div className="flex items-center justify-between">
@@ -100,12 +104,11 @@ function MemberTableHeader(
   );
 }
 
-export function MembersTableView({
-  teamId,
-  user,
-}: MembersTableViewProps) {
+export function MembersTableView({ teamId, user }: MembersTableViewProps) {
   // Data fetching hooks
-  const { data: { members, invites } } = useTeamMembers(teamId ?? null, {
+  const {
+    data: { members, invites },
+  } = useTeamMembers(teamId ?? null, {
     withActivity: true,
   });
   const { data: roles = [] } = useTeamRoles(teamId ?? null);
@@ -156,48 +159,56 @@ export function MembersTableView({
   const filteredData = useMemo(() => {
     if (!deferredQuery) return tableData;
     const searchTerm = deferredQuery.toLowerCase();
-    return tableData.filter((row: MemberTableRow) =>
-      row.name.toLowerCase().includes(searchTerm) ||
-      row.email.toLowerCase().includes(searchTerm)
+    return tableData.filter(
+      (row: MemberTableRow) =>
+        row.name.toLowerCase().includes(searchTerm) ||
+        row.email.toLowerCase().includes(searchTerm),
     );
   }, [tableData, deferredQuery]);
 
   // Memoized event handlers to prevent unnecessary re-renders
-  const handleRemoveMember = useCallback(async (memberId: number) => {
-    if (!teamId) return;
-    try {
-      await removeMemberMutation.mutateAsync({ teamId, memberId });
-    } catch (error) {
-      console.error("Failed to remove team member:", error);
-      toast.error("Failed to remove team member");
-    }
-  }, [teamId, removeMemberMutation]);
+  const handleRemoveMember = useCallback(
+    async (memberId: number) => {
+      if (!teamId) return;
+      try {
+        await removeMemberMutation.mutateAsync({ teamId, memberId });
+      } catch (error) {
+        console.error("Failed to remove team member:", error);
+        toast.error("Failed to remove team member");
+      }
+    },
+    [teamId, removeMemberMutation],
+  );
 
-  const handleUpdateMemberRole = useCallback(async (
-    userId: string,
-    role: { id: number; name: string },
-    checked: boolean,
-  ) => {
-    if (!teamId) return;
-    try {
-      await updateMemberRoleMutation.mutateAsync({
-        teamId,
-        userId,
-        roleId: role.id,
-        roleName: role.name,
-        action: checked ? "grant" : "revoke",
-      });
-      toast.success(
-        checked ? "Role assigned successfully" : "Role removed successfully",
-      );
-    } catch (error) {
-      const errorMessage =
-        typeof error === "object" && (error as any)?.message ||
-        "Failed to update role";
-      toast.error(errorMessage);
-      console.error("Failed to update member role:", error);
-    }
-  }, [teamId, updateMemberRoleMutation]);
+  const handleUpdateMemberRole = useCallback(
+    async (
+      userId: string,
+      role: { id: number; name: string },
+      checked: boolean,
+    ) => {
+      if (!teamId) return;
+      try {
+        await updateMemberRoleMutation.mutateAsync({
+          teamId,
+          userId,
+          roleId: role.id,
+          roleName: role.name,
+          action: checked ? "grant" : "revoke",
+        });
+        toast.success(
+          checked ? "Role assigned successfully" : "Role removed successfully",
+        );
+      } catch (error) {
+        const errorMessage =
+          (typeof error === "object" && !!error && "message" in error &&
+            error.message as string) ||
+          "Failed to update role";
+        toast.error(errorMessage);
+        console.error("Failed to update member role:", error);
+      }
+    },
+    [teamId, updateMemberRoleMutation],
+  );
 
   // Define table columns with updated role column
   const columns: TableColumn<MemberTableRow>[] = useMemo(() => {
@@ -209,22 +220,14 @@ export function MembersTableView({
           // For actual members, use the standardized UserInfo component
           if (row.type === "member" && row.userId) {
             return (
-              <UserInfo
-                userId={row.userId}
-                showDetails
-                maxWidth="250px"
-              />
+              <UserInfo userId={row.userId} showDetails maxWidth="250px" />
             );
           }
 
           // For pending invites, use custom implementation since they don't have userId yet
           return (
             <div className="flex gap-2 items-center min-w-[48px]">
-              <UserAvatar
-                fallback={row.email}
-                size="sm"
-                muted
-              />
+              <UserAvatar fallback={row.email} size="sm" muted />
               <div className="flex flex-col items-start text-left leading-tight w-full">
                 <span
                   className="truncate block text-xs font-medium text-foreground"
@@ -270,11 +273,11 @@ export function MembersTableView({
                 onValueChange={async (newValues) => {
                   // Find roles to add and remove
                   const currentRoleIds = row.roles.map((r) => r.id.toString());
-                  const rolesToAdd = newValues.filter((id) =>
-                    !currentRoleIds.includes(id)
+                  const rolesToAdd = newValues.filter(
+                    (id) => !currentRoleIds.includes(id),
                   );
-                  const rolesToRemove = currentRoleIds.filter((id) =>
-                    !newValues.includes(id)
+                  const rolesToRemove = currentRoleIds.filter(
+                    (id) => !newValues.includes(id),
                   );
 
                   // Process role changes
@@ -324,7 +327,7 @@ export function MembersTableView({
                 placeholder="Select roles"
                 variant="secondary"
                 className="w-[240px]"
-                disabled={true}
+                disabled
                 maxCount={2}
               />
             );
@@ -406,8 +409,10 @@ export function MembersTableView({
                 rejectInvite.isPending}
             >
               {(() => {
-                const isCurrentUser = row.type === "member" && row.userId &&
-                  user && row.userId === user.id;
+                const isCurrentUser = row.type === "member" &&
+                  row.userId &&
+                  user &&
+                  row.userId === user.id;
 
                 if (row.type === "invite") {
                   return (
@@ -473,7 +478,11 @@ export function MembersTableView({
         case "name":
           return row.name.toLowerCase();
         case "roles":
-          return row.roles.map((r) => r.name).sort().join(",").toLowerCase();
+          return row.roles
+            .map((r) => r.name)
+            .sort()
+            .join(",")
+            .toLowerCase();
         case "lastActivity":
           return row.lastActivity
             ? new Date(row.lastActivity).getTime().toString()
@@ -485,16 +494,19 @@ export function MembersTableView({
     [],
   );
 
-  const handleSort = useCallback((key: string) => {
-    if (sortKey === key) {
-      setSortDirection((prev: "asc" | "desc") =>
-        prev === "asc" ? "desc" : "asc"
-      );
-    } else {
-      setSortKey(key);
-      setSortDirection("asc");
-    }
-  }, [sortKey]);
+  const handleSort = useCallback(
+    (key: string) => {
+      if (sortKey === key) {
+        setSortDirection((prev: "asc" | "desc") =>
+          prev === "asc" ? "desc" : "asc"
+        );
+      } else {
+        setSortKey(key);
+        setSortDirection("asc");
+      }
+    },
+    [sortKey],
+  );
 
   // Memoized sorted data for better performance
   const sortedData = useMemo(() => {

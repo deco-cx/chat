@@ -1,4 +1,3 @@
-import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import {
   SidebarHeader,
@@ -20,8 +19,6 @@ export function Header() {
 
           <SidebarMenuButton
             data-open={open}
-            variant="ghost"
-            size="icon"
             onClick={toggleSidebar}
             className="size-8"
           >
