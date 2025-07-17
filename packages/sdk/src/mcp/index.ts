@@ -35,6 +35,7 @@ import * as threadsAPI from "./threads/api.ts";
 import * as triggersAPI from "./triggers/api.ts";
 import * as walletAPI from "./wallet/api.ts";
 import * as whatsappAPI from "./whatsapp/api.ts";
+import * as rolesAPI from "./members/roles-api.ts";
 
 // Register tools for each API handler
 export const GLOBAL_TOOLS = [
@@ -54,6 +55,10 @@ export const GLOBAL_TOOLS = [
   membersAPI.inviteTeamMembers,
   membersAPI.teamRolesList,
   membersAPI.updateMemberRole,
+  rolesAPI.createTeamRole,
+  rolesAPI.updateTeamRole,
+  rolesAPI.deleteTeamRole,
+  rolesAPI.getTeamRole,
   profilesAPI.getProfile,
   profilesAPI.updateProfile,
   integrationsAPI.callTool,

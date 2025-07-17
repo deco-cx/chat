@@ -14,6 +14,7 @@ export * from "./crud/trigger.ts";
 export * from "./crud/user.ts";
 export * from "./crud/wallet.ts";
 export * from "./crud/workflows.ts";
+export * from "./crud/roles.ts";
 
 export * from "./hooks/agent.ts";
 export * from "./hooks/audit.ts";
@@ -31,6 +32,7 @@ export * from "./hooks/trigger.ts";
 export * from "./hooks/wallet.ts";
 export * from "./hooks/whatsapp.ts";
 export * from "./hooks/workflows.ts";
+export * from "./hooks/roles.ts";
 
 export * from "./models/agent.ts";
 export * from "./models/mcp.ts";
