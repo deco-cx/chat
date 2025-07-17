@@ -1,4 +1,4 @@
-import { MCPClient } from "../mcp/index.ts";
+import { MCPClient } from "../fetcher.ts";
 import type { RoleFormData, ToolPermission } from "../mcp/members/roles-api.ts";
 
 export interface TeamRole {
