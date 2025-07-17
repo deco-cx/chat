@@ -1,5 +1,5 @@
 import { Suspense, useMemo, useState } from "react";
-import { useTeam} from "@deco/sdk";
+import { useTeam, useTeamMembers, useTeamRoles } from "@deco/sdk/hooks";
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { useCurrentTeam } from "../../sidebar/team-selector.tsx";
@@ -24,6 +24,12 @@ function MembersViewContent() {
   const { slug } = useCurrentTeam();
   const { data: team } = useTeam(slug);
   const teamId = useMemo(() => team?.id, [team?.id]);
+  const { data: roles = [] } = useTeamRoles(teamId ?? null);
+  const {
+    data: { members },
+  } = useTeamMembers(teamId ?? null, {
+    withActivity: true,
+  });
 
   // State management
   const [tab, setTab] = useState<"members" | "roles">("members");
@@ -32,20 +38,23 @@ function MembersViewContent() {
 
   // Memoized toggle items for stable references
   // Note: counts will be managed by child components
-  const toggleItems = useMemo(() => [
-    {
-      id: "members",
-      label: "Members",
-      count: 0, // This will be updated by child component if needed
-      active: tab === "members",
-    },
-    {
-      id: "roles",
-      label: "Roles",
-      count: 0, // This will be updated by child component if needed
-      active: tab === "roles",
-    },
-  ], [tab]);
+  const toggleItems = useMemo(
+    () => [
+      {
+        id: "members",
+        label: "Members",
+        count: members.length,
+        active: tab === "members",
+      },
+      {
+        id: "roles",
+        label: "Roles",
+        count: roles.length,
+        active: tab === "roles",
+      },
+    ],
+    [tab, members.length, roles.length],
+  );
 
   return (
     <div className="px-6 py-10 flex flex-col gap-6">
@@ -58,17 +67,8 @@ function MembersViewContent() {
         />
 
         {tab === "members"
-          ? (
-            <MembersTableView
-              teamId={teamId}
-              user={user}
-            />
-          )
-          : (
-                      <RolesTableView
-            teamId={teamId}
-          />
-          )}
+          ? <MembersTableView teamId={teamId} user={user} />
+          : <RolesTableView teamId={teamId} />}
       </div>
     </div>
   );

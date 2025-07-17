@@ -13,7 +13,6 @@ import {
   listTools,
   type MCPTool,
   type Member,
-  type Role,
   type RoleFormData,
   type TeamRole,
   useAgents,
@@ -61,13 +60,6 @@ import { Textarea } from "@deco/ui/components/textarea.tsx";
 import { Checkbox } from "@deco/ui/components/checkbox.tsx";
 import { Alert, AlertDescription } from "@deco/ui/components/alert.tsx";
 import { Label } from "@deco/ui/components/label.tsx";
-
-// Types and Interfaces
-interface DefaultRole {
-  id: number;
-  name: string;
-  description: string;
-}
 
 // Internal form data type with simplified tools format
 interface InternalRoleFormData {
@@ -174,33 +166,6 @@ interface RolesTableViewProps {
   teamId?: number;
 }
 
-// Constants
-const DEFAULT_ROLES: DefaultRole[] = [
-  {
-    id: 1,
-    name: "Admin",
-    description: "Full access to all platform features and settings.",
-  },
-  {
-    id: 2,
-    name: "Manager",
-    description:
-      "Manages resources, agents, and integrations, but no access to billing.",
-  },
-  {
-    id: 3,
-    name: "Builder",
-    description:
-      "Creates and maintains agents, integrations, and automations, without user or billing management.",
-  },
-  {
-    id: 4,
-    name: "Member",
-    description:
-      "Collaborates in threads and uses agents and integrations, with no administrative permissions.",
-  },
-];
-
 // Sub-Components for Role Dialog
 function RoleDialogSidebar({
   selectedTab,
@@ -270,12 +235,15 @@ function RoleDialogSidebar({
 }
 
 function RoleGeneralPanel({ formData, setFormData }: RoleGeneralPanelProps) {
-  const handleNameChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev: InternalRoleFormData) => ({
-      ...prev,
-      name: e.target.value,
-    }));
-  }, [setFormData]);
+  const handleNameChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      setFormData((prev: InternalRoleFormData) => ({
+        ...prev,
+        name: e.target.value,
+      }));
+    },
+    [setFormData],
+  );
 
   const handleDescriptionChange = useCallback(
     (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -338,8 +306,9 @@ function RoleToolsPanel({
   );
 
   const handleSelectAll = useCallback(async () => {
-    const hasAnySelected = Object.values(formData.tools)
-      .some((tools) => Array.isArray(tools) && tools.length > 0);
+    const hasAnySelected = Object.values(formData.tools).some(
+      (tools) => Array.isArray(tools) && tools.length > 0,
+    );
 
     if (hasAnySelected) {
       setFormData((prev: InternalRoleFormData) => ({ ...prev, tools: {} }));
@@ -351,11 +320,9 @@ function RoleToolsPanel({
         for (const integration of filteredIntegrations) {
           try {
             const toolsData = await listTools(integration.connection);
-            const toolNames =
-              toolsData.tools?.map((
-                tool: { name: string; description?: string },
-              ) => tool.name) ||
-              [];
+            const toolNames = toolsData.tools?.map(
+              (tool: { name: string; description?: string }) => tool.name,
+            ) || [];
             newTools[integration.id] = toolNames;
           } catch (error) {
             console.error(
@@ -419,8 +386,8 @@ function RoleToolsPanel({
               >
                 {selectingAllTools
                   ? "Loading..."
-                  : Object.values(formData.tools).some((tools) =>
-                      Array.isArray(tools) && tools.length > 0
+                  : Object.values(formData.tools).some(
+                      (tools) => Array.isArray(tools) && tools.length > 0,
                     )
                   ? "Deselect All"
                   : "Select All"}
@@ -493,10 +460,11 @@ function RoleAgentsPanel({
       formData.agents.some((agentId) => {
         const agent = agents.find((a) => a.id === agentId);
         const agentTools = agent?.tools_set || {};
-        return Object.keys(agentTools).some((integrationId) =>
-          !formData.tools[integrationId] ||
-          !Array.isArray(formData.tools[integrationId]) ||
-          formData.tools[integrationId].length === 0
+        return Object.keys(agentTools).some(
+          (integrationId) =>
+            !formData.tools[integrationId] ||
+            !Array.isArray(formData.tools[integrationId]) ||
+            formData.tools[integrationId].length === 0,
         );
       }),
     [formData.agents, formData.tools, agents],
@@ -515,11 +483,7 @@ function RoleAgentsPanel({
         <span className="text-sm text-muted-foreground">
           {formData.agents.length} agents selected
         </span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleSelectAllAgents}
-        >
+        <Button variant="outline" size="sm" onClick={handleSelectAllAgents}>
           {formData.agents.length > 0 ? "Deselect All" : "Select All"}
         </Button>
       </div>
@@ -540,10 +504,7 @@ function RoleAgentsPanel({
             key={agent.id}
             className="w-full cursor-pointer"
             onClick={() =>
-              handleAgentToggle(
-                agent.id,
-                !formData.agents.includes(agent.id),
-              )}
+              handleAgentToggle(agent.id, !formData.agents.includes(agent.id))}
           >
             <CardContent className="flex items-start p-3 w-full">
               <AgentAvatar
@@ -631,11 +592,7 @@ function RoleMembersPanel({
         <span className="text-sm text-muted-foreground">
           {formData.members.length} members selected
         </span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleSelectAllMembers}
-        >
+        <Button variant="outline" size="sm" onClick={handleSelectAllMembers}>
           {formData.members.length > 0 ? "Deselect All" : "Select All"}
         </Button>
       </div>
@@ -680,10 +637,7 @@ function RoleMembersPanel({
                   <Checkbox
                     checked={formData.members.includes(member.user_id)}
                     onCheckedChange={(checked: boolean) =>
-                      handleMemberToggle(
-                        member.user_id,
-                        checked,
-                      )}
+                      handleMemberToggle(member.user_id, checked)}
                   />
                 </div>
               </CardContent>
@@ -713,18 +667,15 @@ function RoleDialogUserInfo({ userId }: RoleDialogUserInfoProps) {
 
   const isCurrentUser: boolean = useMemo(
     () => !!userId && !!user && userId === user.id,
-    [
-      userId,
-      user,
-    ],
+    [userId, user],
   );
 
-  const { data: { members: teamMembers = [] } } = useTeamMembers(
-    teamId ?? null,
-  );
+  const {
+    data: { members: teamMembers = [] },
+  } = useTeamMembers(teamId ?? null);
 
   const members: typeof teamMembers = useMemo(
-    () => (!isCurrentUser && teamId !== null) ? teamMembers : [],
+    () => (!isCurrentUser && teamId !== null ? teamMembers : []),
     [isCurrentUser, teamId, teamMembers],
   );
 
@@ -733,23 +684,22 @@ function RoleDialogUserInfo({ userId }: RoleDialogUserInfoProps) {
     [members, userId],
   );
 
-  const avatarData = useMemo(() => ({
-    url: isCurrentUser
-      ? user?.metadata.avatar_url
-      : member?.profiles?.metadata?.avatar_url,
-    name: isCurrentUser
-      ? user?.metadata.full_name
-      : member?.profiles?.metadata?.full_name,
-    email: isCurrentUser ? user?.email : member?.profiles?.email,
-  }), [isCurrentUser, user, member]);
+  const avatarData = useMemo(
+    () => ({
+      url: isCurrentUser
+        ? user?.metadata.avatar_url
+        : member?.profiles?.metadata?.avatar_url,
+      name: isCurrentUser
+        ? user?.metadata.full_name
+        : member?.profiles?.metadata?.full_name,
+      email: isCurrentUser ? user?.email : member?.profiles?.email,
+    }),
+    [isCurrentUser, user, member],
+  );
 
   return (
     <div className="flex items-center gap-2 min-w-[48px]">
-      <UserAvatar
-        url={avatarData.url}
-        fallback={avatarData.name}
-        size="base"
-      />
+      <UserAvatar url={avatarData.url} fallback={avatarData.name} size="base" />
       <div className="flex flex-col items-start text-left leading-tight w-full">
         <span
           className="truncate block text-sm font-medium text-foreground"
@@ -794,12 +744,15 @@ function RoleDialogIntegrationListItem({
     return { total, allTools, enabledCount, isAll, isEmpty };
   }, [toolsData, toolsSet, integration.id, isLoading]);
 
-  const handleAll = useCallback((checked: boolean) => {
-    setIntegrationTools(
-      integration.id,
-      checked ? toolsInfo.allTools.map((tool) => tool.name) : [],
-    );
-  }, [integration.id, setIntegrationTools, toolsInfo.allTools]);
+  const handleAll = useCallback(
+    (checked: boolean) => {
+      setIntegrationTools(
+        integration.id,
+        checked ? toolsInfo.allTools.map((tool) => tool.name) : [],
+      );
+    },
+    [integration.id, setIntegrationTools, toolsInfo.allTools],
+  );
 
   const handleClick = useCallback(() => {
     if (!toolsInfo.isEmpty) {
@@ -807,9 +760,12 @@ function RoleDialogIntegrationListItem({
     }
   }, [toolsInfo.isEmpty, onNavigateToIntegration, integration]);
 
-  const handleCheckboxClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-  }, []);
+  const handleCheckboxClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+    },
+    [],
+  );
 
   return (
     <Card
@@ -851,10 +807,7 @@ function RoleDialogIntegrationListItem({
               onCheckedChange={handleAll}
               onClick={handleCheckboxClick}
             />
-            <Icon
-              name="chevron_right"
-              size={20}
-            />
+            <Icon name="chevron_right" size={20} />
           </div>
         )}
       </CardContent>
@@ -888,39 +841,45 @@ function IntegrationDetailView({
   }, [toolsData, toolsSet, integration.id]);
 
   // Filter tools based on search with memoization
-  const filteredTools: MCPTool[] = useMemo(() =>
-    toolsInfo.allTools.filter((tool) => {
-      if (!toolsSearch) return true;
-      const searchTerm = toolsSearch.toLowerCase();
-      const toolNameFormatted = tool.name.replace(/_/g, " ").toLowerCase();
-      const toolNameOriginal = tool.name.toLowerCase();
-      const toolDescription = tool.description?.toLowerCase() || "";
-      return toolNameFormatted.includes(searchTerm) ||
-        toolNameOriginal.includes(searchTerm) ||
-        toolDescription.includes(searchTerm);
-    }), [toolsInfo.allTools, toolsSearch]);
+  const filteredTools: MCPTool[] = useMemo(
+    () =>
+      toolsInfo.allTools.filter((tool) => {
+        if (!toolsSearch) return true;
+        const searchTerm = toolsSearch.toLowerCase();
+        const toolNameFormatted = tool.name.replace(/_/g, " ").toLowerCase();
+        const toolNameOriginal = tool.name.toLowerCase();
+        const toolDescription = tool.description?.toLowerCase() || "";
+        return (
+          toolNameFormatted.includes(searchTerm) ||
+          toolNameOriginal.includes(searchTerm) ||
+          toolDescription.includes(searchTerm)
+        );
+      }),
+    [toolsInfo.allTools, toolsSearch],
+  );
 
-  const handleAll = useCallback((checked: boolean) => {
-    setIntegrationTools(
-      integration.id,
-      checked ? toolsInfo.allTools.map((tool) => tool.name) : [],
-    );
-  }, [integration.id, setIntegrationTools, toolsInfo.allTools]);
+  const handleAll = useCallback(
+    (checked: boolean) => {
+      setIntegrationTools(
+        integration.id,
+        checked ? toolsInfo.allTools.map((tool) => tool.name) : [],
+      );
+    },
+    [integration.id, setIntegrationTools, toolsInfo.allTools],
+  );
 
   return (
     <div className="space-y-4">
       {/* Breadcrumbs */}
       <div className="flex items-center gap-2 text-sm">
         <button
+          type="button"
           onClick={onBack}
           className="text-primary hover:text-primary/80 cursor-pointer"
         >
           Tools
         </button>
-        <Icon
-          name="chevron_right"
-          size={16}
-        />
+        <Icon name="chevron_right" size={16} />
         <span className="text-foreground">{integration.name}</span>
       </div>
 
@@ -1000,8 +959,8 @@ function IntegrationDetailView({
               const enabled = toolsSet[integration.id]?.includes(tool.name) ??
                 false;
               const handleCheckboxChange = (checked: boolean) => {
-                const withoutTool = toolsSet[integration.id]?.filter((t) =>
-                  t !== tool.name
+                const withoutTool = toolsSet[integration.id]?.filter(
+                  (t) => t !== tool.name,
                 );
                 const withTool = [
                   ...(toolsSet[integration.id] || []),
@@ -1018,10 +977,10 @@ function IntegrationDetailView({
                 >
                   <div className="flex flex-col min-w-0 flex-1">
                     <span className="text-sm font-medium truncate text-foreground">
-                      {tool.name.replace(/_/g, " ").toLowerCase().replace(
-                        /\b\w/g,
-                        (c: string) => c.toUpperCase(),
-                      )}
+                      {tool.name
+                        .replace(/_/g, " ")
+                        .toLowerCase()
+                        .replace(/\b\w/g, (c: string) => c.toUpperCase())}
                     </span>
                     <span className="text-xs text-muted-foreground break-words">
                       {tool.description || "No description"}
@@ -1049,7 +1008,9 @@ function AddRoleDialog({
   onSave,
   initialTab = "general",
 }: AddRoleDialogProps) {
-  const { data: { members } } = useTeamMembers(teamId ?? null);
+  const {
+    data: { members },
+  } = useTeamMembers(teamId ?? null);
   // Convert external role to internal format for editing
   const convertToInternal = (role?: TeamRole): InternalRoleFormData => {
     if (!role) {
@@ -1123,9 +1084,10 @@ function AddRoleDialog({
     }
   }, [selectedTab]);
 
-  const availableIntegrations = integrations.filter((i) =>
-    i.id.startsWith("i:") &&
-    !["i:user-management", "i:workspace-management"].includes(i.id)
+  const availableIntegrations = integrations.filter(
+    (i) =>
+      i.id.startsWith("i:") &&
+      !["i:user-management", "i:workspace-management"].includes(i.id),
   );
 
   // Use deferred values for search to prevent blocking input
@@ -1137,32 +1099,40 @@ function AddRoleDialog({
   const filteredIntegrations = useMemo(
     () =>
       availableIntegrations.filter((integration) =>
-        integration.name.toLowerCase().includes(
-          deferredToolsSearch.toLowerCase(),
-        )
+        integration.name
+          .toLowerCase()
+          .includes(deferredToolsSearch.toLowerCase())
       ),
     [availableIntegrations, deferredToolsSearch],
   );
 
   const filteredAgents = useMemo(
     () =>
-      agents.filter((agent) =>
-        agent.name.toLowerCase().includes(deferredAgentsSearch.toLowerCase()) ||
-        (agent.description || "").toLowerCase().includes(
-          deferredAgentsSearch.toLowerCase(),
-        )
+      agents.filter(
+        (agent) =>
+          agent.name
+            .toLowerCase()
+            .includes(deferredAgentsSearch.toLowerCase()) ||
+          (agent.description || "")
+            .toLowerCase()
+            .includes(deferredAgentsSearch.toLowerCase()),
       ),
     [agents, deferredAgentsSearch],
   );
 
-  const filteredMembers = useMemo(() =>
-    members.filter((member) => {
-      const name = member.profiles.metadata.full_name || "";
-      const email = member.profiles.email || "";
-      const searchTerm = deferredMembersSearch.toLowerCase();
-      return name.toLowerCase().includes(searchTerm) ||
-        email.toLowerCase().includes(searchTerm);
-    }), [members, deferredMembersSearch]);
+  const filteredMembers = useMemo(
+    () =>
+      members.filter((member) => {
+        const name = member.profiles.metadata.full_name || "";
+        const email = member.profiles.email || "";
+        const searchTerm = deferredMembersSearch.toLowerCase();
+        return (
+          name.toLowerCase().includes(searchTerm) ||
+          email.toLowerCase().includes(searchTerm)
+        );
+      }),
+    [members, deferredMembersSearch],
+  );
 
   const setIntegrationTools = useCallback(
     (integrationId: string, tools: string[]) => {
@@ -1203,40 +1173,44 @@ function AddRoleDialog({
     }, 10);
   }, []);
 
-  const handleAgentToggle = useCallback((agentId: string, checked: boolean) => {
-    if (checked) {
-      const agent = agents.find((a) => a.id === agentId);
-      const agentTools = agent?.tools_set || {};
-      const roleTools = formData.tools;
+  const handleAgentToggle = useCallback(
+    (agentId: string, checked: boolean) => {
+      if (checked) {
+        const agent = agents.find((a) => a.id === agentId);
+        const agentTools = agent?.tools_set || {};
+        const roleTools = formData.tools;
 
-      const missingIntegrations: string[] = [];
-      Object.keys(agentTools).forEach((integrationId) => {
-        if (
-          !roleTools[integrationId] || roleTools[integrationId].length === 0
-        ) {
-          missingIntegrations.push(integrationId);
-        }
-      });
-
-      // Automatically add missing tools
-      if (missingIntegrations.length > 0) {
-        missingIntegrations.forEach((integrationId) => {
-          const agentIntegrationTools = agentTools[integrationId] || [];
-          setIntegrationTools(integrationId, agentIntegrationTools);
+        const missingIntegrations: string[] = [];
+        Object.keys(agentTools).forEach((integrationId) => {
+          if (
+            !roleTools[integrationId] ||
+            roleTools[integrationId].length === 0
+          ) {
+            missingIntegrations.push(integrationId);
+          }
         });
-      }
 
-      setFormData((prev) => ({
-        ...prev,
-        agents: [...prev.agents, agentId],
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        agents: prev.agents.filter((id) => id !== agentId),
-      }));
-    }
-  }, [agents, formData.tools, setIntegrationTools]);
+        // Automatically add missing tools
+        if (missingIntegrations.length > 0) {
+          missingIntegrations.forEach((integrationId) => {
+            const agentIntegrationTools = agentTools[integrationId] || [];
+            setIntegrationTools(integrationId, agentIntegrationTools);
+          });
+        }
+
+        setFormData((prev) => ({
+          ...prev,
+          agents: [...prev.agents, agentId],
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          agents: prev.agents.filter((id) => id !== agentId),
+        }));
+      }
+    },
+    [agents, formData.tools, setIntegrationTools],
+  );
 
   const handleMemberToggle = useCallback((userId: string, checked: boolean) => {
     setFormData((prev) => ({
@@ -1253,12 +1227,14 @@ function AddRoleDialog({
       setFormData({
         name: role.name || "",
         description: role.description || "",
-        tools: Object.fromEntries(Object.entries(role.tools || {}).map(([integrationId, tools]) => [
-          integrationId,
-          tools.map((tool) =>
-            typeof tool === "string" ? tool : tool.toolName
-          ),
-        ])),
+        tools: Object.fromEntries(
+          Object.entries(role.tools || {}).map(([integrationId, tools]) => [
+            integrationId,
+            tools.map((tool) =>
+              typeof tool === "string" ? tool : tool.toolName
+            ),
+          ]),
+        ),
         agents: role.agents || [],
         members: role.members || [],
       });
@@ -1391,14 +1367,14 @@ function AddRoleDialog({
 }
 
 // Sub-Components for Roles Table View
-export function RolesTableView({
-  teamId,
-}: RolesTableViewProps) {
+export function RolesTableView({ teamId }: RolesTableViewProps) {
   // Data fetching hooks
   const { data: roles = [] } = useTeamRoles(teamId ?? null);
   const { data: agents = [] } = useAgents();
   const { data: integrations = [] } = useIntegrations();
-  const { data: { members } } = useTeamMembers(teamId ?? null, {
+  const {
+    data: { members },
+  } = useTeamMembers(teamId ?? null, {
     withActivity: true,
   });
   const createRoleMutation = useCreateTeamRole();
@@ -1412,7 +1388,9 @@ export function RolesTableView({
     "desc",
   );
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
-  const [editingRole, setEditingRole] = useState<TeamRole | undefined>(undefined);
+  const [editingRole, setEditingRole] = useState<TeamRole | undefined>(
+    undefined,
+  );
   const [roleDialogInitialTab, setRoleDialogInitialTab] = useState("general");
 
   // Utility Functions
@@ -1467,16 +1445,19 @@ export function RolesTableView({
     [teamId, updateRoleMutation],
   );
 
-  const handleRolesSort = useCallback((key: string) => {
-    if (rolesSortKey === key) {
-      setRolesSortDirection((prev: "asc" | "desc") =>
-        prev === "asc" ? "desc" : "asc"
-      );
-    } else {
-      setRolesSortKey(key);
-      setRolesSortDirection("asc");
-    }
-  }, [rolesSortKey]);
+  const handleRolesSort = useCallback(
+    (key: string) => {
+      if (rolesSortKey === key) {
+        setRolesSortDirection((prev: "asc" | "desc") =>
+          prev === "asc" ? "desc" : "asc"
+        );
+      } else {
+        setRolesSortKey(key);
+        setRolesSortDirection("asc");
+      }
+    },
+    [rolesSortKey],
+  );
 
   const getRoleSortValue = useCallback(
     (role: TeamRole, key: string): string => {
@@ -1509,209 +1490,206 @@ export function RolesTableView({
   );
 
   // Roles table columns
-  const rolesColumns = useMemo(() => [
-    {
-      id: "role",
-      header: "Role",
-      render: (role: TeamRole) => (
-        <div
-          className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => handleEditRole(role, "general")}
-        >
-          <span className="font-medium">{role.name}</span>
-          <span className="text-xs text-muted-foreground">
-            {role.description}
-          </span>
-        </div>
-      ),
-      sortable: true,
-    },
-    {
-      id: "tools",
-      header: "Tools",
-      render: (role: TeamRole) => {
-        const roleTools = role.tools || {};
-        const integrationsWithTools = integrations.filter((integration) =>
-          roleTools[integration.id] && roleTools[integration.id].length > 0
-        );
-
-        if (integrationsWithTools.length === 0) {
-          return (
-            <span
-              className="text-muted-foreground text-sm cursor-pointer hover:text-foreground transition-colors"
-              onClick={() => handleEditRole(role, "tools")}
+  const rolesColumns = useMemo(
+    () =>
+      [
+        {
+          id: "role",
+          header: "Role",
+          render: (role: TeamRole) => (
+            <div
+              className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => handleEditRole(role, "general")}
             >
-              No tools
-            </span>
-          );
-        }
-
-        return (
-          <div
-            className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => handleEditRole(role, "tools")}
-          >
-            <div className="flex -space-x-1">
-              {integrationsWithTools.slice(0, 3).map((integration) => (
-                <IntegrationAvatar
-                  key={integration.id}
-                  url={integration.icon}
-                  fallback={integration.name}
-                  size="sm"
-                  className="border border-background"
-                />
-              ))}
-            </div>
-            {integrationsWithTools.length > 3 && (
-              <span className="ml-2 text-xs font-medium text-muted-foreground">
-                +{integrationsWithTools.length - 3}
+              <span className="font-medium">{role.name}</span>
+              <span className="text-xs text-muted-foreground">
+                {role.description}
               </span>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      id: "agents",
-      header: "Agents",
-      render: (role: TeamRole) => {
-        const roleAgents = role.agents || [];
-        const roleAgentsList = agents.filter((agent) =>
-          roleAgents.includes(agent.id)
-        );
-
-        if (roleAgentsList.length === 0) {
-          return (
-            <span
-              className="text-muted-foreground text-sm cursor-pointer hover:text-foreground transition-colors"
-              onClick={() => handleEditRole(role, "agents")}
-            >
-              No agents
-            </span>
-          );
-        }
-
-        return (
-          <div
-            className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => handleEditRole(role, "agents")}
-          >
-            <div className="flex -space-x-1">
-              {roleAgentsList.slice(0, 3).map((agent) => (
-                <AgentAvatar
-                  key={agent.id}
-                  url={agent.avatar}
-                  fallback={agent.name}
-                  size="sm"
-                  className="border border-background"
-                />
-              ))}
             </div>
-            {roleAgentsList.length > 3 && (
-              <span className="ml-2 text-xs font-medium text-muted-foreground">
-                +{roleAgentsList.length - 3}
-              </span>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      id: "members",
-      header: "Members",
-      render: (role: TeamRole) => {
-        const roleMembers = role.members || [];
-        const roleMembersList = members.filter((member) =>
-          roleMembers.includes(member.profiles.id)
-        );
+          ),
+          sortable: true,
+        },
+        {
+          id: "tools",
+          header: "Tools",
+          render: (role: TeamRole) => {
+            const roleTools = role.tools || {};
+            const integrationsWithTools = integrations.filter(
+              (integration) =>
+                roleTools[integration.id] &&
+                roleTools[integration.id].length > 0,
+            );
 
-        if (roleMembersList.length === 0) {
-          return (
-            <span
-              className="text-muted-foreground text-sm cursor-pointer hover:text-foreground transition-colors"
-              onClick={() => handleEditRole(role, "members")}
-            >
-              No members
-            </span>
-          );
-        }
+            if (integrationsWithTools.length === 0) {
+              return (
+                <span
+                  className="text-muted-foreground text-sm cursor-pointer hover:text-foreground transition-colors"
+                  onClick={() => handleEditRole(role, "tools")}
+                >
+                  No tools
+                </span>
+              );
+            }
 
-        return (
-          <div
-            className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => handleEditRole(role, "members")}
-          >
-            <div className="flex -space-x-1">
-              {roleMembersList.slice(0, 3).map((member) => (
-                <UserAvatar
-                  key={member.profiles.id}
-                  url={member.profiles.metadata.avatar_url}
-                  fallback={member.profiles.metadata.full_name ||
-                    member.profiles.email}
-                  size="sm"
-                  className="border border-background"
-                />
-              ))}
-            </div>
-            {roleMembersList.length > 3 && (
-              <span className="ml-2 text-xs font-medium text-muted-foreground">
-                +{roleMembersList.length - 3}
-              </span>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      id: "actions",
-      header: "",
-      render: (role: TeamRole) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <Icon name="more_horiz" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => handleEditRole(role)}
-            >
-              <Icon name="edit" />
-              Edit role
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              variant="destructive"
-              disabled={DEFAULT_ROLES.some((r) => r.id === role.id)}
-              onClick={async () => {
-                if (!DEFAULT_ROLES.some((r) => r.id === role.id) && teamId) {
-                  try {
-                    await deleteRoleMutation.mutateAsync({
-                      teamId,
-                      roleId: role.id,
-                    });
-                    toast.success("Role deleted successfully");
-                  } catch (error) {
-                    toast.error("Failed to delete role");
-                    console.error("Role delete error:", error);
-                  }
-                }
-              }}
-            >
-              <Icon name="delete" />
-              Delete role
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-  ] satisfies TableColumn<TeamRole>[], [
-    agents,
-    integrations,
-    handleEditRole,
-    members,
-    teamId,
-    deleteRoleMutation,
-  ]);
+            return (
+              <div
+                className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handleEditRole(role, "tools")}
+              >
+                <div className="flex -space-x-1">
+                  {integrationsWithTools.slice(0, 3).map((integration) => (
+                    <IntegrationAvatar
+                      key={integration.id}
+                      url={integration.icon}
+                      fallback={integration.name}
+                      size="sm"
+                      className="border border-background"
+                    />
+                  ))}
+                </div>
+                {integrationsWithTools.length > 3 && (
+                  <span className="ml-2 text-xs font-medium text-muted-foreground">
+                    +{integrationsWithTools.length - 3}
+                  </span>
+                )}
+              </div>
+            );
+          },
+        },
+        {
+          id: "agents",
+          header: "Agents",
+          render: (role: TeamRole) => {
+            const roleAgents = role.agents || [];
+            const roleAgentsList = agents.filter((agent) =>
+              roleAgents.includes(agent.id)
+            );
+
+            if (roleAgentsList.length === 0) {
+              return (
+                <span
+                  className="text-muted-foreground text-sm cursor-pointer hover:text-foreground transition-colors"
+                  onClick={() => handleEditRole(role, "agents")}
+                >
+                  No agents
+                </span>
+              );
+            }
+
+            return (
+              <div
+                className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handleEditRole(role, "agents")}
+              >
+                <div className="flex -space-x-1">
+                  {roleAgentsList.slice(0, 3).map((agent) => (
+                    <AgentAvatar
+                      key={agent.id}
+                      url={agent.avatar}
+                      fallback={agent.name}
+                      size="sm"
+                      className="border border-background"
+                    />
+                  ))}
+                </div>
+                {roleAgentsList.length > 3 && (
+                  <span className="ml-2 text-xs font-medium text-muted-foreground">
+                    +{roleAgentsList.length - 3}
+                  </span>
+                )}
+              </div>
+            );
+          },
+        },
+        {
+          id: "members",
+          header: "Members",
+          render: (role: TeamRole) => {
+            const roleMembers = role.members || [];
+            const roleMembersList = members.filter((member) =>
+              roleMembers.includes(member.profiles.id)
+            );
+
+            if (roleMembersList.length === 0) {
+              return (
+                <span
+                  className="text-muted-foreground text-sm cursor-pointer hover:text-foreground transition-colors"
+                  onClick={() => handleEditRole(role, "members")}
+                >
+                  No members
+                </span>
+              );
+            }
+
+            return (
+              <div
+                className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handleEditRole(role, "members")}
+              >
+                <div className="flex -space-x-1">
+                  {roleMembersList.slice(0, 3).map((member) => (
+                    <UserAvatar
+                      key={member.profiles.id}
+                      url={member.profiles.metadata.avatar_url}
+                      fallback={member.profiles.metadata.full_name ||
+                        member.profiles.email}
+                      size="sm"
+                      className="border border-background"
+                    />
+                  ))}
+                </div>
+                {roleMembersList.length > 3 && (
+                  <span className="ml-2 text-xs font-medium text-muted-foreground">
+                    +{roleMembersList.length - 3}
+                  </span>
+                )}
+              </div>
+            );
+          },
+        },
+        {
+          id: "actions",
+          header: "",
+          render: (role: TeamRole) => (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Icon name="more_horiz" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleEditRole(role)}>
+                  <Icon name="edit" />
+                  Edit role
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  disabled={role.team_id === null}
+                  onClick={async () => {
+                    if (role.team_id !== null && teamId) {
+                      try {
+                        await deleteRoleMutation.mutateAsync({
+                          teamId,
+                          roleId: role.id,
+                        });
+                        toast.success("Role deleted successfully");
+                      } catch (error) {
+                        toast.error("Failed to delete role");
+                        console.error("Role delete error:", error);
+                      }
+                    }
+                  }}
+                >
+                  <Icon name="delete" />
+                  Delete role
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ),
+        },
+      ] satisfies TableColumn<TeamRole>[],
+    [agents, integrations, handleEditRole, members, teamId, deleteRoleMutation],
+  );
 
   // Filter roles based on search
   const filteredRoles: TeamRole[] = useMemo(
@@ -1723,17 +1701,20 @@ export function RolesTableView({
   );
 
   // Sort the filtered roles
-  const sortedRoles = useMemo(() =>
-    [...filteredRoles].sort((a, b) => {
-      const aValue = getRoleSortValue(a, rolesSortKey);
-      const bValue = getRoleSortValue(b, rolesSortKey);
+  const sortedRoles = useMemo(
+    () =>
+      [...filteredRoles].sort((a, b) => {
+        const aValue = getRoleSortValue(a, rolesSortKey);
+        const bValue = getRoleSortValue(b, rolesSortKey);
 
-      if (rolesSortDirection === "asc") {
-        return aValue.localeCompare(bValue);
-      } else {
-        return bValue.localeCompare(aValue);
-      }
-    }), [filteredRoles, rolesSortKey, rolesSortDirection, getRoleSortValue]);
+        if (rolesSortDirection === "asc") {
+          return aValue.localeCompare(bValue);
+        } else {
+          return bValue.localeCompare(aValue);
+        }
+      }),
+    [filteredRoles, rolesSortKey, rolesSortDirection, getRoleSortValue],
+  );
 
   return (
     <>
@@ -1746,9 +1727,7 @@ export function RolesTableView({
               setRolesQuery(e.target.value)}
             className="w-80"
           />
-          <Button
-            onClick={() => handleEditRole(undefined)}
-          >
+          <Button onClick={() => handleEditRole(undefined)}>
             <Icon name="add" />
             Add role
           </Button>
