@@ -378,14 +378,18 @@ export class PolicyClient {
     const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
 
     const policyData = {
-      name: policy.name,
+      ...policy,
       team_id: teamId,
       statements: policy.statements as unknown as Json[],
     };
 
-    const { data } = await this.db.from("policies").insert(policyData).select().single();
+    const { data, error } = await this.db.from("policies").insert(policyData)
+      .select().single();
+    if (error) {
+      throw error;
+    }
     await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
-    return data;
+    return data as unknown as Policy | null;
   }
 
   async deletePolicyForTeamResource(
@@ -394,7 +398,8 @@ export class PolicyClient {
   ) {
     this.assertDb(this.db);
     const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
-    const { data } = await this.db.from("policies").delete().in("id", policyIds).eq("team_id", teamId).select();
+    const { data } = await this.db.from("policies").delete().in("id", policyIds)
+      .eq("team_id", teamId).select();
     await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
     return data;
   }
@@ -405,7 +410,7 @@ export class PolicyClient {
   ) {
     this.assertDb(this.db);
     const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
-    const { data } = await this.db
+    const { data, error } = await this.db
       .from("policies")
       .update({
         ...policy,
@@ -417,8 +422,12 @@ export class PolicyClient {
       .select()
       .single();
 
+    if (error) {
+      throw error;
+    }
+
     await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
-    return data;
+    return data as unknown as Policy | null;
   }
 
   async createRole(
@@ -442,10 +451,11 @@ export class PolicyClient {
     }
     await this.teamRolesCache.delete(this.getTeamRolesCacheKey(teamId));
 
+    // TODO: implement rollback if error
     if (policies) {
       const policiesData = (await Promise.all(policies.map(async (p) => {
         return await this.createPolicyForTeamResource(teamId, p);
-      }))).filter((p) => p !== null);
+      }))).filter((p): p is Policy => p !== null);
 
       await this.createRolePolicies(policiesData, data.id);
       await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
@@ -454,12 +464,22 @@ export class PolicyClient {
     return data;
   }
 
-  private async createRolePolicies(policies: Pick<Policy, "id">[], roleId: number) {
+  private async createRolePolicies(
+    policies: Pick<Policy, "id">[],
+    roleId: number,
+  ) {
     this.assertDb(this.db);
-    return await this.db.from("role_policies").upsert(policies.map((p) => ({
-      policy_id: p.id,
-      role_id: roleId,
-    }), { onConflict: "role_id, policy_id" }));
+    const { data, error } = await this.db.from("role_policies").upsert(
+      policies.map((p) => ({
+        policy_id: p.id,
+        role_id: roleId,
+      }), { onConflict: "role_id, policy_id" }),
+    );
+
+    if (error) {
+      throw error;
+    }
+    return data;
   }
 
   async updateRole(
@@ -471,7 +491,7 @@ export class PolicyClient {
     const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
 
     // check if role.team_id
-    const { data } = await this.db
+    const { data, error } = await this.db
       .from("roles")
       .update({
         ...role,
@@ -482,15 +502,23 @@ export class PolicyClient {
       .select()
       .single();
 
+    if (error) {
+      throw error;
+    }
+
     await this.teamRolesCache.delete(this.getTeamRolesCacheKey(teamId));
 
+    // TODO: implement rollback if error
     if (policies) {
       const policiesData = (await Promise.all(policies.map(async (p) => {
-        if ('id' in p) {
-          return await this.updatePolicyForTeamResource(teamId, p as Partial<Policy> & Pick<Policy, "id">);
+        if ("id" in p) {
+          return await this.updatePolicyForTeamResource(
+            teamId,
+            p as Partial<Policy> & Pick<Policy, "id">,
+          );
         }
         return await this.createPolicyForTeamResource(teamId, p);
-      }))).filter((p) => p !== null);
+      }))).filter((p): p is Policy => p !== null);
 
       await this.createRolePolicies(policiesData, role.id);
       await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
@@ -524,28 +552,42 @@ export class PolicyClient {
     }
 
     // delete all role_policies
-    const { data: policiesIds } = await this.db.from("role_policies").delete().eq("role_id", role.id).select('policy_id');
+    const { data: policiesIds } = await this.db.from("role_policies").delete()
+      .eq("role_id", role.id).select("policy_id");
 
     if (policiesIds) {
-      await this.deletePolicyForTeamResource(teamId, policiesIds.map((p) => p.policy_id));
+      await this.deletePolicyForTeamResource(
+        teamId,
+        policiesIds.map((p) => p.policy_id),
+      );
     }
 
     // delete all member_roles
-    const { data: memberIds } = await this.db.from("member_roles").delete().eq("role_id", role.id).select('member_id');
+    const { data: memberIds } = await this.db.from("member_roles").delete().eq(
+      "role_id",
+      role.id,
+    ).select("member_id");
     // remove cache for all users
     if (memberIds) {
-      const { data: _members } = await this.db.from("members").select("user_id").in("id", memberIds.map((m) => m.member_id));
-      const members = _members?.filter((m): m is { user_id: string } => m.user_id !== null) ?? [];
-      await this.deleteUserRolesCache(teamId, members.map(m => m.user_id));
+      const { data: _members } = await this.db.from("members").select("user_id")
+        .in("id", memberIds.map((m) => m.member_id));
+      const members = _members?.filter((m): m is { user_id: string } =>
+        m.user_id !== null
+      ) ?? [];
+      await this.deleteUserRolesCache(teamId, members.map((m) => m.user_id));
     }
 
     // Delete the role
-    const { data } = await this.db
+    const { data, error } = await this.db
       .from("roles")
       .delete()
       .eq("id", role.id)
       .eq("team_id", teamId)
       .select();
+
+    if (error) {
+      throw error;
+    }
 
     await this.teamRolesCache.delete(this.getTeamRolesCacheKey(teamId));
     return data;
@@ -582,11 +624,11 @@ export class PolicyClient {
       return null;
     }
 
-    const policies: Policy[] = data.role_policies.map((rp: any) => ({
+    const policies: Policy[] = data.role_policies.map((rp) => ({
       id: rp.policies.id,
       name: rp.policies.name,
       team_id: rp.policies.team_id,
-      statements: rp.policies.statements as Statement[],
+      statements: rp.policies.statements as unknown as Statement[],
     }));
 
     return {
@@ -670,8 +712,16 @@ export class PolicyClient {
   }
 
   private async deleteUserRolesCache(teamId: number, userIds: string[]) {
-    await Promise.all(userIds.map((u) => this.userPolicyCache.delete(this.getUserPoliceCacheKey(u, teamId))));
-    await Promise.all(userIds.map((u) => this.userRolesCache.delete(this.getUserRolesCacheKey(u, teamId))));
+    await Promise.all(
+      userIds.map((u) =>
+        this.userPolicyCache.delete(this.getUserPoliceCacheKey(u, teamId))
+      ),
+    );
+    await Promise.all(
+      userIds.map((u) =>
+        this.userRolesCache.delete(this.getUserRolesCacheKey(u, teamId))
+      ),
+    );
   }
 
   public filterTeamRoles<R extends Pick<Role, "id">>(roles: R[]): R[] {
@@ -766,6 +816,8 @@ export class AuthorizationClient {
     const matchFn = statement.matchCondition
       ? MatcherFunctions[statement.matchCondition.resource]
       : undefined;
+
+    statement.matchCondition && console.log(statement.matchCondition);
 
     const matched = matchFn?.handler?.(
       // deno-lint-ignore no-explicit-any
