@@ -1,5 +1,6 @@
 import {
   type ChangeEvent,
+  Suspense,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -13,13 +14,16 @@ import {
   listTools,
   type MCPTool,
   type Member,
+  type Role,
   type RoleFormData,
   type TeamRole,
+  type ToolPermission,
   useAgents,
   useCreateTeamRole,
   useDeleteTeamRole,
   useIntegrations,
   useTeamMembers,
+  useTeamRole,
   useTeamRoles,
   useTools,
   useUpdateTeamRole,
@@ -61,15 +65,6 @@ import { Checkbox } from "@deco/ui/components/checkbox.tsx";
 import { Alert, AlertDescription } from "@deco/ui/components/alert.tsx";
 import { Label } from "@deco/ui/components/label.tsx";
 
-// Internal form data type with simplified tools format
-interface InternalRoleFormData {
-  name: string;
-  description?: string;
-  tools: Record<string, string[]>; // Simplified internal format
-  agents: string[];
-  members: string[];
-}
-
 interface RoleDialogUserInfoProps {
   userId: string;
 }
@@ -92,9 +87,9 @@ interface IntegrationDetailViewProps {
 interface AddRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  role?: TeamRole;
+  role?: Role;
   teamId?: number;
-  onSave: (roleData: InternalRoleFormData, isEditing: boolean) => void;
+  onSave: (roleData: RoleFormData, isEditing: boolean) => void;
   initialTab?: string;
 }
 
@@ -108,21 +103,13 @@ interface RoleDialogSidebarProps {
 }
 
 interface RoleGeneralPanelProps {
-  formData: InternalRoleFormData;
-  setFormData: (
-    data:
-      | InternalRoleFormData
-      | ((prev: InternalRoleFormData) => InternalRoleFormData),
-  ) => void;
+  formData: TeamRole;
+  setFormData: (data: TeamRole | ((prev: TeamRole) => TeamRole)) => void;
 }
 
 interface RoleToolsPanelProps {
-  formData: InternalRoleFormData;
-  setFormData: (
-    data:
-      | InternalRoleFormData
-      | ((prev: InternalRoleFormData) => InternalRoleFormData),
-  ) => void;
+  formData: TeamRole;
+  setFormData: (data: TeamRole | ((prev: TeamRole) => TeamRole)) => void;
   currentView: string;
   selectedIntegration: Integration | null;
   toolsSearch: string;
@@ -136,12 +123,8 @@ interface RoleToolsPanelProps {
 }
 
 interface RoleAgentsPanelProps {
-  formData: InternalRoleFormData;
-  setFormData: (
-    data:
-      | InternalRoleFormData
-      | ((prev: InternalRoleFormData) => InternalRoleFormData),
-  ) => void;
+  formData: TeamRole;
+  setFormData: (data: TeamRole | ((prev: TeamRole) => TeamRole)) => void;
   agentsSearch: string;
   setAgentsSearch: (search: string) => void;
   filteredAgents: Agent[];
@@ -150,12 +133,8 @@ interface RoleAgentsPanelProps {
 }
 
 interface RoleMembersPanelProps {
-  formData: InternalRoleFormData;
-  setFormData: (
-    data:
-      | InternalRoleFormData
-      | ((prev: InternalRoleFormData) => InternalRoleFormData),
-  ) => void;
+  formData: TeamRole;
+  setFormData: (data: TeamRole | ((prev: TeamRole) => TeamRole)) => void;
   membersSearch: string;
   setMembersSearch: (search: string) => void;
   filteredMembers: Member[];
@@ -171,7 +150,7 @@ function RoleDialogSidebar({
   selectedTab,
   onTabChange,
   selectedToolsCount,
-  selectedAgentsCount,
+  // selectedAgentsCount,
   selectedMembersCount,
   onToolsTabClick,
 }: RoleDialogSidebarProps) {
@@ -201,7 +180,9 @@ function RoleDialogSidebar({
             )}
           </SidebarMenuButton>
         </SidebarMenuItem>
-        <SidebarMenuItem>
+        {/* disabled for instance */}
+        {
+          /*<SidebarMenuItem>
           <SidebarMenuButton
             isActive={selectedTab === "agents"}
             onClick={() => onTabChange("agents")}
@@ -214,7 +195,8 @@ function RoleDialogSidebar({
               </Badge>
             )}
           </SidebarMenuButton>
-        </SidebarMenuItem>
+        </SidebarMenuItem> */
+        }
         <SidebarMenuItem>
           <SidebarMenuButton
             isActive={selectedTab === "members"}
@@ -237,7 +219,7 @@ function RoleDialogSidebar({
 function RoleGeneralPanel({ formData, setFormData }: RoleGeneralPanelProps) {
   const handleNameChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev: InternalRoleFormData) => ({
+      setFormData((prev: TeamRole) => ({
         ...prev,
         name: e.target.value,
       }));
@@ -247,7 +229,7 @@ function RoleGeneralPanel({ formData, setFormData }: RoleGeneralPanelProps) {
 
   const handleDescriptionChange = useCallback(
     (e: ChangeEvent<HTMLTextAreaElement>) => {
-      setFormData((prev: InternalRoleFormData) => ({
+      setFormData((prev: TeamRole) => ({
         ...prev,
         description: e.target.value,
       }));
@@ -256,7 +238,7 @@ function RoleGeneralPanel({ formData, setFormData }: RoleGeneralPanelProps) {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 flex-1">
       <div className="space-y-2">
         <Label htmlFor="role-name" className="text-sm font-medium">
           Name
@@ -266,6 +248,7 @@ function RoleGeneralPanel({ formData, setFormData }: RoleGeneralPanelProps) {
           value={formData.name}
           onChange={handleNameChange}
           placeholder="Enter role name"
+          disabled
         />
       </div>
       <div className="space-y-2">
@@ -274,10 +257,11 @@ function RoleGeneralPanel({ formData, setFormData }: RoleGeneralPanelProps) {
         </Label>
         <Textarea
           id="role-description"
-          value={formData.description}
+          value={formData.description || ""}
           onChange={handleDescriptionChange}
           placeholder="Describe what this role can do"
           rows={3}
+          disabled
         />
       </div>
     </div>
@@ -311,19 +295,22 @@ function RoleToolsPanel({
     );
 
     if (hasAnySelected) {
-      setFormData((prev: InternalRoleFormData) => ({ ...prev, tools: {} }));
+      setFormData((prev: TeamRole) => ({ ...prev, tools: {} }));
     } else {
       setSelectingAllTools(true);
-      const newTools: Record<string, string[]> = {};
+      const newTools: Record<string, ToolPermission[]> = {};
 
       try {
         for (const integration of filteredIntegrations) {
           try {
             const toolsData = await listTools(integration.connection);
-            const toolNames = toolsData.tools?.map(
-              (tool: { name: string; description?: string }) => tool.name,
+            const toolPermissions: ToolPermission[] = toolsData.tools?.map(
+              (tool: { name: string; description?: string }) => ({
+                toolName: tool.name,
+                effect: "allow" as const,
+              }),
             ) || [];
-            newTools[integration.id] = toolNames;
+            newTools[integration.id] = toolPermissions;
           } catch (error) {
             console.error(
               `Failed to load tools for ${integration.name}:`,
@@ -333,7 +320,7 @@ function RoleToolsPanel({
           }
         }
 
-        setFormData((prev: InternalRoleFormData) => ({
+        setFormData((prev: TeamRole) => ({
           ...prev,
           tools: newTools,
         }));
@@ -361,6 +348,18 @@ function RoleToolsPanel({
     [formData.tools],
   );
 
+  // Convert TeamRole tools format to simplified format for display
+  const toolsSetForDisplay = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(formData.tools).map(([integrationId, tools]) => [
+          integrationId,
+          tools.map((tool) => tool.toolName),
+        ]),
+      ),
+    [formData.tools],
+  );
+
   return (
     <div className="space-y-4">
       {currentView === "integrations"
@@ -381,7 +380,7 @@ function RoleToolsPanel({
               <Button
                 variant="outline"
                 size="sm"
-                disabled={selectingAllTools}
+                disabled
                 onClick={handleSelectAll}
               >
                 {selectingAllTools
@@ -398,7 +397,7 @@ function RoleToolsPanel({
               {filteredIntegrations.map((integration) => (
                 <RoleDialogIntegrationListItem
                   key={integration.id}
-                  toolsSet={formData.tools}
+                  toolsSet={toolsSetForDisplay}
                   setIntegrationTools={setIntegrationTools}
                   integration={integration}
                   searchTerm=""
@@ -417,7 +416,7 @@ function RoleToolsPanel({
         ? (
           <IntegrationDetailView
             integration={selectedIntegration}
-            toolsSet={formData.tools}
+            toolsSet={toolsSetForDisplay}
             setIntegrationTools={setIntegrationTools}
             onBack={handleBackToIntegrations}
           />
@@ -427,7 +426,7 @@ function RoleToolsPanel({
   );
 }
 
-function RoleAgentsPanel({
+function _RoleAgentsPanel({
   formData,
   setFormData,
   agentsSearch,
@@ -806,6 +805,7 @@ function RoleDialogIntegrationListItem({
               checked={toolsInfo.isAll}
               onCheckedChange={handleAll}
               onClick={handleCheckboxClick}
+              disabled
             />
             <Icon name="chevron_right" size={20} />
           </div>
@@ -919,7 +919,7 @@ function IntegrationDetailView({
           <Button
             variant="outline"
             size="sm"
-            disabled={isLoading || toolsInfo.total === 0}
+            disabled
             onClick={() => handleAll(!toolsInfo.isAll)}
           >
             {toolsInfo.isAll ? "Deselect All" : "Select All"}
@@ -990,6 +990,7 @@ function IntegrationDetailView({
                     checked={enabled}
                     onCheckedChange={handleCheckboxChange}
                     className="cursor-pointer mt-0.5 flex-shrink-0"
+                    disabled
                   />
                 </label>
               );
@@ -1000,58 +1001,57 @@ function IntegrationDetailView({
   );
 }
 
-function AddRoleDialog({
-  open,
-  onOpenChange,
+// Role dialog content component wrapped in Suspense
+function RoleDialogContent({
   role,
   teamId,
   onSave,
   initialTab = "general",
-}: AddRoleDialogProps) {
+  onOpenChange,
+}: {
+  role?: Role;
+  teamId?: number;
+  onSave: (roleData: RoleFormData, isEditing: boolean) => void;
+  initialTab?: string;
+  onOpenChange: (open: boolean) => void;
+}) {
   const {
     data: { members },
   } = useTeamMembers(teamId ?? null);
-  // Convert external role to internal format for editing
-  const convertToInternal = (role?: TeamRole): InternalRoleFormData => {
-    if (!role) {
+
+  // Fetch full TeamRole data when editing
+  const { data: teamRoleData } = useTeamRole(
+    role && teamId ? { teamId, roleId: role.id } : null,
+  );
+
+  const { data: integrations = [] } = useIntegrations();
+  // const { data: agents = [] } = useAgents();
+
+  // Initialize form data based on whether we're creating or editing
+  const getInitialFormData = useCallback((): TeamRole => {
+    if (role && teamRoleData) {
+      // Editing existing role - use TeamRole data
+      return teamRoleData;
+    } else {
+      // Creating new role
       return {
+        id: 0,
         name: "",
         description: "",
+        team_id: teamId || null,
         tools: {},
         agents: [],
         members: [],
       };
     }
+  }, [role, teamRoleData, teamId]);
 
-    // Convert tools from API format to internal format
-    const internalTools: Record<string, string[]> = {};
-    if (role.tools) {
-      Object.entries(role.tools).forEach(([integrationId, tools]) => {
-        internalTools[integrationId] = tools.map((tool) =>
-          typeof tool === "string" ? tool : tool.toolName
-        );
-      });
-    }
-
-    return {
-      name: role.name || "",
-      description: role.description || "",
-      tools: internalTools,
-      agents: role.agents || [],
-      members: role.members || [],
-    };
-  };
-
-  const [formData, setFormData] = useState<InternalRoleFormData>(() =>
-    convertToInternal(role)
-  );
+  const [formData, setFormData] = useState<TeamRole>(getInitialFormData);
   const [selectedTab, setSelectedTab] = useState(initialTab);
-  const { data: integrations = [] } = useIntegrations();
-  const { data: agents = [] } = useAgents();
 
   // Search states for each section
   const [toolsSearch, setToolsSearch] = useState("");
-  const [agentsSearch, setAgentsSearch] = useState("");
+  // const [agentsSearch, setAgentsSearch] = useState("");
   const [membersSearch, setMembersSearch] = useState("");
   const [selectingAllTools, setSelectingAllTools] = useState(false);
 
@@ -1066,15 +1066,10 @@ function AddRoleDialog({
   // Ref for the scrollable content area
   const contentAreaRef = useRef<HTMLDivElement>(null);
 
-  // Reset selected tab when dialog opens/closes or role changes
+  // Update form data when TeamRole data is loaded
   useEffect(() => {
-    if (open) {
-      setSelectedTab(initialTab);
-      // Reset navigation state when dialog opens
-      setCurrentView("integrations");
-      setSelectedIntegration(null);
-    }
-  }, [open, initialTab]);
+    setFormData(getInitialFormData());
+  }, [getInitialFormData]);
 
   // Reset navigation state when switching tabs
   useEffect(() => {
@@ -1092,7 +1087,7 @@ function AddRoleDialog({
 
   // Use deferred values for search to prevent blocking input
   const deferredToolsSearch = useDeferredValue(toolsSearch);
-  const deferredAgentsSearch = useDeferredValue(agentsSearch);
+  // const deferredAgentsSearch = useDeferredValue(agentsSearch);
   const deferredMembersSearch = useDeferredValue(membersSearch);
 
   // Memoized filtered data based on search
@@ -1106,19 +1101,19 @@ function AddRoleDialog({
     [availableIntegrations, deferredToolsSearch],
   );
 
-  const filteredAgents = useMemo(
-    () =>
-      agents.filter(
-        (agent) =>
-          agent.name
-            .toLowerCase()
-            .includes(deferredAgentsSearch.toLowerCase()) ||
-          (agent.description || "")
-            .toLowerCase()
-            .includes(deferredAgentsSearch.toLowerCase()),
-      ),
-    [agents, deferredAgentsSearch],
-  );
+  // const filteredAgents = useMemo(
+  //   () =>
+  //     agents.filter(
+  //       (agent) =>
+  //         agent.name
+  //           .toLowerCase()
+  //           .includes(deferredAgentsSearch.toLowerCase()) ||
+  //         (agent.description || "")
+  //           .toLowerCase()
+  //           .includes(deferredAgentsSearch.toLowerCase()),
+  //     ),
+  //   [agents, deferredAgentsSearch],
+  // );
 
   const filteredMembers = useMemo(
     () =>
@@ -1136,11 +1131,14 @@ function AddRoleDialog({
 
   const setIntegrationTools = useCallback(
     (integrationId: string, tools: string[]) => {
-      setFormData((prev: InternalRoleFormData) => ({
+      setFormData((prev: TeamRole) => ({
         ...prev,
         tools: {
           ...prev.tools,
-          [integrationId]: tools,
+          [integrationId]: tools.map((toolName) => ({
+            toolName,
+            effect: "allow" as const,
+          })),
         },
       }));
     },
@@ -1173,44 +1171,44 @@ function AddRoleDialog({
     }, 10);
   }, []);
 
-  const handleAgentToggle = useCallback(
-    (agentId: string, checked: boolean) => {
-      if (checked) {
-        const agent = agents.find((a) => a.id === agentId);
-        const agentTools = agent?.tools_set || {};
-        const roleTools = formData.tools;
+  // const handleAgentToggle = useCallback(
+  //   (agentId: string, checked: boolean) => {
+  //     if (checked) {
+  //       const agent = agents.find((a) => a.id === agentId);
+  //       const agentTools = agent?.tools_set || {};
+  //       const roleTools = formData.tools;
 
-        const missingIntegrations: string[] = [];
-        Object.keys(agentTools).forEach((integrationId) => {
-          if (
-            !roleTools[integrationId] ||
-            roleTools[integrationId].length === 0
-          ) {
-            missingIntegrations.push(integrationId);
-          }
-        });
+  //       const missingIntegrations: string[] = [];
+  //       Object.keys(agentTools).forEach((integrationId) => {
+  //         if (
+  //           !roleTools[integrationId] ||
+  //           roleTools[integrationId].length === 0
+  //         ) {
+  //           missingIntegrations.push(integrationId);
+  //         }
+  //       });
 
-        // Automatically add missing tools
-        if (missingIntegrations.length > 0) {
-          missingIntegrations.forEach((integrationId) => {
-            const agentIntegrationTools = agentTools[integrationId] || [];
-            setIntegrationTools(integrationId, agentIntegrationTools);
-          });
-        }
+  //       // Automatically add missing tools
+  //       if (missingIntegrations.length > 0) {
+  //         missingIntegrations.forEach((integrationId) => {
+  //           const agentIntegrationTools = agentTools[integrationId] || [];
+  //           setIntegrationTools(integrationId, agentIntegrationTools);
+  //         });
+  //       }
 
-        setFormData((prev) => ({
-          ...prev,
-          agents: [...prev.agents, agentId],
-        }));
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          agents: prev.agents.filter((id) => id !== agentId),
-        }));
-      }
-    },
-    [agents, formData.tools, setIntegrationTools],
-  );
+  //       setFormData((prev) => ({
+  //         ...prev,
+  //         agents: [...prev.agents, agentId],
+  //       }));
+  //     } else {
+  //       setFormData((prev) => ({
+  //         ...prev,
+  //         agents: prev.agents.filter((id) => id !== agentId),
+  //       }));
+  //     }
+  //   },
+  //   [agents, formData.tools, setIntegrationTools],
+  // );
 
   const handleMemberToggle = useCallback((userId: string, checked: boolean) => {
     setFormData((prev) => ({
@@ -1221,40 +1219,16 @@ function AddRoleDialog({
     }));
   }, []);
 
-  // Update formData when role prop changes
-  useEffect(() => {
-    if (role) {
-      setFormData({
-        name: role.name || "",
-        description: role.description || "",
-        tools: Object.fromEntries(
-          Object.entries(role.tools || {}).map(([integrationId, tools]) => [
-            integrationId,
-            tools.map((tool) =>
-              typeof tool === "string" ? tool : tool.toolName
-            ),
-          ]),
-        ),
-        agents: role.agents || [],
-        members: role.members || [],
-      });
-    } else {
-      setFormData({
-        name: "",
-        description: "",
-        tools: {},
-        agents: [],
-        members: [],
-      });
-    }
-  }, [role]);
-
   const handleSave = () => {
-    onSave(formData, !!role);
-    onOpenChange(false);
-    toast.success(
-      role ? "Role updated successfully" : "Role created successfully",
-    );
+    // Convert TeamRole to RoleFormData format
+    const roleFormData: RoleFormData = {
+      name: formData.name,
+      description: formData.description || undefined,
+      tools: formData.tools,
+      agents: formData.agents,
+      members: formData.members,
+    };
+    onSave(roleFormData, !!role);
   };
 
   // Memoized counts for display to prevent recalculation on every render
@@ -1279,144 +1253,333 @@ function AddRoleDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-fit min-w-[900px] max-w-[95vw] max-h-[80vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>{role ? "Edit Role" : "Add New Role"}</DialogTitle>
-        </DialogHeader>
+    <div className="flex h-[60vh]">
+      {/* Left sidebar menu */}
+      <RoleDialogSidebar
+        selectedTab={selectedTab}
+        onTabChange={setSelectedTab}
+        selectedToolsCount={selectedToolsCount}
+        selectedAgentsCount={selectedAgentsCount}
+        selectedMembersCount={selectedMembersCount}
+        onToolsTabClick={() => {
+          setSelectedTab("tools");
+          // If we're in integration detail view, go back to integrations list
+          if (currentView === "integration-detail") {
+            handleBackToIntegrations();
+          }
+        }}
+      />
 
-        <div className="flex h-[60vh]">
-          {/* Left sidebar menu */}
-          <RoleDialogSidebar
-            selectedTab={selectedTab}
-            onTabChange={setSelectedTab}
-            selectedToolsCount={selectedToolsCount}
-            selectedAgentsCount={selectedAgentsCount}
-            selectedMembersCount={selectedMembersCount}
-            onToolsTabClick={() => {
-              setSelectedTab("tools");
-              // If we're in integration detail view, go back to integrations list
-              if (currentView === "integration-detail") {
-                handleBackToIntegrations();
-              }
-            }}
-          />
+      <div className="flex flex-1 flex-col gap-2 pl-6">
+        {/* Right content area */}
+        <div
+          ref={contentAreaRef}
+          className="flex-1 max-h-full min-w-0 overflow-y-auto"
+        >
+          {selectedTab === "general" && (
+            <RoleGeneralPanel formData={formData} setFormData={setFormData} />
+          )}
 
-          {/* Right content area */}
-          <div
-            ref={contentAreaRef}
-            className="flex-1 pl-6 overflow-y-auto min-w-0"
-          >
-            {selectedTab === "general" && (
-              <RoleGeneralPanel formData={formData} setFormData={setFormData} />
-            )}
+          {selectedTab === "tools" && (
+            <RoleToolsPanel
+              formData={formData}
+              setFormData={setFormData}
+              currentView={currentView}
+              selectedIntegration={selectedIntegration}
+              toolsSearch={toolsSearch}
+              setToolsSearch={setToolsSearch}
+              selectingAllTools={selectingAllTools}
+              setSelectingAllTools={setSelectingAllTools}
+              filteredIntegrations={filteredIntegrations}
+              setIntegrationTools={setIntegrationTools}
+              handleNavigateToIntegration={handleNavigateToIntegration}
+              handleBackToIntegrations={handleBackToIntegrations}
+            />
+          )}
 
-            {selectedTab === "tools" && (
-              <RoleToolsPanel
-                formData={formData}
-                setFormData={setFormData}
-                currentView={currentView}
-                selectedIntegration={selectedIntegration}
-                toolsSearch={toolsSearch}
-                setToolsSearch={setToolsSearch}
-                selectingAllTools={selectingAllTools}
-                setSelectingAllTools={setSelectingAllTools}
-                filteredIntegrations={filteredIntegrations}
-                setIntegrationTools={setIntegrationTools}
-                handleNavigateToIntegration={handleNavigateToIntegration}
-                handleBackToIntegrations={handleBackToIntegrations}
-              />
-            )}
+          {
+            /* selectedTab === "agents" && (
+            <RoleAgentsPanel
+              formData={formData}
+              setFormData={setFormData}
+              agentsSearch={agentsSearch}
+              setAgentsSearch={setAgentsSearch}
+              filteredAgents={filteredAgents}
+              agents={agents}
+              handleAgentToggle={handleAgentToggle}
+            />
+          ) */
+          }
 
-            {selectedTab === "agents" && (
-              <RoleAgentsPanel
-                formData={formData}
-                setFormData={setFormData}
-                agentsSearch={agentsSearch}
-                setAgentsSearch={setAgentsSearch}
-                filteredAgents={filteredAgents}
-                agents={agents}
-                handleAgentToggle={handleAgentToggle}
-              />
-            )}
-
-            {selectedTab === "members" && (
-              <RoleMembersPanel
-                formData={formData}
-                setFormData={setFormData}
-                membersSearch={membersSearch}
-                setMembersSearch={setMembersSearch}
-                filteredMembers={filteredMembers}
-                handleMemberToggle={handleMemberToggle}
-              />
-            )}
-          </div>
+          {selectedTab === "members" && (
+            <RoleMembersPanel
+              formData={formData}
+              setFormData={setFormData}
+              membersSearch={membersSearch}
+              setMembersSearch={setMembersSearch}
+              filteredMembers={filteredMembers}
+              handleMemberToggle={handleMemberToggle}
+            />
+          )}
         </div>
-
-        <DialogFooter>
+        <DialogFooter className="bottom-4 right-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} disabled>
             {role ? "Update Role" : "Create Role"}
           </Button>
         </DialogFooter>
+      </div>
+    </div>
+  );
+}
+
+function AddRoleDialog({
+  open,
+  onOpenChange,
+  role,
+  teamId,
+  onSave,
+  initialTab = "general",
+}: AddRoleDialogProps) {
+  const handleSave = (roleData: RoleFormData, isEditing: boolean) => {
+    onSave(roleData, isEditing);
+    onOpenChange(false);
+    toast.success(
+      role ? "Role updated successfully" : "Role created successfully",
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-fit min-w-[900px] max-w-[95vw] max-h-[80vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle>{role ? "View Role" : "Add New Role"}</DialogTitle>
+        </DialogHeader>
+
+        <Suspense
+          fallback={
+            <div className="flex h-[60vh] items-center justify-center">
+              <div className="text-center">
+                <Skeleton className="h-4 w-48 mb-2" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </div>
+          }
+        >
+          <RoleDialogContent
+            role={role}
+            teamId={teamId}
+            onSave={handleSave}
+            initialTab={initialTab}
+            onOpenChange={onOpenChange}
+          />
+        </Suspense>
       </DialogContent>
     </Dialog>
   );
 }
 
-// Sub-Components for Roles Table View
-export function RolesTableView({ teamId }: RolesTableViewProps) {
-  // Data fetching hooks
-  const { data: roles = [] } = useTeamRoles(teamId ?? null);
-  const { data: agents = [] } = useAgents();
+interface BaseColumnProps {
+  role: Role;
+  teamId?: number;
+  handleEditRole: (role: Role, initialTab: string) => void;
+}
+
+// Column render components that use useTeamRole
+function RoleToolsColumn({ role, teamId, handleEditRole }: BaseColumnProps) {
   const { data: integrations = [] } = useIntegrations();
+  const { data: teamRoleData } = useTeamRole(
+    teamId ? { teamId, roleId: role.id } : null,
+  );
+
+  const integrationsWithTools = useMemo(() => {
+    if (!teamRoleData?.tools) return [];
+    return integrations.filter(
+      (integration) =>
+        teamRoleData.tools[integration.id] &&
+        teamRoleData.tools[integration.id].length > 0,
+    );
+  }, [teamRoleData?.tools]);
+
+  if (!teamRoleData) {
+    return <Skeleton className="h-4 w-16" />;
+  }
+
+  if (integrationsWithTools.length === 0) {
+    return (
+      <span
+        className="text-muted-foreground text-sm cursor-pointer hover:text-foreground transition-colors"
+        onClick={() => handleEditRole(role, "tools")}
+      >
+        No tools
+      </span>
+    );
+  }
+
+  return (
+    <div
+      className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+      onClick={() => handleEditRole(role, "tools")}
+    >
+      <div className="flex -space-x-1">
+        {integrationsWithTools.slice(0, 3).map((integration) => (
+          <IntegrationAvatar
+            key={integration.id}
+            url={integration.icon}
+            fallback={integration.name}
+            size="sm"
+            className="border border-background"
+          />
+        ))}
+      </div>
+      {integrationsWithTools.length > 3 && (
+        <span className="ml-2 text-xs font-medium text-muted-foreground">
+          +{integrationsWithTools.length - 3}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function RoleMembersColumn({ role, teamId, handleEditRole }: BaseColumnProps) {
   const {
     data: { members },
   } = useTeamMembers(teamId ?? null, {
     withActivity: true,
   });
+  const { data: teamRoleData } = useTeamRole(
+    teamId ? { teamId, roleId: role.id } : null,
+  );
+
+  const roleMembersList = useMemo(() => {
+    if (!teamRoleData?.members) return [];
+    return members.filter((member) =>
+      teamRoleData.members.includes(member.user_id)
+    );
+  }, [teamRoleData?.members]);
+
+  if (!teamRoleData) {
+    return <Skeleton className="h-4 w-16" />;
+  }
+
+  if (roleMembersList.length === 0) {
+    return (
+      <span
+        className="text-muted-foreground text-sm cursor-pointer hover:text-foreground transition-colors"
+        onClick={() => handleEditRole(role, "members")}
+      >
+        No members
+      </span>
+    );
+  }
+
+  return (
+    <div
+      className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+      onClick={() => handleEditRole(role, "members")}
+    >
+      <div className="flex -space-x-1">
+        {roleMembersList.slice(0, 3).map((member) => (
+          <UserAvatar
+            key={member.user_id}
+            url={member.profiles.metadata.avatar_url}
+            fallback={member.profiles.metadata.full_name ||
+              member.profiles.email}
+            size="sm"
+            className="border border-background"
+          />
+        ))}
+      </div>
+      {roleMembersList.length > 3 && (
+        <span className="ml-2 text-xs font-medium text-muted-foreground">
+          +{roleMembersList.length - 3}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function _RoleAgentsColumn({ role, teamId, handleEditRole }: BaseColumnProps) {
+  const { data: agents = [] } = useAgents();
+  const { data: teamRoleData } = useTeamRole(
+    teamId ? { teamId, roleId: role.id } : null,
+  );
+
+  const roleAgentsList = useMemo(() => {
+    if (!teamRoleData?.agents) return [];
+    return agents.filter((agent) => teamRoleData.agents.includes(agent.id));
+  }, [teamRoleData?.agents]);
+
+  if (!teamRoleData) {
+    return <Skeleton className="h-4 w-16" />;
+  }
+
+  if (roleAgentsList.length === 0) {
+    return (
+      <span
+        className="text-muted-foreground text-sm cursor-pointer hover:text-foreground transition-colors"
+        onClick={() => handleEditRole(role, "agents")}
+      >
+        No agents
+      </span>
+    );
+  }
+
+  return (
+    <div
+      className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+      onClick={() => handleEditRole(role, "agents")}
+    >
+      <div className="flex -space-x-1">
+        {roleAgentsList.slice(0, 3).map((agent) => (
+          <AgentAvatar
+            key={agent.id}
+            url={agent.avatar}
+            fallback={agent.name}
+            size="sm"
+            className="border border-background"
+          />
+        ))}
+      </div>
+      {roleAgentsList.length > 3 && (
+        <span className="ml-2 text-xs font-medium text-muted-foreground">
+          +{roleAgentsList.length - 3}
+        </span>
+      )}
+    </div>
+  );
+}
+
+type SortKey = "name";
+
+// Sub-Components for Roles Table View
+export function RolesTableView({ teamId }: RolesTableViewProps) {
+  // Data fetching hooks
+  const { data: roles = [] } = useTeamRoles(teamId ?? null);
+
   const createRoleMutation = useCreateTeamRole();
   const updateRoleMutation = useUpdateTeamRole();
   const deleteRoleMutation = useDeleteTeamRole();
 
   // Local state
   const [rolesQuery, setRolesQuery] = useState("");
-  const [rolesSortKey, setRolesSortKey] = useState<string>("tools");
+  const [rolesSortKey, setRolesSortKey] = useState<"" | SortKey>("");
   const [rolesSortDirection, setRolesSortDirection] = useState<"asc" | "desc">(
     "desc",
   );
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
-  const [editingRole, setEditingRole] = useState<TeamRole | undefined>(
-    undefined,
-  );
+  const [editingRole, setEditingRole] = useState<Role | undefined>(undefined);
   const [roleDialogInitialTab, setRoleDialogInitialTab] = useState("general");
 
-  // Utility Functions
-  function mapRoleDataToFormData(roleData: InternalRoleFormData): RoleFormData {
-    return {
-      ...roleData,
-      tools: Object.fromEntries(
-        Object.entries(roleData.tools).map(([integrationId, tools]) => [
-          integrationId,
-          tools.map((tool) =>
-            typeof tool === "string"
-              ? { toolName: tool, effect: "allow" as const }
-              : tool
-          ),
-        ]),
-      ),
-    };
-  }
-
-  const handleCreateRole = useCallback(
-    async (roleData: InternalRoleFormData) => {
+  const _handleCreateRole = useCallback(
+    async (roleData: RoleFormData) => {
       if (!teamId) return;
       try {
         await createRoleMutation.mutateAsync({
           teamId,
-          roleData: mapRoleDataToFormData(roleData),
+          roleData,
         });
         toast.success("Role created successfully");
       } catch (error) {
@@ -1427,14 +1590,14 @@ export function RolesTableView({ teamId }: RolesTableViewProps) {
     [teamId, createRoleMutation],
   );
 
-  const handleUpdateRole = useCallback(
-    async (roleId: number, roleData: InternalRoleFormData) => {
+  const _handleUpdateRole = useCallback(
+    async (roleId: number, roleData: RoleFormData) => {
       if (!teamId) return;
       try {
         await updateRoleMutation.mutateAsync({
           teamId,
           roleId,
-          roleData: mapRoleDataToFormData(roleData),
+          roleData,
         });
         toast.success("Role updated successfully");
       } catch (error) {
@@ -1452,7 +1615,7 @@ export function RolesTableView({ teamId }: RolesTableViewProps) {
           prev === "asc" ? "desc" : "asc"
         );
       } else {
-        setRolesSortKey(key);
+        setRolesSortKey(key as SortKey);
         setRolesSortDirection("asc");
       }
     },
@@ -1460,19 +1623,10 @@ export function RolesTableView({ teamId }: RolesTableViewProps) {
   );
 
   const getRoleSortValue = useCallback(
-    (role: TeamRole, key: string): string => {
+    (role: Role, key: SortKey | ""): string => {
       switch (key) {
-        case "role":
+        case "name":
           return role.name.toLowerCase();
-        case "tools": {
-          const roleTools = role.tools || {};
-          const toolCount = Object.values(roleTools).flat().length;
-          return toolCount.toString().padStart(5, "0");
-        }
-        case "agents":
-          return (role.agents || []).length.toString().padStart(5, "0");
-        case "members":
-          return (role.members || []).length.toString().padStart(5, "0");
         default:
           return "";
       }
@@ -1481,7 +1635,7 @@ export function RolesTableView({ teamId }: RolesTableViewProps) {
   );
 
   const handleEditRole = useCallback(
-    (role: TeamRole | undefined, initialTab = "general") => {
+    (role: Role | undefined, initialTab = "general") => {
       setEditingRole(role);
       setRoleDialogInitialTab(initialTab);
       setRoleDialogOpen(true);
@@ -1496,7 +1650,7 @@ export function RolesTableView({ teamId }: RolesTableViewProps) {
         {
           id: "role",
           header: "Role",
-          render: (role: TeamRole) => (
+          render: (role) => (
             <div
               className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => handleEditRole(role, "general")}
@@ -1512,145 +1666,40 @@ export function RolesTableView({ teamId }: RolesTableViewProps) {
         {
           id: "tools",
           header: "Tools",
-          render: (role: TeamRole) => {
-            const roleTools = role.tools || {};
-            const integrationsWithTools = integrations.filter(
-              (integration) =>
-                roleTools[integration.id] &&
-                roleTools[integration.id].length > 0,
-            );
-
-            if (integrationsWithTools.length === 0) {
-              return (
-                <span
-                  className="text-muted-foreground text-sm cursor-pointer hover:text-foreground transition-colors"
-                  onClick={() => handleEditRole(role, "tools")}
-                >
-                  No tools
-                </span>
-              );
-            }
-
-            return (
-              <div
-                className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => handleEditRole(role, "tools")}
-              >
-                <div className="flex -space-x-1">
-                  {integrationsWithTools.slice(0, 3).map((integration) => (
-                    <IntegrationAvatar
-                      key={integration.id}
-                      url={integration.icon}
-                      fallback={integration.name}
-                      size="sm"
-                      className="border border-background"
-                    />
-                  ))}
-                </div>
-                {integrationsWithTools.length > 3 && (
-                  <span className="ml-2 text-xs font-medium text-muted-foreground">
-                    +{integrationsWithTools.length - 3}
-                  </span>
-                )}
-              </div>
-            );
-          },
+          render: (role) => (
+            <RoleToolsColumn
+              role={role}
+              teamId={teamId}
+              handleEditRole={handleEditRole}
+            />
+          ),
         },
-        {
-          id: "agents",
-          header: "Agents",
-          render: (role: TeamRole) => {
-            const roleAgents = role.agents || [];
-            const roleAgentsList = agents.filter((agent) =>
-              roleAgents.includes(agent.id)
-            );
-
-            if (roleAgentsList.length === 0) {
-              return (
-                <span
-                  className="text-muted-foreground text-sm cursor-pointer hover:text-foreground transition-colors"
-                  onClick={() => handleEditRole(role, "agents")}
-                >
-                  No agents
-                </span>
-              );
-            }
-
-            return (
-              <div
-                className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => handleEditRole(role, "agents")}
-              >
-                <div className="flex -space-x-1">
-                  {roleAgentsList.slice(0, 3).map((agent) => (
-                    <AgentAvatar
-                      key={agent.id}
-                      url={agent.avatar}
-                      fallback={agent.name}
-                      size="sm"
-                      className="border border-background"
-                    />
-                  ))}
-                </div>
-                {roleAgentsList.length > 3 && (
-                  <span className="ml-2 text-xs font-medium text-muted-foreground">
-                    +{roleAgentsList.length - 3}
-                  </span>
-                )}
-              </div>
-            );
-          },
-        },
+        // {
+        //   id: "agents",
+        //   header: "Agents",
+        //   render: (role) => (
+        //     <RoleAgentsColumn
+        //       role={role}
+        //       teamId={teamId}
+        //       handleEditRole={handleEditRole}
+        //     />
+        //   ),
+        // },
         {
           id: "members",
           header: "Members",
-          render: (role: TeamRole) => {
-            const roleMembers = role.members || [];
-            const roleMembersList = members.filter((member) =>
-              roleMembers.includes(member.profiles.id)
-            );
-
-            if (roleMembersList.length === 0) {
-              return (
-                <span
-                  className="text-muted-foreground text-sm cursor-pointer hover:text-foreground transition-colors"
-                  onClick={() => handleEditRole(role, "members")}
-                >
-                  No members
-                </span>
-              );
-            }
-
-            return (
-              <div
-                className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => handleEditRole(role, "members")}
-              >
-                <div className="flex -space-x-1">
-                  {roleMembersList.slice(0, 3).map((member) => (
-                    <UserAvatar
-                      key={member.profiles.id}
-                      url={member.profiles.metadata.avatar_url}
-                      fallback={member.profiles.metadata.full_name ||
-                        member.profiles.email}
-                      size="sm"
-                      className="border border-background"
-                    />
-                  ))}
-                </div>
-                {roleMembersList.length > 3 && (
-                  <span className="ml-2 text-xs font-medium text-muted-foreground">
-                    +{roleMembersList.length - 3}
-                  </span>
-                )}
-              </div>
-            );
-          },
+          render: (role) => (
+            <RoleMembersColumn
+              role={role}
+              teamId={teamId}
+              handleEditRole={handleEditRole}
+            />
+          ),
         },
         {
           id: "actions",
           header: "",
-          render: (role: TeamRole) => (
+          render: (role) => (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -1659,8 +1708,8 @@ export function RolesTableView({ teamId }: RolesTableViewProps) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => handleEditRole(role)}>
-                  <Icon name="edit" />
-                  Edit role
+                  <Icon name="assignment_ind" />
+                  View role
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
@@ -1687,14 +1736,14 @@ export function RolesTableView({ teamId }: RolesTableViewProps) {
             </DropdownMenu>
           ),
         },
-      ] satisfies TableColumn<TeamRole>[],
-    [agents, integrations, handleEditRole, members, teamId, deleteRoleMutation],
+      ] satisfies TableColumn<Role>[],
+    [handleEditRole, teamId, deleteRoleMutation.mutateAsync],
   );
 
   // Filter roles based on search
-  const filteredRoles: TeamRole[] = useMemo(
+  const filteredRoles = useMemo(
     () =>
-      (roles as unknown as TeamRole[]).filter((role) =>
+      roles.filter((role) =>
         role.name.toLowerCase().includes(rolesQuery.toLowerCase())
       ),
     [roles, rolesQuery],
@@ -1727,10 +1776,13 @@ export function RolesTableView({ teamId }: RolesTableViewProps) {
               setRolesQuery(e.target.value)}
             className="w-80"
           />
-          <Button onClick={() => handleEditRole(undefined)}>
+          {/* Disabled at the moment */}
+          {
+            /* <Button onClick={() => handleEditRole(undefined)}>
             <Icon name="add" />
             Add role
-          </Button>
+          </Button> */
+          }
         </div>
         {roles.length === 0
           ? (
@@ -1768,13 +1820,16 @@ export function RolesTableView({ teamId }: RolesTableViewProps) {
         role={editingRole}
         teamId={teamId}
         initialTab={roleDialogInitialTab}
-        onSave={async (roleData, isEditing) => {
-          if (isEditing && editingRole) {
-            await handleUpdateRole(editingRole.id, roleData);
-          } else {
-            await handleCreateRole(roleData);
-          }
-          setEditingRole(undefined);
+        onSave={() => {
+          // enable it when finish backend
+          return;
+
+          // if (isEditing && editingRole) {
+          //   await handleUpdateRole(editingRole.id, roleData);
+          // } else {
+          //   await handleCreateRole(roleData);
+          // }
+          // setEditingRole(undefined);
         }}
       />
     </>
