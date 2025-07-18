@@ -69,7 +69,6 @@ export class PolicyClient {
   private userPolicyCache: WebCache<Pick<Policy, "statements">[]>;
   private userRolesCache: WebCache<MemberRole[]>;
   private teamRolesCache: WebCache<Role[]>;
-  private teamPoliciesCache: WebCache<Pick<Policy, "statements" | "name">[]>;
   private teamSlugCache: WebCache<number>;
 
   private constructor() {
@@ -80,12 +79,6 @@ export class PolicyClient {
     );
     this.userRolesCache = new WebCache<MemberRole[]>("user-roles", TWO_MIN_TTL);
     this.teamRolesCache = new WebCache<Role[]>("team-role", TWO_MIN_TTL);
-    this.teamPoliciesCache = new WebCache<
-      Pick<Policy, "statements" | "name">[]
-    >(
-      "team-policies",
-      TWO_MIN_TTL,
-    );
     this.teamSlugCache = new WebCache<number>("team-slug", TWO_MIN_TTL);
   }
 
@@ -158,6 +151,7 @@ export class PolicyClient {
 
   /**
    * Get all policies for a user in a specific team
+   * Only gets policies from member_roles -> roles -> policies chain
    */
   public async getUserPolicies(
     userId: string,
@@ -176,12 +170,9 @@ export class PolicyClient {
     const cacheKey = this.getUserPoliceCacheKey(userId, teamId);
 
     // Try to get from cache first
-    const [cachedPolicies, teamPolicies] = await Promise.all([
-      this.userPolicyCache.get(cacheKey),
-      this.getTeamPolicies(teamId),
-    ]);
+    const cachedPolicies = await this.userPolicyCache.get(cacheKey);
     if (cachedPolicies) {
-      return [...cachedPolicies, ...teamPolicies];
+      return cachedPolicies;
     }
 
     const { data, error: policiesError } = await this.db
@@ -217,7 +208,7 @@ export class PolicyClient {
       this.filterValidPolicies(policies),
     );
 
-    return [...policies, ...teamPolicies];
+    return policies;
   }
 
   public async removeAllMemberPoliciesAtTeam(
@@ -390,7 +381,6 @@ export class PolicyClient {
     if (error) {
       throw error;
     }
-    await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
     return data as unknown as Policy | null;
   }
 
@@ -402,7 +392,6 @@ export class PolicyClient {
     const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
     const { data } = await this.db.from("policies").delete().in("id", policyIds)
       .eq("team_id", teamId).select();
-    await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
     return data;
   }
 
@@ -428,7 +417,6 @@ export class PolicyClient {
       throw error;
     }
 
-    await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
     return data as unknown as Policy | null;
   }
 
@@ -460,7 +448,6 @@ export class PolicyClient {
       }))).filter((p): p is Policy => p !== null);
 
       await this.createRolePolicies(policiesData, data.id);
-      await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
     }
 
     return data;
@@ -523,7 +510,6 @@ export class PolicyClient {
       }))).filter((p): p is Policy => p !== null);
 
       await this.createRolePolicies(policiesData, role.id);
-      await this.teamPoliciesCache.delete(this.getTeamPoliciesCacheKey(teamId));
     }
 
     return data;
@@ -639,47 +625,6 @@ export class PolicyClient {
     };
   }
 
-  private async getTeamPolicies(
-    teamIdOrSlug: number | string,
-  ): Promise<Pick<Policy, "statements" | "name">[]> {
-    this.assertDb(this.db);
-
-    const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
-    const cacheKey = this.getTeamPoliciesCacheKey(teamId);
-
-    // Try to get from cache first
-    const cachedPolicies = await this.teamPoliciesCache.get(cacheKey);
-    if (cachedPolicies) {
-      return cachedPolicies;
-    }
-
-    // Get from database
-    const { data: policies, error } = await this.db
-      .from("policies")
-      .select("id, name, team_id, statements")
-      .eq("team_id", teamId);
-
-    if (error || !policies) {
-      return [];
-    }
-
-    // Transform the data to match Policy interface
-    const transformedPolicies: Pick<Policy, "name" | "statements">[] = policies
-      .map((policy) => ({
-        name: policy.name,
-        statements: policy.statements as unknown as Statement[],
-      }));
-
-    // Cache the result
-    await this.teamPoliciesCache.delete(cacheKey);
-    await this.teamPoliciesCache.set(
-      cacheKey,
-      this.filterValidPolicies(transformedPolicies),
-    );
-
-    return transformedPolicies;
-  }
-
   private async getTeamIdByIdOrSlug(teamIdOrSlug: string | number) {
     return typeof teamIdOrSlug === "number"
       ? teamIdOrSlug
@@ -736,10 +681,6 @@ export class PolicyClient {
   }
 
   private getTeamRolesCacheKey(teamId: number) {
-    return teamId.toString();
-  }
-
-  private getTeamPoliciesCacheKey(teamId: number) {
     return teamId.toString();
   }
 
