@@ -641,7 +641,7 @@ function Overview({ data, appKey }: {
       {(!isWellKnown && data.info?.provider !== "custom")
         ? (
           <Button variant="special" onClick={handleAddConnection}>
-            <span className="hidden md:inline">Add connection</span>
+            <span className="hidden md:inline">Add Instance</span>
           </Button>
         )
         : null}
