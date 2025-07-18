@@ -6,7 +6,7 @@ import {
 } from "../../errors.ts";
 import { assertTeamResourceAccess } from "../assertions.ts";
 import { createTool } from "./api.ts";
-import { Policy, Statement } from "../../auth/policy.ts";
+import { Policy, RoleUpdateAction, Statement } from "../../auth/policy.ts";
 import { resourceGroupMap } from "../context.ts";
 
 const ToolPermissionSchema = z.object({
@@ -18,12 +18,24 @@ const ToolsSchema = z.record(
   z.string(),
   z.array(ToolPermissionSchema.extend({ policyId: z.string().optional() })),
 );
+
+const MemberRoleActionSchema = z.object({
+  user_id: z.string(),
+  action: RoleUpdateAction,
+});
+
+export type MemberRoleAction = z.infer<typeof MemberRoleActionSchema>;
+
 const RoleFormDataSchema = z.object({
   name: z.string().min(1, "Role name is required"),
   description: z.string().optional(),
   tools: ToolsSchema,
   agents: z.array(z.string()).optional().default([]),
-  members: z.array(z.string()).optional().default([]),
+  members: z.array(MemberRoleActionSchema).optional().default([]).describe(
+    `Only send member actions for changes (diff between original and current state)
+    Members who already have the role and remain selected: no action needed (maintains access)
+    Members who don't have the role and remain unselected: no action needed (maintains no access)`,
+  ),
 });
 
 export type RoleFormData = z.infer<typeof RoleFormDataSchema>;
@@ -86,16 +98,17 @@ export const createTeamRole = createTool({
         // Assign role to specified members
         const { data: dbMembers } = await c.db
           .from("members")
-          .select("profiles(email)")
+          .select("profiles(email), user_id")
           .eq("team_id", teamId)
-          .in("user_id", members);
+          .in("user_id", members.map((m) => m.user_id));
 
         const memberRolePromises = dbMembers?.map(async (member) => {
-          if (!member.profiles?.email) return;
+          const action = members.find((m) => m.user_id === member.user_id)?.action;
+          if (!member.profiles?.email || !action) return;
 
           return await c.policy.updateUserRole(teamId, member.profiles.email, {
             roleId: role.id,
-            action: "grant",
+            action,
           });
         }) ?? [];
 
@@ -201,16 +214,17 @@ export const updateTeamRole = createTool({
         // Assign role to specified members
         const { data: dbMembers } = await c.db
           .from("members")
-          .select("profiles(email)")
+          .select("profiles(email), user_id")
           .eq("team_id", teamId)
-          .in("user_id", members);
+          .in("user_id", members.map((m) => m.user_id));
 
         const memberRolePromises = dbMembers?.map(async (member) => {
-          if (!member.profiles?.email) return;
+          const action = members.find((m) => m.user_id === member.user_id)?.action;
+          if (!member.profiles?.email || !action) return;
 
           return await c.policy.updateUserRole(teamId, member.profiles.email, {
             roleId: updatedRole.id,
-            action: "grant",
+            action,
           });
         }) ?? [];
 
@@ -294,8 +308,11 @@ export const getTeamRole = createTool({
         });
       }
 
-      // Extract member user IDs
-      const members = memberRoles?.map((mr) => mr.members.user_id) || [];
+      // Extract member user IDs with grant action (existing members have granted access)
+      const members = memberRoles?.map((mr) => ({
+        user_id: mr.members.user_id,
+        action: "grant" as const,
+      })) || [];
 
       return {
         id: roleWithPolicies.id,

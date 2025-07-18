@@ -53,9 +53,11 @@ export interface MemberRole {
   role?: Role;
 }
 
+export const RoleUpdateAction = z.enum(["grant", "revoke"]);
+
 export interface RoleUpdateParams {
   roleId: number;
-  action: "grant" | "revoke";
+  action: z.infer<typeof RoleUpdateAction>;
 }
 
 /**

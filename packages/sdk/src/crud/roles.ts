@@ -1,5 +1,6 @@
 import { MCPClient } from "../fetcher.ts";
-import type { RoleFormData, ToolPermission } from "../mcp/members/roles-api.ts";
+import type { MemberRoleAction, RoleFormData, ToolPermission } from "../mcp/members/roles-api.ts";
+export type { MemberRoleAction };
 
 export interface TeamRole {
   id: number;
@@ -8,7 +9,7 @@ export interface TeamRole {
   team_id: number | null;
   tools: Record<string, ToolPermission[]>;
   agents: string[];
-  members: string[];
+  members: MemberRoleAction[];
 }
 
 export type { RoleFormData, ToolPermission };
