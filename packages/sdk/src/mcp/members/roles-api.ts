@@ -6,7 +6,8 @@ import {
 } from "../../errors.ts";
 import { assertTeamResourceAccess } from "../assertions.ts";
 import { createTool } from "./api.ts";
-import { Policy } from "../../auth/policy.ts";
+import { Policy, Statement } from "../../auth/policy.ts";
+import { resourceGroupMap } from "../context.ts";
 
 const ToolPermissionSchema = z.object({
   toolName: z.string(),
@@ -262,8 +263,17 @@ export const getTeamRole = createTool({
       // Get assigned members
       const { data: memberRoles } = await c.db
         .from("member_roles")
-        .select("members(user_id)")
-        .eq("role_id", roleId);
+        .select("role_id, members!inner(team_id, user_id)")
+        .eq("role_id", roleId)
+        .eq("members.team_id", teamId);
+
+      const getIntegrationId = (statement: Statement) => {
+        if (statement.matchCondition?.resource === "is_integration") {
+          return statement.matchCondition.integrationId;
+        }
+        const wellKnownTool = resourceGroupMap.get(statement.resource);
+        return wellKnownTool ? `i:${wellKnownTool}` : "deco-chat";
+      };
 
       // Parse tools from policies
       const tools: Record<string, ToolPermission[]> = {};
@@ -271,25 +281,21 @@ export const getTeamRole = createTool({
         roleWithPolicies.policies.forEach((policy) => {
           if (policy.statements) {
             policy.statements.forEach((statement) => {
-              if (statement.matchCondition?.resource === "is_integration") {
-                const integrationId = statement.matchCondition.integrationId;
-                if (!tools[integrationId]) {
-                  tools[integrationId] = [];
-                }
-                tools[integrationId].push({
-                  toolName: statement.resource,
-                  effect: statement.effect as "allow" | "deny",
-                });
+              const key = getIntegrationId(statement);
+              if (!tools[key]) {
+                tools[key] = [];
               }
+              tools[key].push({
+                toolName: statement.resource,
+                effect: statement.effect,
+              });
             });
           }
         });
       }
 
       // Extract member user IDs
-      const members = memberRoles?.map((mr) =>
-        (mr.members as { user_id: string }).user_id
-      ) || [];
+      const members = memberRoles?.map((mr) => mr.members.user_id) || [];
 
       return {
         id: roleWithPolicies.id,

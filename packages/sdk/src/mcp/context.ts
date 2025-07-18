@@ -203,6 +203,8 @@ async (props: TInput) => {
   }
 };
 
+export const resourceGroupMap = new Map<string, string | undefined>();
+
 export const createToolFactory = <
   TAppContext extends AppContext = AppContext,
 >(
@@ -218,6 +220,7 @@ export const createToolFactory = <
   def: ToolDefinition<TAppContext, TName, TInput, TReturn>,
 ): Tool<TName, TInput, TReturn> => {
   group && integration && addGroup(group, integration);
+  resourceGroupMap.set(def.name, group);
   return {
     group,
     ...def,

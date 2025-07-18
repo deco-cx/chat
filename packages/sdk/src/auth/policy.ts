@@ -624,12 +624,9 @@ export class PolicyClient {
       return null;
     }
 
-    const policies: Policy[] = data.role_policies.map((rp) => ({
-      id: rp.policies.id,
-      name: rp.policies.name,
-      team_id: rp.policies.team_id,
-      statements: rp.policies.statements as unknown as Statement[],
-    }));
+    const policies: Policy[] = this.filterValidPolicies(
+      data.role_policies.map((rp) => rp.policies as unknown as Policy),
+    );
 
     return {
       id: data.id,
