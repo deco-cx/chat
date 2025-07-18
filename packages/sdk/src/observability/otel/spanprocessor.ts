@@ -140,8 +140,9 @@ export class BatchTraceSpanProcessor implements SpanProcessor {
     localRootSpanId: string,
     action: AnyTraceAction,
   ): AnyTraceState {
-    const state = this.traceLookup.get(localRootSpanId) ||
-      { stateName: "not_started" };
+    const state = this.traceLookup.get(localRootSpanId) || {
+      stateName: "not_started",
+    };
     const newState = nextState(state, action);
     if (newState.stateName === "done") {
       this.traceLookup.delete(localRootSpanId);

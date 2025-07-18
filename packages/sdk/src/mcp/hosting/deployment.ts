@@ -15,21 +15,18 @@ export type DeployResult = {
   id?: string;
 };
 const CUSTOM_HOSTNAME_POST_BODY = {
-  "ssl": {
-    "bundle_method": "ubiquitous" as const,
-    "method": "http" as const,
-    "type": "dv" as const,
-    "settings": {
-      "ciphers": [
-        "ECDHE-RSA-AES128-GCM-SHA256",
-        "AES128-SHA",
-      ],
-      "early_hints": "on" as const,
-      "http2": "on" as const,
-      "min_tls_version": "1.2" as const,
-      "tls_1_3": "on" as const,
+  ssl: {
+    bundle_method: "ubiquitous" as const,
+    method: "http" as const,
+    type: "dv" as const,
+    settings: {
+      ciphers: ["ECDHE-RSA-AES128-GCM-SHA256", "AES128-SHA"],
+      early_hints: "on" as const,
+      http2: "on" as const,
+      min_tls_version: "1.2" as const,
+      tls_1_3: "on" as const,
     },
-    "wildcard": false as const,
+    wildcard: false as const,
   },
 };
 export interface Polyfill {
@@ -48,13 +45,9 @@ const addPolyfills = (
 
   for (const polyfill of polyfills) {
     const filePath = `${polyfill.fileName}.mjs`;
-    files[filePath] ??= new File(
-      [polyfill.content],
-      filePath,
-      {
-        type: "application/javascript+module",
-      },
-    );
+    files[filePath] ??= new File([polyfill.content], filePath, {
+      type: "application/javascript+module",
+    });
 
     for (const alias of polyfill.aliases) {
       aliases[alias] = `./${polyfill.fileName}`;
@@ -126,9 +119,10 @@ const handleAssetUpload = async ({
       form.append(
         fileHash,
         new File([base64Data], fileHash, {
-          type: mimeType === "application/javascript+module"
-            ? "application/javascript"
-            : mimeType,
+          type:
+            mimeType === "application/javascript+module"
+              ? "application/javascript"
+              : mimeType,
         }),
         fileHash,
       );
@@ -170,8 +164,8 @@ const uploadWranglerAssets = async ({
 }) => {
   const assetsManifest = createAssetsManifest(assets);
 
-  const assetUploadSession = await c.cf.workersForPlatforms.dispatch.namespaces
-    .scripts.assetUpload.create(
+  const assetUploadSession =
+    await c.cf.workersForPlatforms.dispatch.namespaces.scripts.assetUpload.create(
       c.envVars.CF_DISPATCH_NAMESPACE,
       scriptSlug,
       {
@@ -244,24 +238,27 @@ export async function deployToCloudflare({
   }
 
   await Promise.all(
-    (routes ?? []).map((route) =>
-      route.custom_domain &&
-      assertsDomainOwnership(route.pattern, scriptSlug).then(() => {
-        if (!env.CF_ZONE_ID) {
-          return;
-        }
-        return c.cf.customHostnames.create({
-          hostname: route.pattern,
-          zone_id: zoneId,
-          ...CUSTOM_HOSTNAME_POST_BODY,
-        }).catch((err) => {
-          if (err.status === 409) {
-            // fine, domain already exists
+    (routes ?? []).map(
+      (route) =>
+        route.custom_domain &&
+        assertsDomainOwnership(route.pattern, scriptSlug).then(() => {
+          if (!env.CF_ZONE_ID) {
             return;
           }
-          throw err;
-        });
-      })
+          return c.cf.customHostnames
+            .create({
+              hostname: route.pattern,
+              zone_id: zoneId,
+              ...CUSTOM_HOSTNAME_POST_BODY,
+            })
+            .catch((err) => {
+              if (err.status === 409) {
+                // fine, domain already exists
+                return;
+              }
+              throw err;
+            });
+        }),
     ),
   );
 
@@ -270,14 +267,14 @@ export async function deployToCloudflare({
     envVars["DECO_CHAT_BINDINGS"] = WorkersMCPBindings.stringify(decoBindings);
   }
 
-  const { bindings } = await c.cf
-    .workersForPlatforms
-    .dispatch.namespaces
-    .scripts.settings.get(env.CF_DISPATCH_NAMESPACE, scriptSlug, {
-      account_id: env.CF_ACCOUNT_ID,
-    }).catch(() => ({
-      bindings: [],
-    }));
+  const { bindings } =
+    await c.cf.workersForPlatforms.dispatch.namespaces.scripts.settings
+      .get(env.CF_DISPATCH_NAMESPACE, scriptSlug, {
+        account_id: env.CF_ACCOUNT_ID,
+      })
+      .catch(() => ({
+        bindings: [],
+      }));
 
   const doMigrations = migrationDiff(
     migrations ?? [],
@@ -285,41 +282,41 @@ export async function deployToCloudflare({
   );
 
   const wranglerBindings = [
-    ...durable_objects?.bindings?.map((binding) => ({
+    ...(durable_objects?.bindings?.map((binding) => ({
       type: "durable_object_namespace" as const,
       name: binding.name,
       class_name: binding.class_name,
-    })) ?? [],
-    ...kv_namespaces?.map((kv) => ({
+    })) ?? []),
+    ...(kv_namespaces?.map((kv) => ({
       type: "kv_namespace" as const,
       name: kv.binding,
       namespace_id: kv.id,
-    })) ?? [],
-    ...ai ? [{ type: "ai" as const, name: ai.binding }] : [],
-    ...browser ? [{ type: "browser" as const, name: browser.binding }] : [],
-    ...queues?.producers?.map((producer) => ({
+    })) ?? []),
+    ...(ai ? [{ type: "ai" as const, name: ai.binding }] : []),
+    ...(browser ? [{ type: "browser" as const, name: browser.binding }] : []),
+    ...(queues?.producers?.map((producer) => ({
       type: "queue" as const,
       queue_name: producer.queue,
       name: producer.binding,
-    })) ?? [],
-    ...workflows?.map((workflow) => ({
+    })) ?? []),
+    ...(workflows?.map((workflow) => ({
       type: "workflow" as const,
       name: workflow.binding,
       workflow_name: workflow.name,
       class_name: workflow.class_name,
       script_name: workflow.script_name,
-    })) ?? [],
-    ...d1_databases?.map((d1) => ({
+    })) ?? []),
+    ...(d1_databases?.map((d1) => ({
       type: "d1" as const,
       name: d1.binding,
       id: d1.database_id!,
-    })) ?? [],
-    ...hyperdrive?.map((hd) => ({
+    })) ?? []),
+    ...(hyperdrive?.map((hd) => ({
       type: "hyperdrive" as const,
       name: hd.binding,
       id: hd.id,
       localConnectionString: hd.localConnectionString,
-    })) ?? [],
+    })) ?? []),
   ];
 
   let assetsMetadata: Pick<WranglerConfig, "assets" | "keep_assets"> = {
@@ -371,8 +368,8 @@ export async function deployToCloudflare({
     ...bundledCode,
   };
 
-  const result = await c.cf.workersForPlatforms.dispatch.namespaces
-    .scripts.update(
+  const result =
+    await c.cf.workersForPlatforms.dispatch.namespaces.scripts.update(
       env.CF_DISPATCH_NAMESPACE,
       scriptSlug,
       {

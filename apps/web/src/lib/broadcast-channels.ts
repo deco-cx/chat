@@ -10,7 +10,7 @@ export type IntegrationMessage = {
 };
 
 export const notifyIntegrationUpdate = () => {
-  INTEGRATION_CHANNEL.postMessage(
-    { type: "INTEGRATION_UPDATED" } as IntegrationMessage,
-  );
+  INTEGRATION_CHANNEL.postMessage({
+    type: "INTEGRATION_UPDATED",
+  } as IntegrationMessage);
 };

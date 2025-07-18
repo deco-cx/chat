@@ -17,15 +17,17 @@ export interface EmailBodyProps {
   roles: Array<string>;
 }
 
-export function generateEmailBody(
-  { teamName, inviter, roles }: EmailBodyProps,
-) {
+export function generateEmailBody({
+  teamName,
+  inviter,
+  roles,
+}: EmailBodyProps) {
   const cleanTeamName = sanitizeTeamName(teamName);
   const cleanInviter = sanitizeTeamName(inviter);
 
   function formatRoles(roles: Array<string>) {
-    const capitalizedRoles = roles.map((role) =>
-      role.charAt(0).toUpperCase() + role.slice(1)
+    const capitalizedRoles = roles.map(
+      (role) => role.charAt(0).toUpperCase() + role.slice(1),
     );
 
     if (capitalizedRoles.length === 1) {
@@ -50,7 +52,13 @@ export function generateEmailBody(
 }
 
 export async function sendInviteEmail(
-  { id, team_name, invited_email, inviter, roles }: {
+  {
+    id,
+    team_name,
+    invited_email,
+    inviter,
+    roles,
+  }: {
     id: string;
     team_name: string;
     invited_email: string;
@@ -71,7 +79,7 @@ export async function sendInviteEmail(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${RESEND_API_KEY}`,
+      Authorization: `Bearer ${RESEND_API_KEY}`,
     },
     body: JSON.stringify({
       from: "deco.chat <noreply@deco.chat>",
@@ -90,28 +98,39 @@ export async function sendInviteEmail(
 }
 
 // Helper functions for invite handling
-export async function getInviteIdByEmailAndTeam({ email, teamId }: {
-  email: string;
-  teamId: string;
-}, db: Client) {
-  const { data } = await db.from("invites").select("id").eq(
-    "invited_email",
+export async function getInviteIdByEmailAndTeam(
+  {
     email,
-  ).eq("team_id", Number(teamId));
+    teamId,
+  }: {
+    email: string;
+    teamId: string;
+  },
+  db: Client,
+) {
+  const { data } = await db
+    .from("invites")
+    .select("id")
+    .eq("invited_email", email)
+    .eq("team_id", Number(teamId));
   return data;
 }
 
-export async function checkAlreadyExistUserIdInTeam({
-  userId,
-  teamId,
-  email,
-}: {
-  userId?: string;
-  teamId: string;
-  email?: string;
-}, db: Client) {
+export async function checkAlreadyExistUserIdInTeam(
+  {
+    userId,
+    teamId,
+    email,
+  }: {
+    userId?: string;
+    teamId: string;
+    email?: string;
+  },
+  db: Client,
+) {
   if (userId) {
-    const { data } = await db.from("members")
+    const { data } = await db
+      .from("members")
       .select("id")
       .eq("user_id", userId)
       .eq("team_id", Number(teamId))
@@ -120,14 +139,16 @@ export async function checkAlreadyExistUserIdInTeam({
 
     return data && data.length > 0;
   } else if (email) {
-    const { data: profiles } = await db.from("profiles")
+    const { data: profiles } = await db
+      .from("profiles")
       .select("user_id")
       .eq("email", email.toLowerCase());
 
     if (!profiles || profiles.length === 0) return false;
 
     const userId = profiles[0].user_id;
-    const { data } = await db.from("members")
+    const { data } = await db
+      .from("members")
       .select("id")
       .eq("user_id", userId)
       .eq("team_id", Number(teamId))
@@ -173,7 +194,7 @@ export function enrichPlanWithTeamMetadata({
   };
   plan: Plan;
 }): PlanWithTeamMetadata {
-  const extractOptionalProfile = (member: typeof team.members[number]) =>
+  const extractOptionalProfile = (member: (typeof team.members)[number]) =>
     member.profile;
   const filterExistingEmail = (
     member: { email: string } | null,
@@ -186,14 +207,12 @@ export function enrichPlanWithTeamMetadata({
   const excludeDevEmails = (member: { email: string }) =>
     !member.email.endsWith("@deco.cx");
 
-  const members = team.members.map(extractOptionalProfile).filter(
-    filterExistingEmail,
-  ).filter(excludeDevEmails);
+  const members = team.members
+    .map(extractOptionalProfile)
+    .filter(filterExistingEmail)
+    .filter(excludeDevEmails);
 
-  const remainingSeats = Math.max(
-    plan.user_seats - members.length,
-    0,
-  );
+  const remainingSeats = Math.max(plan.user_seats - members.length, 0);
 
   return {
     ...plan,
@@ -203,7 +222,8 @@ export function enrichPlanWithTeamMetadata({
 }
 
 export async function getTeamBySlug(slug: string, db: Client) {
-  const { data: team, error } = await db.from("teams")
+  const { data: team, error } = await db
+    .from("teams")
     .select(
       "id, name, slug, members(user_id, profile:profiles(email)), plan_id, plan:deco_chat_plans(*)",
     )
@@ -218,7 +238,8 @@ export async function getTeamBySlug(slug: string, db: Client) {
 }
 
 export async function getTeamById(teamId: string, db: Client) {
-  const { data: team, error } = await db.from("teams")
+  const { data: team, error } = await db
+    .from("teams")
     .select(
       "id, name, members(user_id, profile:profiles(email)), plan_id, plan:deco_chat_plans(*)",
     )

@@ -70,9 +70,7 @@ async function getAmountInDollars({
     USD: { value: 1 },
   };
 
-  if (
-    !Object.keys(currencies).includes(currency.toUpperCase())
-  ) {
+  if (!Object.keys(currencies).includes(currency.toUpperCase())) {
     throw new Error("Currency not supported");
   }
 
@@ -99,9 +97,11 @@ async function getWorkspaceByCustomerId({
   customerId: string;
 }): Promise<string> {
   const customerId = context.envVars.TESTING_CUSTOMER_ID || argsCustomerId;
-  const { data, error } = await context.db.from("deco_chat_customer").select(
-    "workspace",
-  ).eq("customer_id", customerId).maybeSingle();
+  const { data, error } = await context.db
+    .from("deco_chat_customer")
+    .select("workspace")
+    .eq("customer_id", customerId)
+    .maybeSingle();
 
   if (!data || error) {
     throw new Error("Failed to get workspace by customer ID", {
@@ -112,56 +112,55 @@ async function getWorkspaceByCustomerId({
   return data.workspace;
 }
 
-const paymentIntentSucceeded: EventHandler<Stripe.PaymentIntentSucceededEvent> =
-  async (
+const paymentIntentSucceeded: EventHandler<
+  Stripe.PaymentIntentSucceededEvent
+> = async (context, event) => {
+  const customerId = event.data.object.customer;
+
+  if (!customerId || typeof customerId !== "string") {
+    throw new Error("Customer ID not found or is not a string");
+  }
+
+  const workspace = await getWorkspaceByCustomerId({
     context,
-    event,
-  ) => {
-    const customerId = event.data.object.customer;
+    customerId,
+  });
 
-    if (!customerId || typeof customerId !== "string") {
-      throw new Error("Customer ID not found or is not a string");
-    }
+  const workspacePattern = new URLPattern({ pathname: "/:root/:slug" });
+  const workspaceMatch = workspacePattern.exec({ pathname: workspace });
 
-    const workspace = await getWorkspaceByCustomerId({
-      context,
-      customerId,
-    });
+  if (
+    !workspaceMatch ||
+    !workspaceMatch.pathname.groups.slug ||
+    !workspaceMatch.pathname.groups.root
+  ) {
+    throw new Error(`Invalid workspace format: ${workspace}`);
+  }
 
-    const workspacePattern = new URLPattern({ pathname: "/:root/:slug" });
-    const workspaceMatch = workspacePattern.exec({ pathname: workspace });
-
-    if (
-      !workspaceMatch || !workspaceMatch.pathname.groups.slug ||
-      !workspaceMatch.pathname.groups.root
-    ) {
-      throw new Error(`Invalid workspace format: ${workspace}`);
-    }
-
-    const contextWithWorkspace = {
-      ...context,
-      workspace: {
-        value: workspace,
-        slug: workspaceMatch.pathname.groups.slug,
-        root: workspaceMatch.pathname.groups.root,
-      },
-    };
-
-    const plan = await getPlan(contextWithWorkspace);
-    const amount = await getAmountInDollars({
-      context,
-      amountReceivedUSDCentsWithMarkup: event.data.object.amount_received,
-      currency: event.data.object.currency,
-      plan,
-    });
-
-    return {
-      type: "WorkspaceCashIn",
-      amount: amount.toMicrodollarString(),
-      workspace,
-      timestamp: new Date(),
-    };
+  const contextWithWorkspace = {
+    ...context,
+    workspace: {
+      value: workspace,
+      slug: workspaceMatch.pathname.groups.slug,
+      root: workspaceMatch.pathname.groups.root,
+    },
   };
+
+  const plan = await getPlan(contextWithWorkspace);
+  const amount = await getAmountInDollars({
+    context,
+    amountReceivedUSDCentsWithMarkup: event.data.object.amount_received,
+    currency: event.data.object.currency,
+    plan,
+  });
+
+  return {
+    type: "WorkspaceCashIn",
+    amount: amount.toMicrodollarString(),
+    workspace,
+    timestamp: new Date(),
+  };
+};
 
 export const createTransactionFromStripeEvent = async (
   c: AppContext,

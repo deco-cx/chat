@@ -44,9 +44,10 @@ interface CreateTeamDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateTeamDialog(
-  { open, onOpenChange }: CreateTeamDialogProps,
-) {
+export function CreateTeamDialog({
+  open,
+  onOpenChange,
+}: CreateTeamDialogProps) {
   const createTeam = useCreateTeam();
   const [error, setError] = useState<string | null>(null);
 
@@ -77,8 +78,8 @@ export function CreateTeamDialog(
         typeof err === "string"
           ? err
           : err instanceof Error
-          ? err.message
-          : "Failed to create team.",
+            ? err.message
+            : "Failed to create team.",
       );
     }
   }
@@ -121,7 +122,8 @@ export function CreateTeamDialog(
                       <span className="font-mono">
                         {typeof window !== "undefined"
                           ? globalThis.location.origin
-                          : ""}/{slug}
+                          : ""}
+                        /{slug}
                       </span>
                     </div>
                   )}
@@ -139,18 +141,17 @@ export function CreateTeamDialog(
               <Button
                 type="submit"
                 variant="default"
-                disabled={!form.formState.isValid || createTeam.isPending ||
-                  !slug}
+                disabled={
+                  !form.formState.isValid || createTeam.isPending || !slug
+                }
               >
-                {createTeam.isPending
-                  ? (
-                    <span className="flex items-center gap-2">
-                      <Spinner size="xs" /> Creating...
-                    </span>
-                  )
-                  : (
-                    "Create Team"
-                  )}
+                {createTeam.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner size="xs" /> Creating...
+                  </span>
+                ) : (
+                  "Create Team"
+                )}
               </Button>
             </AlertDialogFooter>
           </form>

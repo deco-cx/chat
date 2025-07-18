@@ -41,10 +41,13 @@ const preSelectTeam = (
     return null;
   }
 
-  return teams.find((team) =>
-    team.slug === workspace_hint ||
-    team.slug === workspace_hint.split("/").pop()
-  ) ?? null;
+  return (
+    teams.find(
+      (team) =>
+        team.slug === workspace_hint ||
+        team.slug === workspace_hint.split("/").pop(),
+    ) ?? null
+  );
 };
 
 const useAppIntegrations = (appName: string) => {
@@ -102,10 +105,11 @@ function ShowInstalls({
               value=""
               onValueChange={(value) =>
                 setSelectedIntegration(
-                  matchingIntegrations.find((integration) =>
-                    integration.id === value
+                  matchingIntegrations.find(
+                    (integration) => integration.id === value,
                   ) ?? null,
-                )}
+                )
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select an integration" />
@@ -172,8 +176,8 @@ function ShowInstalls({
             value={selectedIntegration?.id}
             onValueChange={(value) => {
               setSelectedIntegration(
-                matchingIntegrations.find((integration) =>
-                  integration.id === value
+                matchingIntegrations.find(
+                  (integration) => integration.id === value,
                 ) ?? null,
               );
               setShowIntegrationSelector(false);
@@ -205,20 +209,20 @@ function ShowInstalls({
   );
 }
 
-function AppsOAuth(
-  { client_id, redirect_uri, state, workspace_hint }: z.infer<
-    typeof OAuthSearchParamsSchema
-  >,
-) {
+function AppsOAuth({
+  client_id,
+  redirect_uri,
+  state,
+  workspace_hint,
+}: z.infer<typeof OAuthSearchParamsSchema>) {
   const teams = useUserTeams();
   const user = useUser();
   const [team, setTeam] = useState<CurrentTeam | null>(
     preSelectTeam(teams, workspace_hint),
   );
   const [showTeamSelector, setShowTeamSelector] = useState(false);
-  const [selectedIntegration, setSelectedIntegration] = useState<
-    Integration | null
-  >(null);
+  const [selectedIntegration, setSelectedIntegration] =
+    useState<Integration | null>(null);
 
   const createOAuthCode = useCreateOAuthCodeForIntegration();
 
@@ -256,7 +260,8 @@ function AppsOAuth(
             <Select
               value=""
               onValueChange={(value) =>
-                setTeam(teams.find((team) => team.slug === value) ?? null)}
+                setTeam(teams.find((team) => team.slug === value) ?? null)
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a team" />
@@ -351,9 +356,7 @@ function AppsOAuth(
           </div>
         )}
 
-        <SDKProvider
-          workspace={selectedWorkspace as Workspace}
-        >
+        <SDKProvider workspace={selectedWorkspace as Workspace}>
           <ShowInstalls
             appName={client_id}
             setSelectedIntegration={setSelectedIntegration}

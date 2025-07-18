@@ -9,17 +9,16 @@ import { decodeJwt } from "jose";
 const createTool = createToolGroup("OAuth", {
   name: "OAuth Management",
   description: "Create and manage OAuth codes securely.",
-  icon:
-    "https://assets.decocache.com/mcp/5e6930c3-86f6-4913-8de3-0c1fefdf02e3/API-key.png",
+  icon: "https://assets.decocache.com/mcp/5e6930c3-86f6-4913-8de3-0c1fefdf02e3/API-key.png",
 });
 
 export const oauthCodeCreate = createTool({
   name: "OAUTH_CODE_CREATE",
   description: "Create an OAuth code for a given API key",
   inputSchema: z.object({
-    integrationId: z.string().describe(
-      "The ID of the integration to create an OAuth code for",
-    ),
+    integrationId: z
+      .string()
+      .describe("The ID of the integration to create an OAuth code for"),
   }),
   outputSchema: z.object({
     code: z.string().describe("The OAuth code"),

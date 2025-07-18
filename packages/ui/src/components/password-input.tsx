@@ -13,9 +13,13 @@ interface PasswordInputProps {
   [key: string]: any;
 }
 
-function PasswordInput(
-  { value, onChange, placeholder, className, ...props }: PasswordInputProps,
-) {
+function PasswordInput({
+  value,
+  onChange,
+  placeholder,
+  className,
+  ...props
+}: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
@@ -68,10 +72,7 @@ function PasswordInput(
           disabled={!value}
           title={copySuccess ? "Copied!" : "Copy token"}
         >
-          <Icon
-            name={copySuccess ? "check" : "content_copy"}
-            size={16}
-          />
+          <Icon name={copySuccess ? "check" : "content_copy"} size={16} />
         </Button>
       </div>
     </div>

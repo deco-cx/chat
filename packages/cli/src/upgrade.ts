@@ -9,11 +9,11 @@ const getLatestVersion = async (): Promise<semver.SemVer> => {
   const versions: { latest: string } = await fetch(
     `https://jsr.io/${denoJson.name}/meta.json`,
     { signal },
-  ).then(
-    (resp) => resp.json() as Promise<{ latest: string }>,
-  ).catch(() => {
-    return { latest: denoJson.version };
-  });
+  )
+    .then((resp) => resp.json() as Promise<{ latest: string }>)
+    .catch(() => {
+      return { latest: denoJson.version };
+    });
   return semver.parse(versions.latest);
 };
 
@@ -34,9 +34,7 @@ export const upgrade = async () => {
 };
 
 export async function checkForUpdates() {
-  if (
-    Deno.env.get("DECO_CLI_UPDATE_CHECKED") || Deno.args.includes("update")
-  ) {
+  if (Deno.env.get("DECO_CLI_UPDATE_CHECKED") || Deno.args.includes("update")) {
     return;
   }
   Deno.env.set("DECO_CLI_UPDATE_CHECKED", "true");
@@ -49,9 +47,9 @@ export async function checkForUpdates() {
       console.log();
       console.log(
         green(
-          `A new version of deco is available: ${
-            bold(`v${semver.format(latestVersion)}`)
-          }`,
+          `A new version of deco is available: ${bold(
+            `v${semver.format(latestVersion)}`,
+          )}`,
         ),
       );
       console.log(

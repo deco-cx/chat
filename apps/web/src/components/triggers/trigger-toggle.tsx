@@ -3,9 +3,7 @@ import type { TriggerOutput } from "@deco/sdk";
 import { Switch } from "@deco/ui/components/switch.tsx";
 import { useState } from "react";
 
-export function TriggerToggle(
-  { trigger }: { trigger: TriggerOutput },
-) {
+export function TriggerToggle({ trigger }: { trigger: TriggerOutput }) {
   const [isActive, setIsActive] = useState(trigger.active);
   const { mutate: activateTrigger } = useActivateTrigger();
   const { mutate: deactivateTrigger } = useDeactivateTrigger();

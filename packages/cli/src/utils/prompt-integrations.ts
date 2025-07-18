@@ -73,20 +73,23 @@ export async function promptIntegrations(
 
   try {
     // Use INTEGRATIONS_LIST tool to get available integrations
-    const response = await client.callTool({
-      name: "INTEGRATIONS_LIST",
-      arguments: {},
-      // @ts-expect-error We need to refactor INTEGRATIONS_LIST to stop returning array and use a proper object
-    }, z.any());
+    const response = await client.callTool(
+      {
+        name: "INTEGRATIONS_LIST",
+        arguments: {},
+        // @ts-expect-error We need to refactor INTEGRATIONS_LIST to stop returning array and use a proper object
+      },
+      z.any(),
+    );
 
     if (response.isError) {
       throw new Error("Failed to fetch integrations");
     }
 
     const integrationsResponse = response.structuredContent as Integration[];
-    const integrations = (integrationsResponse || []).filter((c) =>
-      c.connection.type !== "INNATE"
-    ).sort((a, b) => a.name.localeCompare(b.name));
+    const integrations = (integrationsResponse || [])
+      .filter((c) => c.connection.type !== "INNATE")
+      .sort((a, b) => a.name.localeCompare(b.name));
 
     if (!integrations || integrations.length === 0) {
       throw new Error("No integrations found.");
@@ -109,22 +112,24 @@ export async function promptIntegrations(
 
     while (continueSelecting) {
       // Show current selection status
-      const currentStatus = selectedIntegrations.length > 0
-        ? `\nCurrently selected: ${selectedIntegrations.length} integration(s)`
-        : "\nNo integrations selected yet";
+      const currentStatus =
+        selectedIntegrations.length > 0
+          ? `\nCurrently selected: ${selectedIntegrations.length} integration(s)`
+          : "\nNo integrations selected yet";
 
       // Create options with selection indicators
       const displayOptions = allOptions.map((option) => {
         if (option.value === "SELECT_ALL") {
-          const allSelected = integrations.length > 0 &&
+          const allSelected =
+            integrations.length > 0 &&
             selectedIntegrations.length === integrations.length;
           return {
             name: `${allSelected ? "✓" : "○"} ${option.name}`,
             value: option.value,
           };
         }
-        const isSelected = selectedIntegrations.some((integration) =>
-          integration.id === option.value
+        const isSelected = selectedIntegrations.some(
+          (integration) => integration.id === option.value,
         );
         return {
           name: `${isSelected ? "✓" : "○"} ${option.name}`,
@@ -133,9 +138,10 @@ export async function promptIntegrations(
       });
 
       // Add "Done" option if at least one integration is selected
-      const finalOptions = selectedIntegrations.length > 0
-        ? [{ name: "✓ Done", value: "DONE" }, ...displayOptions]
-        : [{ name: "○ Skip", value: "DONE" }, ...displayOptions];
+      const finalOptions =
+        selectedIntegrations.length > 0
+          ? [{ name: "✓ Done", value: "DONE" }, ...displayOptions]
+          : [{ name: "○ Skip", value: "DONE" }, ...displayOptions];
 
       const selected = await Select.prompt({
         message: `Select integrations:${currentStatus}`,
@@ -156,15 +162,15 @@ export async function promptIntegrations(
         );
       } else {
         // Toggle individual selection
-        const selectedIntegration = integrations.find((integration) =>
-          integration.id === selected
+        const selectedIntegration = integrations.find(
+          (integration) => integration.id === selected,
         );
         if (!selectedIntegration) {
           continue;
         }
 
-        const index = selectedIntegrations.findIndex((integration) =>
-          integration.id === selected
+        const index = selectedIntegrations.findIndex(
+          (integration) => integration.id === selected,
         );
         if (index > -1) {
           selectedIntegrations.splice(index, 1);

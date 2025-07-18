@@ -43,8 +43,10 @@ export interface WorkflowDO extends Rpc.DurableObjectBranded {
 }
 
 export const Workflow = (workflows?: CreateMCPServerOptions["workflows"]) => {
-  return class Workflow extends DurableObject<DefaultEnv>
-    implements WorkflowDO {
+  return class Workflow
+    extends DurableObject<DefaultEnv>
+    implements WorkflowDO
+  {
     constructor(
       public override ctx: DurableObjectState,
       public override env: DefaultEnv,
@@ -53,27 +55,23 @@ export const Workflow = (workflows?: CreateMCPServerOptions["workflows"]) => {
     }
 
     bindings(ctx: RequestContext) {
-      return withBindings<DefaultEnv>(
-        this.env,
-        ctx,
-      );
+      return withBindings<DefaultEnv>(this.env, ctx);
     }
 
     async getWorkflow(
       workflowId: string,
       bindings: DefaultEnv,
     ): Promise<{ workflow: MastraWorkflow }> {
-      const bindedWorkflows = await Promise
-        .all(
-          workflows?.map(async (workflow) => {
-            const workflowResult = workflow(bindings);
-            if (isWorkflow(workflowResult)) {
-              return { workflow: workflowResult };
-            }
+      const bindedWorkflows = await Promise.all(
+        workflows?.map(async (workflow) => {
+          const workflowResult = workflow(bindings);
+          if (isWorkflow(workflowResult)) {
+            return { workflow: workflowResult };
+          }
 
-            return await workflowResult;
-          }) ?? [],
-        );
+          return await workflowResult;
+        }) ?? [],
+      );
       const workflowsMap = Object.fromEntries(
         bindedWorkflows.map((w) => [w.workflow.id, w.workflow]),
       );
@@ -118,10 +116,9 @@ export const Workflow = (workflows?: CreateMCPServerOptions["workflows"]) => {
         workflowId,
         this.bindings(ctx),
       );
-      const run = await workflow
-        .createRunAsync({
-          runId: this.ctx.id.name ?? runId,
-        });
+      const run = await workflow.createRunAsync({
+        runId: this.ctx.id.name ?? runId,
+      });
 
       this.ctx.waitUntil(run.cancel());
 

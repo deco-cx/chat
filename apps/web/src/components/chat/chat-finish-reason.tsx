@@ -8,7 +8,7 @@ const REPORTS_BY_FINISH_REASON = {
     description:
       "You can let the agent keep going from where it stopped, or adjust the step limit in settings.",
   },
-  "length": {
+  length: {
     title: "Agent hit the token limit for this response",
     description:
       "You can let the agent keep going from where it stopped, or adjust the token limit in settings.",

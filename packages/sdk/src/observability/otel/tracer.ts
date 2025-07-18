@@ -51,8 +51,8 @@ export class WorkerTracer implements Tracer {
     }
     const parentSpan = trace.getSpan(context);
     const parentSpanContext = parentSpan?.spanContext();
-    const hasParentContext = parentSpanContext &&
-      trace.isSpanContextValid(parentSpanContext);
+    const hasParentContext =
+      parentSpanContext && trace.isSpanContextValid(parentSpanContext);
 
     const traceId = hasParentContext
       ? parentSpanContext.traceId
@@ -89,9 +89,10 @@ export class WorkerTracer implements Tracer {
     const parentSpanId = hasParentContext
       ? parentSpanContext.spanId
       : undefined;
-    const traceFlags = decision === SamplingDecision.RECORD_AND_SAMPLED
-      ? TraceFlags.SAMPLED
-      : TraceFlags.NONE;
+    const traceFlags =
+      decision === SamplingDecision.RECORD_AND_SAMPLED
+        ? TraceFlags.SAMPLED
+        : TraceFlags.NONE;
     const spanContext = { traceId, spanId, traceFlags, traceState };
 
     const span = new SpanImpl({
@@ -136,9 +137,8 @@ export class WorkerTracer implements Tracer {
     ...args: unknown[]
   ): ReturnType<F> {
     const options = args.length > 1 ? (args[0] as SpanOptions) : undefined;
-    const parentContext = args.length > 2
-      ? (args[1] as Context)
-      : api_context.active();
+    const parentContext =
+      args.length > 2 ? (args[1] as Context) : api_context.active();
     const fn = args[args.length - 1] as F;
 
     const span = this.startSpan(name, options, parentContext);

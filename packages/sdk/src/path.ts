@@ -1,8 +1,6 @@
 import { join } from "node:path/posix";
 
-export type Workspace =
-  | `/users/${string}`
-  | `/shared/${string}`;
+export type Workspace = `/users/${string}` | `/shared/${string}`;
 
 /**
  * Represents a structured, UNIX-inspired file system for the Webdraw application.
@@ -22,19 +20,11 @@ export const Path = {
     const [woLeadingSlash, absolutePath] = path.startsWith(Path.separator)
       ? [path.slice(1), path]
       : [path, join(Path.root, path)];
-    const isFromUserHome = woLeadingSlash.startsWith(
-      Path.folders.home,
-    );
+    const isFromUserHome = woLeadingSlash.startsWith(Path.folders.home);
 
     return {
       path: isFromUserHome
-        ? join(
-          Path.root,
-          woLeadingSlash.replace(
-            Path.folders.home,
-            homePath,
-          ),
-        )
+        ? join(Path.root, woLeadingSlash.replace(Path.folders.home, homePath))
         : absolutePath,
       resolved: isFromUserHome,
     };

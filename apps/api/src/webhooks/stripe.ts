@@ -24,10 +24,7 @@ export const handleStripeWebhook = async (c: Context) => {
       appContext,
     );
     const { transaction, idempotentId } =
-      await createTransactionFromStripeEvent(
-        appContext,
-        event,
-      );
+      await createTransactionFromStripeEvent(appContext, event);
 
     if (!appContext.envVars.WALLET_API_KEY) {
       throw new Error("WALLET_API_KEY is not set");
@@ -38,30 +35,42 @@ export const handleStripeWebhook = async (c: Context) => {
       appContext.walletBinding,
     );
 
-    const response = await wallet["PUT /transactions/:id"]({
-      id: idempotentId,
-    }, {
-      body: transaction,
-    });
+    const response = await wallet["PUT /transactions/:id"](
+      {
+        id: idempotentId,
+      },
+      {
+        body: transaction,
+      },
+    );
 
     if (!response.ok) {
       const error = await response.text();
       throw new Error(`Failed to create transaction: ${error}`);
     }
 
-    return c.json({
-      message: "Transaction created",
-    }, 200);
+    return c.json(
+      {
+        message: "Transaction created",
+      },
+      200,
+    );
   } catch (error) {
     if (error instanceof WebhookEventIgnoredError) {
-      return c.json({
-        message: error.message,
-      }, 400);
+      return c.json(
+        {
+          message: error.message,
+        },
+        400,
+      );
     }
 
     console.error("[Stripe Webhook] Error", serializeError(error));
-    return c.json({
-      message: "Internal server error",
-    }, 500);
+    return c.json(
+      {
+        message: "Internal server error",
+      },
+      500,
+    );
   }
 };

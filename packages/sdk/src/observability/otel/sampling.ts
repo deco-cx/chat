@@ -26,8 +26,10 @@ export function multiTailSampler(samplers: TailSampleFn[]): TailSampleFn {
 
 export const isHeadSampled: TailSampleFn = (traceInfo) => {
   const localRootSpan = traceInfo.localRootSpan;
-  return (localRootSpan.spanContext().traceFlags & TraceFlags.SAMPLED) ===
-    TraceFlags.SAMPLED;
+  return (
+    (localRootSpan.spanContext().traceFlags & TraceFlags.SAMPLED) ===
+    TraceFlags.SAMPLED
+  );
 };
 
 export const isRootErrorSpan: TailSampleFn = (traceInfo) => {

@@ -26,16 +26,19 @@ interface IntegrationListProps {
   onSelect: (integration: Integration) => void;
 }
 
-function IntegrationList(
-  { integrations, isLoading, search, onSelect }: IntegrationListProps,
-) {
+function IntegrationList({
+  integrations,
+  isLoading,
+  search,
+  onSelect,
+}: IntegrationListProps) {
   const filtered = useMemo(
     () =>
       !search
         ? integrations
         : integrations.filter((integration) =>
-          integration.name.toLowerCase().includes(search.toLowerCase())
-        ),
+            integration.name.toLowerCase().includes(search.toLowerCase()),
+          ),
     [integrations, search],
   );
 
@@ -93,56 +96,59 @@ function ToolList({ integration, value, search, onSelect }: ToolListProps) {
       !toolsData
         ? []
         : !search
-        ? toolsData.tools
-        : toolsData.tools.filter((tool) =>
-          tool.name.toLowerCase().includes(search.toLowerCase()) ||
-          (tool.description?.toLowerCase().includes(search.toLowerCase()) ??
-            false)
-        ),
+          ? toolsData.tools
+          : toolsData.tools.filter(
+              (tool) =>
+                tool.name.toLowerCase().includes(search.toLowerCase()) ||
+                (tool.description
+                  ?.toLowerCase()
+                  .includes(search.toLowerCase()) ??
+                  false),
+            ),
     [toolsData, search],
   );
 
   return (
     <>
-      {isLoading
-        ? <div className="p-4 text-muted-foreground">Loading tools...</div>
-        : filtered.length === 0
-        ? <div className="p-4 text-muted-foreground">No tools found.</div>
-        : (
-          filtered.map((tool) => (
-            <button
-              type="button"
-              key={tool.name}
-              className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left ${
-                value === `${integration.id}/${tool.name}` ? "bg-muted" : ""
-              }`}
-              onClick={() => onSelect(tool)}
-            >
-              <IntegrationIcon
-                icon={integration.icon}
-                name={integration.name}
-                className="h-8 w-8 shrink-0"
-              />
-              <div className="flex flex-col min-w-0 flex-1">
-                <span className="font-medium truncate">
-                  {integration.name} / {formatToolName(tool.name)}
+      {isLoading ? (
+        <div className="p-4 text-muted-foreground">Loading tools...</div>
+      ) : filtered.length === 0 ? (
+        <div className="p-4 text-muted-foreground">No tools found.</div>
+      ) : (
+        filtered.map((tool) => (
+          <button
+            type="button"
+            key={tool.name}
+            className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left ${
+              value === `${integration.id}/${tool.name}` ? "bg-muted" : ""
+            }`}
+            onClick={() => onSelect(tool)}
+          >
+            <IntegrationIcon
+              icon={integration.icon}
+              name={integration.name}
+              className="h-8 w-8 shrink-0"
+            />
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="font-medium truncate">
+                {integration.name} / {formatToolName(tool.name)}
+              </span>
+              {tool.description && (
+                <span className="text-xs text-muted-foreground truncate">
+                  {tool.description}
                 </span>
-                {tool.description && (
-                  <span className="text-xs text-muted-foreground truncate">
-                    {tool.description}
-                  </span>
-                )}
-              </div>
-              {value === `${integration.id}/${tool.name}` && (
-                <Icon
-                  name="check"
-                  size={18}
-                  className="ml-auto text-muted-foreground"
-                />
               )}
-            </button>
-          ))
-        )}
+            </div>
+            {value === `${integration.id}/${tool.name}` && (
+              <Icon
+                name="check"
+                size={18}
+                className="ml-auto text-muted-foreground"
+              />
+            )}
+          </button>
+        ))
+      )}
     </>
   );
 }
@@ -154,13 +160,15 @@ interface SelectorDialogProps {
   onChange: (value: string) => void;
 }
 
-function SelectorDialog(
-  { open, value, onClose, onChange }: SelectorDialogProps,
-) {
+function SelectorDialog({
+  open,
+  value,
+  onClose,
+  onChange,
+}: SelectorDialogProps) {
   const [search, setSearch] = useState("");
-  const [selectedIntegration, setSelectedIntegration] = useState<
-    Integration | null
-  >(null);
+  const [selectedIntegration, setSelectedIntegration] =
+    useState<Integration | null>(null);
   const { data: integrations = [], isLoading: isIntegrationsLoading } =
     useIntegrations();
 
@@ -205,9 +213,11 @@ function SelectorDialog(
         </DialogHeader>
         <div className="border-b border-border">
           <Input
-            placeholder={selectedIntegration
-              ? `Search ${selectedIntegration.name} tools...`
-              : "Search integrations..."}
+            placeholder={
+              selectedIntegration
+                ? `Search ${selectedIntegration.name} tools...`
+                : "Search integrations..."
+            }
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full border-none focus-visible:ring-0 placeholder:text-muted-foreground"
@@ -215,26 +225,24 @@ function SelectorDialog(
         </div>
         <div className="max-h-96 overflow-y-auto">
           <div className="divide-y divide-border">
-            {!selectedIntegration
-              ? (
-                <IntegrationList
-                  integrations={integrations}
-                  isLoading={isIntegrationsLoading}
-                  search={search}
-                  onSelect={(integration) => {
-                    setSelectedIntegration(integration);
-                    setSearch("");
-                  }}
-                />
-              )
-              : (
-                <ToolList
-                  integration={selectedIntegration}
-                  value={value}
-                  search={search}
-                  onSelect={handleToolSelect}
-                />
-              )}
+            {!selectedIntegration ? (
+              <IntegrationList
+                integrations={integrations}
+                isLoading={isIntegrationsLoading}
+                search={search}
+                onSelect={(integration) => {
+                  setSelectedIntegration(integration);
+                  setSearch("");
+                }}
+              />
+            ) : (
+              <ToolList
+                integration={selectedIntegration}
+                value={value}
+                search={search}
+                onSelect={handleToolSelect}
+              />
+            )}
           </div>
         </div>
       </DialogContent>
@@ -242,9 +250,10 @@ function SelectorDialog(
   );
 }
 
-export function SingleToolSelector(
-  { value, onChange }: SingleToolSelectorProps,
-) {
+export function SingleToolSelector({
+  value,
+  onChange,
+}: SingleToolSelectorProps) {
   const [open, setOpen] = useState(false);
   const { data: integrations = [] } = useIntegrations();
 
@@ -265,19 +274,19 @@ export function SingleToolSelector(
         })}
         onClick={() => setOpen(true)}
       >
-        {selected
-          ? (
-            <span className="flex items-center gap-2">
-              <IntegrationIcon
-                icon={selected.integration.icon}
-                className="h-8 w-8"
-              />
-              <span className="truncate overflow-hidden whitespace-nowrap max-w-[350px]">
-                {selected.integration.name} / {selected.toolName}
-              </span>
+        {selected ? (
+          <span className="flex items-center gap-2">
+            <IntegrationIcon
+              icon={selected.integration.icon}
+              className="h-8 w-8"
+            />
+            <span className="truncate overflow-hidden whitespace-nowrap max-w-[350px]">
+              {selected.integration.name} / {selected.toolName}
             </span>
-          )
-          : <span className="text-muted-foreground">Select a tool...</span>}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">Select a tool...</span>
+        )}
         <Icon
           name="expand_more"
           size={18}

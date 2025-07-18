@@ -53,9 +53,11 @@ export function useTools(connection: MCPConnection) {
       "tools",
       connection.type,
       // deno-lint-ignore no-explicit-any
-      (connection as any).url || (connection as any).tenant ||
-      // deno-lint-ignore no-explicit-any
-      (connection as any).name,
+      (connection as any).url ||
+        // deno-lint-ignore no-explicit-any
+        (connection as any).tenant ||
+        // deno-lint-ignore no-explicit-any
+        (connection as any).name,
     ],
     queryFn: ({ signal }) => listTools(connection, { signal }),
   });

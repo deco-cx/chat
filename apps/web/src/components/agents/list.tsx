@@ -116,11 +116,7 @@ function IntegrationMiniature({ toolSetId }: { toolSetId: string }) {
           asChild
         >
           <div className="w-8 h-8 flex items-center justify-center">
-            <IntegrationIcon
-              icon={icon}
-              size="xs"
-              name={integration.name}
-            />
+            <IntegrationIcon icon={icon} size="xs" name={integration.name} />
           </div>
         </TooltipTrigger>
         <TooltipContent>
@@ -132,8 +128,7 @@ function IntegrationMiniature({ toolSetId }: { toolSetId: string }) {
 }
 
 function IntegrationBadges({ agent, max }: { agent: Agent; max?: number }) {
-  const integrations = Object
-    .entries(agent.tools_set ?? {})
+  const integrations = Object.entries(agent.tools_set ?? {})
     .filter(([_, tools]) => tools.length > 0)
     .slice(0, max ?? Infinity);
 
@@ -220,16 +215,13 @@ function Actions({ agent }: { agent: Agent }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <AlertDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-      >
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the {agent.name}{" "}
-              agent. This action cannot be undone.
+              This will permanently delete the {agent.name} agent. This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -243,16 +235,14 @@ function Actions({ agent }: { agent: Agent }) {
               disabled={removeAgent.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {removeAgent.isPending
-                ? (
-                  <>
-                    <Spinner size="xs" />
-                    <span className="ml-2">Deleting...</span>
-                  </>
-                )
-                : (
-                  "Delete"
-                )}
+              {removeAgent.isPending ? (
+                <>
+                  <Spinner size="xs" />
+                  <span className="ml-2">Deleting...</span>
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -276,11 +266,7 @@ function Card({ agent }: { agent: Agent }) {
       <CardContent className="gap-4 flex flex-col flex-grow">
         <div className="flex flex-col gap-3 w-full">
           <div className="relative w-full">
-            <AgentAvatar
-              url={agent.avatar}
-              fallback={agent.name}
-              size="lg"
-            />
+            <AgentAvatar url={agent.avatar} fallback={agent.name} size="lg" />
             <div
               className="absolute top-0 right-0"
               onClick={(e) => e.stopPropagation()}
@@ -323,9 +309,7 @@ function listReducer(state: ListState, action: ListAction): ListState {
   }
 }
 
-function TableView({ agents }: {
-  agents: Agent[];
-}) {
+function TableView({ agents }: { agents: Agent[] }) {
   const focusChat = useFocusChat();
   const [sortKey, setSortKey] = useState<"name" | "description">("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -404,9 +388,7 @@ function TableView({ agents }: {
   );
 }
 
-function CardsView({ agents }: {
-  agents: Agent[];
-}) {
+function CardsView({ agents }: { agents: Agent[] }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 gap-3 peer">
       {agents.map((agent) => (
@@ -433,7 +415,7 @@ const VISIBILITY_LABELS = {
   ),
 } as const;
 
-type Visibility = typeof VISIBILITIES[number];
+type Visibility = (typeof VISIBILITIES)[number];
 
 function List() {
   const [state, dispatch] = useReducer(listReducer, initialState);
@@ -441,9 +423,11 @@ function List() {
   const { filter } = state;
   const { data: agents } = useAgents();
   const [viewMode, setViewMode] = useViewMode("agents");
-  const { value: visibility, update: setVisibility } = useLocalStorage<
-    Visibility
-  >({ key: "agents-visibility", defaultValue: "all" });
+  const { value: visibility, update: setVisibility } =
+    useLocalStorage<Visibility>({
+      key: "agents-visibility",
+      defaultValue: "all",
+    });
 
   const agentsByVisibility = useMemo(() => {
     const initial = Object.fromEntries(
@@ -460,7 +444,7 @@ function List() {
 
   const filteredAgents =
     agentsByVisibility[visibility]?.filter((agent) =>
-      agent.name.toLowerCase().includes(filter.toLowerCase())
+      agent.name.toLowerCase().includes(filter.toLowerCase()),
     ) ?? [];
 
   return (
@@ -484,47 +468,55 @@ function List() {
         view={{ viewMode, onChange: setViewMode }}
       />
 
-      {filteredAgents.length > 0
-        ? (
-          <div className="flex-1 min-h-0 overflow-x-auto">
-            {viewMode === "table"
-              ? <TableView agents={filteredAgents} />
-              : <CardsView agents={filteredAgents} />}
-          </div>
-        )
-        : (
-          <EmptyState
-            icon={agents.length === 0 ? "robot_2" : visibility === "public" &&
-                agentsByVisibility["public"].length === 0
-              ? "public"
-              : visibility === "workspace" &&
-                  agentsByVisibility["workspace"].length === 0
-              ? "groups"
-              : "search_off"}
-            title={agents.length === 0
+      {filteredAgents.length > 0 ? (
+        <div className="flex-1 min-h-0 overflow-x-auto">
+          {viewMode === "table" ? (
+            <TableView agents={filteredAgents} />
+          ) : (
+            <CardsView agents={filteredAgents} />
+          )}
+        </div>
+      ) : (
+        <EmptyState
+          icon={
+            agents.length === 0
+              ? "robot_2"
+              : visibility === "public" &&
+                  agentsByVisibility["public"].length === 0
+                ? "public"
+                : visibility === "workspace" &&
+                    agentsByVisibility["workspace"].length === 0
+                  ? "groups"
+                  : "search_off"
+          }
+          title={
+            agents.length === 0
               ? "No agents yet"
               : visibility === "public" &&
                   agentsByVisibility["public"].length === 0
-              ? "No public agents available"
-              : visibility === "workspace" &&
-                  agentsByVisibility["workspace"].length === 0
-              ? "No team agents yet"
-              : "No agents match your filter"}
-            description={agents.length === 0
+                ? "No public agents available"
+                : visibility === "workspace" &&
+                    agentsByVisibility["workspace"].length === 0
+                  ? "No team agents yet"
+                  : "No agents match your filter"
+          }
+          description={
+            agents.length === 0
               ? "You haven't created any agents yet. Create one to get started."
               : visibility === "public" &&
                   agentsByVisibility["public"].length === 0
-              ? "Once agents are shared publicly, they'll appear here for anyone to explore and try out."
-              : visibility === "workspace" &&
-                  agentsByVisibility["workspace"].length === 0
-              ? "Agents shared with your team will show up here. Create one to start collaborating."
-              : "Try adjusting your search. If you still can't find what you're looking for, you can create a new agent."}
-            buttonProps={{
-              children: "New agent",
-              onClick: handleCreate,
-            }}
-          />
-        )}
+                ? "Once agents are shared publicly, they'll appear here for anyone to explore and try out."
+                : visibility === "workspace" &&
+                    agentsByVisibility["workspace"].length === 0
+                  ? "Agents shared with your team will show up here. Create one to start collaborating."
+                  : "Try adjusting your search. If you still can't find what you're looking for, you can create a new agent."
+          }
+          buttonProps={{
+            children: "New agent",
+            onClick: handleCreate,
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -537,9 +529,7 @@ const TABS: Record<string, Tab> = {
   },
 };
 
-const Context = createContext<
-  { handleCreate: () => void } | null
->(null);
+const Context = createContext<{ handleCreate: () => void } | null>(null);
 
 export default function Page() {
   const focusChat = useFocusChat();
@@ -559,11 +549,7 @@ export default function Page() {
           <DefaultBreadcrumb items={[{ label: "Agents", link: "/agents" }]} />
         }
         actionButtons={
-          <Button
-            onClick={handleCreate}
-            variant="special"
-            className="gap-2"
-          >
+          <Button onClick={handleCreate} variant="special" className="gap-2">
             <Icon name="add" />
             <span className="hidden md:inline">New agent</span>
           </Button>

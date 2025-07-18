@@ -136,9 +136,7 @@ export function ConfirmMarketplaceInstallDialog({
                 <div className="mt-4 p-3 bg-accent border border-border rounded-xl text-sm">
                   <div className="flex items-center gap-2">
                     <Icon name="info" size={16} />
-                    <span className="font-medium">
-                      Third-party integration
-                    </span>
+                    <span className="font-medium">Third-party integration</span>
                   </div>
                   <p className="mt-1">
                     This integration is provided by a third party and is not
@@ -153,17 +151,11 @@ export function ConfirmMarketplaceInstallDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          {isLoading
-            ? (
-              <Button disabled={isLoading}>
-                Connecting...
-              </Button>
-            )
-            : (
-              <Button onClick={handleConnect}>
-                Connect
-              </Button>
-            )}
+          {isLoading ? (
+            <Button disabled={isLoading}>Connecting...</Button>
+          ) : (
+            <Button onClick={handleConnect}>Connect</Button>
+          )}
         </DialogFooter>
       </DialogContent>
 
@@ -173,8 +165,9 @@ export function ConfirmMarketplaceInstallDialog({
           isOpen={modalState.isOpen}
           onClose={modalState.onClose}
           schema={modalState.schema}
-          integrationName={modalState.integrationName || integration?.name ||
-            "Integration"}
+          integrationName={
+            modalState.integrationName || integration?.name || "Integration"
+          }
           permissions={modalState.permissions || []}
           onSubmit={handleModalComplete}
           isLoading={modalState.isLoading}
@@ -203,9 +196,8 @@ function AddConnectionDialogContent({
   const tab = forceTab ?? _tab;
   const [search, setSearch] = useState("");
   const createCustomConnection = useCreateCustomConnection();
-  const [installingIntegration, setInstallingIntegration] = useState<
-    MarketplaceIntegration | null
-  >(null);
+  const [installingIntegration, setInstallingIntegration] =
+    useState<MarketplaceIntegration | null>(null);
   const [oauthCompletionDialog, setOauthCompletionDialog] = useState<{
     open: boolean;
     url: string;
@@ -253,9 +245,7 @@ function AddConnectionDialogContent({
             </Button>
             <Button
               variant="ghost"
-              className={cn(
-                "w-full justify-start text-muted-foreground group",
-              )}
+              className={cn("w-full justify-start text-muted-foreground group")}
               onClick={() => navigateWorkspace("/connections")}
             >
               <Icon name="arrow_outward" size={16} />
@@ -307,37 +297,39 @@ function AddConnectionDialogContent({
           {tab === "my-connections" && (
             <InstalledConnections
               query={search}
-              emptyState={showEmptyState
-                ? myConnectionsEmptyState ?? (
-                  <div className="flex flex-col h-full min-h-[200px] gap-4 pb-16">
-                    <div className="w-full flex items-center flex-col gap-2 py-8">
-                      <h3 className="text-2xl font-medium">
-                        No integrations found
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Create a new integration to get started
-                      </p>
-                    </div>
-                    <Marketplace
-                      filter={search}
-                      emptyState={
-                        <div className="flex flex-col gap-2 py-8 w-full items-center">
+              emptyState={
+                showEmptyState
+                  ? (myConnectionsEmptyState ?? (
+                      <div className="flex flex-col h-full min-h-[200px] gap-4 pb-16">
+                        <div className="w-full flex items-center flex-col gap-2 py-8">
+                          <h3 className="text-2xl font-medium">
+                            No integrations found
+                          </h3>
                           <p className="text-sm text-muted-foreground">
-                            No integrations found for the search "{search}"
+                            Create a new integration to get started
                           </p>
                         </div>
-                      }
-                      onClick={async (integration) => {
-                        if (integration.id === NEW_CUSTOM_CONNECTION.id) {
-                          await createCustomConnection();
-                          return;
-                        }
-                        setInstallingIntegration(integration);
-                      }}
-                    />
-                  </div>
-                )
-                : null}
+                        <Marketplace
+                          filter={search}
+                          emptyState={
+                            <div className="flex flex-col gap-2 py-8 w-full items-center">
+                              <p className="text-sm text-muted-foreground">
+                                No integrations found for the search "{search}"
+                              </p>
+                            </div>
+                          }
+                          onClick={async (integration) => {
+                            if (integration.id === NEW_CUSTOM_CONNECTION.id) {
+                              await createCustomConnection();
+                              return;
+                            }
+                            setInstallingIntegration(integration);
+                          }}
+                        />
+                      </div>
+                    ))
+                  : null
+              }
               filter={filter}
               onClick={(integration) => onSelect?.(integration)}
             />
@@ -350,10 +342,7 @@ function AddConnectionDialogContent({
         onConfirm={({ connection, authorizeOauthUrl }) => {
           onSelect?.(connection);
           if (authorizeOauthUrl) {
-            const popup = globalThis.open(
-              authorizeOauthUrl,
-              "_blank",
-            );
+            const popup = globalThis.open(authorizeOauthUrl, "_blank");
             if (!popup || popup.closed || typeof popup.closed === "undefined") {
               setOauthCompletionDialog({
                 open: true,
@@ -368,7 +357,8 @@ function AddConnectionDialogContent({
       <OAuthCompletionDialog
         open={oauthCompletionDialog.open}
         onOpenChange={(open) =>
-          setOauthCompletionDialog((prev) => ({ ...prev, open }))}
+          setOauthCompletionDialog((prev) => ({ ...prev, open }))
+        }
         authorizeOauthUrl={oauthCompletionDialog.url}
         integrationName={oauthCompletionDialog.integrationName}
       />
@@ -401,9 +391,7 @@ export function SelectConnectionDialog(props: SelectConnectionDialogProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {trigger}
-      </DialogTrigger>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
       <AddConnectionDialogContent
         title={props.title}
         filter={props.filter}

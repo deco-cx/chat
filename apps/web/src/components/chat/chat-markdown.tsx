@@ -23,11 +23,8 @@ function LazyHighlighterFallback() {
       }}
     >
       {lines.map((width, i) => (
-        <div
-          key={i}
-          className="flex gap-2 items-center my-1"
-        >
-          {(i > 2 && i < 7) && (
+        <div key={i} className="flex gap-2 items-center my-1">
+          {i > 2 && i < 7 && (
             <div
               className="w-4 h-4 rounded-sm opacity-40 animate-pulse"
               style={{
@@ -103,7 +100,7 @@ function Table(props: React.HTMLAttributes<HTMLTableElement>) {
             }
             return text;
           })
-          .join(",")
+          .join(","),
       )
       .join("\n");
   }, []);
@@ -203,10 +200,7 @@ const MemoizedMarkdownBlock = memo(
             />
           ),
           td: (props) => (
-            <td
-              {...props}
-              className="px-4 py-2 border-b border-border"
-            />
+            <td {...props} className="px-4 py-2 border-b border-border" />
           ),
         }}
       >
@@ -217,9 +211,13 @@ const MemoizedMarkdownBlock = memo(
   (prevProps, nextProps) => prevProps.content === nextProps.content,
 );
 
-function CodeBlock(
-  { language, content }: { language: string; content: string },
-) {
+function CodeBlock({
+  language,
+  content,
+}: {
+  language: string;
+  content: string;
+}) {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<number | null>(null);
 
@@ -257,9 +255,13 @@ function CodeBlock(
 
 MemoizedMarkdownBlock.displayName = "MemoizedMarkdownBlock";
 
-export const MemoizedMarkdown = (
-  { content, id }: { content: string; id: string },
-) => {
+export const MemoizedMarkdown = ({
+  content,
+  id,
+}: {
+  content: string;
+  id: string;
+}) => {
   const blocks = useMemo(() => marked.lexer(content), [content]);
 
   return blocks.map((block, index) => {
@@ -274,10 +276,7 @@ export const MemoizedMarkdown = (
     }
 
     return (
-      <MemoizedMarkdownBlock
-        content={block.raw}
-        key={`${id}-block_${index}`}
-      />
+      <MemoizedMarkdownBlock content={block.raw} key={`${id}-block_${index}`} />
     );
   });
 };

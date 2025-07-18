@@ -49,9 +49,7 @@ ChatHeader.UI = () => {
         size="xs"
         className="text-xs"
       />
-      <h1 className="text-sm font-medium tracking-tight">
-        {agent.name}
-      </h1>
+      <h1 className="text-sm font-medium tracking-tight">{agent.name}</h1>
     </div>
   );
 };

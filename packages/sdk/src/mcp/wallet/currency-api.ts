@@ -28,7 +28,7 @@ export const createCurrencyClient = (apiKey: string) => {
   const client = createHttpClient<CurrencyAPI>({
     base: "https://api.currencyapi.com/v3",
     headers: new Headers({
-      "apikey": apiKey,
+      apikey: apiKey,
     }),
   });
 

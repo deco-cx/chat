@@ -2,30 +2,27 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@deco/ui/lib/utils.ts";
 
-const variants = cva(
-  "animate-spin",
-  {
-    variants: {
-      variant: {
-        default: "fill-primary text-gray-200",
-        destructive: "fill-destructive text-gray-200",
-        secondary: "fill-secondary text-gray-200",
-        special: "fill-special text-backround",
-      },
-      size: {
-        default: "h-7 w-7",
-        sm: "h-6 w-6",
-        lg: "h-8 w-8",
-        icon: "h-6 w-6",
-        xs: "h-4 w-4",
-      },
+const variants = cva("animate-spin", {
+  variants: {
+    variant: {
+      default: "fill-primary text-gray-200",
+      destructive: "fill-destructive text-gray-200",
+      secondary: "fill-secondary text-gray-200",
+      special: "fill-special text-backround",
     },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
+    size: {
+      default: "h-7 w-7",
+      sm: "h-6 w-6",
+      lg: "h-8 w-8",
+      icon: "h-6 w-6",
+      xs: "h-4 w-4",
     },
   },
-);
+  defaultVariants: {
+    variant: "default",
+    size: "default",
+  },
+});
 
 type Props = VariantProps<typeof variants>;
 

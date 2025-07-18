@@ -4,15 +4,16 @@ import { useMemo } from "react";
 import { IntegrationIcon } from "./common.tsx";
 import { LEGACY_INTEGRATIONS } from "../../constants.ts";
 
-function CardsView(
-  { integrations, onRowClick }: {
-    integrations: Integration[];
-    onRowClick: (integration: Integration) => void;
-  },
-) {
+function CardsView({
+  integrations,
+  onRowClick,
+}: {
+  integrations: Integration[];
+  onRowClick: (integration: Integration) => void;
+}) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-      {integrations.map((integration) => (
+      {integrations.map((integration) =>
         LEGACY_INTEGRATIONS.includes(integration.id) ? null : (
           <Card
             key={integration.id}
@@ -37,8 +38,8 @@ function CardsView(
               </div>
             </CardContent>
           </Card>
-        )
-      ))}
+        ),
+      )}
     </div>
   );
 }
@@ -60,10 +61,11 @@ export function InstalledConnections({
     const searchTerm = query.toLowerCase();
 
     const filteredByQuery = query
-      ? installedIntegrations.filter((integration: Integration) =>
-        integration.name.toLowerCase().includes(searchTerm) ||
-        (integration.description?.toLowerCase() ?? "").includes(searchTerm)
-      )
+      ? installedIntegrations.filter(
+          (integration: Integration) =>
+            integration.name.toLowerCase().includes(searchTerm) ||
+            (integration.description?.toLowerCase() ?? "").includes(searchTerm),
+        )
       : installedIntegrations;
 
     return filter ? filteredByQuery.filter(filter) : filteredByQuery;
@@ -76,10 +78,7 @@ export function InstalledConnections({
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className="flex-1 min-h-0 overflow-x-auto">
-        <CardsView
-          integrations={filteredIntegrations}
-          onRowClick={onClick}
-        />
+        <CardsView integrations={filteredIntegrations} onRowClick={onClick} />
       </div>
     </div>
   );

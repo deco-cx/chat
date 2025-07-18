@@ -64,9 +64,7 @@ import { ToolCallForm } from "./tool-call-form.tsx";
 import { ToolCallResult } from "./tool-call-result.tsx";
 import type { MCPToolCallResult } from "./types.ts";
 import { useWorkspaceLink } from "../../hooks/use-navigate-workspace.ts";
-import {
-  ConfirmMarketplaceInstallDialog,
-} from "./select-connection-dialog.tsx";
+import { ConfirmMarketplaceInstallDialog } from "./select-connection-dialog.tsx";
 import type { MarketplaceIntegration } from "./marketplace.tsx";
 import { OAuthCompletionDialog } from "./oauth-completion-dialog.tsx";
 
@@ -110,8 +108,8 @@ function useStartConfiguringOpen() {
 
 function useIconFilename() {
   function generate(originalFile: File) {
-    const extension = originalFile.name.split(".").pop()?.toLowerCase() ||
-      "png";
+    const extension =
+      originalFile.name.split(".").pop()?.toLowerCase() || "png";
     return `icon-${crypto.randomUUID()}.${extension}`;
   }
   return { generate };
@@ -166,9 +164,13 @@ function useIconUpload(form: ReturnType<typeof useForm<Integration>>) {
   };
 }
 
-function ConfigureConnectionInstanceForm(
-  { instance, closeForm }: { instance: Integration; closeForm: () => void },
-) {
+function ConfigureConnectionInstanceForm({
+  instance,
+  closeForm,
+}: {
+  instance: Integration;
+  closeForm: () => void;
+}) {
   const form = useForm<Integration>({
     defaultValues: {
       id: instance.id || crypto.randomUUID(),
@@ -208,10 +210,7 @@ function ConfigureConnectionInstanceForm(
       form.reset(data);
       closeForm();
     } catch (error) {
-      console.error(
-        `Error updating integration:`,
-        error,
-      );
+      console.error(`Error updating integration:`, error);
 
       trackEvent("integration_create", {
         success: false,
@@ -227,22 +226,25 @@ function ConfigureConnectionInstanceForm(
       "connection",
       value === "SSE" || value === "HTTP"
         ? {
-          type: value,
-          url: ec?.type === "SSE"
-            ? ec.url || "https://example.com/sse"
-            : "https://example.com/sse",
-        }
+            type: value,
+            url:
+              ec?.type === "SSE"
+                ? ec.url || "https://example.com/sse"
+                : "https://example.com/sse",
+          }
         : value === "Websocket"
-        ? {
-          type: "Websocket",
-          url: ec?.type === "Websocket"
-            ? ec.url || "wss://example.com/ws"
-            : "wss://example.com/ws",
-        }
-        : {
-          type: "Deco",
-          tenant: ec?.type === "Deco" ? ec.tenant || "tenant-id" : "tenant-id",
-        },
+          ? {
+              type: "Websocket",
+              url:
+                ec?.type === "Websocket"
+                  ? ec.url || "wss://example.com/ws"
+                  : "wss://example.com/ws",
+            }
+          : {
+              type: "Deco",
+              tenant:
+                ec?.type === "Deco" ? ec.tenant || "tenant-id" : "tenant-id",
+            },
     );
   };
 
@@ -268,32 +270,27 @@ function ConfigureConnectionInstanceForm(
                   />
                   <Input type="hidden" {...field} />
                   <FormControl>
-                    {iconValue
-                      ? (
-                        <div onClick={triggerFileInput} className="w-14 h-14">
-                          <IntegrationIcon
-                            icon={iconValue}
-                            className={cn(
-                              "w-14 h-14 bg-background",
-                              isUploading && "opacity-50",
-                            )}
-                          />
-                        </div>
-                      )
-                      : (
-                        <div
-                          onClick={triggerFileInput}
-                          className="w-14 h-14 flex flex-col items-center justify-center gap-1 border border-border bg-background rounded-xl"
-                        >
-                          <Icon
-                            name="upload"
-                            size={24}
-                          />
-                          <span className="text-xs text-muted-foreground/70 text-center px-1">
-                            Select an icon
-                          </span>
-                        </div>
-                      )}
+                    {iconValue ? (
+                      <div onClick={triggerFileInput} className="w-14 h-14">
+                        <IntegrationIcon
+                          icon={iconValue}
+                          className={cn(
+                            "w-14 h-14 bg-background",
+                            isUploading && "opacity-50",
+                          )}
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        onClick={triggerFileInput}
+                        className="w-14 h-14 flex flex-col items-center justify-center gap-1 border border-border bg-background rounded-xl"
+                      >
+                        <Icon name="upload" size={24} />
+                        <span className="text-xs text-muted-foreground/70 text-center px-1">
+                          Select an icon
+                        </span>
+                      </div>
+                    )}
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -393,10 +390,7 @@ function ConfigureConnectionInstanceForm(
                           optional
                         </span>
                         <FormControl>
-                          <PasswordInput
-                            placeholder="token"
-                            {...field}
-                          />
+                          <PasswordInput placeholder="token" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -413,10 +407,7 @@ function ConfigureConnectionInstanceForm(
                     <FormItem>
                       <FormLabel>WebSocket URL</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="wss://example.com/ws"
-                          {...field}
-                        />
+                        <Input placeholder="wss://example.com/ws" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -449,10 +440,7 @@ function ConfigureConnectionInstanceForm(
                           optional
                         </span>
                         <FormControl>
-                          <PasswordInput
-                            placeholder="token"
-                            {...field}
-                          />
+                          <PasswordInput placeholder="token" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -481,12 +469,13 @@ function ConfigureConnectionInstanceForm(
   );
 }
 
-function ConnectionInstanceItem(
-  { instance, onTestTools }: {
-    instance: Integration;
-    onTestTools: (connectionId: string) => void;
-  },
-) {
+function ConnectionInstanceItem({
+  instance,
+  onTestTools,
+}: {
+  instance: Integration;
+  onTestTools: (connectionId: string) => void;
+}) {
   const { connectionId: queryStringConnectionId } = useStartConfiguringOpen();
   const [isConfiguring, setIsConfiguring] = useState(
     queryStringConnectionId === instance.id,
@@ -536,10 +525,7 @@ function ConnectionInstanceItem(
       className="w-full p-4 flex items-center gap-2 rounded-xl border border-border"
       key={instance.id}
     >
-      <IntegrationIcon
-        icon={instance.icon}
-        name={instance.name}
-      />
+      <IntegrationIcon icon={instance.icon} name={instance.name} />
       <div className="h-12 flex flex-col gap-1 flex-1 min-w-0">
         <h5 className="text-sm font-medium truncate">{instance.name}</h5>
         <p className="text-sm text-muted-foreground truncate">
@@ -579,7 +565,10 @@ function ConnectionInstanceItem(
   );
 }
 
-function Instances({ data, onTestTools }: {
+function Instances({
+  data,
+  onTestTools,
+}: {
   data: ReturnType<typeof useGroupedApp>;
   onTestTools: (connectionId: string) => void;
 }) {
@@ -599,14 +588,16 @@ function Instances({ data, onTestTools }: {
   );
 }
 
-function Overview({ data, appKey }: {
+function Overview({
+  data,
+  appKey,
+}: {
   data: ReturnType<typeof useGroupedApp>;
   appKey: string;
 }) {
   const isWellKnown = isWellKnownApp(appKey);
-  const [installingIntegration, setInstallingIntegration] = useState<
-    MarketplaceIntegration | null
-  >(null);
+  const [installingIntegration, setInstallingIntegration] =
+    useState<MarketplaceIntegration | null>(null);
   const [oauthCompletionDialog, setOauthCompletionDialog] = useState<{
     open: boolean;
     url: string;
@@ -638,26 +629,19 @@ function Overview({ data, appKey }: {
           </p>
         </div>
       </div>
-      {(!isWellKnown && data.info?.provider !== "custom")
-        ? (
-          <Button variant="special" onClick={handleAddConnection}>
-            <span className="hidden md:inline">Add connection</span>
-          </Button>
-        )
-        : null}
+      {!isWellKnown && data.info?.provider !== "custom" ? (
+        <Button variant="special" onClick={handleAddConnection}>
+          <span className="hidden md:inline">Add connection</span>
+        </Button>
+      ) : null}
 
       <ConfirmMarketplaceInstallDialog
         integration={installingIntegration}
         setIntegration={setInstallingIntegration}
         onConfirm={({ authorizeOauthUrl }) => {
           if (authorizeOauthUrl) {
-            const popup = globalThis.open(
-              authorizeOauthUrl,
-              "_blank",
-            );
-            if (
-              !popup || popup.closed || typeof popup.closed === "undefined"
-            ) {
+            const popup = globalThis.open(authorizeOauthUrl, "_blank");
+            if (!popup || popup.closed || typeof popup.closed === "undefined") {
               setOauthCompletionDialog({
                 open: true,
                 url: authorizeOauthUrl,
@@ -671,7 +655,8 @@ function Overview({ data, appKey }: {
       <OAuthCompletionDialog
         open={oauthCompletionDialog.open}
         onOpenChange={(open) =>
-          setOauthCompletionDialog((prev) => ({ ...prev, open }))}
+          setOauthCompletionDialog((prev) => ({ ...prev, open }))
+        }
         authorizeOauthUrl={oauthCompletionDialog.url}
         integrationName={oauthCompletionDialog.integrationName}
       />
@@ -684,7 +669,7 @@ function ParametersViewer({ tool }: Pick<ToolProps, "tool">) {
     if (!schema || typeof schema !== "object") return [];
 
     // deno-lint-ignore no-explicit-any
-    const properties = schema.properties as Record<string, any> || {};
+    const properties = (schema.properties as Record<string, any>) || {};
     const required = (schema.required as string[]) || [];
 
     return Object.entries(properties).map(([name, prop]) => ({
@@ -699,40 +684,36 @@ function ParametersViewer({ tool }: Pick<ToolProps, "tool">) {
 
   return (
     <div className="flex flex-col gap-2">
-      {parameters.length > 0
-        ? (
-          parameters.map((param) => (
-            <div className="flex flex-col gap-2">
-              <div key={param.name} className="flex items-center gap-2">
-                <Icon
-                  name={param.type === "string" ? "text_fields" : "category"}
-                  size={16}
-                />
-                <span className="text-sm pl-1">
-                  {formatToolName(param.name)}
-                </span>
-                <span
-                  className={cn(
-                    "text-xs text-muted-foreground",
-                    param.required && "font-medium",
-                  )}
-                >
-                  {param.required ? "Required" : "Optional"}
-                </span>
-              </div>
-              {param.description && (
-                <span className="px-7 text-sm text-muted-foreground font-normal">
-                  {param.description}
-                </span>
-              )}
+      {parameters.length > 0 ? (
+        parameters.map((param) => (
+          <div className="flex flex-col gap-2">
+            <div key={param.name} className="flex items-center gap-2">
+              <Icon
+                name={param.type === "string" ? "text_fields" : "category"}
+                size={16}
+              />
+              <span className="text-sm pl-1">{formatToolName(param.name)}</span>
+              <span
+                className={cn(
+                  "text-xs text-muted-foreground",
+                  param.required && "font-medium",
+                )}
+              >
+                {param.required ? "Required" : "Optional"}
+              </span>
             </div>
-          ))
-        )
-        : (
-          <div className="text-sm text-muted-foreground">
-            No parameters required
+            {param.description && (
+              <span className="px-7 text-sm text-muted-foreground font-normal">
+                {param.description}
+              </span>
+            )}
           </div>
-        )}
+        ))
+      ) : (
+        <div className="text-sm text-muted-foreground">
+          No parameters required
+        </div>
+      )}
     </div>
   );
 }
@@ -744,9 +725,8 @@ interface ToolProps {
 
 function Tool({ tool, connection }: ToolProps) {
   const toolCall = useToolCall(connection);
-  const [toolCallResponse, setToolCallResponse] = useState<
-    MCPToolCallResult | null
-  >(null);
+  const [toolCallResponse, setToolCallResponse] =
+    useState<MCPToolCallResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -882,14 +862,16 @@ function Tool({ tool, connection }: ToolProps) {
   );
 }
 
-function ToolsInspector({ data, selectedConnectionId }: {
+function ToolsInspector({
+  data,
+  selectedConnectionId,
+}: {
   data: ReturnType<typeof useGroupedApp>;
   selectedConnectionId?: string;
 }) {
   const [search, setSearch] = useState("");
-  const [selectedIntegration, setSelectedIntegration] = useState<
-    Integration | null
-  >(data.instances[0] ?? null);
+  const [selectedIntegration, setSelectedIntegration] =
+    useState<Integration | null>(data.instances[0] ?? null);
   const toolsRef = useRef<HTMLDivElement>(null);
   const connection = selectedIntegration?.connection;
   const tools = useTools(connection as MCPConnection);
@@ -912,8 +894,8 @@ function ToolsInspector({ data, selectedConnectionId }: {
   // Update selected integration when selectedConnectionId changes
   useEffect(() => {
     if (selectedConnectionId) {
-      const instance = data.instances.find((i) =>
-        i.id === selectedConnectionId
+      const instance = data.instances.find(
+        (i) => i.id === selectedConnectionId,
       );
       if (instance) {
         setSelectedIntegration(instance);
@@ -928,10 +910,11 @@ function ToolsInspector({ data, selectedConnectionId }: {
     }
   }, [selectedConnectionId, data.instances]);
 
-  const filteredTools = tools.data.tools.filter((tool) =>
-    tool.name.toLowerCase().includes(search.toLowerCase()) ||
-    (tool.description &&
-      tool.description.toLowerCase().includes(search.toLowerCase()))
+  const filteredTools = tools.data.tools.filter(
+    (tool) =>
+      tool.name.toLowerCase().includes(search.toLowerCase()) ||
+      (tool.description &&
+        tool.description.toLowerCase().includes(search.toLowerCase())),
   );
 
   return (
@@ -943,9 +926,7 @@ function ToolsInspector({ data, selectedConnectionId }: {
         <Select
           value={selectedIntegration?.id}
           onValueChange={(value) => {
-            const instance = data.instances.find((i) =>
-              i.id === value
-            );
+            const instance = data.instances.find((i) => i.id === value);
             setSelectedIntegration(instance ?? null);
           }}
         >
@@ -967,48 +948,42 @@ function ToolsInspector({ data, selectedConnectionId }: {
         />
       </div>
       <div className="flex flex-col gap-4 w-full min-h-[80vh]">
-        {tools.isLoading
-          ? (
-            Array.from({ length: 8 }).map((_, idx) => (
-              <Skeleton key={idx} className="rounded-lg w-full h-[76px]" />
-            ))
-          )
-          : tools.isError
-          ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center">
-              <img
-                src="/img/error-state-connection-tools.svg"
-                className="h-64 mb-4"
-              />
-              <h3 className="text-2xl font-semibold text-foreground mb-2">
-                Unable to list connection tools
-              </h3>
-              <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg text-left mb-4">
-                <pre className="text-xs text-destructive whitespace-pre-wrap break-words">
-                  Error: {tools.error?.message || 'Unknown error occurred'}
-                </pre>
-              </div>
-              <Button onClick={() => tools.refetch()}>
-                <Icon name="refresh" size={16} />
-                Refresh
-              </Button>
+        {tools.isLoading ? (
+          Array.from({ length: 8 }).map((_, idx) => (
+            <Skeleton key={idx} className="rounded-lg w-full h-[76px]" />
+          ))
+        ) : tools.isError ? (
+          <div className="flex flex-col items-center justify-center p-8 text-center">
+            <img
+              src="/img/error-state-connection-tools.svg"
+              className="h-64 mb-4"
+            />
+            <h3 className="text-2xl font-semibold text-foreground mb-2">
+              Unable to list connection tools
+            </h3>
+            <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg text-left mb-4">
+              <pre className="text-xs text-destructive whitespace-pre-wrap break-words">
+                Error: {tools.error?.message || "Unknown error occurred"}
+              </pre>
             </div>
+            <Button onClick={() => tools.refetch()}>
+              <Icon name="refresh" size={16} />
+              Refresh
+            </Button>
+          </div>
+        ) : (
+          filteredTools.map((tool) =>
+            connection ? (
+              <Tool key={tool.name} connection={connection} tool={tool} />
+            ) : null,
           )
-          : (
-            filteredTools.map((tool) =>
-              connection
-                ? <Tool key={tool.name} connection={connection} tool={tool} />
-                : null
-            )
-          )}
+        )}
       </div>
     </div>
   );
 }
 
-function AppDetail({ appKey }: {
-  appKey: string;
-}) {
+function AppDetail({ appKey }: { appKey: string }) {
   const workspaceLink = useWorkspaceLink();
   const app = useGroupedApp({
     appKey,
@@ -1029,7 +1004,8 @@ function AppDetail({ appKey }: {
         <Instances
           data={app}
           onTestTools={(connectionId) =>
-            setSelectedToolInspectorConnectionId(connectionId)}
+            setSelectedToolInspectorConnectionId(connectionId)
+          }
         />
         <ToolsInspector
           data={app}
@@ -1064,18 +1040,20 @@ export default function Page() {
           items={[
             { label: "Integrations", link: "/connections" },
             ...(info?.name
-              ? [{
-                label: (
-                  <div className="flex items-center gap-2">
-                    <IntegrationIcon
-                      icon={info.icon}
-                      name={info.name}
-                      size="xs"
-                    />
-                    <span>{info.name}</span>
-                  </div>
-                ),
-              }]
+              ? [
+                  {
+                    label: (
+                      <div className="flex items-center gap-2">
+                        <IntegrationIcon
+                          icon={info.icon}
+                          name={info.name}
+                          size="xs"
+                        />
+                        <span>{info.name}</span>
+                      </div>
+                    ),
+                  },
+                ]
               : []),
           ]}
         />

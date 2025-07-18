@@ -46,22 +46,27 @@ const createRuntimeContext = (prev?: RuntimeContext<AppContext>) => {
 export function createPrivateTool<
   TSchemaIn extends z.ZodSchema | undefined = undefined,
   TSchemaOut extends z.ZodSchema | undefined = undefined,
-  TContext extends ToolExecutionContext<TSchemaIn> = ToolExecutionContext<
-    TSchemaIn
-  >,
-  TExecute extends ToolAction<TSchemaIn, TSchemaOut, TContext>["execute"] =
-    ToolAction<TSchemaIn, TSchemaOut, TContext>["execute"],
+  TContext extends
+    ToolExecutionContext<TSchemaIn> = ToolExecutionContext<TSchemaIn>,
+  TExecute extends ToolAction<
+    TSchemaIn,
+    TSchemaOut,
+    TContext
+  >["execute"] = ToolAction<TSchemaIn, TSchemaOut, TContext>["execute"],
 >(
   opts: ToolAction<TSchemaIn, TSchemaOut, TContext> & {
     execute?: TExecute;
   },
-): [TSchemaIn, TSchemaOut, TExecute] extends
-  [z.ZodSchema, z.ZodSchema, Function]
+): [TSchemaIn, TSchemaOut, TExecute] extends [
+  z.ZodSchema,
+  z.ZodSchema,
+  Function,
+]
   ? Tool<TSchemaIn, TSchemaOut, TContext> & {
-    inputSchema: TSchemaIn;
-    outputSchema: TSchemaOut;
-    execute: (context: TContext) => Promise<any>;
-  }
+      inputSchema: TSchemaIn;
+      outputSchema: TSchemaOut;
+      execute: (context: TContext) => Promise<any>;
+    }
   : Tool<TSchemaIn, TSchemaOut, TContext> {
   const execute = opts.execute;
   if (typeof execute === "function") {
@@ -78,33 +83,39 @@ export function createPrivateTool<
 export function createTool<
   TSchemaIn extends z.ZodSchema | undefined = undefined,
   TSchemaOut extends z.ZodSchema | undefined = undefined,
-  TContext extends ToolExecutionContext<TSchemaIn> = ToolExecutionContext<
-    TSchemaIn
-  >,
-  TExecute extends ToolAction<TSchemaIn, TSchemaOut, TContext>["execute"] =
-    ToolAction<TSchemaIn, TSchemaOut, TContext>["execute"],
+  TContext extends
+    ToolExecutionContext<TSchemaIn> = ToolExecutionContext<TSchemaIn>,
+  TExecute extends ToolAction<
+    TSchemaIn,
+    TSchemaOut,
+    TContext
+  >["execute"] = ToolAction<TSchemaIn, TSchemaOut, TContext>["execute"],
 >(
   opts: ToolAction<TSchemaIn, TSchemaOut, TContext> & {
     execute?: TExecute;
   },
-): [TSchemaIn, TSchemaOut, TExecute] extends
-  [z.ZodSchema, z.ZodSchema, Function]
+): [TSchemaIn, TSchemaOut, TExecute] extends [
+  z.ZodSchema,
+  z.ZodSchema,
+  Function,
+]
   ? Tool<TSchemaIn, TSchemaOut, TContext> & {
-    inputSchema: TSchemaIn;
-    outputSchema: TSchemaOut;
-    execute: (context: TContext) => Promise<any>;
-  }
+      inputSchema: TSchemaIn;
+      outputSchema: TSchemaOut;
+      execute: (context: TContext) => Promise<any>;
+    }
   : Tool<TSchemaIn, TSchemaOut, TContext> {
   return mastraCreateTool({
     ...opts,
-    execute: typeof opts?.execute === "function"
-      ? ((input) => {
-        return opts.execute!({
-          ...input,
-          runtimeContext: createRuntimeContext(input.runtimeContext),
-        });
-      }) as TExecute
-      : opts.execute,
+    execute:
+      typeof opts?.execute === "function"
+        ? (((input) => {
+            return opts.execute!({
+              ...input,
+              runtimeContext: createRuntimeContext(input.runtimeContext),
+            });
+          }) as TExecute)
+        : opts.execute,
   });
 }
 
@@ -121,8 +132,7 @@ export interface Step<
   TResumeSchema extends z.ZodType<any> = z.ZodType<any>,
   TSuspendSchema extends z.ZodType<any> = z.ZodType<any>,
   TEngineType = any,
-> extends
-  Omit<
+> extends Omit<
     MastraStep<
       TStepId,
       TSchemaIn,
@@ -170,25 +180,23 @@ export function createStep<
   TStepOutput extends z.ZodType<any>,
   TResumeSchema extends z.ZodType<any>,
   TSuspendSchema extends z.ZodType<any>,
->(
-  opts: {
-    id: TStepId;
-    description?: string;
-    inputSchema: TStepInput;
-    outputSchema: TStepOutput;
-    resumeSchema?: TResumeSchema;
-    suspendSchema?: TSuspendSchema;
-    execute: ExecWithContext<
-      ExecuteFunction<
-        z.infer<TStepInput>,
-        z.infer<TStepOutput>,
-        z.infer<TResumeSchema>,
-        z.infer<TSuspendSchema>,
-        DefaultEngineType
-      >
-    >;
-  },
-): Step<
+>(opts: {
+  id: TStepId;
+  description?: string;
+  inputSchema: TStepInput;
+  outputSchema: TStepOutput;
+  resumeSchema?: TResumeSchema;
+  suspendSchema?: TSuspendSchema;
+  execute: ExecWithContext<
+    ExecuteFunction<
+      z.infer<TStepInput>,
+      z.infer<TStepOutput>,
+      z.infer<TResumeSchema>,
+      z.infer<TSuspendSchema>,
+      DefaultEngineType
+    >
+  >;
+}): Step<
   TStepId,
   TStepInput,
   TStepOutput,
@@ -221,8 +229,8 @@ export interface CreateMCPServerOptions<
     (
       env: Env & DefaultEnv<TSchema>,
     ) => // this is a workaround to allow workflows to be thenables
-    | Promise<{ workflow: ReturnType<typeof createWorkflow> }>
-    | ReturnType<typeof createWorkflow>
+      | Promise<{ workflow: ReturnType<typeof createWorkflow> }>
+      | ReturnType<typeof createWorkflow>
   >;
 }
 
@@ -251,9 +259,10 @@ const State = {
   ): R => asyncLocalStorage.run(ctx, f, ...args),
 };
 
-const decoChatOAuthToolFor = <TSchema extends z.ZodTypeAny = never>(
-  { state: schema, scopes }: CreateMCPServerOptions<any, TSchema>["oauth"] = {},
-) => {
+const decoChatOAuthToolFor = <TSchema extends z.ZodTypeAny = never>({
+  state: schema,
+  scopes,
+}: CreateMCPServerOptions<any, TSchema>["oauth"] = {}) => {
   const jsonSchema = schema
     ? zodToJsonSchema(schema)
     : { type: "object", properties: {} };
@@ -283,16 +292,17 @@ const createWorkflowTools = <TEnv = any, TSchema extends z.ZodTypeAny = never>(
   const startTool = createTool({
     id: `DECO_CHAT_WORKFLOWS_START_${workflow.id}`,
     description: workflow.description ?? `Start workflow ${workflow.id}`,
-    inputSchema: workflow.inputSchema && "shape" in workflow.inputSchema
-      ? workflow.inputSchema
-      : z.object({}),
+    inputSchema:
+      workflow.inputSchema && "shape" in workflow.inputSchema
+        ? workflow.inputSchema
+        : z.object({}),
     outputSchema: z.object({
       id: z.string(),
     }),
     execute: async (args) => {
       const store = State.getStore();
-      const runId = store?.req.headers.get("x-deco-chat-run-id") ??
-        crypto.randomUUID();
+      const runId =
+        store?.req.headers.get("x-deco-chat-run-id") ?? crypto.randomUUID();
       const workflowDO = bindings.DECO_CHAT_WORKFLOW_DO.get(
         bindings.DECO_CHAT_WORKFLOW_DO.idFromName(runId),
       );
@@ -410,7 +420,8 @@ export const createMCPServer = <
     ).then((w) => w.map((w) => w.workflow));
 
     const workflowTools =
-      workflows?.map((workflow) => createWorkflowTools(workflow, bindings))
+      workflows
+        ?.map((workflow) => createWorkflowTools(workflow, bindings))
         .flat() ?? [];
 
     tools.push(...workflowTools);
@@ -421,12 +432,14 @@ export const createMCPServer = <
         tool.id,
         {
           description: tool.description,
-          inputSchema: tool.inputSchema && "shape" in tool.inputSchema
-            ? (tool.inputSchema.shape as z.ZodRawShape)
-            : z.object({}).shape,
+          inputSchema:
+            tool.inputSchema && "shape" in tool.inputSchema
+              ? (tool.inputSchema.shape as z.ZodRawShape)
+              : z.object({}).shape,
           outputSchema:
-            tool.outputSchema && typeof tool.outputSchema === "object" &&
-              "shape" in tool.outputSchema
+            tool.outputSchema &&
+            typeof tool.outputSchema === "object" &&
+            "shape" in tool.outputSchema
               ? (tool.outputSchema.shape as z.ZodRawShape)
               : z.object({}).shape,
         },
@@ -481,14 +494,12 @@ export const createMCPServer = <
       );
     }
 
-    return State.run(
-      { env, ctx, req },
-      () =>
-        execute({
-          context: toolCallInput,
-          runId: crypto.randomUUID(),
-          runtimeContext: createRuntimeContext(),
-        }),
+    return State.run({ env, ctx, req }, () =>
+      execute({
+        context: toolCallInput,
+        runId: crypto.randomUUID(),
+        runtimeContext: createRuntimeContext(),
+      }),
     );
   };
 

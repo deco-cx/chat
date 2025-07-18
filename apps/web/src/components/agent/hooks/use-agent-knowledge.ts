@@ -27,9 +27,9 @@ interface UseAgentKnowledgeIntegrationProps {
   agent: Agent;
 }
 
-export const useAgentKnowledgeIntegration = (
-  { agent }: Pick<UseAgentKnowledgeIntegrationProps, "agent">,
-) => {
+export const useAgentKnowledgeIntegration = ({
+  agent,
+}: Pick<UseAgentKnowledgeIntegrationProps, "agent">) => {
   const { id: idProp } = agent;
   const knowledgeName = useMemo(() => parseToValidIndexName(idProp), [idProp]);
   const knowledgeIntegrationId = useMemo(
@@ -39,8 +39,8 @@ export const useAgentKnowledgeIntegration = (
   const integrations = useIntegrations();
   const knowledgeIntegration = useMemo(
     () =>
-      integrations.data?.find((integration) =>
-        integration.id === knowledgeIntegrationId
+      integrations.data?.find(
+        (integration) => integration.id === knowledgeIntegrationId,
       ),
     [knowledgeIntegrationId, integrations],
   );
@@ -52,13 +52,17 @@ export const useAgentKnowledgeIntegration = (
   };
 };
 
-export const useCreateAgentKnowledgeIntegration = (
-  { setIntegrationTools, agent }: UseAgentKnowledgeIntegrationProps,
-) => {
-  const { integration: knowledgeIntegration, name: knowledgeName, id } =
-    useAgentKnowledgeIntegration({
-      agent,
-    });
+export const useCreateAgentKnowledgeIntegration = ({
+  setIntegrationTools,
+  agent,
+}: UseAgentKnowledgeIntegrationProps) => {
+  const {
+    integration: knowledgeIntegration,
+    name: knowledgeName,
+    id,
+  } = useAgentKnowledgeIntegration({
+    agent,
+  });
   const integrations = useIntegrations();
   const createKnowledge = useCreateKnowledge();
 
@@ -105,9 +109,11 @@ interface UseUploadAgentKnowledgeFilesProps {
   setIntegrationTools: (integrationId: string, tools: string[]) => void;
 }
 
-export const useUploadAgentKnowledgeFiles = (
-  { agent, onAddFile, setIntegrationTools }: UseUploadAgentKnowledgeFilesProps,
-) => {
+export const useUploadAgentKnowledgeFiles = ({
+  agent,
+  onAddFile,
+  setIntegrationTools,
+}: UseUploadAgentKnowledgeFilesProps) => {
   const { integration: knowledgeIntegration, createAgentKnowledge } =
     useCreateAgentKnowledgeIntegration({
       agent,
@@ -117,9 +123,8 @@ export const useUploadAgentKnowledgeFiles = (
   const addFileToKnowledgeBase = useKnowledgeAddFile();
   const readFile = useReadFile();
   const deleteFile = useDeleteFile();
-  const knowledeIntegrationPromise = useRef<PromiseWithResolvers<Integration>>(
-    null,
-  );
+  const knowledeIntegrationPromise =
+    useRef<PromiseWithResolvers<Integration>>(null);
 
   useEffect(() => {
     if (!knowledeIntegrationPromise.current || !knowledgeIntegration) return;
@@ -153,9 +158,8 @@ export const useUploadAgentKnowledgeFiles = (
             content: new Uint8Array(buffer),
           };
 
-          const savedResponse = await writeFileMutation.mutateAsync(
-            fileMutateData,
-          );
+          const savedResponse =
+            await writeFileMutation.mutateAsync(fileMutateData);
 
           if (!savedResponse.ok) {
             throw new Error(`Failed to upload file ${filename}`);
@@ -216,16 +220,18 @@ export const useUploadAgentKnowledgeFiles = (
   };
 
   const uploadKnowledgeFiles = async (files: File[]) => {
-    onAddFile((
-      prev,
-    ) => [...prev, ...files.map((file) => ({ file, uploading: true }))]);
+    onAddFile((prev) => [
+      ...prev,
+      ...files.map((file) => ({ file, uploading: true })),
+    ]);
     if (!knowledgeIntegration?.connection) {
       await createAgentKnowledge();
       knowledeIntegrationPromise.current = Promise.withResolvers();
 
       await knowledeIntegrationPromise.current.promise;
     }
-    const kbIntegration = knowledgeIntegration ??
+    const kbIntegration =
+      knowledgeIntegration ??
       (await knowledeIntegrationPromise.current?.promise);
     if (!kbIntegration) throw new Error("Not found knowledge for this agent");
     return _uploadKnowledgeFiles(files, kbIntegration);

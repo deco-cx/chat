@@ -28,8 +28,10 @@ export function useSendAgentWhatsAppInvite(agentId: string, triggerId: string) {
         template_name: template.name,
         language_code: template.language_code,
         sender_phone: props.to,
-        sender_name: profile?.metadata?.full_name ??
-          profile?.metadata?.username ?? "Unknown name",
+        sender_name:
+          profile?.metadata?.full_name ??
+          profile?.metadata?.username ??
+          "Unknown name",
         agent_name: agent.name,
       });
     },
@@ -96,13 +98,13 @@ function getMetaCountryCodeFromPhone(phone: string): string {
   const cleanPhone = phone.startsWith("+") ? phone : `+${phone}`;
 
   // Sort countries by dial_code length (longest first) to match more specific codes first
-  const sortedCountries = [...countries].sort((a, b) =>
-    b.dial_code.length - a.dial_code.length
+  const sortedCountries = [...countries].sort(
+    (a, b) => b.dial_code.length - a.dial_code.length,
   );
 
   // Find the first country whose dial_code matches the start of the phone number
   const matchedCountry = sortedCountries.find((country) =>
-    cleanPhone.startsWith(country.dial_code)
+    cleanPhone.startsWith(country.dial_code),
   );
 
   // Return the meta_code if it exists, otherwise default to en_US

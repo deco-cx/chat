@@ -3,9 +3,7 @@ import { Icon } from "@deco/ui/components/icon.tsx";
 import cronstrue from "cronstrue";
 import { CodeBlock } from "./code-block.tsx";
 
-export function CronDetails(
-  { trigger }: { trigger: CronTrigger },
-) {
+export function CronDetails({ trigger }: { trigger: CronTrigger }) {
   // Check if this is an agent trigger (has prompt) or tool trigger (has callTool)
   const isAgentTrigger = "prompt" in trigger;
   const isToolTrigger = "callTool" in trigger;
@@ -34,9 +32,7 @@ export function CronDetails(
       {isAgentTrigger && (
         <div>
           <div className="text-sm font-medium mb-1">Prompt</div>
-          <CodeBlock>
-            {JSON.stringify(trigger.prompt, null, 2)}
-          </CodeBlock>
+          <CodeBlock>{JSON.stringify(trigger.prompt, null, 2)}</CodeBlock>
         </div>
       )}
 

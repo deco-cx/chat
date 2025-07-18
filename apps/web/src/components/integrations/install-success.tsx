@@ -28,8 +28,7 @@ function ConnectionInstallSuccess() {
     onSuccess: () => {
       const searchParams = new URLSearchParams(globalThis.location.search);
       searchParams.delete("installId");
-      const newUrl =
-        `${globalThis.location.pathname}?${searchParams.toString()}`;
+      const newUrl = `${globalThis.location.pathname}?${searchParams.toString()}`;
       globalThis.history.replaceState({}, "", newUrl);
 
       // Notify other windows about the successful update
@@ -57,7 +56,9 @@ function ConnectionInstallSuccess() {
       return;
     }
 
-    const newName = name || `${existingIntegration.name} | ${account}` ||
+    const newName =
+      name ||
+      `${existingIntegration.name} | ${account}` ||
       existingIntegration.name;
     const newDescription = account || existingIntegration.description;
     if (existingIntegration.connection.type === "HTTP") {
@@ -75,38 +76,36 @@ function ConnectionInstallSuccess() {
   return (
     <div className="min-h-screen h-full flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md p-4 rounded-xl">
-        {isPending
-          ? (
-            <CardContent className="text-center space-y-4 py-8">
-              <div className="flex justify-center w-full">
-                <Spinner size="lg" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium">Processing Integration</h3>
-                <p className="text-muted-foreground">
-                  Please wait while we set up your integration...
-                </p>
-              </div>
+        {isPending ? (
+          <CardContent className="text-center space-y-4 py-8">
+            <div className="flex justify-center w-full">
+              <Spinner size="lg" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">Processing Integration</h3>
+              <p className="text-muted-foreground">
+                Please wait while we set up your integration...
+              </p>
+            </div>
+          </CardContent>
+        ) : (
+          <>
+            <CardHeader className="text-center">
+              <Icon name="check_circle" size={36} className="text-special" />
+              <CardTitle className="text-xl font-medium">
+                Integration Connected Successfully!
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <p className="text-muted-foreground">
+                Your integration has been successfully connected.
+              </p>
+              <p className="text-muted-foreground">
+                You can now close this window.
+              </p>
             </CardContent>
-          )
-          : (
-            <>
-              <CardHeader className="text-center">
-                <Icon name="check_circle" size={36} className="text-special" />
-                <CardTitle className="text-xl font-medium">
-                  Integration Connected Successfully!
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-center space-y-4">
-                <p className="text-muted-foreground">
-                  Your integration has been successfully connected.
-                </p>
-                <p className="text-muted-foreground">
-                  You can now close this window.
-                </p>
-              </CardContent>
-            </>
-          )}
+          </>
+        )}
       </Card>
     </div>
   );

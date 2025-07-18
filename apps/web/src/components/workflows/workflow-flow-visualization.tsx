@@ -136,8 +136,10 @@ function getStepStatus(stepData: any, workflowStatus: string): string {
   if (stepData.endedAt && !stepData.output && !stepData.error) return "skipped";
   // Fallback: if workflow is done but step has no data, mark as skipped
   if (
-    (workflowStatus === "failed" || workflowStatus === "completed" ||
-      workflowStatus === "success") && !stepData.startedAt
+    (workflowStatus === "failed" ||
+      workflowStatus === "completed" ||
+      workflowStatus === "success") &&
+    !stepData.startedAt
   ) {
     return "skipped";
   }
@@ -258,9 +260,9 @@ function StepDetailContentFlow({
             <div className="flex items-center gap-2">
               <CopyButton value={stepData.output} />
               <Icon
-                name={activeSection === "output"
-                  ? "expand_less"
-                  : "expand_more"}
+                name={
+                  activeSection === "output" ? "expand_less" : "expand_more"
+                }
                 size={20}
                 className="text-success"
               />
@@ -333,9 +335,13 @@ function StepDetailModal({
 }
 
 // Custom Node Component for React Flow
-function WorkflowStepNode(
-  { data, selected }: { data: any; selected?: boolean },
-) {
+function WorkflowStepNode({
+  data,
+  selected,
+}: {
+  data: any;
+  selected?: boolean;
+}) {
   let cardClasses =
     "relative transition-all duration-200 cursor-pointer hover:shadow-md";
   let borderClasses = "";
@@ -491,7 +497,8 @@ function calculateLayout(
     if (step.isParallel) {
       // Handle parallel steps with more spacing for better curved arrows
       const parallelSteps = step.steps;
-      const totalWidth = parallelSteps.length * nodeWidth +
+      const totalWidth =
+        parallelSteps.length * nodeWidth +
         (parallelSteps.length - 1) * (horizontalSpacing - nodeWidth);
       const startX = xCenterPosition - totalWidth / 2;
 
@@ -889,13 +896,11 @@ export function WorkflowFlowVisualization({
                   <span>{statusCounts.failed} failed</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse">
-                  </div>
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
                   <span>{statusCounts.running} running</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full">
-                  </div>
+                  <div className="w-2 h-2 bg-muted-foreground rounded-full"></div>
                   <span>
                     {statusCounts.pending + statusCounts.skipped} pending
                   </span>

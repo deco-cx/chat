@@ -51,7 +51,9 @@ export function Combobox({
                     const currentValue = options.find(
                       (option) => option.label === currentLabel,
                     )?.value;
-                    onChange(currentValue === value ? "" : currentValue ?? "");
+                    onChange(
+                      currentValue === value ? "" : (currentValue ?? ""),
+                    );
                   }}
                 >
                   {option.label}

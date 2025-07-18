@@ -54,8 +54,7 @@ function handleLiteral({
     if (!isValidDesignSystemToken(className)) {
       context.report({
         range,
-        message:
-          `Class "${className}" does not use design system tokens. Please use tokens from the design system.`,
+        message: `Class "${className}" does not use design system tokens. Please use tokens from the design system.`,
       });
     }
   }

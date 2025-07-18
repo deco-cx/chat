@@ -9,14 +9,16 @@ import {
   DialogHeader,
 } from "@deco/ui/components/dialog.tsx";
 
-export const DeleteTriggerModal = (
-  { trigger, open, onOpenChange }: {
-    trigger: ListTriggersOutput["triggers"][number];
+export const DeleteTriggerModal = ({
+  trigger,
+  open,
+  onOpenChange,
+}: {
+  trigger: ListTriggersOutput["triggers"][number];
 
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-  },
-) => {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => {
   const { mutate: deleteTrigger } = useDeleteTrigger();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

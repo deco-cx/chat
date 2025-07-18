@@ -6,20 +6,22 @@ import type { ToolBinder } from "./index.ts";
 import { createMCPClientProxy } from "@deco/workers-runtime/proxy";
 
 export type MCPClientStub<TDefinition extends readonly ToolBinder[]> = {
-  [K in TDefinition[number] as K["name"]]: K extends
-    ToolBinder<string, infer TInput, infer TReturn> ? (
-      params: TInput,
-      init?: RequestInit,
-    ) => Promise<TReturn>
+  [K in TDefinition[number] as K["name"]]: K extends ToolBinder<
+    string,
+    infer TInput,
+    infer TReturn
+  >
+    ? (params: TInput, init?: RequestInit) => Promise<TReturn>
     : never;
 };
 
 export type MCPClientFetchStub<TDefinition extends readonly ToolBinder[]> = {
-  [K in TDefinition[number] as K["name"]]: K extends
-    ToolBinder<string, infer TInput, infer TReturn> ? (
-      params: TInput,
-      init?: RequestInit,
-    ) => Promise<TReturn>
+  [K in TDefinition[number] as K["name"]]: K extends ToolBinder<
+    string,
+    infer TInput,
+    infer TReturn
+  >
+    ? (params: TInput, init?: RequestInit) => Promise<TReturn>
     : never;
 };
 

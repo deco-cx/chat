@@ -20,11 +20,12 @@ export const AudioButton: React.FC<AudioButtonProps> = ({ onMessage }) => {
 
   useEffect(() => {
     if (
-      typeof globalThis !== "undefined" && "SpeechRecognition" in globalThis ||
+      (typeof globalThis !== "undefined" &&
+        "SpeechRecognition" in globalThis) ||
       "webkitSpeechRecognition" in globalThis
     ) {
-      const SpeechRecognition = globalThis.SpeechRecognition ||
-        globalThis.webkitSpeechRecognition;
+      const SpeechRecognition =
+        globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
@@ -89,10 +90,7 @@ export const AudioButton: React.FC<AudioButtonProps> = ({ onMessage }) => {
           onClick={toggleListening}
           className="h-8 w-8"
         >
-          <Icon
-            filled
-            name={isListening ? "stop" : "mic"}
-          />
+          <Icon filled name={isListening ? "stop" : "mic"} />
         </Button>
       </div>
     </div>

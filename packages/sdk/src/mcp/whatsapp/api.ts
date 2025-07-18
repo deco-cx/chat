@@ -11,8 +11,7 @@ const ALLOWED_WORKSPACES = ["/shared/deco.cx"];
 const createTool = createToolGroup("Whatsapp", {
   name: "WhatsApp",
   description: "Manage WhatsApp user interactions.",
-  icon:
-    "https://assets.decocache.com/mcp/5775ad49-916a-45cf-a82e-3a2d2b36360d/whatsapp-management.png",
+  icon: "https://assets.decocache.com/mcp/5775ad49-916a-45cf-a82e-3a2d2b36360d/whatsapp-management.png",
 });
 
 export const sendWhatsAppTemplateMessage = createTool({
@@ -40,7 +39,8 @@ export const sendWhatsAppTemplateMessage = createTool({
     const env = getEnv(c);
 
     if (
-      !env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID ||
+      !env.WHATSAPP_ACCESS_TOKEN ||
+      !env.WHATSAPP_PHONE_NUMBER_ID ||
       !env.WHATSAPP_API_VERSION
     ) {
       throw new Error("Missing WhatsApp environment variables");
@@ -51,7 +51,7 @@ export const sendWhatsAppTemplateMessage = createTool({
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
+          Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -93,7 +93,7 @@ export const sendWhatsAppTemplateMessage = createTool({
         `Failed to send whatsapp message: ${response.statusText}`,
       );
     }
-    const data = await response.json() as { messages: { id: string }[] };
+    const data = (await response.json()) as { messages: { id: string }[] };
     return {
       wppMessageId: data.messages[0].id,
       to: to,
@@ -122,13 +122,13 @@ export const createWhatsAppInvite = createTool({
 
     const db = c.db;
 
-    const { data: alreadyInvited, error: alreadyInvitedError } = await db.from(
-      "deco_chat_wpp_invites",
-    )
-      .select("wpp_message_id").eq("phone", phone).eq("user_id", userId).eq(
-        "trigger_id",
-        triggerId,
-      ).maybeSingle();
+    const { data: alreadyInvited, error: alreadyInvitedError } = await db
+      .from("deco_chat_wpp_invites")
+      .select("wpp_message_id")
+      .eq("phone", phone)
+      .eq("user_id", userId)
+      .eq("trigger_id", triggerId)
+      .maybeSingle();
 
     if (alreadyInvitedError) {
       throw new Error(alreadyInvitedError.message);
@@ -176,15 +176,13 @@ export const upsertWhatsAppUser = createTool({
       triggers.push(triggerId);
     }
 
-    const { error } = await c.db
-      .from("deco_chat_wpp_users")
-      .upsert({
-        phone: phone,
-        trigger_url: triggerUrl,
-        trigger_id: triggerId,
-        triggers: [...triggers],
-        updated_at: new Date().toISOString(),
-      });
+    const { error } = await c.db.from("deco_chat_wpp_users").upsert({
+      phone: phone,
+      trigger_url: triggerUrl,
+      trigger_id: triggerId,
+      triggers: [...triggers],
+      updated_at: new Date().toISOString(),
+    });
 
     if (error) {
       throw new Error(error.message);

@@ -20,14 +20,16 @@ import {
   getRulesConfig,
 } from "../config.ts";
 
-type MCPServerConfig = {
-  command: string;
-  args: string[];
-} | {
-  url: string;
-  type: "http" | "sse";
-  headers?: Record<string, string>;
-};
+type MCPServerConfig =
+  | {
+      command: string;
+      args: string[];
+    }
+  | {
+      url: string;
+      type: "http" | "sse";
+      headers?: Record<string, string>;
+    };
 
 export interface MCPConfig {
   mcpServers: Record<string, MCPServerConfig>;
@@ -56,7 +58,8 @@ const IDE_SUPPORT: Record<string, IDESupport> = {
 
       const configPath = join(outDir, "mcp.json");
       const existingConfig: MCPConfig = await Deno.readTextFile(configPath)
-        .then(JSON.parse).catch(() => ({ mcpServers: {} }));
+        .then(JSON.parse)
+        .catch(() => ({ mcpServers: {} }));
 
       const config = {
         mcpServers: {
@@ -88,7 +91,8 @@ const IDE_SUPPORT: Record<string, IDESupport> = {
 
       const configPath = join(outDir, "mcp.json");
       const existingConfig: MCPConfig = await Deno.readTextFile(configPath)
-        .then(JSON.parse).catch(() => ({ mcpServers: {} }));
+        .then(JSON.parse)
+        .catch(() => ({ mcpServers: {} }));
 
       const config = {
         mcpServers: {
@@ -127,10 +131,7 @@ export async function writeIDEConfig(configs: IDEConfig[]): Promise<void> {
   console.log(`✅ IDE configuration written to: ${targetDir}`);
 }
 
-export const hasMCPPreferences = async (
-  workspace: string,
-  app: string,
-) => {
+export const hasMCPPreferences = async (workspace: string, app: string) => {
   const [appUUID, currentVersion] = await Promise.all([
     getAppUUID(workspace, app),
     getMCPConfigVersion(),
@@ -147,10 +148,7 @@ export const setMCPPreferences = async (workspace: string, app: string) => {
     getMCPConfigVersion(),
   ]);
 
-  localStorage.setItem(
-    `mcp-install-version-${appUUID}`,
-    currentVersion,
-  );
+  localStorage.setItem(`mcp-install-version-${appUUID}`, currentVersion);
 };
 
 export async function promptIDESetup(
@@ -188,10 +186,7 @@ export async function promptIDESetup(
   }
 
   // Create the IDE-specific configuration
-  const configs = await ideSupport.createConfig(
-    mcpConfig,
-    projectRoot,
-  );
+  const configs = await ideSupport.createConfig(mcpConfig, projectRoot);
 
   return configs;
 }

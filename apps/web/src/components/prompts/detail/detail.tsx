@@ -122,10 +122,7 @@ export default function Page() {
 
       form.reset(data);
     } catch (error) {
-      console.error(
-        `Error updating prompt:`,
-        error,
-      );
+      console.error(`Error updating prompt:`, error);
 
       trackEvent("prompt_create", {
         success: false,
@@ -153,8 +150,7 @@ export default function Page() {
 
     updateAgentCache({
       ...agent,
-      instructions:
-        `${agent.instructions}\n\nThe current prompt Id is "${prompt.id}"`,
+      instructions: `${agent.instructions}\n\nThe current prompt Id is "${prompt.id}"`,
     });
   }, [prompt]);
 
@@ -171,9 +167,7 @@ export default function Page() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancel}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDiscard}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -220,19 +214,14 @@ export default function Page() {
                       <Icon name="history" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    Version history
-                  </TooltipContent>
+                  <TooltipContent>Version history</TooltipContent>
                 </Tooltip>
                 <div
                   className={cn(
                     promptVersion ? "opacity-100" : "opacity-0 w-0",
                   )}
                 >
-                  <Button
-                    variant="default"
-                    onClick={handleRestoreVersion}
-                  >
+                  <Button variant="default" onClick={handleRestoreVersion}>
                     Restore version
                   </Button>
                 </div>
@@ -253,25 +242,22 @@ export default function Page() {
                   </Button>
                   <Button
                     className="bg-primary-light text-primary-dark hover:bg-primary-light/90 gap-2"
-                    disabled={!numberOfChanges ||
-                      prompt.readonly}
+                    disabled={!numberOfChanges || prompt.readonly}
                     onClick={() => {
                       onSubmit(form.getValues());
                     }}
                   >
-                    {isMutating
-                      ? (
-                        <>
-                          <Spinner size="xs" />
-                          <span>Saving...</span>
-                        </>
-                      )
-                      : (
-                        <span>
-                          Save {numberOfChanges}{" "}
-                          change{numberOfChanges > 1 ? "s" : ""}
-                        </span>
-                      )}
+                    {isMutating ? (
+                      <>
+                        <Spinner size="xs" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>
+                        Save {numberOfChanges} change
+                        {numberOfChanges > 1 ? "s" : ""}
+                      </span>
+                    )}
                   </Button>
                 </div>
               </div>

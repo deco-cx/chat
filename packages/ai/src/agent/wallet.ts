@@ -157,9 +157,12 @@ export class AgentWallet {
       workspace: this.config.workspace,
     });
 
-    const response = await this.client["POST /transactions"]({}, {
-      body: operation,
-    });
+    const response = await this.client["POST /transactions"](
+      {},
+      {
+        body: operation,
+      },
+    );
 
     if (!response.ok) {
       // TODO(@mcandeia): add error tracking with posthog
@@ -212,9 +215,9 @@ export class AgentWallet {
             }
 
             throw new Error(
-              `Failed to ensure pending operations are done: ${
-                JSON.stringify(operation)
-              }`,
+              `Failed to ensure pending operations are done: ${JSON.stringify(
+                operation,
+              )}`,
             );
           }
         }),

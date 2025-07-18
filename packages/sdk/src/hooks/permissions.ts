@@ -20,7 +20,11 @@ export function usePermissionDescriptions(scopes: string[] = []): {
 } {
   const { workspace } = useSDK();
 
-  const { data: toolsData, isLoading, error } = useQuery({
+  const {
+    data: toolsData,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: [
       ...KEYS.INTEGRATION_TOOLS(workspace, "workspace-management"),
       "permission-descriptions",

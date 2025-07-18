@@ -29,9 +29,11 @@ export interface KnowledgeBaseContext extends AppContext {
 }
 
 // Legacy schema for backward compatibility during migration
-export const KnowledgeFileMetadataSchema = z.object({
-  agentId: z.string().optional(),
-}).merge(FileMetadataSchema);
+export const KnowledgeFileMetadataSchema = z
+  .object({
+    agentId: z.string().optional(),
+  })
+  .merge(FileMetadataSchema);
 
 const addFileDefaults = <
   T extends {
@@ -42,7 +44,9 @@ const addFileDefaults = <
     filename: string | null;
     status: string | null;
   },
->(file: T): Omit<T, "metadata"> & {
+>(
+  file: T,
+): Omit<T, "metadata"> & {
   metadata: z.infer<typeof KnowledgeFileMetadataSchema>;
   docIds: string[];
   filename: string;
@@ -61,11 +65,14 @@ const addFileDefaults = <
 
 const createKnowledgeBaseTool = createToolFactory<
   WithTool<KnowledgeBaseContext>
->((c) =>
-  ({
-    ...c,
-    name: c.params.name ?? DEFAULT_KNOWLEDGE_BASE_NAME,
-  }) as unknown as WithTool<KnowledgeBaseContext>, KNOWLEDGE_BASE_GROUP);
+>(
+  (c) =>
+    ({
+      ...c,
+      name: c.params.name ?? DEFAULT_KNOWLEDGE_BASE_NAME,
+    }) as unknown as WithTool<KnowledgeBaseContext>,
+  KNOWLEDGE_BASE_GROUP,
+);
 
 const openAIEmbedder = (apiKey: string) => {
   const openai = createOpenAI({
@@ -128,7 +135,7 @@ async function batchUpsertVectorContent(
       vectors: embeddings,
       metadata: itemsWithIds.map((item) => ({
         id: item.docId,
-        metadata: { ...item.metadata ?? {}, content: item.content },
+        metadata: { ...(item.metadata ?? {}), content: item.content },
       })),
     });
   } catch (e) {
@@ -140,8 +147,7 @@ async function batchUpsertVectorContent(
 const createTool = createToolGroup("KnowledgeBaseManagement", {
   name: "Knowledge Base Management",
   description: "Delete, create and list knowledge bases.",
-  icon:
-    "https://assets.decocache.com/mcp/1b6e79a9-7830-459c-a1a6-ba83e7e58cbe/Knowledge-Base.png",
+  icon: "https://assets.decocache.com/mcp/1b6e79a9-7830-459c-a1a6-ba83e7e58cbe/Knowledge-Base.png",
 });
 
 export const listKnowledgeBases = createTool({
@@ -190,13 +196,16 @@ export const createBase = createTool({
   name: "KNOWLEDGE_BASE_CREATE",
   description: "Create a knowledge base",
   inputSchema: z.object({
-    name: z.string()
+    name: z
+      .string()
       .regex(
         /^[a-z0-9-_]+$/,
         "Name can only contain lowercase letters, numbers, hyphens, and underscores",
       )
       .describe("The name of the knowledge base"),
-    dimension: z.number().describe("The dimension of the knowledge base")
+    dimension: z
+      .number()
+      .describe("The dimension of the knowledge base")
       .optional(),
   }),
   handler: async ({ name, dimension }, c) => {
@@ -217,9 +226,7 @@ export const forget = createKnowledgeBaseTool({
   name: "KNOWLEDGE_BASE_FORGET",
   description: "Forget something",
   inputSchema: z.object({
-    docIds: z.array(z.string()).describe(
-      "The id of the content to forget",
-    ),
+    docIds: z.array(z.string()).describe("The id of the content to forget"),
   }),
   handler: async ({ docIds }, c) => {
     assertHasWorkspace(c);
@@ -227,9 +234,11 @@ export const forget = createKnowledgeBaseTool({
     await assertWorkspaceResourceAccess(c.tool.name, c);
 
     const vector = await getVector(c);
-    await Promise.all(docIds.map(
-      (docId) => vector.deleteVector({ indexName: c.name, id: docId }),
-    ));
+    await Promise.all(
+      docIds.map((docId) =>
+        vector.deleteVector({ indexName: c.name, id: docId }),
+      ),
+    );
     return {
       docIds,
     };
@@ -240,24 +249,31 @@ export const remember = createKnowledgeBaseTool({
   name: "KNOWLEDGE_BASE_REMEMBER",
   description: "Remember something",
   inputSchema: z.object({
-    docId: z.string().optional().describe(
-      "The id of the content being remembered",
-    ),
+    docId: z
+      .string()
+      .optional()
+      .describe("The id of the content being remembered"),
     content: z.string().describe("The content to remember"),
-    metadata: z.record(z.string(), z.string()).describe(
-      "The metadata to remember",
-    ).optional(),
+    metadata: z
+      .record(z.string(), z.string())
+      .describe("The metadata to remember")
+      .optional(),
   }),
   handler: async ({ content, metadata, docId }, c) => {
     assertHasWorkspace(c);
 
     await assertWorkspaceResourceAccess(c.tool.name, c);
 
-    const [resultDocId] = await batchUpsertVectorContent([{
-      content,
-      metadata,
-      docId,
-    }], c);
+    const [resultDocId] = await batchUpsertVectorContent(
+      [
+        {
+          content,
+          metadata,
+          docId,
+        },
+      ],
+      c,
+    );
 
     return {
       docId: resultDocId,
@@ -272,8 +288,10 @@ export const search = createKnowledgeBaseTool({
     query: z.string().describe("The query to search the knowledge base"),
     topK: z.number().describe("The number of results to return").optional(),
     content: z.boolean().describe("Whether to return the content").optional(),
-    filter: z.record(z.string(), z.any()).describe(
-      `Filters to match against document metadata and narrow search results. Supports MongoDB-style query operators:
+    filter: z
+      .record(z.string(), z.any())
+      .describe(
+        `Filters to match against document metadata and narrow search results. Supports MongoDB-style query operators:
         comparison ($eq, $ne, $gt, $gte, $lt, $lte), array ($in, $nin), logical ($and, $or), and existence ($exists).
         Only returns documents whose metadata matches the specified filter conditions.
         Examples:
@@ -281,7 +299,8 @@ export const search = createKnowledgeBaseTool({
         { "metadata": {{"priority": {"$gte": 3}}},
         { "metadata": {{"status": {"$in": ["active", "pending"]}}},
         { "metadata": {{"$and": [{"type": "pdf"}, {"size": {"$lt": 1000}}]}}}`,
-    ).optional(),
+      )
+      .optional(),
   }),
   handler: async ({ query, topK, filter }, c) => {
     assertHasWorkspace(c);
@@ -300,12 +319,14 @@ export const search = createKnowledgeBaseTool({
       value: query,
     });
 
-    return await vector?.query({
-      indexName,
-      queryVector: embedding,
-      topK: topK ?? 1,
-      filter,
-    }) ?? { results: [] };
+    return (
+      (await vector?.query({
+        indexName,
+        queryVector: embedding,
+        topK: topK ?? 1,
+        filter,
+      })) ?? { results: [] }
+    );
   },
 });
 
@@ -314,37 +335,38 @@ export const addFile = createKnowledgeBaseTool({
   description: "Add a file content into knowledge base",
   inputSchema: z.object({
     fileUrl: z.string(),
-    path: z.string().describe(
-      "File path from file added using workspace fs_write tool",
-    ).optional(),
+    path: z
+      .string()
+      .describe("File path from file added using workspace fs_write tool")
+      .optional(),
     filename: z.string().describe("The name of the file").optional(),
-    metadata: z.record(z.string(), z.union([z.string(), z.boolean()]))
+    metadata: z
+      .record(z.string(), z.union([z.string(), z.boolean()]))
       .optional(),
   }),
-  handler: async (
-    { fileUrl, metadata: _metadata, path, filename },
-    c,
-  ) => {
+  handler: async ({ fileUrl, metadata: _metadata, path, filename }, c) => {
     await assertWorkspaceResourceAccess(c.tool.name, c);
     assertKbFileProcessor(c);
     assertHasWorkspace(c);
 
-    const finalFilename = filename ||
-      (path ? basename(path) : undefined) ||
-      fileUrl;
-    const { data: newFile, error } = await c.db.from("deco_chat_assets").upsert(
-      {
-        file_url: fileUrl,
-        workspace: c.workspace.value,
-        index_name: c.name,
-        path,
-        filename: finalFilename,
-        status: "processing",
-      },
-      { onConflict: "workspace,file_url" },
-    ).select(
-      "fileUrl:file_url, metadata, path, docIds:doc_ids, filename, status",
-    )
+    const finalFilename =
+      filename || (path ? basename(path) : undefined) || fileUrl;
+    const { data: newFile, error } = await c.db
+      .from("deco_chat_assets")
+      .upsert(
+        {
+          file_url: fileUrl,
+          workspace: c.workspace.value,
+          index_name: c.name,
+          path,
+          filename: finalFilename,
+          status: "processing",
+        },
+        { onConflict: "workspace,file_url" },
+      )
+      .select(
+        "fileUrl:file_url, metadata, path, docIds:doc_ids, filename, status",
+      )
       .single();
 
     if (!newFile || error) {
@@ -368,17 +390,16 @@ export const listFiles = createKnowledgeBaseTool({
   name: "KNOWLEDGE_BASE_LIST_FILES",
   description: "List all files in the knowledge base",
   inputSchema: z.object({}),
-  handler: async (
-    _,
-    c,
-  ) => {
+  handler: async (_, c) => {
     await assertWorkspaceResourceAccess(c.tool.name, c);
     assertHasWorkspace(c);
 
-    const { data: files } = await c.db.from("deco_chat_assets")
+    const { data: files } = await c.db
+      .from("deco_chat_assets")
       .select(
         "fileUrl:file_url, metadata, path, docIds:doc_ids, filename, status",
-      ).eq("workspace", c.workspace.value)
+      )
+      .eq("workspace", c.workspace.value)
       .eq("index_name", c.name);
 
     return files?.map(addFileDefaults) ?? [];
@@ -391,25 +412,22 @@ export const deleteFile = createKnowledgeBaseTool({
   inputSchema: z.object({
     fileUrl: z.string(),
   }),
-  handler: async (
-    { fileUrl },
-    c,
-  ) => {
+  handler: async ({ fileUrl }, c) => {
     await assertWorkspaceResourceAccess(c.tool.name, c);
     assertHasWorkspace(c);
 
-    const { data: file } = await c.db.from("deco_chat_assets")
-      .select(
-        "file_url, metadata, doc_ids",
-      ).eq("workspace", c.workspace.value)
+    const { data: file } = await c.db
+      .from("deco_chat_assets")
+      .select("file_url, metadata, doc_ids")
+      .eq("workspace", c.workspace.value)
       .eq("file_url", fileUrl)
       .single();
 
-    file?.doc_ids && await forget.handler({ docIds: file.doc_ids });
-    const { error } = await c.db.from("deco_chat_assets").delete().eq(
-      "file_url",
-      fileUrl,
-    );
+    file?.doc_ids && (await forget.handler({ docIds: file.doc_ids }));
+    const { error } = await c.db
+      .from("deco_chat_assets")
+      .delete()
+      .eq("file_url", fileUrl);
 
     if (error) {
       throw new InternalServerError(

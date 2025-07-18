@@ -38,10 +38,7 @@ function Page() {
   const { data: { title } = {} } = useThread(id);
 
   return (
-    <ChatProvider
-      agentId={thread?.metadata?.agentId ?? id}
-      threadId={id}
-    >
+    <ChatProvider agentId={thread?.metadata?.agentId ?? id} threadId={id}>
       <PageLayout
         hideViewsButton
         tabs={TABS}

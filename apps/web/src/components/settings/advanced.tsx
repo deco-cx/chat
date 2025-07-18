@@ -43,9 +43,13 @@ export const useCurrentTeamRoles = () => {
   return roles;
 };
 
-function CopyLinkButton(
-  { className, link }: { className: string; link: string },
-) {
+function CopyLinkButton({
+  className,
+  link,
+}: {
+  className: string;
+  link: string;
+}) {
   const [isCopied, setIsCopied] = useState(false);
 
   return (
@@ -69,11 +73,7 @@ function CopyLinkButton(
 }
 
 function AdvancedTab() {
-  const {
-    form,
-    agent,
-    handleSubmit,
-  } = useAgentSettingsForm();
+  const { form, agent, handleSubmit } = useAgentSettingsForm();
   const roles = useCurrentTeamRoles();
 
   const useWorkingMemory = useWatch({
@@ -86,10 +86,7 @@ function AdvancedTab() {
     <ScrollArea className="h-full w-full">
       <Form {...form}>
         <div className="h-full w-full p-4 max-w-3xl mx-auto">
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-6 py-2 pb-16"
-          >
+          <form onSubmit={handleSubmit} className="space-y-6 py-2 pb-16">
             <FormField
               name="visibility"
               render={({ field }) => {
@@ -162,10 +159,7 @@ function AdvancedTab() {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <Icon
-                          name="open_in_new"
-                          className="w-4 h-4"
-                        />
+                        <Icon name="open_in_new" className="w-4 h-4" />
                       </a>
                     </FormLabel>
                     <FormDescription>
@@ -256,10 +250,7 @@ function AdvancedTab() {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <Icon
-                          name="open_in_new"
-                          className="w-4 h-4"
-                        />
+                        <Icon name="open_in_new" className="w-4 h-4" />
                       </a>
                     </FormLabel>
                     <FormDescription>
@@ -295,10 +286,7 @@ function AdvancedTab() {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <Icon
-                          name="open_in_new"
-                          className="w-4 h-4"
-                        />
+                        <Icon name="open_in_new" className="w-4 h-4" />
                       </a>
                     </FormLabel>
                     <FormDescription>
@@ -330,10 +318,7 @@ function AdvancedTab() {
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            <Icon
-                              name="open_in_new"
-                              className="w-4 h-4"
-                            />
+                            <Icon name="open_in_new" className="w-4 h-4" />
                           </a>
                         </FormLabel>
                         <FormDescription>
@@ -425,9 +410,11 @@ function AdvancedTab() {
                             {roles.map((role) => (
                               <SelectItem key={role.id} value={role.name}>
                                 <Icon
-                                  name={role.name === "owner"
-                                    ? "lock_person"
-                                    : "groups"}
+                                  name={
+                                    role.name === "owner"
+                                      ? "lock_person"
+                                      : "groups"
+                                  }
                                 />
                                 {role.name}
                               </SelectItem>

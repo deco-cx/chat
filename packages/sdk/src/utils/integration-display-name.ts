@@ -68,9 +68,7 @@ export class KnowledgeBaseNameProvider implements IntegrationNameProvider {
 export function createNameProviders(
   agents: Agent[] | undefined,
 ): IntegrationNameProvider[] {
-  return [
-    new KnowledgeBaseNameProvider(agents),
-  ];
+  return [new KnowledgeBaseNameProvider(agents)];
 }
 
 /**

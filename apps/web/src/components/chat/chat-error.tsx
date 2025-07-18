@@ -27,7 +27,11 @@ const WELL_KNOWN_ERROR_MESSAGES = {
 
 export function ChatError() {
   const workspaceLink = useWorkspaceLink();
-  const { chat: { error }, retry, correlationIdRef } = useChatContext();
+  const {
+    chat: { error },
+    retry,
+    correlationIdRef,
+  } = useChatContext();
   const insufficientFunds = error?.message.includes(
     WELL_KNOWN_ERROR_MESSAGES.InsufficientFunds,
   );
@@ -91,9 +95,7 @@ export function ChatError() {
           )}
           {correlationIdRef?.current && (
             <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-              <span className="select-none">
-                Error Id:
-              </span>
+              <span className="select-none">Error Id:</span>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span

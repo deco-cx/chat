@@ -89,7 +89,7 @@ export function jsonSchemaToModel(
     let zodType;
     if (value.anyOf) {
       const anyOfTypes = value.anyOf.map((schema: any) =>
-        jsonSchemaPropertiesToTSTypes(schema)
+        jsonSchemaPropertiesToTSTypes(schema),
       );
       zodType = z
         .union(anyOfTypes)
@@ -99,15 +99,17 @@ export function jsonSchemaToModel(
         );
     } else if (value.allOf) {
       const allOfTypes = value.allOf.map((schema: any) =>
-        jsonSchemaPropertiesToTSTypes(schema)
+        jsonSchemaPropertiesToTSTypes(schema),
       );
       zodType = z
         .intersection(
           allOfTypes[0],
-          allOfTypes.slice(1).reduce(
-            (acc: z.ZodTypeAny, schema: z.ZodTypeAny) => acc.and(schema),
-            allOfTypes[0],
-          ),
+          allOfTypes
+            .slice(1)
+            .reduce(
+              (acc: z.ZodTypeAny, schema: z.ZodTypeAny) => acc.and(schema),
+              allOfTypes[0],
+            ),
         )
         .describe(
           (value.description || "") +

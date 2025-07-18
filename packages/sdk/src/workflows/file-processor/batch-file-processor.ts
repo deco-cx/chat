@@ -17,11 +17,13 @@ import type { Workspace } from "../../path.ts";
 // Workflow message schema for knowledge base file processing
 export const KbFileProcessorMessageSchema = z.object({
   fileUrl: z.string().url("Invalid file URL"),
-  path: z.string().describe(
-    "File path from file added using workspace fs_write tool",
-  ).optional(),
+  path: z
+    .string()
+    .describe("File path from file added using workspace fs_write tool")
+    .optional(),
   filename: z.string().describe("The name of the file").optional(),
-  metadata: z.record(z.string(), z.union([z.string(), z.boolean()]))
+  metadata: z
+    .record(z.string(), z.union([z.string(), z.boolean()]))
     .describe("Additional metadata for the file")
     .optional(),
   workspace: z.string().min(1, "Workspace is required"),
@@ -43,9 +45,9 @@ export type ProcessingResult = z.infer<typeof ProcessingResultSchema>;
 
 // Workflow binding interface
 export interface KbFileProcessorWorkflow {
-  create: (
-    options: { params: KbFileProcessorMessage },
-  ) => Promise<{ id: string }>;
+  create: (options: {
+    params: KbFileProcessorMessage;
+  }) => Promise<{ id: string }>;
 }
 
 // Environment variables schema for Workflow processing
@@ -55,10 +57,9 @@ export const WorkflowEnvSchema = z.object({
   SUPABASE_SERVER_TOKEN: z.string().min(1, "Supabase server token is required"),
   TURSO_ADMIN_TOKEN: z.string().min(1, "Turso admin token is required"),
   TURSO_ORGANIZATION: z.string().min(1, "Turso organization is required"),
-  TURSO_GROUP_DATABASE_TOKEN: z.string().min(
-    1,
-    "Turso group database token is required",
-  ),
+  TURSO_GROUP_DATABASE_TOKEN: z
+    .string()
+    .min(1, "Turso group database token is required"),
   VECTOR_BATCH_SIZE: z.string().optional(),
 });
 type WorkflowEnvs = z.infer<typeof WorkflowEnvSchema>;
@@ -82,10 +83,7 @@ export function getBatchSize(env: WorkflowEnvs): number {
 /**
  * Get vector client for the workspace
  */
-async function getVectorClient(
-  workspace: string,
-  env: WorkflowEnvs,
-) {
+async function getVectorClient(workspace: string, env: WorkflowEnvs) {
   const mem = await WorkspaceMemory.create({
     workspace: workspace as Workspace, // Cast to avoid type issues in workflow context
     tursoAdminToken: env.TURSO_ADMIN_TOKEN,
@@ -140,15 +138,14 @@ async function generateFileChunks(
     ...(path ? { path } : { fileUrl }),
   };
 
-  const enrichedChunks = processedFile.chunks
-    .map((chunk, index) => ({
-      text: chunk.text,
-      metadata: {
-        ...fileMetadata,
-        ...chunk.metadata,
-        chunkIndex: index,
-      },
-    }));
+  const enrichedChunks = processedFile.chunks.map((chunk, index) => ({
+    text: chunk.text,
+    metadata: {
+      ...fileMetadata,
+      ...chunk.metadata,
+      chunkIndex: index,
+    },
+  }));
 
   return {
     enrichedChunks,
@@ -230,9 +227,8 @@ async function updateAssetRecord(
   const supabase = createKnowledgeBaseSupabaseClient(env);
 
   // Add fallback logic for filename
-  const finalFilename = filename ||
-    (path ? basename(path) : undefined) ||
-    fileUrl;
+  const finalFilename =
+    filename || (path ? basename(path) : undefined) || fileUrl;
 
   // Update the asset record
   const { data: previousAsset } = await supabase
@@ -272,14 +268,8 @@ export async function processBatch(
   message: KbFileProcessorMessage,
   env: z.infer<typeof WorkflowEnvSchema>,
 ): Promise<ProcessingResult> {
-  const {
-    fileUrl,
-    path,
-    filename,
-    metadata,
-    workspace,
-    knowledgeBaseName,
-  } = message;
+  const { fileUrl, path, filename, metadata, workspace, knowledgeBaseName } =
+    message;
   const batchSize = getBatchSize(env);
 
   let allStoredIds: string[] = [];
@@ -287,11 +277,7 @@ export async function processBatch(
 
   try {
     const { enrichedChunks, totalChunkCount, fileMetadata } =
-      await generateFileChunks(
-        fileUrl,
-        path,
-        metadata,
-      );
+      await generateFileChunks(fileUrl, path, metadata);
 
     if (enrichedChunks.length === 0) {
       // No more chunks to process
@@ -306,24 +292,27 @@ export async function processBatch(
       const batch = enrichedChunks.slice(i, i + batchSize);
       const embeddings = await generateEmbeddings(batch, env.OPENAI_API_KEY);
       allStoredIds.push(
-        ...await storeVectorsInDatabase(
+        ...(await storeVectorsInDatabase(
           vector,
           knowledgeBaseName,
           embeddings,
           batch,
-        ),
+        )),
       );
     }
 
-    allStoredIds = await updateAssetRecord({
-      workspace,
-      fileUrl,
-      newDocIds: allStoredIds,
-      filename,
-      path,
-      fileMetadata,
-      totalChunkCount,
-    }, env);
+    allStoredIds = await updateAssetRecord(
+      {
+        workspace,
+        fileUrl,
+        newDocIds: allStoredIds,
+        filename,
+        path,
+        fileMetadata,
+        totalChunkCount,
+      },
+      env,
+    );
 
     return {
       hasMore: false,
@@ -335,7 +324,7 @@ export async function processBatch(
     if (allStoredIds.length > 0) {
       await Promise.all(
         allStoredIds.map((docId) =>
-          vector.deleteVector({ indexName: knowledgeBaseName, id: docId })
+          vector.deleteVector({ indexName: knowledgeBaseName, id: docId }),
         ),
       );
     }
@@ -346,11 +335,14 @@ export async function processBatch(
     );
 
     // Update asset status to failed
-    await updateAssetStatusToFailed({
-      workspace,
-      fileUrl,
-      error: error instanceof Error ? error.message : String(error),
-    }, env);
+    await updateAssetStatusToFailed(
+      {
+        workspace,
+        fileUrl,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      env,
+    );
 
     throw error;
   }
@@ -393,7 +385,9 @@ export async function updateAssetStatusToFailed(
       })
       .eq("workspace", params.workspace)
       .eq("file_url", params.fileUrl);
-  } catch { /** ignore */ }
+  } catch {
+    /** ignore */
+  }
 }
 
 /**

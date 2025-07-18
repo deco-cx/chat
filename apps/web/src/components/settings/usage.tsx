@@ -65,16 +65,19 @@ function color(id: string) {
 
   // Use the first part of the ID as a seed for consistent colors
   const seed = id.split("-")[0];
-  const hash = seed.split("").reduce(
-    (acc, char) => acc + char.charCodeAt(0),
-    0,
-  );
+  const hash = seed
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return colors[hash % colors.length];
 }
 
-export function EmptyStateCard(
-  { title, description }: { title: string; description: string },
-) {
+export function EmptyStateCard({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
   return (
     <div className="flex flex-col items-center justify-center h-full w-full py-8">
       <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -98,16 +101,18 @@ function CreditsUsedPerAgentCard({
   const usage = useUsagePerAgent({ range });
 
   const total = usage.total;
-  const enrichedAgents = usage.items.map((_agent) => {
-    const agent = workspaceAgents.data?.find((a) => a.id === _agent.id);
-    return {
-      id: _agent.id,
-      total: _agent.total,
-      avatar: agent?.avatar,
-      label: agent?.name || _agent.label || _agent.id,
-      color: color(_agent.id),
-    };
-  }).sort((a, b) => b.total - a.total);
+  const enrichedAgents = usage.items
+    .map((_agent) => {
+      const agent = workspaceAgents.data?.find((a) => a.id === _agent.id);
+      return {
+        id: _agent.id,
+        total: _agent.total,
+        avatar: agent?.avatar,
+        label: agent?.name || _agent.label || _agent.id,
+        color: color(_agent.id),
+      };
+    })
+    .sort((a, b) => b.total - a.total);
 
   if (enrichedAgents.length === 0) {
     return (
@@ -118,13 +123,16 @@ function CreditsUsedPerAgentCard({
             <Select
               value={range}
               onValueChange={(value: "day" | "week" | "month") =>
-                setRange(value)}
+                setRange(value)
+              }
             >
               <SelectTrigger className="!h-7 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="day" className="text-xs">Today</SelectItem>
+                <SelectItem value="day" className="text-xs">
+                  Today
+                </SelectItem>
                 <SelectItem value="week" className="text-xs">
                   This Week
                 </SelectItem>
@@ -172,7 +180,9 @@ function CreditsUsedPerAgentCard({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="day" className="text-xs">Today</SelectItem>
+              <SelectItem value="day" className="text-xs">
+                Today
+              </SelectItem>
               <SelectItem value="week" className="text-xs">
                 This Week
               </SelectItem>
@@ -314,8 +324,12 @@ function CreditsUsedPerThread({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="day" className="text-xs">Today</SelectItem>
-            <SelectItem value="week" className="text-xs">This Week</SelectItem>
+            <SelectItem value="day" className="text-xs">
+              Today
+            </SelectItem>
+            <SelectItem value="week" className="text-xs">
+              This Week
+            </SelectItem>
             <SelectItem value="month" className="text-xs">
               This Month
             </SelectItem>
@@ -324,56 +338,56 @@ function CreditsUsedPerThread({
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 pb-8 pt-3">
-        {enrichedThreads.length === 0
-          ? (
-            <EmptyStateCard
-              title="No thread data"
-              description="There haven't been any threads created during this time period."
-            />
-          )
-          : (
-            enrichedThreads.map((thread) => (
-              <Dialog key={thread.id}>
-                <DialogTrigger asChild>
-                  <div className="flex items-center justify-between p-4 mb-2 rounded-lg hover:bg-muted transition-colors cursor-pointer">
-                    <div className="flex items-center gap-4">
-                      <AgentAvatar
-                        url={thread.agent?.avatar}
-                        fallback={thread.agent?.name}
-                        size="base"
-                      />
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm font-medium text-foreground">
-                          {thread.agent?.name || "Unknown Agent"}
+        {enrichedThreads.length === 0 ? (
+          <EmptyStateCard
+            title="No thread data"
+            description="There haven't been any threads created during this time period."
+          />
+        ) : (
+          enrichedThreads.map((thread) => (
+            <Dialog key={thread.id}>
+              <DialogTrigger asChild>
+                <div className="flex items-center justify-between p-4 mb-2 rounded-lg hover:bg-muted transition-colors cursor-pointer">
+                  <div className="flex items-center gap-4">
+                    <AgentAvatar
+                      url={thread.agent?.avatar}
+                      fallback={thread.agent?.name}
+                      size="base"
+                    />
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-medium text-foreground">
+                        {thread.agent?.name || "Unknown Agent"}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <UserAvatar
+                          url={thread.member?.profiles?.metadata?.avatar_url}
+                          fallback={
+                            thread.member?.profiles?.metadata?.full_name ||
+                            "User"
+                          }
+                          size="xs"
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          {thread.member?.profiles?.metadata?.full_name ||
+                            "Unknown User"}
                         </span>
-                        <div className="flex items-center gap-2">
-                          <UserAvatar
-                            url={thread.member?.profiles?.metadata?.avatar_url}
-                            fallback={thread.member?.profiles?.metadata
-                              ?.full_name || "User"}
-                            size="xs"
-                          />
-                          <span className="text-xs text-muted-foreground">
-                            {thread.member?.profiles?.metadata?.full_name ||
-                              "Unknown User"}
-                          </span>
-                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">
-                        {thread.total}
-                      </span>
-                    </div>
                   </div>
-                </DialogTrigger>
-                <ThreadDetails
-                  thread={thread}
-                  withWorkpaceLink={withWorkpaceLink}
-                />
-              </Dialog>
-            ))
-          )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">
+                      {thread.total}
+                    </span>
+                  </div>
+                </div>
+              </DialogTrigger>
+              <ThreadDetails
+                thread={thread}
+                withWorkpaceLink={withWorkpaceLink}
+              />
+            </Dialog>
+          ))
+        )}
       </div>
     </Card>
   );
@@ -481,9 +495,7 @@ function ThreadDetails({ thread, withWorkpaceLink }: ThreadDetailsProps) {
           asChild
           className="mt-2 w-full justify-center"
         >
-          <Link
-            to={withWorkpaceLink(`/audit/${thread.id}`)}
-          >
+          <Link to={withWorkpaceLink(`/audit/${thread.id}`)}>
             <Icon name="open_in_new" size={16} />
             View messages
           </Link>
@@ -512,9 +524,9 @@ function userToMember(user: ReturnType<typeof useUser>): Member {
 
 function useMembers() {
   const { teamSlug } = useParams();
-  const { data: { members: _members } } = useTeamMembersBySlug(
-    teamSlug ?? null,
-  );
+  const {
+    data: { members: _members },
+  } = useTeamMembersBySlug(teamSlug ?? null);
   const user = useUser();
 
   const members = useMemo(() => {

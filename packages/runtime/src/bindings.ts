@@ -9,11 +9,8 @@ type WorkspaceClientContext = Omit<
 >;
 export const workspaceClient = (
   ctx: WorkspaceClientContext,
-): ReturnType<typeof MCPClient["forWorkspace"]> => {
-  return MCPClient.forWorkspace(
-    ctx.workspace,
-    ctx.token,
-  );
+): ReturnType<(typeof MCPClient)["forWorkspace"]> => {
+  return MCPClient.forWorkspace(ctx.workspace, ctx.token);
 };
 
 const mcpClientForIntegrationId = (
@@ -34,15 +31,15 @@ export const createIntegrationBinding = (
   binding: MCPBinding,
   env: DefaultEnv,
 ) => {
-  const integrationId = "integration_id" in binding
-    ? binding.integration_id
-    : undefined;
+  const integrationId =
+    "integration_id" in binding ? binding.integration_id : undefined;
   if (!integrationId) {
     const ctx = env.DECO_CHAT_REQUEST_CONTEXT;
     const bindingFromState = ctx?.state?.[binding.name];
     const integrationId =
-      bindingFromState && typeof bindingFromState === "object" &&
-        "value" in bindingFromState
+      bindingFromState &&
+      typeof bindingFromState === "object" &&
+      "value" in bindingFromState
         ? bindingFromState.value
         : undefined;
     if (typeof integrationId !== "string") {

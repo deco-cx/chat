@@ -173,8 +173,8 @@ export async function createCommand(
 ): Promise<void> {
   try {
     if (templateName) {
-      const validTemplate = AVAILABLE_TEMPLATES.find((t) =>
-        t.name === templateName
+      const validTemplate = AVAILABLE_TEMPLATES.find(
+        (t) => t.name === templateName,
       );
       if (!validTemplate) {
         console.error(`❌ Template '${templateName}' not found.`);
@@ -185,18 +185,19 @@ export async function createCommand(
     }
 
     const finalProjectName = slugify(
-      projectName || await Input.prompt({
-        message: "Enter project name:",
-        validate: (value) => {
-          if (!value.trim()) {
-            return "Project name cannot be empty";
-          }
-          if (!/^[a-z0-9-]+$/.test(value)) {
-            return "Project name can only contain lowercase letters, numbers, and hyphens";
-          }
-          return true;
-        },
-      }),
+      projectName ||
+        (await Input.prompt({
+          message: "Enter project name:",
+          validate: (value) => {
+            if (!value.trim()) {
+              return "Project name cannot be empty";
+            }
+            if (!/^[a-z0-9-]+$/.test(value)) {
+              return "Project name can only contain lowercase letters, numbers, and hyphens";
+            }
+            return true;
+          },
+        })),
     );
 
     // Prompt user to select workspace
@@ -228,16 +229,18 @@ export async function createCommand(
       await Deno.remove(targetDir, { recursive: true });
     }
 
-    const finalTemplateName = templateName || await Select.prompt({
-      message: "Select a template:",
-      options: AVAILABLE_TEMPLATES.map((t) => ({
-        name: `${t.name} - ${t.description}`,
-        value: t.name,
-      })),
-    });
+    const finalTemplateName =
+      templateName ||
+      (await Select.prompt({
+        message: "Select a template:",
+        options: AVAILABLE_TEMPLATES.map((t) => ({
+          name: `${t.name} - ${t.description}`,
+          value: t.name,
+        })),
+      }));
 
-    const selectedTemplate = AVAILABLE_TEMPLATES.find((t) =>
-      t.name === finalTemplateName
+    const selectedTemplate = AVAILABLE_TEMPLATES.find(
+      (t) => t.name === finalTemplateName,
     );
     if (!selectedTemplate) {
       throw new Error(`Template '${finalTemplateName}' not found`);
@@ -252,10 +255,7 @@ export async function createCommand(
 
     // Prompt user to install MCP configuration for IDE
     const mcpResult = workspace
-      ? await promptIDESetup(
-        { workspace, app: finalProjectName },
-        targetDir,
-      )
+      ? await promptIDESetup({ workspace, app: finalProjectName }, targetDir)
       : null;
 
     console.log(`📦 Downloading template '${selectedTemplate.name}'...`);

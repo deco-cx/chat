@@ -76,9 +76,9 @@ export function IntegrationListItem({
   const total = toolsData?.tools?.length ?? 0;
 
   const allTools = toolsData?.tools || [];
-  const enabledCount =
-    allTools.filter((tool) => toolsSet[integration.id]?.includes(tool.name))
-      .length;
+  const enabledCount = allTools.filter((tool) =>
+    toolsSet[integration.id]?.includes(tool.name),
+  ).length;
   const isAll = enabledCount === total && total > 0;
   const isEmpty = !isLoading && allTools.length === 0;
 
@@ -90,14 +90,16 @@ export function IntegrationListItem({
     const toolNameOriginal = tool.name.toLowerCase();
     const toolDescription = tool.description?.toLowerCase() || "";
 
-    return toolNameFormatted.includes(lowerSearchTerm) ||
+    return (
+      toolNameFormatted.includes(lowerSearchTerm) ||
       toolNameOriginal.includes(lowerSearchTerm) ||
-      toolDescription.includes(lowerSearchTerm);
+      toolDescription.includes(lowerSearchTerm)
+    );
   };
 
   // Filter tools based on search term
   const filteredTools = allTools.filter((tool) =>
-    toolMatchesSearch(tool, searchTerm)
+    toolMatchesSearch(tool, searchTerm),
   );
 
   // Hide integration if searching and no tools match
@@ -166,7 +168,7 @@ export function IntegrationListItem({
           </Badge>
         </div>
       )}
-      {(!isEmpty && !hideTools) && (
+      {!isEmpty && !hideTools && (
         <div
           className={cn(
             "flex flex-col items-start gap-1 min-w-0 border-t border-border cursor-pointer bg-background rounded-b-xl",
@@ -200,8 +202,8 @@ export function IntegrationListItem({
                   {isLoading
                     ? "Loading tools..."
                     : searchTerm
-                    ? `${filteredTools.length} matching tools`
-                    : "All tools"}
+                      ? `${filteredTools.length} matching tools`
+                      : "All tools"}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -267,8 +269,9 @@ function ToolList({
   const { data: profile } = useProfile();
 
   // Apply client-side filtering for hidden tools on top of search filtering
-  const displayTools = filteredTools.filter((tool) =>
-    !(clientHiddenTools.includes(tool.name) && hideFor(profile?.email))
+  const displayTools = filteredTools.filter(
+    (tool) =>
+      !(clientHiddenTools.includes(tool.name) && hideFor(profile?.email)),
   );
 
   if (isLoading) {
@@ -284,12 +287,11 @@ function ToolList({
   return (
     <div className="space-y-2 rounded-b-xl max-h-[350px] w-full overflow-y-auto">
       {displayTools?.map((tool) => {
-        const enabled = toolsSet[integration.id]?.includes(tool.name) ??
-          false;
+        const enabled = toolsSet[integration.id]?.includes(tool.name) ?? false;
 
         const handleCheckboxChange = (checked: boolean) => {
-          const withoutTool = toolsSet[integration.id]?.filter((t) =>
-            t !== tool.name
+          const withoutTool = toolsSet[integration.id]?.filter(
+            (t) => t !== tool.name,
           );
           const withTool = [...(toolsSet[integration.id] || []), tool.name];
           const toolsToUpdate = checked ? withTool : withoutTool;

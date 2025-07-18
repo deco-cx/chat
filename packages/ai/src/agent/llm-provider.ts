@@ -26,9 +26,11 @@ interface AIGatewayOptions {
   metadata?: Record<string, string>;
 }
 
-const aiGatewayForProvider = (
-  { accountId, gatewayId, provider }: AIGatewayOptions,
-) =>
+const aiGatewayForProvider = ({
+  accountId,
+  gatewayId,
+  provider,
+}: AIGatewayOptions) =>
   `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayId}/${provider}`;
 
 type ProviderFactory = (
@@ -58,19 +60,14 @@ type Provider = {
 /**
  * Supported providers for the AI Gateway
  */
-const providers: Record<
-  string,
-  Provider
-> = {
+const providers: Record<string, Provider> = {
   anthropic: {
     creator: anthropic,
     envVarName: "ANTHROPIC_API_KEY",
     mapOpenRouterModel: {
       "claude-3.7-sonnet:thinking": "claude-3-7-sonnet-latest",
       "claude-sonnet-4": "claude-sonnet-4-20250514",
-    } satisfies Partial<
-      Record<string, ModelsOf<AnthropicProvider>>
-    >,
+    } satisfies Partial<Record<string, ModelsOf<AnthropicProvider>>>,
     tokenLimit: {
       default: 200_000,
       "claude-3-5-sonnet-latest": 200_000,
@@ -97,18 +94,14 @@ const providers: Record<
       "gpt-4.1-mini": 1_047_576,
       "gpt-4.1": 1_047_576,
       "o3-mini-high": 200_000,
-    } satisfies Partial<
-      Record<ModelsOf<OpenAIProvider> | "default", number>
-    >,
+    } satisfies Partial<Record<ModelsOf<OpenAIProvider> | "default", number>>,
   },
   deepseek: {
     creator: deepseek,
     envVarName: "DEEPSEEK_API_KEY",
     tokenLimit: {
       default: 200_000,
-    } satisfies Partial<
-      Record<ModelsOf<DeepSeekProvider> | "default", number>
-    >,
+    } satisfies Partial<Record<ModelsOf<DeepSeekProvider> | "default", number>>,
   },
   "x-ai": {
     creator: xai,
@@ -116,9 +109,7 @@ const providers: Record<
     tokenLimit: {
       default: 200_000,
       "grok-3-beta": 131_072,
-    } satisfies Partial<
-      Record<ModelsOf<XaiProvider> | "default", number>
-    >,
+    } satisfies Partial<Record<ModelsOf<XaiProvider> | "default", number>>,
   },
 } as const;
 
@@ -139,7 +130,9 @@ export const createLLMProvider: ProviderFactory = (opts) => {
   const supportsOpenRouter = provider.supportsOpenRouter !== false;
   const openRouterApiKey = opts.envs["OPENROUTER_API_KEY"];
   if (
-    !supportsOpenRouter || !openRouterApiKey || opts.bypassOpenRouter ||
+    !supportsOpenRouter ||
+    !openRouterApiKey ||
+    opts.bypassOpenRouter ||
     opts.apiKey
   ) {
     const creator = provider.creator({
@@ -147,13 +140,13 @@ export const createLLMProvider: ProviderFactory = (opts) => {
       baseURL: opts.bypassGateway ? undefined : aiGatewayForProvider(opts),
       headers: opts.metadata
         ? {
-          "cf-aig-metadata": JSON.stringify(opts.metadata),
-        }
+            "cf-aig-metadata": JSON.stringify(opts.metadata),
+          }
         : undefined,
     });
     return (model: string) => {
       model = opts.bypassOpenRouter
-        ? provider.mapOpenRouterModel?.[model] ?? model
+        ? (provider.mapOpenRouterModel?.[model] ?? model)
         : model;
       return { llm: creator(model), tokenLimit: modelLimit(provider, model) };
     };
@@ -163,9 +156,9 @@ export const createLLMProvider: ProviderFactory = (opts) => {
     apiKey: openRouterApiKey,
     headers: opts.metadata
       ? {
-        ...OPENROUTER_HEADERS,
-        "cf-aig-metadata": JSON.stringify(opts.metadata),
-      }
+          ...OPENROUTER_HEADERS,
+          "cf-aig-metadata": JSON.stringify(opts.metadata),
+        }
       : undefined,
     baseURL: opts.bypassGateway
       ? undefined

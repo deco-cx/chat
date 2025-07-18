@@ -12,7 +12,7 @@ export default function PageviewTrackerLayout() {
     );
 
     trackEvent("$pageview", {
-      "$current_url": url.href,
+      $current_url: url.href,
     });
   }, [location.pathname, location.search]);
 

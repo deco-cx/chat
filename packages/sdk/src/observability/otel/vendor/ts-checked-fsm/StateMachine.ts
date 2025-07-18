@@ -37,8 +37,10 @@ type ErrorBrand<T extends IndexType> = { [k in T]: void };
 type IndexType = string | number;
 
 /// Validators
-type AssertStateInMap<StateMap, S extends StateType> = S extends
-  MapKeys<StateMap> ? S : ErrorBrand<`'${S}' is not a state`>;
+type AssertStateInMap<
+  StateMap,
+  S extends StateType,
+> = S extends MapKeys<StateMap> ? S : ErrorBrand<`'${S}' is not a state`>;
 type AssertNewState<S extends StateType, States> = S extends MapKeys<States>
   ? ErrorBrand<`'${S}' has already been declared`>
   : S;
@@ -52,18 +54,15 @@ type AssertNewTransition<
 type AssertActionNotDefined<
   AN extends ActionNameType,
   ActionNames extends IndexType,
-> = AN extends ActionNames ? ErrorBrand<`Action '${AN}' already declared`>
-  : AN;
+> = AN extends ActionNames ? ErrorBrand<`Action '${AN}' already declared`> : AN;
 type AssertActionIsDefined<
   AN extends ActionNameType,
   ActionNames extends IndexType,
-> = AN extends ActionNames ? AN
-  : ErrorBrand<`'${AN}' is not an action`>;
+> = AN extends ActionNames ? AN : ErrorBrand<`'${AN}' is not an action`>;
 type AssertAllNonTerminalStatesHandled<Transitions, HandledStates> =
-  MapKeys<Transitions> extends HandledStates ? void
-    : ErrorBrand<
-      `No handlers declared for ${Exclude<MapKeys<Transitions>, HandledStates>}`
-    >;
+  MapKeys<Transitions> extends HandledStates
+    ? void
+    : ErrorBrand<`No handlers declared for ${Exclude<MapKeys<Transitions>, HandledStates>}`>;
 
 type StateMachineDefinition<S, A> = {
   handlers: {
@@ -76,10 +75,16 @@ type StateMachineDefinition<S, A> = {
 // Allows us to append multiple values for the same key in a type map.
 type AddToTypeMap<M, K extends string | number | symbol, V> = M | [K, V];
 
-type MapLookup<Map, K extends string | number | symbol> = Map extends
-  [K, infer V] ? V : never;
+type MapLookup<Map, K extends string | number | symbol> = Map extends [
+  K,
+  infer V,
+]
+  ? V
+  : never;
 type MapKeys<Map> = Map extends [infer K, infer _]
-  ? (K extends IndexType ? K : never)
+  ? K extends IndexType
+    ? K
+    : never
   : never;
 type MapValues<Map> = Map extends [infer _, infer V] ? V : never;
 
@@ -233,10 +238,11 @@ type ActionHandlerCallback<
 ) => NS extends State<infer N, infer ND>
   ? N extends MapKeys<States>
     ? CS extends MapKeys<Transitions>
-      ? N extends MapLookup<Transitions, CS> ? State<N, ND>
-      : ErrorBrand<`No transition declared between ${CS} and ${N}`>
-    : ErrorBrand<`State ${CS} is terminal and has no transitions`>
-  : ErrorBrand<`${N} is not a state`>
+      ? N extends MapLookup<Transitions, CS>
+        ? State<N, ND>
+        : ErrorBrand<`No transition declared between ${CS} and ${N}`>
+      : ErrorBrand<`State ${CS} is terminal and has no transitions`>
+    : ErrorBrand<`${N} is not a state`>
   : ErrorBrand<"The returned value is not a state">;
 
 ///
@@ -293,7 +299,8 @@ const transition = <StateMap, Transitions>(): TransitionFunc<
 > => {
   return <S extends StateType, N extends StateType>(
     _curState: AssertStateInMap<StateMap, S>,
-    _next: N extends MapKeys<StateMap> ? AssertNewTransition<S, N, Transitions>
+    _next: N extends MapKeys<StateMap>
+      ? AssertNewTransition<S, N, Transitions>
       : ErrorBrand<`${S} is not a declared state`>,
   ) => {
     type NewTransitions = AddToTypeMap<Transitions, S, N>;

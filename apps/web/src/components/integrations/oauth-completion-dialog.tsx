@@ -39,8 +39,8 @@ export function OAuthCompletionDialog({
             </div>
           </div>
           <DialogDescription className="text-left">
-            Complete the authentication flow with {integrationName}{" "}
-            by clicking the link below. This will open in a new tab.
+            Complete the authentication flow with {integrationName} by clicking
+            the link below. This will open in a new tab.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

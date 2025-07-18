@@ -5,9 +5,7 @@ import { ReactNodeViewRenderer } from "@tiptap/react";
 import MentionNode from "./mention-node.tsx";
 import { suggestion } from "../suggestions/suggestions.ts";
 
-export const mentions = (
-  prompts: Prompt[],
-) => {
+export const mentions = (prompts: Prompt[]) => {
   const promptMap = new Map<string, Prompt>(
     prompts.map((prompt) => [prompt.id, prompt]),
   );

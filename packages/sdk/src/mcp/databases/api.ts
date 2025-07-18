@@ -34,9 +34,7 @@ export const getWorkspaceD1Database = async (
   await cache.set(cacheKey, db.uuid);
   return db.uuid;
 };
-const assertsWorkspaceD1Database = async (
-  c: AppContext,
-) => {
+const assertsWorkspaceD1Database = async (c: AppContext) => {
   assertHasWorkspace(c);
   const workspace = c.workspace.value;
 
@@ -65,8 +63,7 @@ const assertsWorkspaceD1Database = async (
 const createTool = createToolGroup("Databases", {
   name: "Databases",
   description: "Query workspace database",
-  icon:
-    "https://assets.decocache.com/mcp/390f7756-ec01-47e4-bb31-9e7b18f6f56f/database.png",
+  icon: "https://assets.decocache.com/mcp/390f7756-ec01-47e4-bb31-9e7b18f6f56f/database.png",
 });
 
 const Timings = z.object({
@@ -81,7 +78,8 @@ const Meta = z.object({
   rows_read: z.number().optional(),
   rows_written: z.number().optional(),
   served_by_primary: z.boolean().optional(),
-  served_by_region: z.enum(["WNAM", "ENAM", "WEUR", "EEUR", "APAC", "OC"])
+  served_by_region: z
+    .enum(["WNAM", "ENAM", "WEUR", "EEUR", "APAC", "OC"])
     .optional(),
   size_after: z.number().optional(),
   timings: Timings.optional(),
@@ -98,9 +96,9 @@ export const runSql = createTool({
   description: "Run a SQL query against the workspace database",
   inputSchema: z.object({
     sql: z.string().describe("The SQL query to run"),
-    params: z.array(z.any()).describe(
-      "The parameters to pass to the SQL query",
-    ),
+    params: z
+      .array(z.any())
+      .describe("The parameters to pass to the SQL query"),
   }),
   outputSchema: z.object({
     result: z.array(QueryResult),

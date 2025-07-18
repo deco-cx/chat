@@ -42,9 +42,7 @@ export function ChatInput() {
       fallback={<ChatInput.UI disabled />}
       shouldCatch={(e) => e instanceof NotFoundError}
     >
-      <Suspense
-        fallback={<ChatInput.UI disabled />}
-      >
+      <Suspense fallback={<ChatInput.UI disabled />}>
         <ChatInput.Suspense />
       </Suspense>
     </ErrorBoundary>
@@ -118,9 +116,7 @@ const useGlobalDrop = (handleFileDrop: (e: DragEvent) => void) => {
   return isDragging;
 };
 
-ChatInput.UI = (
-  { disabled }: { disabled?: boolean },
-) => {
+ChatInput.UI = ({ disabled }: { disabled?: boolean }) => {
   const { workspace } = useSDK();
   const {
     chat: { stop, input, handleInputChange, handleSubmit, status },
@@ -152,9 +148,9 @@ ChatInput.UI = (
   const writeFileMutation = useWriteFile();
 
   const handleRichTextChange = (markdown: string) => {
-    handleInputChange(
-      { target: { value: markdown } } as ChangeEvent<HTMLTextAreaElement>,
-    );
+    handleInputChange({
+      target: { value: markdown },
+    } as ChangeEvent<HTMLTextAreaElement>);
   };
 
   // Auto-focus when loading state changes from true to false
@@ -217,20 +213,21 @@ ChatInput.UI = (
     const newFiles = Array.from(fileList);
 
     // Prevent duplicates and limit to 5 files
-    const allFiles = [
-      ...uploadedFiles.map((uf) => uf.file),
-      ...newFiles,
-    ].slice(0, 5);
+    const allFiles = [...uploadedFiles.map((uf) => uf.file), ...newFiles].slice(
+      0,
+      5,
+    );
 
     const uniqueFiles = Array.from(
       new Map(allFiles.map((f) => [f.name + f.size, f])).values(),
     );
 
     const filesToUpload = uniqueFiles
-      .filter((file) =>
-        !uploadedFiles.some((uf) =>
-          uf.file.name === file.name && uf.file.size === file.size
-        )
+      .filter(
+        (file) =>
+          !uploadedFiles.some(
+            (uf) => uf.file.name === file.name && uf.file.size === file.size,
+          ),
       )
       .map((file): UploadedFile => ({ file, status: "uploading" }));
 
@@ -254,20 +251,20 @@ ChatInput.UI = (
         prev.map((uf) =>
           uf.file === file
             ? { ...uf, url: url || undefined, status: "done" }
-            : uf
-        )
+            : uf,
+        ),
       );
     } catch (error) {
       setUploadedFiles((prev) =>
         prev.map((uf) =>
           uf.file === file
             ? {
-              ...uf,
-              status: "error",
-              error: error instanceof Error ? error.message : "Upload failed",
-            }
-            : uf
-        )
+                ...uf,
+                status: "error",
+                error: error instanceof Error ? error.message : "Upload failed",
+              }
+            : uf,
+        ),
       );
     }
   }
@@ -348,20 +345,18 @@ ChatInput.UI = (
                     accept={getAcceptedFileTypes()}
                   />
                   {selectedModel.capabilities.includes("file-upload") ||
-                      selectedModel.capabilities.includes("image-upload")
-                    ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="h-8 w-8 border hover:bg-muted"
-                        title="Attach files"
-                      >
-                        <Icon className="text-sm" name="add" />
-                      </Button>
-                    )
-                    : null}
+                  selectedModel.capabilities.includes("image-upload") ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="h-8 w-8 border hover:bg-muted"
+                      title="Attach files"
+                    >
+                      <Icon className="text-sm" name="add" />
+                    </Button>
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-2">
                   {showModelSelector && (
@@ -371,7 +366,8 @@ ChatInput.UI = (
                         setPreferences({
                           ...preferences,
                           defaultModel: modelToSelect,
-                        })}
+                        })
+                      }
                     />
                   )}
                   {showThreadTools && <ToolsButton />}
@@ -382,14 +378,11 @@ ChatInput.UI = (
                     disabled={isUploading || (!isLoading && !input.trim())}
                     onClick={isLoading ? stop : undefined}
                     className="h-8 w-8 transition-all hover:opacity-70"
-                    title={isLoading
-                      ? "Stop generating"
-                      : "Send message (Enter)"}
+                    title={
+                      isLoading ? "Stop generating" : "Send message (Enter)"
+                    }
                   >
-                    <Icon
-                      filled
-                      name={isLoading ? "stop" : "send"}
-                    />
+                    <Icon filled name={isLoading ? "stop" : "send"} />
                   </Button>
                 </div>
               </div>
@@ -404,7 +397,7 @@ ChatInput.UI = (
                   uploadedFile={uf}
                   removeFile={() => {
                     setUploadedFiles((prev) =>
-                      prev.filter((_, i) => i !== index)
+                      prev.filter((_, i) => i !== index),
                     );
                   }}
                 />
@@ -449,9 +442,7 @@ interface FilePreviewItemProps {
   removeFile: () => void;
 }
 
-function FilePreviewItem(
-  { uploadedFile, removeFile }: FilePreviewItemProps,
-) {
+function FilePreviewItem({ uploadedFile, removeFile }: FilePreviewItemProps) {
   const { file, status, error, url } = uploadedFile;
 
   return (
@@ -468,32 +459,32 @@ function FilePreviewItem(
       </Button>
 
       <div className="flex items-center justify-center size-16 rounded-xl group-hover:ring ring-offset-2 ring-border overflow-hidden bg-muted">
-        {status === "uploading"
-          ? <Spinner size="xs" />
-          : status === "error"
-          ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Icon name="error" size={32} className="text-destructive" />
-              </TooltipTrigger>
-              <TooltipContent className="flex flex-col items-center">
-                Error uploading file {error?.toString()}
-              </TooltipContent>
-            </Tooltip>
-          )
-          : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                {file.type.startsWith("image/") && url
-                  ? <img src={url} className="h-full w-full object-cover" />
-                  : <Icon name="draft" size={32} />}
-              </TooltipTrigger>
-              <TooltipContent className="flex flex-col items-center">
-                <span>{file.name}</span>
-                <span>{(file.size / 1024).toFixed(1)}KB</span>
-              </TooltipContent>
-            </Tooltip>
-          )}
+        {status === "uploading" ? (
+          <Spinner size="xs" />
+        ) : status === "error" ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Icon name="error" size={32} className="text-destructive" />
+            </TooltipTrigger>
+            <TooltipContent className="flex flex-col items-center">
+              Error uploading file {error?.toString()}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {file.type.startsWith("image/") && url ? (
+                <img src={url} className="h-full w-full object-cover" />
+              ) : (
+                <Icon name="draft" size={32} />
+              )}
+            </TooltipTrigger>
+            <TooltipContent className="flex flex-col items-center">
+              <span>{file.name}</span>
+              <span>{(file.size / 1024).toFixed(1)}KB</span>
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
     </div>
   );

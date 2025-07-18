@@ -44,11 +44,14 @@ export async function promptWorkspace(
 
   try {
     // Use TEAMS_LIST tool to get available teams
-    const response = await client.callTool({
-      name: "TEAMS_LIST",
-      arguments: {},
-      // @ts-expect-error We need to refactor TEAMS_LIST to stop returning array and use a proper object
-    }, z.any());
+    const response = await client.callTool(
+      {
+        name: "TEAMS_LIST",
+        arguments: {},
+        // @ts-expect-error We need to refactor TEAMS_LIST to stop returning array and use a proper object
+      },
+      z.any(),
+    );
 
     if (response.isError) {
       throw new Error("Failed to fetch teams");

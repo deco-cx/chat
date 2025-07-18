@@ -27,10 +27,7 @@ export function RawJsonView({ json }: { json: unknown }) {
       <Button
         className="absolute top-2 right-2"
         size="icon"
-        onClick={() =>
-          handleCopy(
-            JSON.stringify(json, null, 2),
-          )}
+        onClick={() => handleCopy(JSON.stringify(json, null, 2))}
         variant="outline"
       >
         <Icon name={copied ? "check" : "content_copy"} size={16} />
@@ -42,9 +39,13 @@ export function RawJsonView({ json }: { json: unknown }) {
   );
 }
 
-export function ToolCallForm(
-  { tool, onSubmit, onCancel, isLoading, rawMode }: ToolCallFormProps,
-) {
+export function ToolCallForm({
+  tool,
+  onSubmit,
+  onCancel,
+  isLoading,
+  rawMode,
+}: ToolCallFormProps) {
   const [payload, setPayload] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -100,84 +101,82 @@ export function ToolCallForm(
 
   return (
     <div className="space-y-4">
-      {rawMode
-        ? (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <div className="text-sm font-medium">Input Schema</div>
-              <RawJsonView json={tool.inputSchema} />
-            </div>
+      {rawMode ? (
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <div className="text-sm font-medium">Input Schema</div>
+            <RawJsonView json={tool.inputSchema} />
+          </div>
 
-            <div className="flex flex-col gap-2">
-              <div className="text-sm font-medium">Raw JSON Payload</div>
-              <Textarea
-                value={payload}
-                onChange={(e) => setPayload(e.target.value)}
-                placeholder="Enter JSON payload..."
-                className="font-mono bg-background"
-                rows={10}
-                disabled={isLoading}
-              />
-              {error && (
-                <div className="text-sm text-destructive mt-2">{error}</div>
+          <div className="flex flex-col gap-2">
+            <div className="text-sm font-medium">Raw JSON Payload</div>
+            <Textarea
+              value={payload}
+              onChange={(e) => setPayload(e.target.value)}
+              placeholder="Enter JSON payload..."
+              className="font-mono bg-background"
+              rows={10}
+              disabled={isLoading}
+            />
+            {error && (
+              <div className="text-sm text-destructive mt-2">{error}</div>
+            )}
+          </div>
+
+          <div className="flex gap-2 mt-4">
+            <Button
+              onClick={handleRawSubmit}
+              className="flex-1 gap-2"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Spinner size="xs" />
+                  Processing...
+                </>
+              ) : (
+                "Execute Tool Call"
               )}
-            </div>
-
-            <div className="flex gap-2 mt-4">
+            </Button>
+            {isLoading && (
               <Button
-                onClick={handleRawSubmit}
+                variant="outline"
+                onClick={onCancel}
+                className="flex items-center gap-2"
+              >
+                <Icon name="close" />
+                Cancel
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <Form {...form}>
+          <JSONSchemaForm
+            schema={tool.inputSchema as JSONSchema7}
+            form={form}
+            disabled={isLoading}
+            onSubmit={handleFormSubmit}
+            error={error}
+            submitButton={
+              <Button
+                type="submit"
                 className="flex-1 gap-2"
                 disabled={isLoading}
               >
-                {isLoading
-                  ? (
-                    <>
-                      <Spinner size="xs" />
-                      Processing...
-                    </>
-                  )
-                  : "Execute Tool Call"}
+                {isLoading ? (
+                  <>
+                    <Spinner size="xs" />
+                    Processing...
+                  </>
+                ) : (
+                  "Execute Tool Call"
+                )}
               </Button>
-              {isLoading && (
-                <Button
-                  variant="outline"
-                  onClick={onCancel}
-                  className="flex items-center gap-2"
-                >
-                  <Icon name="close" />
-                  Cancel
-                </Button>
-              )}
-            </div>
-          </div>
-        )
-        : (
-          <Form {...form}>
-            <JSONSchemaForm
-              schema={tool.inputSchema as JSONSchema7}
-              form={form}
-              disabled={isLoading}
-              onSubmit={handleFormSubmit}
-              error={error}
-              submitButton={
-                <Button
-                  type="submit"
-                  className="flex-1 gap-2"
-                  disabled={isLoading}
-                >
-                  {isLoading
-                    ? (
-                      <>
-                        <Spinner size="xs" />
-                        Processing...
-                      </>
-                    )
-                    : "Execute Tool Call"}
-                </Button>
-              }
-            />
-          </Form>
-        )}
+            }
+          />
+        </Form>
+      )}
     </div>
   );
 }

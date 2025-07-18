@@ -132,9 +132,7 @@ export default function Page() {
   );
 }
 
-function TriggerIcon(
-  { type }: { type: Trigger["type"] },
-) {
+function TriggerIcon({ type }: { type: Trigger["type"] }) {
   return (
     <div className="flex items-center justify-center p-2 bg-primary/10 rounded-md">
       {type === "cron" && (

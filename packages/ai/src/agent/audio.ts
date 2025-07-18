@@ -29,9 +29,7 @@ export async function transcribeBase64Audio({
 
   const stream = new ReadableStream({
     start(controller) {
-      controller.enqueue(
-        new Uint8Array(buffer),
-      );
+      controller.enqueue(new Uint8Array(buffer));
       controller.close();
     },
   });
@@ -44,11 +42,7 @@ export async function transcribeBase64Audio({
 const DEFAULT_TEXT_TO_SPEECH_MODEL = "tts-1";
 const DEFAULT_SPEECH_TO_TEXT_MODEL = "whisper-1";
 
-export function createAgentOpenAIVoice({
-  apiKey,
-}: {
-  apiKey: string;
-}) {
+export function createAgentOpenAIVoice({ apiKey }: { apiKey: string }) {
   return new OpenAIVoice({
     listeningModel: {
       apiKey,

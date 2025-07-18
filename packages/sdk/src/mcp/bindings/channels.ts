@@ -23,26 +23,32 @@ const joinChannelSchema = channelBindingSchema.extend({
 });
 
 const listChannelsSchema = z.object({
-  channels: z.array(z.object({
-    label: z.string(),
-    value: z.string(),
-  })),
+  channels: z.array(
+    z.object({
+      label: z.string(),
+      value: z.string(),
+    }),
+  ),
 });
 
 export type Callbacks = z.infer<typeof callbacksSchema>;
 export type JoinedChannelPayload = z.infer<typeof joinChannelSchema>;
 export type ListChannelsSchema = z.infer<typeof listChannelsSchema>;
-export const CHANNEL_BINDING_SCHEMA = [{
-  name: "DECO_CHAT_CHANNELS_JOIN" as const,
-  inputSchema: joinChannelSchema,
-  outputSchema: z.any(),
-}, {
-  name: "DECO_CHAT_CHANNELS_LEAVE" as const,
-  inputSchema: channelIdSchema,
-  outputSchema: z.any(),
-}, {
-  name: "DECO_CHAT_CHANNELS_LIST" as const,
-  inputSchema: z.any(),
-  outputSchema: listChannelsSchema,
-  opt: true,
-}] as const satisfies Binder;
+export const CHANNEL_BINDING_SCHEMA = [
+  {
+    name: "DECO_CHAT_CHANNELS_JOIN" as const,
+    inputSchema: joinChannelSchema,
+    outputSchema: z.any(),
+  },
+  {
+    name: "DECO_CHAT_CHANNELS_LEAVE" as const,
+    inputSchema: channelIdSchema,
+    outputSchema: z.any(),
+  },
+  {
+    name: "DECO_CHAT_CHANNELS_LIST" as const,
+    inputSchema: z.any(),
+    outputSchema: listChannelsSchema,
+    opt: true,
+  },
+] as const satisfies Binder;

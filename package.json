@@ -9,7 +9,8 @@
     "test:watch": "vitest",
     "build": "PWD=$PWD/apps/web deno run build",
     "lint": "deno lint --config ./package.json .",
-    "fmt": "deno fmt --config ./package.json .",
+    "fmt": "biome format --write",
+    "fmt:check": "biome format",
     "check": "tsc --noEmit",
     "ui": "npx shadcn@latest add -c ./packages/ui",
     "clean": "rm -f deno.lock && rm -rf node_modules apps/*/node_modules packages/*/node_modules && deno install",
@@ -17,38 +18,15 @@
     "db:migration": "supabase migration up --linked --include-all",
     "db:migration:create": "supabase migration new",
     "npm:build": "npm run build --workspace=apps/web",
-    "db:types": "npx supabase gen types typescript --project-id ozksgdmyrqcxcwhnbepg --schema public > packages/sdk/src/storage/supabase/schema.ts",
-    "rolesCLI": "deno run --env-file=./apps/web/.env -A scripts/role-and-policy-cli.ts"
+    "db:types": "npx supabase gen types typescript --project-id ozksgdmyrqcxcwhnbepg --schema public > packages/sdk/src/storage/supabase/schema.ts"
   },
+  "lock": false,
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
-  "compilerOptions": {
-    "experimentalDecorators": true,
-    "lib": [
-      "deno.window",
-      "dom",
-      "esnext",
-      "deno.ns",
-      "deno.unstable",
-      "dom.iterable"
-    ],
-    "jsx": "react-jsx",
-    "jsxImportSource": "react"
-  },
-  "exclude": [
-    ".github/",
-    "**/.wrangler",
-    "apps/web/public/**",
-    "packages/runtime/src/cf-imports.ts"
-  ],
-  "lock": false,
-  "unstable": [
-    "kv",
-    "raw-imports"
-  ],
   "devDependencies": {
+    "@biomejs/biome": "2.1.2",
     "supabase": "^2.22.12",
     "concurrently": "^9.2.0",
     "typescript": "^5.8.3",

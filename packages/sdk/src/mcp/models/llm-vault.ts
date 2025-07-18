@@ -4,14 +4,8 @@ import crypto from "node:crypto";
 
 export interface LLMVault {
   readApiKey(modelId: string): Promise<{ model: string; apiKey: string }>;
-  storeApiKey(
-    modelId: string,
-    apiKey: string,
-  ): Promise<void>;
-  updateApiKey(
-    modelId: string,
-    apiKey: string | null,
-  ): Promise<void>;
+  storeApiKey(modelId: string, apiKey: string): Promise<void>;
+  updateApiKey(modelId: string, apiKey: string | null): Promise<void>;
   removeApiKey(modelId: string): Promise<void>;
 }
 
@@ -71,10 +65,7 @@ export class SupabaseLLMVault implements LLMVault {
     return decrypted;
   }
 
-  async storeApiKey(
-    modelId: string,
-    apiKey: string,
-  ): Promise<void> {
+  async storeApiKey(modelId: string, apiKey: string): Promise<void> {
     const encryptedKey = this.encrypt(apiKey);
 
     const { error } = await this.db
@@ -86,10 +77,7 @@ export class SupabaseLLMVault implements LLMVault {
     if (error) throw error;
   }
 
-  async updateApiKey(
-    modelId: string,
-    apiKey: string | null,
-  ): Promise<void> {
+  async updateApiKey(modelId: string, apiKey: string | null): Promise<void> {
     const encryptedKey = apiKey ? this.encrypt(apiKey) : null;
 
     const { error } = await this.db

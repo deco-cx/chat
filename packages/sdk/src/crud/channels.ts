@@ -14,10 +14,7 @@ export const listChannels = (
   workspace: string,
   signal?: AbortSignal,
 ): Promise<{ channels: Channel[] }> =>
-  MCPClient.forWorkspace(workspace).CHANNELS_LIST(
-    {},
-    { signal },
-  );
+  MCPClient.forWorkspace(workspace).CHANNELS_LIST({}, { signal });
 
 /**
  * Create a new channel
@@ -48,10 +45,7 @@ export const getChannel = (
   id: string,
   signal?: AbortSignal,
 ): Promise<Channel> =>
-  MCPClient.forWorkspace(workspace).CHANNELS_GET(
-    { id },
-    { signal },
-  );
+  MCPClient.forWorkspace(workspace).CHANNELS_GET({ id }, { signal });
 
 /**
  * Make a agent join the channel
@@ -77,7 +71,7 @@ export const listAvailableChannelsForConnection = (
   workspace: string,
   connection: MCPConnection,
 ) =>
-  MCPClient.forConnection<typeof WellKnownBindings["Channel"]>(
+  MCPClient.forConnection<(typeof WellKnownBindings)["Channel"]>(
     connection,
   ).DECO_CHAT_CHANNELS_LIST({
     workspace,
@@ -105,10 +99,7 @@ export const leaveChannel = (
  * @param channelId - The ID of the channel to delete
  * @returns Delete response with id and agentId
  */
-export const deleteChannel = (
-  workspace: string,
-  channelId: string,
-) =>
+export const deleteChannel = (workspace: string, channelId: string) =>
   MCPClient.forWorkspace(workspace).CHANNELS_DELETE({
     id: channelId,
   });

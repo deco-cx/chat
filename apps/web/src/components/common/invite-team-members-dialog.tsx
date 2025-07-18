@@ -38,19 +38,22 @@ import { RolesDropdown } from "./roles-dropdown.tsx";
 
 // Form validation schema
 const inviteMemberSchema = z.object({
-  invitees: z.array(
-    z.object({
-      email: z.string()
-        .regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, {
-          message:
-            "Special characters are not allowed. Only standard ASCII characters are allowed in the email.",
-        })
-        .email({
-          message: "Please enter a valid email address",
-        }),
-      roleId: z.array(z.string()).min(1, { message: "Please select a role" }),
-    }),
-  ).min(1),
+  invitees: z
+    .array(
+      z.object({
+        email: z
+          .string()
+          .regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, {
+            message:
+              "Special characters are not allowed. Only standard ASCII characters are allowed in the email.",
+          })
+          .email({
+            message: "Please enter a valid email address",
+          }),
+        roleId: z.array(z.string()).min(1, { message: "Please select a role" }),
+      }),
+    )
+    .min(1),
 });
 
 export type InviteMemberFormData = z.infer<typeof inviteMemberSchema>;
@@ -78,10 +81,7 @@ function InviteTeamMembersDialogFeatureWall() {
       </div>
       <DialogFooter>
         <DialogClose asChild>
-          <Button
-            variant="outline"
-            type="button"
-          >
+          <Button variant="outline" type="button">
             Close
           </Button>
         </DialogClose>
@@ -175,12 +175,10 @@ export function InviteTeamMembersDialog({
       // Transform data for API call
       const invitees = data.invitees.map(({ email, roleId }) => ({
         email,
-        roles: roleId.map((id) => (
-          {
-            id: Number(id),
-            name: roles.find((r) => r.id === Number(id))?.name || "",
-          }
-        )),
+        roles: roleId.map((id) => ({
+          id: Number(id),
+          name: roles.find((r) => r.id === Number(id))?.name || "",
+        })),
       }));
 
       // Call API to invite members
@@ -208,12 +206,9 @@ export function InviteTeamMembersDialog({
 
   // Create a cloned trigger with an onClick handler
   const wrappedTrigger = trigger
-    ? cloneElement(
-      trigger as ReactElement<{ onClick?: MouseEventHandler }>,
-      {
+    ? cloneElement(trigger as ReactElement<{ onClick?: MouseEventHandler }>, {
         onClick: openDialog,
-      },
-    )
+      })
     : null;
 
   return (
@@ -253,9 +248,11 @@ export function InviteTeamMembersDialog({
                                   {...field}
                                   autoComplete="email"
                                   disabled={inviteMemberMutation.isPending}
-                                  className={fieldState.error
-                                    ? "border-destructive focus-visible:ring-destructive"
-                                    : ""}
+                                  className={
+                                    fieldState.error
+                                      ? "border-destructive focus-visible:ring-destructive"
+                                      : ""
+                                  }
                                 />
                               </FormControl>
                               <FormMessage />
@@ -273,16 +270,14 @@ export function InviteTeamMembersDialog({
                                 <div className="flex items-center gap-2 h-10">
                                   <span className="inline-flex gap-2 items-center">
                                     {field.value.slice(0, 3).map((roleId) => {
-                                      const role = roles.find((r) =>
-                                        r.id.toString() === roleId
+                                      const role = roles.find(
+                                        (r) => r.id.toString() === roleId,
                                       );
-                                      return role
-                                        ? (
-                                          <Badge variant="outline" key={roleId}>
-                                            {role.name}
-                                          </Badge>
-                                        )
-                                        : null;
+                                      return role ? (
+                                        <Badge variant="outline" key={roleId}>
+                                          {role.name}
+                                        </Badge>
+                                      ) : null;
                                     })}
                                   </span>
                                   <RolesDropdown
@@ -303,8 +298,8 @@ export function InviteTeamMembersDialog({
                                       } else {
                                         // Remove role
                                         field.onChange(
-                                          currentRoles.filter((id) =>
-                                            id !== roleIdStr
+                                          currentRoles.filter(
+                                            (id) => id !== roleIdStr,
                                           ),
                                         );
                                       }
@@ -325,8 +320,9 @@ export function InviteTeamMembersDialog({
                         size="icon"
                         className="self-end mb-1"
                         onClick={() => handleRemoveInvitee(index)}
-                        disabled={fields.length <= 1 ||
-                          inviteMemberMutation.isPending}
+                        disabled={
+                          fields.length <= 1 || inviteMemberMutation.isPending
+                        }
                       >
                         <Icon name="remove" />
                       </Button>
@@ -364,8 +360,9 @@ export function InviteTeamMembersDialog({
                   </Button>
                   <Button
                     type="submit"
-                    disabled={inviteMemberMutation.isPending ||
-                      !form.formState.isValid}
+                    disabled={
+                      inviteMemberMutation.isPending || !form.formState.isValid
+                    }
                   >
                     {inviteMemberMutation.isPending
                       ? "Inviting..."

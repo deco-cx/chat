@@ -8,15 +8,10 @@ const Hosts = {
 
 type Client = ReturnType<typeof createServerClient>;
 let client: Client | undefined;
-const getServerClient = (
-  supabaseUrl: string,
-  supabaseKey: string,
-): Client => {
-  client ??= createServerClient(
-    supabaseUrl,
-    supabaseKey,
-    { cookies: { getAll: () => [] } },
-  );
+const getServerClient = (supabaseUrl: string, supabaseKey: string): Client => {
+  client ??= createServerClient(supabaseUrl, supabaseKey, {
+    cookies: { getAll: () => [] },
+  });
 
   return client;
 };
@@ -41,26 +36,18 @@ export default {
       const host = req.headers.get("host") ?? new URL(req.url).hostname;
       const fetcher = isWellKnownHost(host)
         ? (req: Request, opts?: RequestInit) =>
-          env?.DECO_CHAT_API?.fetch(req, opts) ?? fetch(req, opts)
+            env?.DECO_CHAT_API?.fetch(req, opts) ?? fetch(req, opts)
         : fetch;
       const isAuthorized = typeof req.headers.get("Authorization") === "string";
-      if (host !== Hosts.API || isAuthorized) { // just forward the request to the target url
-        return fetcher(
-          req,
-        );
+      if (host !== Hosts.API || isAuthorized) {
+        // just forward the request to the target url
+        return fetcher(req);
       }
 
       // otherwise, we need to authenticate the request
-      const {
-        DECO_CHAT_APP_ORIGIN,
-        SUPABASE_URL,
-        SUPABASE_SERVER_TOKEN,
-      } = env;
+      const { DECO_CHAT_APP_ORIGIN, SUPABASE_URL, SUPABASE_SERVER_TOKEN } = env;
 
-      if (
-        !DECO_CHAT_APP_ORIGIN || !SUPABASE_URL ||
-        !SUPABASE_SERVER_TOKEN
-      ) {
+      if (!DECO_CHAT_APP_ORIGIN || !SUPABASE_URL || !SUPABASE_SERVER_TOKEN) {
         return new Response("Missing environment variables", { status: 500 });
       }
 
@@ -86,10 +73,12 @@ export default {
       if (!issuer) {
         return fetcher(req);
       }
-      const token = await issuer.issue({
-        sub: `app:${DECO_CHAT_APP_ORIGIN}`,
-        aud: data?.workspace,
-      }).catch(() => null);
+      const token = await issuer
+        .issue({
+          sub: `app:${DECO_CHAT_APP_ORIGIN}`,
+          aud: data?.workspace,
+        })
+        .catch(() => null);
 
       if (!token) {
         return fetcher(req);

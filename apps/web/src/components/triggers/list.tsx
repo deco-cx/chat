@@ -24,7 +24,7 @@ import { TriggerType } from "./trigger-type.tsx";
 
 const SORTABLE_KEYS = ["title", "type", "target", "author"] as const;
 
-type SortKey = typeof SORTABLE_KEYS[number];
+type SortKey = (typeof SORTABLE_KEYS)[number];
 type SortDirection = "asc" | "desc";
 
 function ListTriggersSkeleton() {
@@ -112,11 +112,12 @@ function ListTriggersSuspended() {
 
   const triggers = (data?.triggers || []) as TriggerOutput[];
 
-  const filteredTriggers = search.trim().length > 0
-    ? triggers.filter((t) =>
-      t.data.title.toLowerCase().includes(search.toLowerCase())
-    )
-    : triggers;
+  const filteredTriggers =
+    search.trim().length > 0
+      ? triggers.filter((t) =>
+          t.data.title.toLowerCase().includes(search.toLowerCase()),
+        )
+      : triggers;
 
   if (isLoading) {
     return <ListTriggersSkeleton />;
@@ -141,41 +142,39 @@ function ListTriggersSuspended() {
       />
 
       <div className="flex-1 min-h-0 overflow-x-auto">
-        {filteredTriggers.length === 0
-          ? (
-            <EmptyState
-              icon="cable"
-              title={search.trim().length > 0
-                ? "No triggers found"
-                : "No triggers yet"}
-              description={search.trim().length > 0
+        {filteredTriggers.length === 0 ? (
+          <EmptyState
+            icon="cable"
+            title={
+              search.trim().length > 0 ? "No triggers found" : "No triggers yet"
+            }
+            description={
+              search.trim().length > 0
                 ? "Try adjusting your search terms to find what you're looking for."
-                : "Create your first trigger to automate your agent workflows and respond to events automatically."}
-              buttonProps={{
-                children: "Create Trigger",
-                onClick: () => {
-                  // This will trigger the modal to open
-                  const createButton = document.querySelector(
-                    '[title="Add Trigger"]',
-                  ) as HTMLButtonElement;
-                  createButton?.click();
-                },
-              }}
-            />
-          )
-          : (
-            viewMode === "table"
-              ? <TableView triggers={filteredTriggers} />
-              : <CardsView triggers={filteredTriggers} />
-          )}
+                : "Create your first trigger to automate your agent workflows and respond to events automatically."
+            }
+            buttonProps={{
+              children: "Create Trigger",
+              onClick: () => {
+                // This will trigger the modal to open
+                const createButton = document.querySelector(
+                  '[title="Add Trigger"]',
+                ) as HTMLButtonElement;
+                createButton?.click();
+              },
+            }}
+          />
+        ) : viewMode === "table" ? (
+          <TableView triggers={filteredTriggers} />
+        ) : (
+          <CardsView triggers={filteredTriggers} />
+        )}
       </div>
     </div>
   );
 }
 
-function TableView(
-  { triggers }: { triggers: TriggerOutput[] },
-) {
+function TableView({ triggers }: { triggers: TriggerOutput[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("title");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [openModalId, setOpenModalId] = useState<string | null>(null);
@@ -183,9 +182,7 @@ function TableView(
   const { data: agents } = useAgents();
   const { data: integrations = [] } = useIntegrations();
 
-  function TargetInfo(
-    { trigger }: { trigger: TriggerOutput },
-  ) {
+  function TargetInfo({ trigger }: { trigger: TriggerOutput }) {
     const data = trigger.data;
 
     // For agent triggers - use type assertion to handle the schema
@@ -195,17 +192,12 @@ function TableView(
 
     // For tool triggers - use type assertion to handle the complex union type
     if ("callTool" in data && data.callTool) {
-      const integration = integrations.find((i) =>
-        i.id === data.callTool.integrationId
+      const integration = integrations.find(
+        (i) => i.id === data.callTool.integrationId,
       );
       const toolName = data.callTool.toolName;
 
-      return (
-        <IntegrationInfo
-          integration={integration}
-          toolName={toolName}
-        />
-      );
+      return <IntegrationInfo integration={integration} toolName={toolName} />;
     }
 
     return <span className="text-muted-foreground">Unknown target</span>;
@@ -221,10 +213,7 @@ function TableView(
     }
   }
 
-  function getSortValue(
-    trigger: TriggerOutput,
-    key: SortKey,
-  ): string {
+  function getSortValue(trigger: TriggerOutput, key: SortKey): string {
     if (key === "target") {
       const data = trigger.data;
 
@@ -236,11 +225,13 @@ function TableView(
 
       // For tool triggers - use type guard to handle the complex union type
       if ("callTool" in data && data.callTool) {
-        const integration = integrations.find((i) =>
-          i.id === data.callTool.integrationId
+        const integration = integrations.find(
+          (i) => i.id === data.callTool.integrationId,
         );
-        return integration?.name?.toLowerCase() ||
-          data.callTool.integrationId.toLowerCase();
+        return (
+          integration?.name?.toLowerCase() ||
+          data.callTool.integrationId.toLowerCase()
+        );
       }
 
       return "";
@@ -262,11 +253,14 @@ function TableView(
     return 0;
   });
 
-  const handleTriggerClick = useCallback((trigger: TriggerOutput) => {
-    if (!openModalId) {
-      navigate(`/trigger/${trigger.id}`);
-    }
-  }, [openModalId, navigate]);
+  const handleTriggerClick = useCallback(
+    (trigger: TriggerOutput) => {
+      if (!openModalId) {
+        navigate(`/trigger/${trigger.id}`);
+      }
+    },
+    [openModalId, navigate],
+  );
 
   const columns: TableColumn<TriggerOutput>[] = [
     {
@@ -328,9 +322,7 @@ function TableView(
   );
 }
 
-function CardsView(
-  { triggers }: { triggers: TriggerOutput[] },
-) {
+function CardsView({ triggers }: { triggers: TriggerOutput[] }) {
   const navigate = useNavigateWorkspace();
   const handleTriggerClick = useCallback(
     (trigger: TriggerOutput) => {

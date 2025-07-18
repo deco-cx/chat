@@ -77,8 +77,8 @@ export function TypeSelectField<T extends FieldValues = FieldValues>({
           <Select
             onValueChange={(value: string) => {
               // Update the form with an object containing the selected value
-              const selectedOption = options.find((option: OptionItem) =>
-                option.value === value
+              const selectedOption = options.find(
+                (option: OptionItem) => option.value === value,
               );
               if (selectedOption) {
                 field.onChange({ value: selectedOption.value });

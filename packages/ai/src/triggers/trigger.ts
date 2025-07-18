@@ -45,9 +45,10 @@ export const threadOf = (
   data: TriggerData,
   url?: URL,
 ): { threadId: string | undefined; resourceId: string | undefined } => {
-  const resourceId = data.resourceId ?? url?.searchParams.get("resourceId") ??
-    undefined;
-  const threadId = url?.searchParams.get("threadId") ??
+  const resourceId =
+    data.resourceId ?? url?.searchParams.get("resourceId") ?? undefined;
+  const threadId =
+    url?.searchParams.get("threadId") ??
     (resourceId ? crypto.randomUUID() : undefined); // generate a random threadId if resourceId exists.
   return { threadId, resourceId };
 };
@@ -56,11 +57,7 @@ export interface TriggerHooks<TData extends TriggerData = TriggerData> {
   type: TData["type"];
   onCreated?(data: TData, trigger: Trigger): Promise<void>;
   onDeleted?(data: TData, trigger: Trigger): Promise<void>;
-  run(
-    data: TData,
-    trigger: Trigger,
-    args?: unknown,
-  ): Promise<unknown>;
+  run(data: TData, trigger: Trigger, args?: unknown): Promise<unknown>;
 }
 
 const hooks: Record<TriggerData["type"], TriggerHooks<TriggerData>> = {
@@ -76,9 +73,7 @@ export interface TriggerMetadata {
 
 function mapTriggerToTriggerData(
   trigger: NonNullable<
-    Awaited<
-      ReturnType<MCPClientStub<WorkspaceTools>["TRIGGERS_GET"]>
-    >
+    Awaited<ReturnType<MCPClientStub<WorkspaceTools>["TRIGGERS_GET"]>>
   >,
 ): TriggerData {
   return {
@@ -135,17 +130,18 @@ export class Trigger {
   private db: ReturnType<typeof createServerClient>;
   private env: any;
 
-  constructor(public state: ActorState, protected actorEnv: any) {
+  constructor(
+    public state: ActorState,
+    protected actorEnv: any,
+  ) {
     this.env = {
       ...process.env,
       ...actorEnv,
     };
     this.workspace = getTwoFirstSegments(this.state.id);
-    this.db = createServerClient(
-      SUPABASE_URL,
-      this.env.SUPABASE_SERVER_TOKEN,
-      { cookies: { getAll: () => [] } },
-    );
+    this.db = createServerClient(SUPABASE_URL, this.env.SUPABASE_SERVER_TOKEN, {
+      cookies: { getAll: () => [] },
+    });
 
     this.mcpClient = this._createMCPClient();
 
@@ -189,30 +185,34 @@ export class Trigger {
   }
 
   _token() {
-    const keyPair = this.env.DECO_CHAT_API_JWT_PRIVATE_KEY &&
-        this.env.DECO_CHAT_API_JWT_PUBLIC_KEY
-      ? {
-        public: this.env.DECO_CHAT_API_JWT_PUBLIC_KEY,
-        private: this.env.DECO_CHAT_API_JWT_PRIVATE_KEY,
-      }
-      : undefined;
+    const keyPair =
+      this.env.DECO_CHAT_API_JWT_PRIVATE_KEY &&
+      this.env.DECO_CHAT_API_JWT_PUBLIC_KEY
+        ? {
+            public: this.env.DECO_CHAT_API_JWT_PUBLIC_KEY,
+            private: this.env.DECO_CHAT_API_JWT_PRIVATE_KEY,
+          }
+        : undefined;
     return JwtIssuer.forKeyPair(keyPair).then((issuer) =>
       issuer.issue({
         sub: `trigger:${this._getTriggerId()}`,
         aud: this.workspace,
-      })
+      }),
     );
   }
 
   private _runWithContext<T>(fn: () => Promise<T>) {
-    return contextStorage.run({
-      env: this.actorEnv,
-      ctx: {
-        passThroughOnException: () => {},
-        waitUntil: () => {},
-        props: {},
+    return contextStorage.run(
+      {
+        env: this.actorEnv,
+        ctx: {
+          passThroughOnException: () => {},
+          waitUntil: () => {},
+          props: {},
+        },
       },
-    }, fn);
+      fn,
+    );
   }
 
   public _callTool(tool: CallTool, args?: Record<string, unknown>) {
@@ -221,10 +221,11 @@ export class Trigger {
         id: tool.integrationId,
       });
 
-      const patchedConnection =
-        isApiDecoChatMCPConnection(integration.connection)
-          ? { ...integration.connection, token: await this._token() }
-          : integration.connection;
+      const patchedConnection = isApiDecoChatMCPConnection(
+        integration.connection,
+      )
+        ? { ...integration.connection, token: await this._token() }
+        : integration.connection;
 
       const response = await this.mcpClient.INTEGRATIONS_CALL_TOOL({
         connection: patchedConnection,
@@ -242,17 +243,14 @@ export class Trigger {
     return MCPClient.forContext(this._createContext());
   }
 
-  public _callbacks(
-    payload?: InvokePayload,
-  ): Callbacks {
+  public _callbacks(payload?: InvokePayload): Callbacks {
     const urlFor = (method: keyof Trigger) =>
       buildInvokeUrl(
         this.state.id,
         method,
         this.metadata?.params?.passphrase,
         payload,
-      )
-        .href;
+      ).href;
 
     return {
       stream: urlFor("stream"),
@@ -269,14 +267,15 @@ export class Trigger {
   }
 
   private async _loadData(): Promise<TriggerData | null> {
-    const loadFromDbPromise = this.mcpClient.TRIGGERS_GET({
-      id: this._getTriggerId(),
-    })
-      .then((v) => v === null ? null : mapTriggerToTriggerData(v))
+    const loadFromDbPromise = this.mcpClient
+      .TRIGGERS_GET({
+        id: this._getTriggerId(),
+      })
+      .then((v) => (v === null ? null : mapTriggerToTriggerData(v)))
       .catch(() => null);
 
     const loadFromStatePromise = this._loadFromState().then((v) =>
-      v === null ? loadFromDbPromise : v
+      v === null ? loadFromDbPromise : v,
     );
 
     // loads in parallel and get faster
@@ -337,8 +336,8 @@ export class Trigger {
 
   enrichMetadata(metadata: TriggerMetadata, req: Request): TriggerMetadata {
     return {
-      internalCall: req.headers.get("host") === null ||
-        getRuntimeKey() === "deno",
+      internalCall:
+        req.headers.get("host") === null || getRuntimeKey() === "deno",
       params: Object.fromEntries(new URL(req.url).searchParams.entries()),
       reqHeaders: Object.fromEntries(req.headers.entries()),
       ...metadata,
@@ -360,11 +359,7 @@ export class Trigger {
         return;
       }
 
-      runData.result = await this.hooks?.run(
-        data,
-        this,
-        args,
-      );
+      runData.result = await this.hooks?.run(data, this, args);
       return runData.result;
     } catch (error) {
       console.error("Error running trigger:", error);
@@ -375,7 +370,7 @@ export class Trigger {
         result: runData.result as Record<string, unknown> | null,
         status: runData.error ? "error" : "success",
         metadata: {
-          ...runData.metadata as Record<string, unknown> | null,
+          ...(runData.metadata as Record<string, unknown> | null),
           args,
           error: runData.error,
         },

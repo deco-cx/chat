@@ -60,9 +60,7 @@ test("doesSchemaTypeMatchValue", () => {
 
   // Test array of types
   expect(doesSchemaTypeMatchValue(["string", "null"], "string")).toBe(true);
-  expect(
-    doesSchemaTypeMatchValue(["string", "number"], "boolean"),
-  ).toBe(false);
+  expect(doesSchemaTypeMatchValue(["string", "number"], "boolean")).toBe(false);
   expect(doesSchemaTypeMatchValue(["integer", "null"], "number")).toBe(true);
 });
 
@@ -121,17 +119,17 @@ test("findMatchingAnyOfSchema - object properties matching", () => {
   ];
 
   // Test matching by properties
-  const nameAgeSchema = findMatchingAnyOfSchema(
-    schemas,
-    { name: "John", age: 30 },
-  );
+  const nameAgeSchema = findMatchingAnyOfSchema(schemas, {
+    name: "John",
+    age: 30,
+  });
   expect(nameAgeSchema?.properties?.name).toBeDefined();
   expect(nameAgeSchema?.properties?.age).toBeDefined();
 
-  const nameSchema = findMatchingAnyOfSchema(
-    schemas,
-    { firstName: "John", lastName: "Doe" },
-  );
+  const nameSchema = findMatchingAnyOfSchema(schemas, {
+    firstName: "John",
+    lastName: "Doe",
+  });
   expect(nameSchema?.properties?.firstName).toBeDefined();
   expect(nameSchema?.properties?.lastName).toBeDefined();
 });
@@ -149,17 +147,11 @@ test("findMatchingAnyOfSchema - required properties", () => {
   ];
 
   // Should match when all required properties exist
-  const match = findMatchingAnyOfSchema(
-    schemas,
-    { name: "John", age: 30 },
-  );
+  const match = findMatchingAnyOfSchema(schemas, { name: "John", age: 30 });
   expect(match).toBeDefined();
 
   // Should not match when required properties are missing
-  const noMatch = findMatchingAnyOfSchema(
-    schemas,
-    { name: "John" },
-  );
+  const noMatch = findMatchingAnyOfSchema(schemas, { name: "John" });
   expect(noMatch).toBeUndefined();
 });
 
@@ -206,10 +198,7 @@ test("getDefaultAnyOfSchema", () => {
   expect(nonNullSchema.type).toBe("string");
 
   // Test first item fallback
-  const basicSchemas: JSONSchema7[] = [
-    { type: "boolean" },
-    { type: "string" },
-  ];
+  const basicSchemas: JSONSchema7[] = [{ type: "boolean" }, { type: "string" }];
   const firstSchema = getDefaultAnyOfSchema(basicSchemas);
   expect(firstSchema.type).toBe("boolean");
 });

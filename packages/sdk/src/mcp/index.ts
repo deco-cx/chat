@@ -169,9 +169,7 @@ export const AGENT_TOOLS = [
   agentAPI.agentListen,
 ] as const;
 
-export const AI_TOOLS = [
-  aiAPI.aiGenerate,
-] as const;
+export const AI_TOOLS = [aiAPI.aiGenerate] as const;
 
 export type GlobalTools = typeof GLOBAL_TOOLS;
 export type WorkspaceTools = typeof WORKSPACE_TOOLS;
@@ -187,20 +185,16 @@ export type ToolBinder<
   // deno-lint-ignore no-explicit-any
   TInput = any,
   TReturn extends object | null | boolean = object,
-> =
-  & Pick<
-    ToolLike<TName, TInput, TReturn>,
-    "name" | "inputSchema" | "outputSchema"
-  >
-  & { opt?: true };
+> = Pick<
+  ToolLike<TName, TInput, TReturn>,
+  "name" | "inputSchema" | "outputSchema"
+> & { opt?: true };
 
 const global = createMCPToolsStub({
   tools: GLOBAL_TOOLS,
 });
 
-export const createGlobalForContext = (
-  context?: AppContext,
-): typeof global => {
+export const createGlobalForContext = (context?: AppContext): typeof global => {
   return createMCPToolsStub({
     tools: GLOBAL_TOOLS,
     context,

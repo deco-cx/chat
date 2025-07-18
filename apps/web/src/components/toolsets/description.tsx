@@ -1,8 +1,10 @@
 import { useState } from "react";
 
-export function ExpandableDescription(
-  { description }: { description: string },
-) {
+export function ExpandableDescription({
+  description,
+}: {
+  description: string;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (

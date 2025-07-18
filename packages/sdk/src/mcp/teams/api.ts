@@ -27,92 +27,128 @@ const OWNER_ROLE_ID = 1;
 
 // Enhanced theme schema with detailed context for AI tools
 const themeVariablesSchema = z.object({
-  "--background": z.string().optional().describe(
-    "Main background color of the application (OKLCH/hex format)",
-  ),
-  "--foreground": z.string().optional().describe(
-    "Main text color on background (OKLCH/hex format)",
-  ),
-  "--card": z.string().optional().describe(
-    "Background color for cards and panels (OKLCH/hex format)",
-  ),
-  "--card-foreground": z.string().optional().describe(
-    "Text color on cards and panels (OKLCH/hex format)",
-  ),
-  "--popover": z.string().optional().describe(
-    "Background color for popovers and dropdowns (OKLCH/hex format)",
-  ),
-  "--popover-foreground": z.string().optional().describe(
-    "Text color in popovers and dropdowns (OKLCH/hex format)",
-  ),
-  "--primary": z.string().optional().describe(
-    "Primary brand color for buttons and highlights (OKLCH/hex format)",
-  ),
-  "--primary-foreground": z.string().optional().describe(
-    "Text color on primary elements (OKLCH/hex format)",
-  ),
-  "--primary-light": z.string().optional().describe(
-    "Lighter variant of primary color (OKLCH/hex format)",
-  ),
-  "--primary-dark": z.string().optional().describe(
-    "Darker variant of primary color (OKLCH/hex format)",
-  ),
-  "--secondary": z.string().optional().describe(
-    "Secondary color for less prominent elements (OKLCH/hex format)",
-  ),
-  "--secondary-foreground": z.string().optional().describe(
-    "Text color on secondary elements (OKLCH/hex format)",
-  ),
-  "--muted": z.string().optional().describe(
-    "Muted background color for subtle elements (OKLCH/hex format)",
-  ),
-  "--muted-foreground": z.string().optional().describe(
-    "Muted text color for secondary text (OKLCH/hex format)",
-  ),
-  "--accent": z.string().optional().describe(
-    "Accent color for interactive elements (OKLCH/hex format)",
-  ),
-  "--accent-foreground": z.string().optional().describe(
-    "Text color on accent elements (OKLCH/hex format)",
-  ),
-  "--destructive": z.string().optional().describe(
-    "Color for destructive actions and errors (OKLCH/hex format)",
-  ),
-  "--destructive-foreground": z.string().optional().describe(
-    "Text color on destructive elements (OKLCH/hex format)",
-  ),
-  "--success": z.string().optional().describe(
-    "Color for success states and positive actions (OKLCH/hex format)",
-  ),
-  "--success-foreground": z.string().optional().describe(
-    "Text color on success elements (OKLCH/hex format)",
-  ),
-  "--warning": z.string().optional().describe(
-    "Color for warning states and caution indicators (OKLCH/hex format)",
-  ),
-  "--warning-foreground": z.string().optional().describe(
-    "Text color on warning elements (OKLCH/hex format)",
-  ),
-  "--border": z.string().optional().describe(
-    "Border color for elements (OKLCH/hex format)",
-  ),
-  "--input": z.string().optional().describe(
-    "Border color for input fields (OKLCH/hex format)",
-  ),
-  "--sidebar": z.string().optional().describe(
-    "Background color for sidebar navigation (OKLCH/hex format)",
-  ),
-  "--splash": z.string().optional().describe(
-    "Background color for splash screen animation (OKLCH/hex format)",
-  ),
+  "--background": z
+    .string()
+    .optional()
+    .describe("Main background color of the application (OKLCH/hex format)"),
+  "--foreground": z
+    .string()
+    .optional()
+    .describe("Main text color on background (OKLCH/hex format)"),
+  "--card": z
+    .string()
+    .optional()
+    .describe("Background color for cards and panels (OKLCH/hex format)"),
+  "--card-foreground": z
+    .string()
+    .optional()
+    .describe("Text color on cards and panels (OKLCH/hex format)"),
+  "--popover": z
+    .string()
+    .optional()
+    .describe("Background color for popovers and dropdowns (OKLCH/hex format)"),
+  "--popover-foreground": z
+    .string()
+    .optional()
+    .describe("Text color in popovers and dropdowns (OKLCH/hex format)"),
+  "--primary": z
+    .string()
+    .optional()
+    .describe(
+      "Primary brand color for buttons and highlights (OKLCH/hex format)",
+    ),
+  "--primary-foreground": z
+    .string()
+    .optional()
+    .describe("Text color on primary elements (OKLCH/hex format)"),
+  "--primary-light": z
+    .string()
+    .optional()
+    .describe("Lighter variant of primary color (OKLCH/hex format)"),
+  "--primary-dark": z
+    .string()
+    .optional()
+    .describe("Darker variant of primary color (OKLCH/hex format)"),
+  "--secondary": z
+    .string()
+    .optional()
+    .describe("Secondary color for less prominent elements (OKLCH/hex format)"),
+  "--secondary-foreground": z
+    .string()
+    .optional()
+    .describe("Text color on secondary elements (OKLCH/hex format)"),
+  "--muted": z
+    .string()
+    .optional()
+    .describe("Muted background color for subtle elements (OKLCH/hex format)"),
+  "--muted-foreground": z
+    .string()
+    .optional()
+    .describe("Muted text color for secondary text (OKLCH/hex format)"),
+  "--accent": z
+    .string()
+    .optional()
+    .describe("Accent color for interactive elements (OKLCH/hex format)"),
+  "--accent-foreground": z
+    .string()
+    .optional()
+    .describe("Text color on accent elements (OKLCH/hex format)"),
+  "--destructive": z
+    .string()
+    .optional()
+    .describe("Color for destructive actions and errors (OKLCH/hex format)"),
+  "--destructive-foreground": z
+    .string()
+    .optional()
+    .describe("Text color on destructive elements (OKLCH/hex format)"),
+  "--success": z
+    .string()
+    .optional()
+    .describe(
+      "Color for success states and positive actions (OKLCH/hex format)",
+    ),
+  "--success-foreground": z
+    .string()
+    .optional()
+    .describe("Text color on success elements (OKLCH/hex format)"),
+  "--warning": z
+    .string()
+    .optional()
+    .describe(
+      "Color for warning states and caution indicators (OKLCH/hex format)",
+    ),
+  "--warning-foreground": z
+    .string()
+    .optional()
+    .describe("Text color on warning elements (OKLCH/hex format)"),
+  "--border": z
+    .string()
+    .optional()
+    .describe("Border color for elements (OKLCH/hex format)"),
+  "--input": z
+    .string()
+    .optional()
+    .describe("Border color for input fields (OKLCH/hex format)"),
+  "--sidebar": z
+    .string()
+    .optional()
+    .describe("Background color for sidebar navigation (OKLCH/hex format)"),
+  "--splash": z
+    .string()
+    .optional()
+    .describe(
+      "Background color for splash screen animation (OKLCH/hex format)",
+    ),
 });
 
 const fontSchema = z.union([
   z.object({
     type: z.literal("Google Fonts").describe("Use a Google Fonts font"),
-    name: z.string().describe(
-      "Name of the Google Font (e.g., 'Inter', 'Roboto', 'Open Sans')",
-    ),
+    name: z
+      .string()
+      .describe(
+        "Name of the Google Font (e.g., 'Inter', 'Roboto', 'Open Sans')",
+      ),
   }),
   z.object({
     type: z.literal("Custom").describe("Use a custom uploaded font"),
@@ -121,23 +157,29 @@ const fontSchema = z.union([
   }),
 ]);
 
-const enhancedThemeSchema = z.object({
-  variables: themeVariablesSchema.optional().describe(
-    "CSS custom properties for theme colors. Use OKLCH format (preferred) or hex colors.",
-  ),
-  picture: z.string().optional().describe("URL to team avatar/logo image"),
-  font: fontSchema.optional().describe("Font configuration for the workspace"),
-}).describe(
-  "Theme configuration for the workspace. Only include the properties you want to change - existing values will be preserved.",
-);
+const enhancedThemeSchema = z
+  .object({
+    variables: themeVariablesSchema
+      .optional()
+      .describe(
+        "CSS custom properties for theme colors. Use OKLCH format (preferred) or hex colors.",
+      ),
+    picture: z.string().optional().describe("URL to team avatar/logo image"),
+    font: fontSchema
+      .optional()
+      .describe("Font configuration for the workspace"),
+  })
+  .describe(
+    "Theme configuration for the workspace. Only include the properties you want to change - existing values will be preserved.",
+  );
 
 export const sanitizeTeamName = (name: string): string => {
   if (!name) return "";
   const nameWithoutAccents = removeNameAccents(name);
-  return nameWithoutAccents.trim().replace(/\s+/g, " ").replace(
-    /[^\w\s\-.+@]/g,
-    "",
-  );
+  return nameWithoutAccents
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[^\w\s\-.+@]/g, "");
 };
 
 export const getAvatarFromTheme = (
@@ -145,7 +187,9 @@ export const getAvatarFromTheme = (
   createSignedUrl: (path: string) => Promise<string>,
 ): Promise<string | null> => {
   if (
-    theme !== null && typeof theme === "object" && "picture" in theme &&
+    theme !== null &&
+    typeof theme === "object" &&
+    "picture" in theme &&
     typeof theme.picture === "string"
   ) {
     const picture = theme.picture as string;
@@ -222,11 +266,14 @@ const ensureMonthlyPlanCreditsReward = async ({
     timestamp: new Date(),
   };
 
-  const response = await wallet["PUT /transactions/:id"]({
-    id: transactionId,
-  }, {
-    body: transaction,
-  });
+  const response = await wallet["PUT /transactions/:id"](
+    {
+      id: transactionId,
+    },
+    {
+      body: transaction,
+    },
+  );
 
   if (response.status !== 200 && response.status !== 304) {
     return console.error(
@@ -250,8 +297,7 @@ export const getTeam = createTool({
 
     await assertTeamResourceAccess(c.tool.name, slug, c);
 
-    const { data: teamData, error } = await c
-      .db
+    const { data: teamData, error } = await c.db
       .from("teams")
       .select("*")
       .eq("slug", slug)
@@ -313,8 +359,7 @@ export const createTeam = createTool({
 
     // Enforce unique slug if provided
     if (slug) {
-      const { data: existingTeam, error: slugError } = await c
-        .db
+      const { data: existingTeam, error: slugError } = await c.db
         .from("teams")
         .select("id")
         .eq("slug", slug)
@@ -326,8 +371,7 @@ export const createTeam = createTool({
     }
 
     // Create the team
-    const { data: team, error: createError } = await c
-      .db
+    const { data: team, error: createError } = await c.db
       .from("teams")
       .insert([{ name: sanitizeTeamName(name), slug, stripe_subscription_id }])
       .select()
@@ -336,17 +380,18 @@ export const createTeam = createTool({
     if (createError) throw createError;
 
     // Add the creator as an admin member
-    const { data: member, error: memberError } = await c
-      .db
+    const { data: member, error: memberError } = await c.db
       .from("members")
       .insert([
         {
           team_id: team.id,
           user_id: user.id,
-          activity: [{
-            action: "add_member",
-            timestamp: new Date().toISOString(),
-          }],
+          activity: [
+            {
+              action: "add_member",
+              timestamp: new Date().toISOString(),
+            },
+          ],
         },
       ])
       .select()
@@ -358,15 +403,12 @@ export const createTeam = createTool({
     }
 
     // Set the member's role_id to 1 in member_roles
-    const { error: roleError } = await c
-      .db
-      .from("member_roles")
-      .insert([
-        {
-          member_id: member.id,
-          role_id: OWNER_ROLE_ID,
-        },
-      ]);
+    const { error: roleError } = await c.db.from("member_roles").insert([
+      {
+        member_id: member.id,
+        role_id: OWNER_ROLE_ID,
+      },
+    ]);
 
     if (roleError) throw roleError;
 
@@ -394,8 +436,7 @@ export const updateTeam = createTool({
     // TODO: check if it's required
     // Enforce unique slug if being updated
     if (data.slug) {
-      const { data: existingTeam, error: slugError } = await c
-        .db
+      const { data: existingTeam, error: slugError } = await c.db
         .from("teams")
         .select("id")
         .eq("slug", data.slug)
@@ -408,8 +449,7 @@ export const updateTeam = createTool({
     }
 
     // Get current team data to merge theme
-    const { data: currentTeam, error: getError } = await c
-      .db
+    const { data: currentTeam, error: getError } = await c.db
       .from("teams")
       .select("theme")
       .eq("id", id)
@@ -420,8 +460,7 @@ export const updateTeam = createTool({
     const mergedTheme = mergeThemes(currentTeam.theme, data.theme);
 
     // Update the team
-    const { data: updatedTeam, error: updateError } = await c
-      .db
+    const { data: updatedTeam, error: updateError } = await c.db
       .from("teams")
       .update({
         ...data,
@@ -473,10 +512,10 @@ export const deleteTeam = createTool({
     await c.db.from("member_roles").delete().in("member_id", memberIds);
     await c.db.from("members").delete().eq("team_id", teamId);
 
-    const { error } = await c.db.from("teams").delete().eq(
-      "id",
-      teamId,
-    )
+    const { error } = await c.db
+      .from("teams")
+      .delete()
+      .eq("id", teamId)
       .select("id");
 
     if (error) throw error;
@@ -494,8 +533,7 @@ export const listTeams = createTool({
     assertPrincipalIsUser(c);
     const user = c.user;
 
-    const { data, error } = await c
-      .db
+    const { data, error } = await c.db
       .from("teams")
       .select(`
         id,
@@ -517,8 +555,8 @@ export const listTeams = createTool({
       throw error;
     }
 
-    const teamsWithoutAvatar = data.map(({ members: _members, ...teamData }) =>
-      teamData
+    const teamsWithoutAvatar = data.map(
+      ({ members: _members, ...teamData }) => teamData,
     );
 
     const teamsWithAvatar = await Promise.all(
@@ -548,10 +586,11 @@ export const getWorkspaceTheme = createTool({
     c.resourceAccess.grant();
     const { slug } = props;
 
-    const { data: team, error } = await c.db.from("teams").select("theme").eq(
-      "slug",
-      slug,
-    ).maybeSingle();
+    const { data: team, error } = await c.db
+      .from("teams")
+      .select("theme")
+      .eq("slug", slug)
+      .maybeSingle();
 
     if (error) throw error;
 

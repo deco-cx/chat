@@ -256,9 +256,10 @@ export function instrumentClientFetch(
 
       const host = new URL(request.url).host;
       const method = request.method.toUpperCase();
-      const spanName = typeof attrs?.["name"] === "string"
-        ? attrs?.["name"]
-        : `fetch ${method} ${host}`;
+      const spanName =
+        typeof attrs?.["name"] === "string"
+          ? attrs?.["name"]
+          : `fetch ${method} ${host}`;
       const promise = tracer.startActiveSpan(
         spanName,
         options,
@@ -274,9 +275,7 @@ export function instrumentClientFetch(
           }
           span.setAttributes(gatherRequestAttributes(request));
           if (request.cf) {
-            span.setAttributes(
-              gatherOutgoingCfAttributes(request.cf),
-            );
+            span.setAttributes(gatherOutgoingCfAttributes(request.cf));
           }
           const response = await Reflect.apply(target, thisArg, [request]);
           span.setAttributes(gatherResponseAttributes(response));

@@ -25,9 +25,9 @@ onUserChange((user) => {
 
 const maybeDisableTracking =
   // deno-lint-ignore no-explicit-any
-  <T extends (...args: any[]) => void>(callback: T) =>
-  (...args: Parameters<T>) =>
-    POSTHOG_SHOULD_TRACK ? callback(...args) : undefined;
+    <T extends (...args: any[]) => void>(callback: T) =>
+    (...args: Parameters<T>) =>
+      POSTHOG_SHOULD_TRACK ? callback(...args) : undefined;
 
 const serializeErrorProperties = (error: unknown) => {
   if (error instanceof Error) {

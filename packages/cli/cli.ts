@@ -67,8 +67,9 @@ const hostingList = new Command()
   })
   .action(async (args) => {
     return listApps({
-      workspace: args.workspace ??
-        await readSession().then((session) => session?.workspace!),
+      workspace:
+        args.workspace ??
+        (await readSession().then((session) => session?.workspace!)),
     });
   });
 
@@ -91,7 +92,8 @@ const hostingDeploy = new Command()
     });
     const wranglerConfig = await readWranglerConfig();
     const assetsDirectory = wranglerConfig.assets?.directory;
-    const app = args.app ??
+    const app =
+      args.app ??
       (typeof wranglerConfig.name === "string"
         ? wranglerConfig.name
         : "my-app");
@@ -154,9 +156,8 @@ const dev = new Command()
     }));
 
     const wranglerConfig = await readWranglerConfig();
-    const app = typeof wranglerConfig.name === "string"
-      ? wranglerConfig.name
-      : "my-app";
+    const app =
+      typeof wranglerConfig.name === "string" ? wranglerConfig.name : "my-app";
 
     const latest = await hasMCPPreferences(config.workspace, app);
 

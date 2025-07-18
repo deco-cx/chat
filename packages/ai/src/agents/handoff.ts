@@ -18,9 +18,12 @@ export const createHandoffToolsFor = (
     description: descriptionFrom(integration),
     inputSchema: z.object({
       message: z.string().describe("The message to send to the agent"),
-      schema: z.any().optional().describe(
-        "The JSON schema to use for a structured response. If provided, the response will be an object.",
-      ),
+      schema: z
+        .any()
+        .optional()
+        .describe(
+          "The JSON schema to use for a structured response. If provided, the response will be an object.",
+        ),
     }),
     outputSchema: z.object({
       text: z.string().optional().describe("The response from the agent"),
@@ -29,16 +32,18 @@ export const createHandoffToolsFor = (
       agentId: z.string().describe("The ID of the new agent"),
     }),
     execute:
-      (agent) => async ({ context, threadId: _threadId, resourceId }) => {
+      (agent) =>
+      async ({ context, threadId: _threadId, resourceId }) => {
         const segments = integration.id.split(":");
         const agentId = segments[1] || segments[0];
         const threadId = `${_threadId}-${agentId}`;
-        const targetAgent = agent.state.stub(AIAgent).new(
-          Path.resolveHome(
-            Path.folders.Agent.root(agentId),
-            agent.workspace,
-          ).path,
-        ).withMetadata({ threadId, resourceId });
+        const targetAgent = agent.state
+          .stub(AIAgent)
+          .new(
+            Path.resolveHome(Path.folders.Agent.root(agentId), agent.workspace)
+              .path,
+          )
+          .withMetadata({ threadId, resourceId });
 
         const userMessage = {
           id: crypto.randomUUID(),

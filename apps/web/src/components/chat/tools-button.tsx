@@ -19,13 +19,18 @@ function ToolsButton() {
   );
 }
 
-function DockedToggleButton(
-  { id, title, children, className, disabled, ...btnProps }: {
-    id: string;
-    title: string;
-    children: ReactNode;
-  } & ComponentProps<typeof Button>,
-) {
+function DockedToggleButton({
+  id,
+  title,
+  children,
+  className,
+  disabled,
+  ...btnProps
+}: {
+  id: string;
+  title: string;
+  children: ReactNode;
+} & ComponentProps<typeof Button>) {
   const { openPanels, tabs } = useDock();
 
   return (
@@ -40,7 +45,8 @@ function DockedToggleButton(
           title,
           initialWidth: 420,
           position: { direction: "right" },
-        })}
+        })
+      }
       className={cn(className, openPanels.has(id) ? "bg-accent" : "")}
     >
       {children}
@@ -76,9 +82,7 @@ ToolsButton.UI = () => {
       size="sm"
     >
       <Icon name="build" />
-      <span className="text-xs">
-        {numberOfTools}
-      </span>
+      <span className="text-xs">{numberOfTools}</span>
     </DockedToggleButton>
   );
 };

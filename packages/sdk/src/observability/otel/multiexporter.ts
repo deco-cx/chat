@@ -40,8 +40,8 @@ export class MultiSpanExporterAsync implements SpanExporter {
     );
 
     Promise.all(promises).then((results) => {
-      const failed = results.filter((result) =>
-        result.code === ExportResultCode.FAILED
+      const failed = results.filter(
+        (result) => result.code === ExportResultCode.FAILED,
       );
       if (failed.length > 0) {
         // not ideal, but just return the first error

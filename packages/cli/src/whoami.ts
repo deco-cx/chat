@@ -47,14 +47,13 @@ export const whoamiCommand = async () => {
         `\uD83C\uDFE2  Current Workspace: \u001b[1m${session.workspace}\u001b[0m\n`,
       );
     } else {
-      console.log(
-        "\u26A0\uFE0F  No workspace selected.\n",
-      );
+      console.log("\u26A0\uFE0F  No workspace selected.\n");
     }
   } catch (err: unknown) {
-    const message = typeof err === "object" && err && "message" in err
-      ? (err as { message: string }).message
-      : String(err);
+    const message =
+      typeof err === "object" && err && "message" in err
+        ? (err as { message: string }).message
+        : String(err);
     console.error("\u274C  Error reading session:", message);
   }
 };

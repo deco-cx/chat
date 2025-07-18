@@ -26,10 +26,14 @@ interface KnowledgeAddFileParams extends FromWorkspace, ForConnection {
   metadata?: Record<string, string>;
 }
 
-export const knowledgeAddFile = (
-  { fileUrl, workspace, metadata, path, filename, connection }:
-    KnowledgeAddFileParams,
-) =>
+export const knowledgeAddFile = ({
+  fileUrl,
+  workspace,
+  metadata,
+  path,
+  filename,
+  connection,
+}: KnowledgeAddFileParams) =>
   getClientFor(workspace, connection).KNOWLEDGE_BASE_ADD_FILE({
     fileUrl,
     metadata,
@@ -39,17 +43,21 @@ export const knowledgeAddFile = (
 
 interface KnowledgeListFilesParams extends FromWorkspace, ForConnection {}
 
-export const knowledgeListFiles = (
-  { workspace, connection }: KnowledgeListFilesParams,
-) => getClientFor(workspace, connection).KNOWLEDGE_BASE_LIST_FILES({});
+export const knowledgeListFiles = ({
+  workspace,
+  connection,
+}: KnowledgeListFilesParams) =>
+  getClientFor(workspace, connection).KNOWLEDGE_BASE_LIST_FILES({});
 
 interface KnowledgeDeleteFileParams extends FromWorkspace, ForConnection {
   fileUrl: string;
 }
 
-export const knowledgeDeleteFile = (
-  { workspace, connection, fileUrl }: KnowledgeDeleteFileParams,
-) =>
+export const knowledgeDeleteFile = ({
+  workspace,
+  connection,
+  fileUrl,
+}: KnowledgeDeleteFileParams) =>
   getClientFor(workspace, connection).KNOWLEDGE_BASE_DELETE_FILE({ fileUrl });
 
 interface CreateKnowledgeParams extends FromWorkspace {

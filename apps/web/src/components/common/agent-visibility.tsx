@@ -22,24 +22,23 @@ export function AgentVisibility({ agent }: { agent: Agent }) {
   );
 }
 
-AgentVisibility.Icon = (
-  { agent, ...props }:
-    & { agent: Agent }
-    & Omit<ComponentProps<typeof Icon>, "name">,
-) => (
+AgentVisibility.Icon = ({
+  agent,
+  ...props
+}: { agent: Agent } & Omit<ComponentProps<typeof Icon>, "name">) => (
   <Tooltip>
     <TooltipTrigger asChild>
       <Icon
         {...props}
-        name={agent.visibility === "PUBLIC"
-          ? "public"
-          : agent.visibility === "PRIVATE"
-          ? "lock"
-          : "groups"}
+        name={
+          agent.visibility === "PUBLIC"
+            ? "public"
+            : agent.visibility === "PRIVATE"
+              ? "lock"
+              : "groups"
+        }
       />
     </TooltipTrigger>
-    <TooltipContent>
-      {DESCRIPTIONS[agent.visibility]}
-    </TooltipContent>
+    <TooltipContent>{DESCRIPTIONS[agent.visibility]}</TooltipContent>
   </Tooltip>
 );

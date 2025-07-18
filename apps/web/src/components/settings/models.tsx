@@ -78,7 +78,7 @@ export function ModelLogo({ logo, name }: ModelLogoProps) {
 
 const SORTABLE_KEYS = ["name", "active", "APIKey"] as const;
 
-type SortKey = typeof SORTABLE_KEYS[number];
+type SortKey = (typeof SORTABLE_KEYS)[number];
 type SortDirection = "asc" | "desc";
 
 function Title() {
@@ -150,9 +150,7 @@ function ModelsView() {
   );
 }
 
-const KeyCell = (
-  { model, onClick }: { model: Model; onClick: () => void },
-) => {
+const KeyCell = ({ model, onClick }: { model: Model; onClick: () => void }) => {
   if (model.byDeco) {
     return (
       <Button variant="outline" onClick={onClick}>
@@ -218,22 +216,20 @@ const ModelActions = ({
   );
 };
 
-const ModelInfoCell = (
-  { model }: { model: Model },
-) => {
+const ModelInfoCell = ({ model }: { model: Model }) => {
   return (
     <div className="flex items-center gap-2">
-      {model.logo
-        ? (
-          <Avatar
-            shape="square"
-            url={model.logo}
-            fallback={model.name}
-            objectFit="contain"
-            size="xs"
-          />
-        )
-        : <Icon name="conversion_path" className="text-muted-foreground" />}
+      {model.logo ? (
+        <Avatar
+          shape="square"
+          url={model.logo}
+          fallback={model.name}
+          objectFit="contain"
+          size="xs"
+        />
+      ) : (
+        <Icon name="conversion_path" className="text-muted-foreground" />
+      )}
       <div>
         <div className="flex items-center gap-2">
           <h3 className="font-medium line-clamp-1">{model.name}</h3>
@@ -253,9 +249,7 @@ const modelFormSchema = z.object({
 
 type ModelForm = z.infer<typeof modelFormSchema>;
 
-function TableView(
-  { models }: { models: Model[] },
-) {
+function TableView({ models }: { models: Model[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("active");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const { isOpen: modalOpen, setIsOpen } = useModal();
@@ -294,24 +288,20 @@ function TableView(
     await deleteModel.mutateAsync(model.id);
   }
 
-  function getSortValue(
-    model: Model,
-    key: SortKey,
-  ): string {
+  function getSortValue(model: Model, key: SortKey): string {
     if (key === "name") return model.name?.toLowerCase() || "";
     if (key === "active") return model.isEnabled ? "1" : "0";
     if (key === "APIKey") return model.hasCustomKey ? "1" : "0";
     return "";
   }
 
-  const sortedModels = [...models]
-    .sort((a, b) => {
-      const aVal = getSortValue(a, sortKey);
-      const bVal = getSortValue(b, sortKey);
-      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
+  const sortedModels = [...models].sort((a, b) => {
+    const aVal = getSortValue(a, sortKey);
+    const bVal = getSortValue(b, sortKey);
+    if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+    return 0;
+  });
 
   const columns: TableColumn<Model>[] = [
     {
@@ -524,22 +514,21 @@ function TableView(
                           <SelectValue placeholder="Select Model" />
                         </SelectTrigger>
                         <SelectContent>
-                          {WELL_KNOWN_MODELS
-                            .map((model) => (
-                              <SelectItem
-                                key={model.model.split(":")[1]}
-                                value={model.model}
-                              >
-                                {model.logo && (
-                                  <img
-                                    src={model.logo}
-                                    alt={model.name}
-                                    className="w-6 h-6"
-                                  />
-                                )}
-                                {model.model.split(":")[1]}
-                              </SelectItem>
-                            ))}
+                          {WELL_KNOWN_MODELS.map((model) => (
+                            <SelectItem
+                              key={model.model.split(":")[1]}
+                              value={model.model}
+                            >
+                              {model.logo && (
+                                <img
+                                  src={model.logo}
+                                  alt={model.name}
+                                  className="w-6 h-6"
+                                />
+                              )}
+                              {model.model.split(":")[1]}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </FormControl>
@@ -558,9 +547,11 @@ function TableView(
                         <Input
                           type="password"
                           {...field}
-                          placeholder={modelRef.current?.hasCustomKey
-                            ? "••••••••••••••••••••••••••••••••••••••••••"
-                            : ""}
+                          placeholder={
+                            modelRef.current?.hasCustomKey
+                              ? "••••••••••••••••••••••••••••••••••••••••••"
+                              : ""
+                          }
                           disabled={isMutating}
                         />
                       </FormControl>
@@ -570,11 +561,7 @@ function TableView(
                 />
               </div>
               <div className="flex items-center justify-end gap-3">
-                <Button
-                  type="submit"
-                  variant="default"
-                  disabled={isMutating}
-                >
+                <Button type="submit" variant="default" disabled={isMutating}>
                   {isMutating ? "Saving..." : "Save"}
                 </Button>
                 <DialogClose asChild>

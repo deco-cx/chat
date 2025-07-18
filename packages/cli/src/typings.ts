@@ -14,18 +14,20 @@ interface Options {
 const formatDescription = (desc: string | undefined) => {
   if (!desc) return "";
 
-  return desc
-    // Escape */ sequences that would break the comment block
-    .replace(/\*\//g, "*\\/")
-    // Normalize line endings
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
-    // Split into lines and format each line
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) => ` * ${line}`)
-    .join("\n");
+  return (
+    desc
+      // Escape */ sequences that would break the comment block
+      .replace(/\*\//g, "*\\/")
+      // Normalize line endings
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      // Split into lines and format each line
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((line) => ` * ${line}`)
+      .join("\n")
+  );
 };
 
 function slugify(name: string) {
@@ -150,18 +152,24 @@ function isValidJavaScriptPropertyName(name: string): boolean {
 }
 
 type KeyInfo = { type: string; key: string };
-const DEFAULT_BINDINGS: DecoBinding[] = [{
-  name: "DECO_CHAT_WORKSPACE_API",
-  integration_id: "i:workspace-management",
-  type: "mcp",
-}, {
-  name: "DECO_CHAT_API",
-  integration_id: "i:user-management",
-  type: "mcp",
-}];
-export const genEnv = async (
-  { workspace, local, bindings, selfUrl }: Options,
-) => {
+const DEFAULT_BINDINGS: DecoBinding[] = [
+  {
+    name: "DECO_CHAT_WORKSPACE_API",
+    integration_id: "i:workspace-management",
+    type: "mcp",
+  },
+  {
+    name: "DECO_CHAT_API",
+    integration_id: "i:user-management",
+    type: "mcp",
+  },
+];
+export const genEnv = async ({
+  workspace,
+  local,
+  bindings,
+  selfUrl,
+}: Options) => {
   const client = await createWorkspaceClient({ workspace, local });
   const apiClient = await createWorkspaceClient({ local });
 
@@ -171,28 +179,28 @@ export const genEnv = async (
     [
       ...bindings,
       ...DEFAULT_BINDINGS,
-      ...selfUrl
+      ...(selfUrl
         ? [{ name: "SELF", type: "mcp", integration_url: selfUrl }]
-        : [],
+        : []),
     ].map(async (binding) => {
       let connection: unknown;
       let stateKey: KeyInfo | undefined;
       if ("integration_id" in binding) {
-        const integration = await client.callTool({
+        const integration = (await client.callTool({
           name: "INTEGRATIONS_GET",
           arguments: {
             id: binding.integration_id,
           },
-        }) as { structuredContent: { connection: unknown } };
+        })) as { structuredContent: { connection: unknown } };
         connection = integration.structuredContent.connection;
       } else if ("integration_name" in binding) {
         stateKey = { type: binding.integration_name, key: binding.name };
-        const app = await client.callTool({
+        const app = (await client.callTool({
           name: "REGISTRY_GET_APP",
           arguments: {
             name: binding.integration_name,
           },
-        }) as { structuredContent: { connection: unknown } };
+        })) as { structuredContent: { connection: unknown } };
         connection = app.structuredContent.connection;
       } else if ("integration_url" in binding) {
         connection = {
@@ -203,12 +211,12 @@ export const genEnv = async (
         throw new Error(`Unknown binding type: ${binding}`);
       }
 
-      const tools = await apiClient.callTool({
+      const tools = (await apiClient.callTool({
         name: "INTEGRATIONS_LIST_TOOLS",
         arguments: {
           connection,
         },
-      }) as {
+      })) as {
         structuredContent: {
           tools: {
             name: string;
@@ -227,33 +235,32 @@ export const genEnv = async (
       }
 
       const compiledTools = await Promise.all(
-        tools.structuredContent.tools
-          .map(async (t) => {
-            const jsName = generateName(t.name, new Set());
-            const inputName = `${jsName}Input`;
-            const outputName = `${jsName}Output`;
-            const customName = (schema: any) => {
-              let typeName = schema.title ?? schema.type;
-              if (Array.isArray(typeName)) {
-                typeName = typeName.join(",");
-              }
+        tools.structuredContent.tools.map(async (t) => {
+          const jsName = generateName(t.name, new Set());
+          const inputName = `${jsName}Input`;
+          const outputName = `${jsName}Output`;
+          const customName = (schema: any) => {
+            let typeName = schema.title ?? schema.type;
+            if (Array.isArray(typeName)) {
+              typeName = typeName.join(",");
+            }
 
-              if (typeof typeName !== "string") {
-                return undefined;
-              }
-              const key = slugify(typeName);
-              const count = types.get(key) ?? 0;
-              types.set(key, count + 1);
-              return count ? `${typeName}_${count}` : typeName;
-            };
-            const [inputTs, outputTs] = await Promise.all([
-              compile({ ...t.inputSchema, title: inputName }, inputName, {
-                additionalProperties: false,
-                customName,
-                format: false,
-              }),
-              t.outputSchema
-                ? await compile(
+            if (typeof typeName !== "string") {
+              return undefined;
+            }
+            const key = slugify(typeName);
+            const count = types.get(key) ?? 0;
+            types.set(key, count + 1);
+            return count ? `${typeName}_${count}` : typeName;
+          };
+          const [inputTs, outputTs] = await Promise.all([
+            compile({ ...t.inputSchema, title: inputName }, inputName, {
+              additionalProperties: false,
+              customName,
+              format: false,
+            }),
+            t.outputSchema
+              ? await compile(
                   { ...t.outputSchema, title: outputName },
                   outputName,
                   {
@@ -262,19 +269,19 @@ export const genEnv = async (
                     format: false,
                   },
                 )
-                : undefined,
-            ]);
-            tsTypes += `
+              : undefined,
+          ]);
+          tsTypes += `
         ${inputTs}
         ${outputTs ?? ""}
           `;
-            return [
-              t.name,
-              inputName,
-              outputTs ? outputName : undefined,
-              t.description,
-            ];
-          }),
+          return [
+            t.name,
+            inputName,
+            outputTs ? outputName : undefined,
+            t.description,
+          ];
+        }),
       );
 
       return [
@@ -309,45 +316,47 @@ ${tsTypes}
   }
 
   export const StateSchema = z.object({
-    ${
-    props.filter((p) => p !== null && p[2] !== undefined).map((prop) => {
-      const [_, __, stateKey] = prop as [
-        string,
-        [string, string, string | undefined, string | undefined][],
-        KeyInfo | undefined,
-      ];
-      return `${stateKey!.key}: z.object({
+    ${props
+      .filter((p) => p !== null && p[2] !== undefined)
+      .map((prop) => {
+        const [_, __, stateKey] = prop as [
+          string,
+          [string, string, string | undefined, string | undefined][],
+          KeyInfo | undefined,
+        ];
+        return `${stateKey!.key}: z.object({
         value: z.string(),
         __type: z.literal("${stateKey!.type}").default("${stateKey!.type}"),
       })`;
-    }).join(",\n")
-  }
+      })
+      .join(",\n")}
   })
 
   export interface Env {
     DECO_CHAT_WORKSPACE: string;
     DECO_CHAT_API_JWT_PUBLIC_KEY: string;
-    ${
-    props.filter((p) => p !== null).map(([propName, tools]) => {
-      return `${propName}: Mcp<{
-        ${
-        tools.map(([toolName, inputName, outputName, description]) => {
-          const docComment = description
-            ? `/**\n${formatDescription(description)}\n */`
-            : "";
+    ${props
+      .filter((p) => p !== null)
+      .map(([propName, tools]) => {
+        return `${propName}: Mcp<{
+        ${tools
+          .map(([toolName, inputName, outputName, description]) => {
+            const docComment = description
+              ? `/**\n${formatDescription(description)}\n */`
+              : "";
 
-          return `${docComment}
+            return `${docComment}
           ${
             isValidJavaScriptPropertyName(toolName)
               ? toolName
               : [`"${toolName}"`]
           }: (input: ${inputName}) => Promise<${outputName ?? "any"}>;
           `;
-        }).join("")
-      }
+          })
+          .join("")}
       }>;`;
-    }).join("")
-  }
+      })
+      .join("")}
   }
   `);
 };

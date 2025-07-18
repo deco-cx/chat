@@ -11,8 +11,7 @@ import { MCPClient } from "../index.ts";
 const createTool = createToolGroup("Prompt", {
   name: "Prompt Management",
   description: "Manage reusable prompt templates.",
-  icon:
-    "https://assets.decocache.com/mcp/9861d914-141d-4236-b616-d73ef6559ca1/Prompt-Management.png",
+  icon: "https://assets.decocache.com/mcp/9861d914-141d-4236-b616-d73ef6559ca1/Prompt-Management.png",
 });
 
 export const createPrompt = createTool({
@@ -31,8 +30,7 @@ export const createPrompt = createTool({
 
     const { name, description, content } = props;
 
-    const { data, error } = await c
-      .db
+    const { data, error } = await c.db
       .from("deco_chat_prompts")
       .insert({
         workspace,
@@ -46,8 +44,7 @@ export const createPrompt = createTool({
     if (error) throw error;
 
     if (!data) throw new Error("Failed to create prompt");
-    await c
-      .db
+    await c.db
       .from("deco_chat_prompts_versions")
       .insert({
         prompt_id: data.id,
@@ -94,8 +91,7 @@ export const updatePrompt = createTool({
 
     if (!prompt) throw new Error("Failed to update prompt");
 
-    await c
-      .db
+    await c.db
       .from("deco_chat_prompts_versions")
       .insert({
         prompt_id: id,
@@ -183,12 +179,14 @@ export const listPrompts = createTool({
   description: "List prompts for the current workspace",
   inputSchema: z.object({
     ids: z.array(z.string()).optional().describe("Filter prompts by ids"),
-    resolveMentions: z.boolean().optional().describe(
-      "Resolve mentions in the prompts",
-    ),
-    excludeIds: z.array(z.string()).optional().describe(
-      "Exclude prompts by ids",
-    ),
+    resolveMentions: z
+      .boolean()
+      .optional()
+      .describe("Resolve mentions in the prompts"),
+    excludeIds: z
+      .array(z.string())
+      .optional()
+      .describe("Exclude prompts by ids"),
   }),
   handler: async (props, c) => {
     assertHasWorkspace(c);
@@ -228,15 +226,16 @@ export const listPrompts = createTool({
     if (resolveMentions) {
       const resolvedPrompts = await Promise.allSettled(
         prompts.map((prompt) =>
-          resolveMentionsFn(prompt.content, workspace, MCPClient.forContext(c))
+          resolveMentionsFn(prompt.content, workspace, MCPClient.forContext(c)),
         ),
       );
 
       prompts = prompts.map((prompt, index) => ({
         ...prompt,
-        content: resolvedPrompts[index].status === "fulfilled"
-          ? resolvedPrompts[index].value
-          : prompt.content,
+        content:
+          resolvedPrompts[index].status === "fulfilled"
+            ? resolvedPrompts[index].value
+            : prompt.content,
       }));
     }
 

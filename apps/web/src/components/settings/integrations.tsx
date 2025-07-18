@@ -68,10 +68,13 @@ function AddConnectionButton() {
 
 function useConfigureConnection() {
   const navigateWorkspace = useNavigateWorkspace();
-  return useCallback((integration: Integration) => {
-    const appKey = AppKeys.build(getConnectionAppKey(integration));
-    navigateWorkspace(`/connection/${appKey}?edit=${integration.id}`);
-  }, [navigateWorkspace]);
+  return useCallback(
+    (integration: Integration) => {
+      const appKey = AppKeys.build(getConnectionAppKey(integration));
+      navigateWorkspace(`/connection/${appKey}?edit=${integration.id}`);
+    },
+    [navigateWorkspace],
+  );
 }
 
 function Connections() {
@@ -101,61 +104,58 @@ function Connections() {
         </FormDescription>
         {!showAddConnectionEmptyState && <AddConnectionButton />}
       </div>
-      {showAddConnectionEmptyState
-        ? (
-          <div className="flex flex-col gap-2 items-center justify-center h-full min-h-[200px] rounded-xl bg-muted border border-border border-dashed relative overflow-hidden">
-            <div className="absolute inset-0">
-              <img
-                src="/img/empty-state-agent-connections.svg"
-                alt="No connections found"
-                className="h-40"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-muted via-transparent to-muted" />
-            </div>
-            <div className="absolute z-10 flex flex-col items-center gap-2 bottom-6">
-              <AddConnectionButton />
+      {showAddConnectionEmptyState ? (
+        <div className="flex flex-col gap-2 items-center justify-center h-full min-h-[200px] rounded-xl bg-muted border border-border border-dashed relative overflow-hidden">
+          <div className="absolute inset-0">
+            <img
+              src="/img/empty-state-agent-connections.svg"
+              alt="No connections found"
+              className="h-40"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-muted via-transparent to-muted" />
+          </div>
+          <div className="absolute z-10 flex flex-col items-center gap-2 bottom-6">
+            <AddConnectionButton />
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="flex gap-2 w-full">
+            <div className="border border-border rounded-xl w-full">
+              <div className="flex items-center h-10 px-4 gap-2">
+                <Icon
+                  name="search"
+                  size={20}
+                  className="text-muted-foreground"
+                />
+                <Input
+                  placeholder="Search tools..."
+                  value={_search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="flex-1 h-full border-none focus-visible:ring-0 placeholder:text-muted-foreground bg-transparent px-2"
+                />
+              </div>
             </div>
           </div>
-        )
-        : (
-          <>
-            <div className="flex gap-2 w-full">
-              <div className="border border-border rounded-xl w-full">
-                <div className="flex items-center h-10 px-4 gap-2">
-                  <Icon
-                    name="search"
-                    size={20}
-                    className="text-muted-foreground"
+          <div className="space-y-2">
+            <div className="flex-1">
+              <div className="flex flex-col gap-2">
+                {connections.map((connection) => (
+                  <IntegrationListItem
+                    key={connection.id}
+                    toolsSet={toolsSet}
+                    setIntegrationTools={setIntegrationTools}
+                    integration={connection}
+                    onConfigure={onConfigureConnection}
+                    onRemove={(integrationId) => disableAllTools(integrationId)}
+                    searchTerm={search}
                   />
-                  <Input
-                    placeholder="Search tools..."
-                    value={_search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="flex-1 h-full border-none focus-visible:ring-0 placeholder:text-muted-foreground bg-transparent px-2"
-                  />
-                </div>
+                ))}
               </div>
             </div>
-            <div className="space-y-2">
-              <div className="flex-1">
-                <div className="flex flex-col gap-2">
-                  {connections.map((connection) => (
-                    <IntegrationListItem
-                      key={connection.id}
-                      toolsSet={toolsSet}
-                      setIntegrationTools={setIntegrationTools}
-                      integration={connection}
-                      onConfigure={onConfigureConnection}
-                      onRemove={(integrationId) =>
-                        disableAllTools(integrationId)}
-                      searchTerm={search}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -175,12 +175,8 @@ function KnowledgeHeading() {
 
 function Knowledge() {
   const { agent } = useAgentSettingsForm();
-  const {
-    setIntegrationTools,
-  } = useAgentSettingsToolsSet();
-  const [uploadingFiles, setUploadedFiles] = useState<
-    UploadFile[]
-  >([]);
+  const { setIntegrationTools } = useAgentSettingsToolsSet();
+  const [uploadingFiles, setUploadedFiles] = useState<UploadFile[]>([]);
   const { integration } = useAgentKnowledgeIntegration({ agent });
   const { data: files, isLoading } = useKnowledgeListFiles({
     connection: integration?.connection,
@@ -195,11 +191,11 @@ function Knowledge() {
     () =>
       files
         ? files.map((file) => ({
-          fileUrl: file.fileUrl,
-          ...file.metadata,
-          name: file.filename,
-          status: file.status,
-        }))
+            fileUrl: file.fileUrl,
+            ...file.metadata,
+            name: file.filename,
+            status: file.status,
+          }))
         : [],
     [files],
   );
@@ -207,31 +203,28 @@ function Knowledge() {
   // Combine uploaded files with uploading files (uploading files come after uploaded files)
   // Filter out uploading files that already exist in uploaded files based on file_url
   const allFiles = useMemo<KnowledgeFile[]>(() => {
-    const uploadedFileUrls = new Set(
-      formatedFiles.map((file) => file.fileUrl),
-    );
+    const uploadedFileUrls = new Set(formatedFiles.map((file) => file.fileUrl));
 
     const filteredUploadingFiles = uploadingFiles
-      .filter(({ fileUrl: file_url }) =>
-        !file_url || !uploadedFileUrls.has(file_url)
+      .filter(
+        ({ fileUrl: file_url }) => !file_url || !uploadedFileUrls.has(file_url),
       )
-      .map(({ file, uploading, fileUrl }): KnowledgeFile => ({
-        name: file.name,
-        fileType: getExtensionFromContentType(file.type),
-        fileSize: file.size,
-        fileUrl: fileUrl ?? file.name,
-        uploading,
-      }));
+      .map(
+        ({ file, uploading, fileUrl }): KnowledgeFile => ({
+          name: file.name,
+          fileType: getExtensionFromContentType(file.type),
+          fileSize: file.size,
+          fileUrl: fileUrl ?? file.name,
+          uploading,
+        }),
+      );
 
-    return [
-      ...formatedFiles,
-      ...filteredUploadingFiles,
-    ];
+    return [...formatedFiles, ...filteredUploadingFiles];
   }, [formatedFiles, uploadingFiles]);
 
   // Show empty view only if there are no uploaded files AND no uploading files
-  const hasNoFiles = (files?.length === 0 || !files) &&
-    uploadingFiles.length === 0;
+  const hasNoFiles =
+    (files?.length === 0 || !files) && uploadingFiles.length === 0;
 
   // Disable add file button when loading on first request and has no files
   const shouldDisableAddButton = isLoading && hasNoFiles;
@@ -281,10 +274,13 @@ function Knowledge() {
 
 function useConfigureAgentConnection() {
   const navigateWorkspace = useNavigateWorkspace();
-  return useCallback((connection: Integration) => {
-    const agentId = connection.id.split("a:")[1];
-    navigateWorkspace(`/agent/${agentId}/${crypto.randomUUID()}`);
-  }, [navigateWorkspace]);
+  return useCallback(
+    (connection: Integration) => {
+      const agentId = connection.id.split("a:")[1];
+      navigateWorkspace(`/agent/${agentId}/${crypto.randomUUID()}`);
+    },
+    [navigateWorkspace],
+  );
 }
 
 const agentConnectionFilter = (integration: Integration) =>
@@ -300,14 +296,13 @@ function AddAgentConnectionButton() {
       myConnectionsEmptyState={
         <div className="flex flex-col gap-2 items-center justify-center h-full min-h-[200px] rounded-xl bg-muted border border-border border-dashed">
           <div className="flex flex-col gap-2 pt-8">
-            <h3 className="text-lg font-medium">
-              No agents found
-            </h3>
+            <h3 className="text-lg font-medium">No agents found</h3>
           </div>
         </div>
       }
       onSelect={(integration) =>
-        setIntegrationTools(integration.id, ["AGENT_GENERATE_TEXT"])}
+        setIntegrationTools(integration.id, ["AGENT_GENERATE_TEXT"])
+      }
       trigger={
         <Button variant="outline">
           <Icon name="add" /> Add agent
@@ -341,31 +336,29 @@ function MultiAgent() {
         </FormDescription>
         {!showAddAgentEmptyState ? <AddAgentConnectionButton /> : null}
       </div>
-      {showAddAgentEmptyState
-        ? (
-          <div className="flex flex-col gap-2 items-center justify-center h-full min-h-[200px] rounded-xl bg-muted border border-border border-dashed">
-            <AddAgentConnectionButton />
-          </div>
-        )
-        : (
-          <div className="space-y-2">
-            <div className="flex-1">
-              <div className="flex flex-col gap-2">
-                {agentConnections.map((agentConnection) => (
-                  <IntegrationListItem
-                    key={agentConnection.id}
-                    toolsSet={toolsSet}
-                    setIntegrationTools={setIntegrationTools}
-                    integration={agentConnection}
-                    onConfigure={onConfigure}
-                    onRemove={(integrationId) => disableAllTools(integrationId)}
-                    hideTools
-                  />
-                ))}
-              </div>
+      {showAddAgentEmptyState ? (
+        <div className="flex flex-col gap-2 items-center justify-center h-full min-h-[200px] rounded-xl bg-muted border border-border border-dashed">
+          <AddAgentConnectionButton />
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex-1">
+            <div className="flex flex-col gap-2">
+              {agentConnections.map((agentConnection) => (
+                <IntegrationListItem
+                  key={agentConnection.id}
+                  toolsSet={toolsSet}
+                  setIntegrationTools={setIntegrationTools}
+                  integration={agentConnection}
+                  onConfigure={onConfigure}
+                  onRemove={(integrationId) => disableAllTools(integrationId)}
+                  hideTools
+                />
+              ))}
             </div>
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 }
@@ -405,7 +398,8 @@ export function useAgentSettingsToolsSet() {
           // If fetching goes well, update the form again
           newToolsSet[integrationId] = result.tools.map((tool) => tool.name);
           form.setValue("tools_set", newToolsSet, { shouldDirty: true });
-        }).catch(console.error);
+        })
+        .catch(console.error);
     }, 100);
     form.setValue("tools_set", newToolsSet, { shouldDirty: true });
   };
@@ -417,10 +411,7 @@ export function useAgentSettingsToolsSet() {
     form.setValue("tools_set", newToolsSet, { shouldDirty: true });
   };
 
-  const setIntegrationTools = (
-    integrationId: string,
-    tools: string[],
-  ) => {
+  const setIntegrationTools = (integrationId: string, tools: string[]) => {
     const toolsSet = form.getValues("tools_set");
     const newToolsSet = { ...toolsSet };
     newToolsSet[integrationId] = tools;
@@ -437,19 +428,13 @@ export function useAgentSettingsToolsSet() {
 }
 
 function ToolsAndKnowledgeTab() {
-  const {
-    form,
-    handleSubmit,
-  } = useAgentSettingsForm();
+  const { form, handleSubmit } = useAgentSettingsForm();
 
   return (
     <ScrollArea className="h-full w-full">
       <Form {...form}>
         <div className="h-full w-full p-4 max-w-3xl mx-auto">
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-4"
-          >
+          <form onSubmit={handleSubmit} className="space-y-4">
             <Connections />
             {/* TODO: bring this back. The flow it buggs is adding a file to kb <Knowledge /> */}
             <Knowledge />

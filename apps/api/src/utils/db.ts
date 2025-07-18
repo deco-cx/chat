@@ -9,12 +9,13 @@ export type Options = Parameters<typeof createServerClient>;
 export const getCookieDomain = (hostname: string) =>
   hostname.split(".").slice(-2).join(".");
 
-export const getServerClientOptions = (
-  { cookies, setCookie }: {
-    cookies: Record<string, string>;
-    setCookie?: SetAllCookies;
-  },
-): Options[2] => {
+export const getServerClientOptions = ({
+  cookies,
+  setCookie,
+}: {
+  cookies: Record<string, string>;
+  setCookie?: SetAllCookies;
+}): Options[2] => {
   return {
     cookies: {
       getAll: () =>
@@ -22,8 +23,7 @@ export const getServerClientOptions = (
           name,
           value,
         })),
-      setAll: setCookie ?? ((_cookies) => {
-      }),
+      setAll: setCookie ?? ((_cookies) => {}),
     },
   };
 };

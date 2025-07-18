@@ -8,7 +8,5 @@ export function unescapeHTML(text: string) {
 }
 
 export function weakEscapeHTML(text: string) {
-  return text
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

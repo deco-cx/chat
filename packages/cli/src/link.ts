@@ -102,7 +102,8 @@ async function register(
       domain,
       localAddr,
       server,
-      apiKey: Deno.env.get("DECO_TUNNEL_SERVER_TOKEN") ??
+      apiKey:
+        Deno.env.get("DECO_TUNNEL_SERVER_TOKEN") ??
         "c309424a-2dc4-46fe-bfc7-a7c10df59477",
     });
 
@@ -111,9 +112,9 @@ async function register(
     const copied = await copyToClipboard(serverUrl);
 
     console.log(
-      `\nTunnel started \n   -> 🌐 ${colors.bold("Preview")}: ${
-        colors.cyan(serverUrl)
-      }${copied ? colors.dim(" (copied to clipboard)") : ""}`,
+      `\nTunnel started \n   -> 🌐 ${colors.bold("Preview")}: ${colors.cyan(
+        serverUrl,
+      )}${copied ? colors.dim(" (copied to clipboard)") : ""}`,
     );
 
     await tunnel.closed;
@@ -131,9 +132,8 @@ export const link = async ({
   // Get config to extract workspace and app
   const config = await getConfig({});
   const wranglerConfig = await readWranglerConfig();
-  const app = typeof wranglerConfig.name === "string"
-    ? wranglerConfig.name
-    : "my-app";
+  const app =
+    typeof wranglerConfig.name === "string" ? wranglerConfig.name : "my-app";
 
   // Generate app domain based on workspace and app name
   const appDomain = await getAppDomain(config.workspace, app);

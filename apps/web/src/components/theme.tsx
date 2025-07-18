@@ -36,7 +36,9 @@ export const useTheme = () => {
   return {
     data: cachedTheme || theme,
     isLoading: isQueryLoading && !cachedTheme,
-    isStale: !!cachedTheme && !!theme &&
+    isStale:
+      !!cachedTheme &&
+      !!theme &&
       JSON.stringify(cachedTheme) !== JSON.stringify(theme),
   };
 };
@@ -48,11 +50,10 @@ export function WithWorkspaceTheme({
 }) {
   const { data: theme } = useTheme();
   const loadedLogo = theme?.picture ?? "/img/deco-chat-logo.png";
-  const loadedBackground = theme?.variables?.[
-    "--splash" as ThemeVariable
-  ] ?? theme?.variables?.[
-    "--sidebar" as ThemeVariable
-  ] ?? null;
+  const loadedBackground =
+    theme?.variables?.["--splash" as ThemeVariable] ??
+    theme?.variables?.["--sidebar" as ThemeVariable] ??
+    null;
   const splashRef = useRef<HTMLDivElement>(null);
   const circleRef = useRef<HTMLDivElement>(null);
   const splashScreenRef = useRef<HTMLDivElement>(null);
@@ -81,19 +82,21 @@ export function WithWorkspaceTheme({
       );
 
       // Expand the background circle
-      gsap.fromTo(
-        circleRef.current,
-        { scale: 0, opacity: 0 },
-        {
-          scale: 20, // Large enough to cover the screen
-          opacity: 1,
-          duration: 1.5,
-          ease: "power2.inOut",
-          delay: 0.2,
-        },
-      ).then(() => {
-        loadedBackgroundPromise.current.resolve();
-      });
+      gsap
+        .fromTo(
+          circleRef.current,
+          { scale: 0, opacity: 0 },
+          {
+            scale: 20, // Large enough to cover the screen
+            opacity: 1,
+            duration: 1.5,
+            ease: "power2.inOut",
+            delay: 0.2,
+          },
+        )
+        .then(() => {
+          loadedBackgroundPromise.current.resolve();
+        });
     }
   }, [showSplash]);
 
@@ -149,19 +152,21 @@ export function WithWorkspaceTheme({
     if (loadedBackground) {
       loadedBackgroundPromise.current.promise.then(() => {
         if (loadedColorCircleRef.current) {
-          gsap.fromTo(
-            loadedColorCircleRef.current,
-            { scale: 0, opacity: 0 },
-            {
-              scale: 20,
-              opacity: 1,
-              duration: 1.5,
-              ease: "power2.inOut",
-              delay: 0.2,
-            },
-          ).then(() => {
-            animateCloseSplash();
-          });
+          gsap
+            .fromTo(
+              loadedColorCircleRef.current,
+              { scale: 0, opacity: 0 },
+              {
+                scale: 20,
+                opacity: 1,
+                duration: 1.5,
+                ease: "power2.inOut",
+                delay: 0.2,
+              },
+            )
+            .then(() => {
+              animateCloseSplash();
+            });
         }
       });
     }

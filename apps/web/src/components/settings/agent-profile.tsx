@@ -22,8 +22,8 @@ const AVATAR_FILE_PATH = "assets/avatars";
 
 const useAvatarFilename = () => {
   const generate = (originalFile: File) => {
-    const extension = originalFile.name.split(".").pop()?.toLowerCase() ||
-      "png";
+    const extension =
+      originalFile.name.split(".").pop()?.toLowerCase() || "png";
     return `avatar-${crypto.randomUUID()}.${extension}`;
   };
 
@@ -31,11 +31,7 @@ const useAvatarFilename = () => {
 };
 
 function PromptTab() {
-  const {
-    form,
-    agent,
-    handleSubmit,
-  } = useAgentSettingsForm();
+  const { form, agent, handleSubmit } = useAgentSettingsForm();
 
   const writeFileMutation = useWriteFile();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,10 +78,7 @@ function PromptTab() {
     <ScrollArea className="h-full w-full [&>div>div]:h-full">
       <Form {...form}>
         <div className="h-full w-full p-6 mx-auto @container">
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col gap-6 h-full"
-          >
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6 h-full">
             <div className="flex flex-col @[640px]:flex-row gap-3 w-full">
               <div className="flex flex-col @[640px]:flex-row items-start @[640px]:items-center gap-6 flex-1">
                 <FormField
@@ -106,30 +99,26 @@ function PromptTab() {
                             className="w-16 h-16 group aspect-square flex flex-col items-center justify-center gap-1 cursor-pointer relative overflow-hidden"
                             onClick={triggerFileInput}
                           >
-                            {isUploading
-                              ? (
-                                <Skeleton
-                                  className={cn(
-                                    "w-full h-full rounded-xl",
-                                  )}
+                            {isUploading ? (
+                              <Skeleton
+                                className={cn("w-full h-full rounded-xl")}
+                              />
+                            ) : (
+                              <>
+                                <AgentAvatar
+                                  url={field.value || agent.avatar}
+                                  fallback={agent.name}
+                                  size="xl"
                                 />
-                              )
-                              : (
-                                <>
-                                  <AgentAvatar
-                                    url={field.value || agent.avatar}
-                                    fallback={agent.name}
-                                    size="xl"
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                  <Icon
+                                    name="upload"
+                                    className="text-white text-xl"
                                   />
-                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                    <Icon
-                                      name="upload"
-                                      className="text-white text-xl"
-                                    />
-                                  </div>
-                                  <Input type="hidden" {...field} />
-                                </>
-                              )}
+                                </div>
+                                <Input type="hidden" {...field} />
+                              </>
+                            )}
                           </div>
                         </FormControl>
                       </div>
@@ -178,7 +167,8 @@ function PromptTab() {
                           <ModelSelector
                             model={field.value}
                             onModelChange={(newValue) =>
-                              field.onChange(newValue)}
+                              field.onChange(newValue)
+                            }
                             variant="borderless"
                           />
                         </FormControl>

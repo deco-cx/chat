@@ -38,8 +38,8 @@ export function getDetectedType(value: SchemaType): string {
   return valueType === "object" && value === null
     ? "null"
     : valueType === "object" && Array.isArray(value)
-    ? "array"
-    : valueType;
+      ? "array"
+      : valueType;
 }
 
 /**
@@ -120,9 +120,12 @@ export function findMatchingAnyOfSchema(
 
     // For objects, do additional validation with properties
     if (
-      checkProperties && detectedType === "object" &&
-      typeof value === "object" && value !== null &&
-      !Array.isArray(value) && schemaObj.properties
+      checkProperties &&
+      detectedType === "object" &&
+      typeof value === "object" &&
+      value !== null &&
+      !Array.isArray(value) &&
+      schemaObj.properties
     ) {
       // Get keys from both schema and object
       const schemaKeys = Object.keys(schemaObj.properties);
@@ -145,8 +148,10 @@ export function findMatchingAnyOfSchema(
 
     // For arrays, check if the items schema matches
     if (
-      detectedType === "array" && Array.isArray(value) &&
-      value.length > 0 && schemaObj.items
+      detectedType === "array" &&
+      Array.isArray(value) &&
+      value.length > 0 &&
+      schemaObj.items
     ) {
       // Basic array validation
       return true;
@@ -192,8 +197,9 @@ export function findSchemaByChildFields<
   }
 
   const namePrefix = `${name}.`;
-  const childFieldPaths = Object.keys(childFields as Record<string, unknown>)
-    .filter((path) => path.startsWith(namePrefix));
+  const childFieldPaths = Object.keys(
+    childFields as Record<string, unknown>,
+  ).filter((path) => path.startsWith(namePrefix));
 
   if (childFieldPaths.length === 0) {
     return undefined;
@@ -254,8 +260,10 @@ export function findSchemaByParentRelationship<
       // Try to match schema title or a property with parent's type
       const matchByTitle = schema.anyOf.find((s) => {
         const schemaObj = s as JSONSchema7;
-        return schemaObj.title?.toLowerCase() ===
-          parentRecord.type?.toString().toLowerCase();
+        return (
+          schemaObj.title?.toLowerCase() ===
+          parentRecord.type?.toString().toLowerCase()
+        );
       });
 
       if (matchByTitle) {
@@ -336,12 +344,12 @@ export function getDefaultAnyOfSchema(schemas: JSONSchema7[]): JSONSchema7 {
   // Then try to find a non-null schema
   const nonNullSchema = !schemaWithDefault
     ? schemas.find((s) => {
-      const schemaType = (s as JSONSchema7).type;
-      if (Array.isArray(schemaType)) {
-        return !schemaType.includes("null");
-      }
-      return schemaType !== "null";
-    })
+        const schemaType = (s as JSONSchema7).type;
+        if (Array.isArray(schemaType)) {
+          return !schemaType.includes("null");
+        }
+        return schemaType !== "null";
+      })
     : null;
 
   // Choose the best schema based on priority: default value > non-null > first item
@@ -362,7 +370,9 @@ export function selectAnyOfSchema<
   fieldName?: string,
 ): JSONSchema7 {
   if (
-    !schema.anyOf || !Array.isArray(schema.anyOf) || schema.anyOf.length === 0
+    !schema.anyOf ||
+    !Array.isArray(schema.anyOf) ||
+    schema.anyOf.length === 0
   ) {
     return schema;
   }

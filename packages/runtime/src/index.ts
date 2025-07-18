@@ -16,9 +16,10 @@ export {
 } from "./mcp.ts";
 
 export interface WorkspaceDB {
-  query: (
-    params: { sql: string; params: string[] },
-  ) => Promise<{ result: QueryResult[] }>;
+  query: (params: {
+    sql: string;
+    params: string[];
+  }) => Promise<{ result: QueryResult[] }>;
 }
 
 export interface DefaultEnv<TSchema extends z.ZodTypeAny = any> {
@@ -84,15 +85,13 @@ export interface User {
   };
 }
 
-export interface RequestContext<
-  TSchema extends z.ZodTypeAny = any,
-> {
+export interface RequestContext<TSchema extends z.ZodTypeAny = any> {
   state: z.infer<TSchema>;
   token: string;
   workspace: string;
-  ensureAuthenticated: (
-    options?: { workspaceHint?: string },
-  ) => User | undefined;
+  ensureAuthenticated: (options?: {
+    workspaceHint?: string;
+  }) => User | undefined;
 }
 
 // 2. Map binding type to its creator function
@@ -130,7 +129,10 @@ const withDefaultBindings = (env: DefaultEnv, ctx: RequestContext) => {
 };
 
 export class UnauthorizedError extends Error {
-  constructor(message: string, public redirectTo: URL) {
+  constructor(
+    message: string,
+    public redirectTo: URL,
+  ) {
     super(message);
     this.name = "UnauthorizedError";
   }
@@ -187,10 +189,7 @@ export const withBindings = <TEnv>(
   const bindings = WorkersMCPBindings.parse(env.DECO_CHAT_BINDINGS);
 
   for (const binding of bindings) {
-    env[binding.name] = creatorByType[binding.type](
-      binding as any,
-      env,
-    );
+    env[binding.name] = creatorByType[binding.type](binding as any, env);
   }
 
   withDefaultBindings(env, env.DECO_CHAT_REQUEST_CONTEXT);
@@ -236,9 +235,7 @@ export const withRuntime = <TEnv, TSchema extends z.ZodTypeAny = never>(
       }
       const toolCallInput = await req.json();
       const result = await server.callTool({
-        env: withBindings(env, getReqToken(req)) as
-          & TEnv
-          & DefaultEnv<TSchema>,
+        env: withBindings(env, getReqToken(req)) as TEnv & DefaultEnv<TSchema>,
         ctx,
         req,
         toolCallId,
@@ -251,12 +248,10 @@ export const withRuntime = <TEnv, TSchema extends z.ZodTypeAny = never>(
         },
       });
     }
-    return userFns.fetch?.(
-      req,
-      withBindings(env, getReqToken(req)) as any,
-      ctx,
-    ) ||
-      new Response("Not found", { status: 404 });
+    return (
+      userFns.fetch?.(req, withBindings(env, getReqToken(req)) as any, ctx) ||
+      new Response("Not found", { status: 404 })
+    );
   };
   return {
     Workflow: Workflow(userFns.workflows),

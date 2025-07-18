@@ -10,14 +10,11 @@ export interface Team {
   created_at: string;
 }
 
-export const listTeams = (
-  init?: RequestInit,
-): Promise<Team[]> => MCPClient.TEAMS_LIST({}, init) as Promise<Team[]>;
+export const listTeams = (init?: RequestInit): Promise<Team[]> =>
+  MCPClient.TEAMS_LIST({}, init) as Promise<Team[]>;
 
-export const getTeam = (
-  slug: string,
-  init?: RequestInit,
-): Promise<Team> => MCPClient.TEAMS_GET({ slug }, init) as Promise<Team>;
+export const getTeam = (slug: string, init?: RequestInit): Promise<Team> =>
+  MCPClient.TEAMS_GET({ slug }, init) as Promise<Team>;
 
 export interface CreateTeamInput {
   name: string;
@@ -35,9 +32,9 @@ export const getWorkspaceTheme = (
   slug: string,
   init?: RequestInit,
 ): Promise<{ theme?: Theme } | null> =>
-  MCPClient.TEAMS_GET_THEME({ slug }, init) as Promise<
-    { theme?: Theme } | null
-  >;
+  MCPClient.TEAMS_GET_THEME({ slug }, init) as Promise<{
+    theme?: Theme;
+  } | null>;
 
 export interface UpdateTeamInput {
   id: number;

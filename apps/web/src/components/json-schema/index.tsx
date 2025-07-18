@@ -32,27 +32,22 @@ export interface JsonSchemaFormProps<
   optionsLoader?: (type: string) => Promise<OptionItem[]> | OptionItem[];
 }
 
-export default function Form<T extends FieldValues = Record<string, unknown>>(
-  {
-    schema,
-    form,
-    disabled = false,
-    onSubmit,
-    error,
-    submitButton,
-    optionsLoader,
-  }: JsonSchemaFormProps<T>,
-) {
+export default function Form<T extends FieldValues = Record<string, unknown>>({
+  schema,
+  form,
+  disabled = false,
+  onSubmit,
+  error,
+  submitButton,
+  optionsLoader,
+}: JsonSchemaFormProps<T>) {
   if (!schema || typeof schema !== "object") {
     return <div className="text-sm text-destructive">Invalid schema</div>;
   }
 
   // Handle root schema
   return (
-    <form
-      className="space-y-4"
-      onSubmit={onSubmit}
-    >
+    <form className="space-y-4" onSubmit={onSubmit}>
       {schema.type === "object" && schema.properties && (
         <ObjectProperties<T>
           properties={schema.properties}
@@ -69,19 +64,13 @@ export default function Form<T extends FieldValues = Record<string, unknown>>(
         </div>
       )}
 
-      {submitButton && (
-        <div className="flex gap-2">
-          {submitButton}
-        </div>
-      )}
+      {submitButton && <div className="flex gap-2">{submitButton}</div>}
     </form>
   );
 }
 
 // Object properties component
-function ObjectProperties<
-  T extends FieldValues = Record<string, unknown>,
->({
+function ObjectProperties<T extends FieldValues = Record<string, unknown>>({
   properties,
   required = [],
   form,
@@ -154,13 +143,13 @@ function Field<T extends FieldValues = Record<string, unknown>>({
 
   // Handle regular field types (not anyOf)
   const type = Array.isArray(schema.type)
-    ? schema.type.find((prop: string) => prop !== "null") ?? "null"
+    ? (schema.type.find((prop: string) => prop !== "null") ?? "null")
     : schema.type;
   const description = schema.description as string | undefined;
   // Extract just the property name from the full path for cleaner titles
   const propertyName = name.split(".").pop() || name;
-  const title = (schema.title as string | undefined) ||
-    formatPropertyName(propertyName);
+  const title =
+    (schema.title as string | undefined) || formatPropertyName(propertyName);
 
   switch (type) {
     case "string":
@@ -252,9 +241,8 @@ function Field<T extends FieldValues = Record<string, unknown>>({
             <div className="space-y-4">
               {Object.entries(schema.properties).map(
                 ([propName, propSchema]) => {
-                  const isPropertyRequired = schema.required?.includes(
-                    propName,
-                  );
+                  const isPropertyRequired =
+                    schema.required?.includes(propName);
                   const fullName = `${name}.${propName}`;
 
                   return (
@@ -287,14 +275,16 @@ function Field<T extends FieldValues = Record<string, unknown>>({
       );
     case "array": {
       // Create a RenderItem component for this specific array field
-      const RenderItem = (
-        { name: itemName, schema: itemSchema, title: itemTitle }: {
-          name: string;
-          index: number;
-          schema: JSONSchema7;
-          title?: string;
-        },
-      ) => (
+      const RenderItem = ({
+        name: itemName,
+        schema: itemSchema,
+        title: itemTitle,
+      }: {
+        name: string;
+        index: number;
+        schema: JSONSchema7;
+        title?: string;
+      }) => (
         <Field<T>
           name={itemName}
           schema={{ ...itemSchema, title: itemTitle }}

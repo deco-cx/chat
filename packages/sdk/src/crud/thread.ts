@@ -56,8 +56,7 @@ export const getThread = (
   threadId: string,
   init: RequestInit = {},
 ): Promise<ThreadDetails> =>
-  MCPClient.forWorkspace(workspace)
-    .THREADS_GET({ id: threadId }, init);
+  MCPClient.forWorkspace(workspace).THREADS_GET({ id: threadId }, init);
 
 export interface ThreadMessage {
   id: string;
@@ -73,8 +72,10 @@ export const getThreadMessages = (
   threadId: string,
   init: RequestInit = {},
 ): Promise<UIMessage[]> =>
-  MCPClient.forWorkspace(workspace)
-    .THREADS_GET_MESSAGES({ id: threadId }, init);
+  MCPClient.forWorkspace(workspace).THREADS_GET_MESSAGES(
+    { id: threadId },
+    init,
+  );
 
 export interface ThreadTools {
   tools_set: Record<string, string[]>;
@@ -85,8 +86,7 @@ export const getThreadTools = (
   threadId: string,
   init: RequestInit = {},
 ): Promise<ThreadTools> =>
-  MCPClient.forWorkspace(workspace)
-    .THREADS_GET_TOOLS({ id: threadId }, init);
+  MCPClient.forWorkspace(workspace).THREADS_GET_TOOLS({ id: threadId }, init);
 
 export const updateThreadTitle = (
   workspace: string,
@@ -94,8 +94,10 @@ export const updateThreadTitle = (
   title: string,
   init: RequestInit = {},
 ): Promise<ThreadDetails> =>
-  MCPClient.forWorkspace(workspace)
-    .THREADS_UPDATE_TITLE({ threadId, title }, init) as Promise<ThreadDetails>;
+  MCPClient.forWorkspace(workspace).THREADS_UPDATE_TITLE(
+    { threadId, title },
+    init,
+  ) as Promise<ThreadDetails>;
 
 export const updateThreadMetadata = (
   workspace: string,
@@ -103,7 +105,7 @@ export const updateThreadMetadata = (
   metadata: Record<string, unknown>,
   init: RequestInit = {},
 ): Promise<ThreadDetails> =>
-  MCPClient.forWorkspace(workspace)
-    .THREADS_UPDATE_METADATA({ threadId, metadata }, init) as Promise<
-      ThreadDetails
-    >;
+  MCPClient.forWorkspace(workspace).THREADS_UPDATE_METADATA(
+    { threadId, metadata },
+    init,
+  ) as Promise<ThreadDetails>;

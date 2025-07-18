@@ -59,8 +59,7 @@ export async function addCommand({ workspace, local }: AddCommandOptions) {
       };
 
       const bindingName = await Input.prompt({
-        message:
-          `Enter binding name for integration "${integrationBinding.integration_id}":`,
+        message: `Enter binding name for integration "${integrationBinding.integration_id}":`,
         default: integrationBinding.name,
         validate: (value: string) => {
           if (!value.trim()) {
@@ -82,8 +81,8 @@ export async function addCommand({ workspace, local }: AddCommandOptions) {
 
     // Read current wrangler config and get existing bindings
     const currentWranglerConfig = await readWranglerConfig();
-    const currentBindings =
-      (currentWranglerConfig.deco?.bindings || []) as DecoBinding[];
+    const currentBindings = (currentWranglerConfig.deco?.bindings ||
+      []) as DecoBinding[];
 
     // Simply concat arrays (no deduplication)
     const allBindings = [...currentBindings, ...newBindings];
@@ -99,9 +98,10 @@ export async function addCommand({ workspace, local }: AddCommandOptions) {
 
     console.log(`✅ Added ${newBindings.length} integration(s) successfully!`);
     newBindings.forEach((binding) => {
-      const id = "integration_id" in binding
-        ? binding.integration_id
-        : binding.integration_name;
+      const id =
+        "integration_id" in binding
+          ? binding.integration_id
+          : binding.integration_name;
       console.log(`  - ${binding.name} (${id})`);
     });
     console.log("\n💡 Run 'deco gen' to update your environment types.");

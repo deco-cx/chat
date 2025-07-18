@@ -54,13 +54,14 @@ export const honoCtxToAppCtx = (c: Context<AppEnv>): AppContext => {
     authorization: authorizationClient,
     token: c.req.header("Authorization")?.replace("Bearer ", ""),
     kbFileProcessor: c.env.KB_FILE_PROCESSOR,
-    workspace: slug && root
-      ? {
-        root,
-        slug,
-        value: workspace,
-      }
-      : undefined,
+    workspace:
+      slug && root
+        ? {
+            root,
+            slug,
+            value: workspace,
+          }
+        : undefined,
   };
 };
 
@@ -102,12 +103,14 @@ const createMCPHandlerFor = (
         {
           annotations: tool.annotations,
           description: tool.description,
-          inputSchema: "shape" in tool.inputSchema
-            ? (tool.inputSchema.shape as z.ZodRawShape)
-            : z.object({}).shape,
+          inputSchema:
+            "shape" in tool.inputSchema
+              ? (tool.inputSchema.shape as z.ZodRawShape)
+              : z.object({}).shape,
           outputSchema:
-            tool.outputSchema && typeof tool.outputSchema === "object" &&
-              "shape" in tool.outputSchema
+            tool.outputSchema &&
+            typeof tool.outputSchema === "object" &&
+            "shape" in tool.outputSchema
               ? (tool.outputSchema.shape as z.ZodRawShape)
               : z.object({}).shape,
         },
@@ -183,27 +186,29 @@ const createToolCallHandlerFor = <
 app.use(logger());
 
 // Enable CORS for all routes on api.deco.chat and localhost
-app.use(cors({
-  origin: (origin) => origin,
-  allowMethods: ["HEAD", "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowHeaders: [
-    "Content-Type",
-    "Authorization",
-    "Cookie",
-    "Accept",
-    "cache-control",
-    "pragma",
-    "x-trace-debug-id",
-    "x-deno-isolate-instance-id",
-  ],
-  exposeHeaders: [
-    "Content-Type",
-    "Authorization",
-    "Set-Cookie",
-    "x-trace-debug-id",
-  ],
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: (origin) => origin,
+    allowMethods: ["HEAD", "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Cookie",
+      "Accept",
+      "cache-control",
+      "pragma",
+      "x-trace-debug-id",
+      "x-deno-isolate-instance-id",
+    ],
+    exposeHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Set-Cookie",
+      "x-trace-debug-id",
+    ],
+    credentials: true,
+  }),
+);
 
 app.use(withContextMiddleware);
 app.use(setUserMiddleware);
@@ -221,24 +226,12 @@ app.use(async (c, next) => {
 app.use(withActorsMiddleware);
 
 // MCP endpoint handlers
-app.all(
-  "/mcp",
-  createMCPHandlerFor(GLOBAL_TOOLS),
-);
-app.all(
-  "/:root/:slug/mcp",
-  createMCPHandlerFor(WORKSPACE_TOOLS),
-);
-app.all(
-  "/:root/:slug/agents/:agentId/mcp",
-  createMCPHandlerFor(AGENT_TOOLS),
-);
+app.all("/mcp", createMCPHandlerFor(GLOBAL_TOOLS));
+app.all("/:root/:slug/mcp", createMCPHandlerFor(WORKSPACE_TOOLS));
+app.all("/:root/:slug/agents/:agentId/mcp", createMCPHandlerFor(AGENT_TOOLS));
 
 // Tool call endpoint handlers
-app.post(
-  "/tools/call/:tool",
-  createToolCallHandlerFor(GLOBAL_TOOLS),
-);
+app.post("/tools/call/:tool", createToolCallHandlerFor(GLOBAL_TOOLS));
 app.post(
   "/:root/:slug/tools/call/:tool",
   createToolCallHandlerFor(WORKSPACE_TOOLS),
@@ -302,8 +295,8 @@ app.get("/files/:root/:slug/:path{.+}", async (c) => {
   }
 
   return c.body(response.body, 200, {
-    "Content-Type": response.headers.get("content-type") ||
-      "application/octet-stream",
+    "Content-Type":
+      response.headers.get("content-type") || "application/octet-stream",
   });
 });
 
@@ -313,7 +306,7 @@ const getPublicKey = async (): Promise<JsonWebKey> => {
 };
 app.get("/.well-known/jwks.json", async () => {
   return Response.json({
-    keys: [{ ...await getPublicKey(), kid: DECO_CHAT_KEY_ID }],
+    keys: [{ ...(await getPublicKey()), kid: DECO_CHAT_KEY_ID }],
   });
 });
 // External webhooks
@@ -334,48 +327,41 @@ app.get("/health", (c: Context) => c.json({ status: "ok" }));
 
 const DECO_WORKSPACE_HEADER = "x-deco-workspace";
 const SENSITIVE_HEADERS = ["Cookie", "Authorization"];
-app.on([
-  "GET",
-  "POST",
-  "PUT",
-  "DELETE",
-  "PATCH",
-  "OPTIONS",
-], [
-  "/:root/:slug/views/:script/:path{.+}?",
-  "/views/:script/:path{.+}?",
-], (c: Context) => {
-  const script = c.req.param("script");
-  const path = c.req.param("path");
-  const root = c.req.param("root");
-  const slug = c.req.param("slug");
-  const workspace = root && slug
-    ? `/${root}/${slug}`
-    : c.req.header(DECO_WORKSPACE_HEADER);
+app.on(
+  ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  ["/:root/:slug/views/:script/:path{.+}?", "/views/:script/:path{.+}?"],
+  (c: Context) => {
+    const script = c.req.param("script");
+    const path = c.req.param("path");
+    const root = c.req.param("root");
+    const slug = c.req.param("slug");
+    const workspace =
+      root && slug ? `/${root}/${slug}` : c.req.header(DECO_WORKSPACE_HEADER);
 
-  const url = new URL(c.req.raw.url);
-  url.protocol = "https:";
-  url.port = "443";
-  url.host = Entrypoint.host(script);
-  url.pathname = `/${path || ""}`;
+    const url = new URL(c.req.raw.url);
+    url.protocol = "https:";
+    url.port = "443";
+    url.host = Entrypoint.host(script);
+    url.pathname = `/${path || ""}`;
 
-  const headers = new Headers(c.req.header());
-  SENSITIVE_HEADERS.forEach((header) => {
-    headers.delete(header);
-  });
+    const headers = new Headers(c.req.header());
+    SENSITIVE_HEADERS.forEach((header) => {
+      headers.delete(header);
+    });
 
-  workspace && headers.set(DECO_WORKSPACE_HEADER, workspace);
-  return fetchScript(
-    c,
-    script,
-    new Request(url, {
-      redirect: c.req.raw.redirect,
-      body: c.req.raw.body,
-      method: c.req.raw.method,
-      headers,
-    }),
-  );
-});
+    workspace && headers.set(DECO_WORKSPACE_HEADER, workspace);
+    return fetchScript(
+      c,
+      script,
+      new Request(url, {
+        redirect: c.req.raw.redirect,
+        body: c.req.raw.body,
+        method: c.req.raw.method,
+        headers,
+      }),
+    );
+  },
+);
 
 app.onError((err, c) => {
   console.error(err);

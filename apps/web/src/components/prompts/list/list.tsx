@@ -103,9 +103,7 @@ function ListPromptsLayout() {
       hideViewsButton
       breadcrumb={
         <DefaultBreadcrumb
-          items={[
-            { label: "Prompt Library", link: "/prompts" },
-          ]}
+          items={[{ label: "Prompt Library", link: "/prompts" }]}
         />
       }
       tabs={{
@@ -122,19 +120,17 @@ function ListPromptsLayout() {
           variant="special"
           className="gap-2"
         >
-          {create.isPending
-            ? (
-              <>
-                <Spinner size="xs" />
-                <span>Creating prompt...</span>
-              </>
-            )
-            : (
-              <>
-                <Icon name="add" />
-                <span className="hidden md:inline">New prompt</span>
-              </>
-            )}
+          {create.isPending ? (
+            <>
+              <Spinner size="xs" />
+              <span>Creating prompt...</span>
+            </>
+          ) : (
+            <>
+              <Icon name="add" />
+              <span className="hidden md:inline">New prompt</span>
+            </>
+          )}
         </Button>
       }
     />
@@ -204,13 +200,15 @@ function PromptCard({
   );
 }
 
-function CardsView(
-  { prompts, onConfigure, onDelete }: {
-    prompts: Prompt[];
-    onConfigure: (prompt: Prompt) => void;
-    onDelete: (promptId: string) => void;
-  },
-) {
+function CardsView({
+  prompts,
+  onConfigure,
+  onDelete,
+}: {
+  prompts: Prompt[];
+  onConfigure: (prompt: Prompt) => void;
+  onDelete: (promptId: string) => void;
+}) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 peer">
       {prompts.map((prompt) => (
@@ -225,13 +223,15 @@ function CardsView(
   );
 }
 
-function TableView(
-  { prompts, onConfigure, onDelete }: {
-    prompts: Prompt[];
-    onConfigure: (prompt: Prompt) => void;
-    onDelete: (promptId: string) => void;
-  },
-) {
+function TableView({
+  prompts,
+  onConfigure,
+  onDelete,
+}: {
+  prompts: Prompt[];
+  onConfigure: (prompt: Prompt) => void;
+  onDelete: (promptId: string) => void;
+}) {
   const [sortKey, setSortKey] = useState<string>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -304,9 +304,10 @@ function ListPrompts() {
   const { filter, deleteDialogOpen, promptToDelete, deleting } = state;
 
   const filteredPrompts =
-    prompts?.filter((prompt) =>
-      prompt.name.toLowerCase().includes(filter.toLowerCase()) &&
-      !isWellKnownPromptId(prompt.id)
+    prompts?.filter(
+      (prompt) =>
+        prompt.name.toLowerCase().includes(filter.toLowerCase()) &&
+        !isWellKnownPromptId(prompt.id),
     ) ?? [];
 
   const handleConfigure = (prompt: Prompt) => {
@@ -353,41 +354,33 @@ function ListPrompts() {
       </div>
 
       <div className="flex-1 min-h-0 px-4 overflow-x-auto">
-        {!prompts
-          ? (
-            <div className="flex h-48 items-center justify-center">
-              <Spinner size="lg" />
-            </div>
-          )
-          : filteredPrompts.length === 0
-          ? (
-            <EmptyState
-              icon="local_library"
-              title="No prompts yet"
-              description="Create a prompt to get started."
-              buttonProps={{
-                children: "Create a prompt",
-                onClick: handleCreate,
-              }}
-            />
-          )
-          : (
-            viewMode === "cards"
-              ? (
-                <CardsView
-                  prompts={filteredPrompts}
-                  onConfigure={handleConfigure}
-                  onDelete={handleDeleteConfirm}
-                />
-              )
-              : (
-                <TableView
-                  prompts={filteredPrompts}
-                  onConfigure={handleConfigure}
-                  onDelete={handleDeleteConfirm}
-                />
-              )
-          )}
+        {!prompts ? (
+          <div className="flex h-48 items-center justify-center">
+            <Spinner size="lg" />
+          </div>
+        ) : filteredPrompts.length === 0 ? (
+          <EmptyState
+            icon="local_library"
+            title="No prompts yet"
+            description="Create a prompt to get started."
+            buttonProps={{
+              children: "Create a prompt",
+              onClick: handleCreate,
+            }}
+          />
+        ) : viewMode === "cards" ? (
+          <CardsView
+            prompts={filteredPrompts}
+            onConfigure={handleConfigure}
+            onDelete={handleDeleteConfirm}
+          />
+        ) : (
+          <TableView
+            prompts={filteredPrompts}
+            onConfigure={handleConfigure}
+            onDelete={handleDeleteConfirm}
+          />
+        )}
       </div>
       <AlertDialog
         open={deleteDialogOpen}
@@ -408,16 +401,14 @@ function ListPrompts() {
               disabled={deleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
             >
-              {deleting
-                ? (
-                  <>
-                    <Spinner />
-                    Deleting...
-                  </>
-                )
-                : (
-                  "Delete"
-                )}
+              {deleting ? (
+                <>
+                  <Spinner />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -55,11 +55,9 @@ function InviteCard({
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <div className="relative w-6 h-6 rounded-full overflow-hidden bg-muted">
             <img
-              src={`https://ui-avatars.com/api/?name=${
-                encodeURIComponent(
-                  invite.inviter.name || invite.inviter.email || "Unknown",
-                )
-              }`}
+              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                invite.inviter.name || invite.inviter.email || "Unknown",
+              )}`}
               alt="Inviter avatar"
               className="w-full h-full object-cover"
             />
@@ -82,9 +80,11 @@ function InviteCard({
               size="sm"
               className="h-8"
             >
-              {isAcceptLoading
-                ? <Spinner size="xs" />
-                : <Icon name="check" className="mr-1" size={14} />}
+              {isAcceptLoading ? (
+                <Spinner size="xs" />
+              ) : (
+                <Icon name="check" className="mr-1" size={14} />
+              )}
               Accept
             </Button>
             <Button
@@ -94,9 +94,11 @@ function InviteCard({
               size="sm"
               className="h-8"
             >
-              {isRejectLoading
-                ? <Spinner size="xs" />
-                : <Icon name="close" className="mr-1" size={14} />}
+              {isRejectLoading ? (
+                <Spinner size="xs" />
+              ) : (
+                <Icon name="close" className="mr-1" size={14} />
+              )}
               Reject
             </Button>
           </div>
@@ -115,28 +117,22 @@ function InvitesListSkeleton() {
             <CardContent className="p-6 flex flex-col gap-4">
               <div className="flex items-start justify-between">
                 <div className="flex flex-col gap-2 flex-1">
-                  <div className="h-6 bg-muted rounded animate-pulse w-3/4">
-                  </div>
+                  <div className="h-6 bg-muted rounded animate-pulse w-3/4"></div>
                   <div className="flex gap-1">
-                    <div className="h-5 bg-muted rounded animate-pulse w-16">
-                    </div>
-                    <div className="h-5 bg-muted rounded animate-pulse w-20">
-                    </div>
+                    <div className="h-5 bg-muted rounded animate-pulse w-16"></div>
+                    <div className="h-5 bg-muted rounded animate-pulse w-20"></div>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-muted rounded-full animate-pulse">
-                </div>
+                <div className="w-6 h-6 bg-muted rounded-full animate-pulse"></div>
                 <div className="h-4 bg-muted rounded animate-pulse w-32"></div>
               </div>
               <div className="flex items-center justify-between">
                 <div className="h-4 bg-muted rounded animate-pulse w-20"></div>
                 <div className="flex gap-2">
-                  <div className="h-8 bg-muted rounded animate-pulse w-16">
-                  </div>
-                  <div className="h-8 bg-muted rounded animate-pulse w-16">
-                  </div>
+                  <div className="h-8 bg-muted rounded animate-pulse w-16"></div>
+                  <div className="h-8 bg-muted rounded animate-pulse w-16"></div>
                 </div>
               </div>
             </CardContent>
@@ -182,15 +178,21 @@ function InvitesListContent() {
   >({});
   const [viewMode, setViewMode] = useViewMode("invites");
 
-  const filteredInvites = search.trim().length > 0
-    ? invites.filter((invite) =>
-      invite.teamName.toLowerCase().includes(search.toLowerCase()) ||
-      (invite.inviter.name &&
-        invite.inviter.name.toLowerCase().includes(search.toLowerCase())) ||
-      (invite.inviter.email &&
-        invite.inviter.email.toLowerCase().includes(search.toLowerCase()))
-    )
-    : invites;
+  const filteredInvites =
+    search.trim().length > 0
+      ? invites.filter(
+          (invite) =>
+            invite.teamName.toLowerCase().includes(search.toLowerCase()) ||
+            (invite.inviter.name &&
+              invite.inviter.name
+                .toLowerCase()
+                .includes(search.toLowerCase())) ||
+            (invite.inviter.email &&
+              invite.inviter.email
+                .toLowerCase()
+                .includes(search.toLowerCase())),
+        )
+      : invites;
 
   if (!invites.length) {
     return <InvitesListEmpty />;
@@ -249,8 +251,11 @@ function InvitesListContent() {
       case "teamName":
         return invite.teamName.toLowerCase();
       case "inviter":
-        return (invite.inviter.name || invite.inviter.email || "")
-          .toLowerCase();
+        return (
+          invite.inviter.name ||
+          invite.inviter.email ||
+          ""
+        ).toLowerCase();
       case "createdAt":
         return invite.createdAt;
       default:
@@ -281,26 +286,24 @@ function InvitesListContent() {
       />
 
       <div className="flex-1 min-h-0 overflow-x-auto">
-        {viewMode === "table"
-          ? (
-            <TableView
-              invites={sortedInvites}
-              onAccept={handleAccept}
-              onReject={handleReject}
-              loadingStates={loadingStates}
-              sortKey={sortKey}
-              sortDirection={sortDirection}
-              onSort={handleSort}
-            />
-          )
-          : (
-            <CardsView
-              invites={sortedInvites}
-              onAccept={handleAccept}
-              onReject={handleReject}
-              loadingStates={loadingStates}
-            />
-          )}
+        {viewMode === "table" ? (
+          <TableView
+            invites={sortedInvites}
+            onAccept={handleAccept}
+            onReject={handleReject}
+            loadingStates={loadingStates}
+            sortKey={sortKey}
+            sortDirection={sortDirection}
+            onSort={handleSort}
+          />
+        ) : (
+          <CardsView
+            invites={sortedInvites}
+            onAccept={handleAccept}
+            onReject={handleReject}
+            loadingStates={loadingStates}
+          />
+        )}
       </div>
     </div>
   );
@@ -327,8 +330,9 @@ function TableView({
     {
       id: "teamName",
       header: "Team",
-      render: (invite) => <span className="font-medium">{invite.teamName}
-      </span>,
+      render: (invite) => (
+        <span className="font-medium">{invite.teamName}</span>
+      ),
       sortable: true,
     },
     {
@@ -379,9 +383,11 @@ function TableView({
               size="sm"
               className="h-8"
             >
-              {isAcceptLoading
-                ? <Spinner size="xs" />
-                : <Icon name="check" className="mr-1" size={14} />}
+              {isAcceptLoading ? (
+                <Spinner size="xs" />
+              ) : (
+                <Icon name="check" className="mr-1" size={14} />
+              )}
               Accept
             </Button>
             <Button
@@ -391,9 +397,11 @@ function TableView({
               size="sm"
               className="h-8"
             >
-              {isRejectLoading
-                ? <Spinner size="xs" />
-                : <Icon name="close" className="mr-1" size={14} />}
+              {isRejectLoading ? (
+                <Spinner size="xs" />
+              ) : (
+                <Icon name="close" className="mr-1" size={14} />
+              )}
               Reject
             </Button>
           </div>

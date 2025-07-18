@@ -68,20 +68,18 @@ const ResponsiveSelectContent = ({
   const { isMobile } = useResponsiveSelectContext();
   const { className, ...restProps } = props;
 
-  return isMobile
-    ? (
-      <drawer.DrawerContent {...restProps}>
-        <drawer.DrawerHeader className="hidden">
-          <drawer.DrawerTitle>
-            {title}
-          </drawer.DrawerTitle>
-        </drawer.DrawerHeader>
-        <div className={cn("flex flex-col gap-2 p-2 py-4", className)}>
-          {children}
-        </div>
-      </drawer.DrawerContent>
-    )
-    : <select.SelectContent {...props}>{children}</select.SelectContent>;
+  return isMobile ? (
+    <drawer.DrawerContent {...restProps}>
+      <drawer.DrawerHeader className="hidden">
+        <drawer.DrawerTitle>{title}</drawer.DrawerTitle>
+      </drawer.DrawerHeader>
+      <div className={cn("flex flex-col gap-2 p-2 py-4", className)}>
+        {children}
+      </div>
+    </drawer.DrawerContent>
+  ) : (
+    <select.SelectContent {...props}>{children}</select.SelectContent>
+  );
 };
 
 const ResponsiveSelectItem = ({
@@ -91,17 +89,17 @@ const ResponsiveSelectItem = ({
   const { isMobile, setValue } = useResponsiveSelectContext();
   const { className, ...restProps } = props;
 
-  return isMobile
-    ? (
-      <div
-        {...restProps}
-        onClick={() => setValue(props.value)}
-        className={cn(className)}
-      >
-        {children}
-      </div>
-    )
-    : <select.SelectItem {...props}>{children}</select.SelectItem>;
+  return isMobile ? (
+    <div
+      {...restProps}
+      onClick={() => setValue(props.value)}
+      className={cn(className)}
+    >
+      {children}
+    </div>
+  ) : (
+    <select.SelectItem {...props}>{children}</select.SelectItem>
+  );
 };
 
 const ResponsiveSelectTrigger = ({
@@ -110,13 +108,15 @@ const ResponsiveSelectTrigger = ({
 }: React.ComponentProps<typeof select.SelectTrigger>) => {
   const { isMobile } = useResponsiveSelectContext();
 
-  return isMobile
-    ? (
-      <drawer.DrawerTrigger asChild>
-        <Button variant="outline" {...props}>{children}</Button>
-      </drawer.DrawerTrigger>
-    )
-    : <select.SelectTrigger {...props}>{children}</select.SelectTrigger>;
+  return isMobile ? (
+    <drawer.DrawerTrigger asChild>
+      <Button variant="outline" {...props}>
+        {children}
+      </Button>
+    </drawer.DrawerTrigger>
+  ) : (
+    <select.SelectTrigger {...props}>{children}</select.SelectTrigger>
+  );
 };
 
 const ResponsiveSelectValue = ({
@@ -125,9 +125,11 @@ const ResponsiveSelectValue = ({
 }: React.ComponentProps<typeof select.SelectValue>) => {
   const { isMobile } = useResponsiveSelectContext();
 
-  return isMobile
-    ? <span {...props}>{children}</span>
-    : <select.SelectValue {...props}>{children}</select.SelectValue>;
+  return isMobile ? (
+    <span {...props}>{children}</span>
+  ) : (
+    <select.SelectValue {...props}>{children}</select.SelectValue>
+  );
 };
 
 export {

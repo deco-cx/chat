@@ -40,9 +40,7 @@ function Login() {
         <div className="text-lg font-semibold leading-none tracking-tight">
           <div className="flex flex-col items-center gap-5">
             <div className="flex flex-col text-center items-center">
-              <h2 className="text-xl font-bold max-w-64">
-                Welcome to Deco
-              </h2>
+              <h2 className="text-xl font-bold max-w-64">Welcome to Deco</h2>
             </div>
             <p className="text-sm text-muted-foreground font-normal">
               Choose an option to get started
@@ -55,9 +53,11 @@ function Login() {
             return (
               <div
                 key={provider.name}
-                className={isLastUsed
-                  ? "relative w-full min-w-80 border-2 border-primary rounded-lg bg-primary/5"
-                  : "w-full min-w-80"}
+                className={
+                  isLastUsed
+                    ? "relative w-full min-w-80 border-2 border-primary rounded-lg bg-primary/5"
+                    : "w-full min-w-80"
+                }
               >
                 <Button
                   variant="outline"

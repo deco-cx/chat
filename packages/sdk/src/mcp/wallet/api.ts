@@ -68,16 +68,16 @@ const ThreadsUsage = {
 
     return usageResponse.json();
   },
-  format: (
-    usage: WalletAPI["GET /usage/threads"]["response"],
-  ) => {
+  format: (usage: WalletAPI["GET /usage/threads"]["response"]) => {
     return {
-      items: usage.items.map((thread) => ({
-        ...thread,
-        total: MicroDollar.fromMicrodollarString(thread.total).display({
-          showAllDecimals: true,
-        }),
-      })).filter(isNotNull),
+      items: usage.items
+        .map((thread) => ({
+          ...thread,
+          total: MicroDollar.fromMicrodollarString(thread.total).display({
+            showAllDecimals: true,
+          }),
+        }))
+        .filter(isNotNull),
     };
   },
 };
@@ -114,8 +114,7 @@ const AgentsUsage = {
 const createTool = createToolGroup("Wallet", {
   name: "Wallet & Billing",
   description: "Handle payments and subscriptions.",
-  icon:
-    "https://assets.decocache.com/mcp/c179a1cd-4933-40ac-a9c1-18f24e19e592/Wallet--Billing.png",
+  icon: "https://assets.decocache.com/mcp/c179a1cd-4933-40ac-a9c1-18f24e19e592/Wallet--Billing.png",
 });
 
 export const getWalletAccount = createTool({
@@ -160,11 +159,7 @@ export const getThreadsUsage = createTool({
 
     const wallet = getWalletClient(c);
 
-    const usage = await ThreadsUsage.fetch(
-      wallet,
-      c.workspace.value,
-      range,
-    );
+    const usage = await ThreadsUsage.fetch(wallet, c.workspace.value, range);
     return ThreadsUsage.format(usage);
   },
 });
@@ -182,11 +177,7 @@ export const getAgentsUsage = createTool({
 
     const wallet = getWalletClient(c);
 
-    const usage = await AgentsUsage.fetch(
-      wallet,
-      c.workspace.value,
-      range,
-    );
+    const usage = await AgentsUsage.fetch(wallet, c.workspace.value, range);
     return AgentsUsage.format(usage);
   },
 });
@@ -233,9 +224,11 @@ export const createWalletVoucher = createTool({
   name: "CREATE_VOUCHER",
   description: "Create a voucher with money from the current tenant's wallet",
   inputSchema: z.object({
-    amount: z.number().describe(
-      "The amount of money to add to the voucher. Specified in USD dollars.",
-    ),
+    amount: z
+      .number()
+      .describe(
+        "The amount of money to add to the voucher. Specified in USD dollars.",
+      ),
   }),
   handler: async ({ amount }, c) => {
     assertHasWorkspace(c);
@@ -258,9 +251,12 @@ export const createWalletVoucher = createTool({
       workspace: c.workspace.value,
     } as const;
 
-    const response = await wallet["POST /transactions"]({}, {
-      body: operation,
-    });
+    const response = await wallet["POST /transactions"](
+      {},
+      {
+        body: operation,
+      },
+    );
 
     if (!response.ok) {
       throw new Error("Failed to create voucher");
@@ -308,9 +304,12 @@ export const redeemWalletVoucher = createTool({
       workspace: c.workspace.value,
     } as const;
 
-    const response = await wallet["POST /transactions"]({}, {
-      body: operation,
-    });
+    const response = await wallet["POST /transactions"](
+      {},
+      {
+        body: operation,
+      },
+    );
 
     if (!response.ok) {
       throw new Error("Failed to redeem voucher");

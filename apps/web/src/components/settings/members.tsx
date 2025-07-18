@@ -30,13 +30,15 @@ import { RolesDropdown } from "../common/roles-dropdown.tsx";
 import { Table, type TableColumn } from "../common/table/index.tsx";
 import { ActivityStatusCell, UserInfo } from "../common/table/table-cells.tsx";
 
-function MemberTableHeader(
-  { onChange, disabled, teamId }: {
-    disabled?: boolean;
-    onChange: (value: string) => void;
-    teamId?: number;
-  },
-) {
+function MemberTableHeader({
+  onChange,
+  disabled,
+  teamId,
+}: {
+  disabled?: boolean;
+  onChange: (value: string) => void;
+  teamId?: number;
+}) {
   return (
     <div className="flex items-center justify-between">
       <Input
@@ -71,8 +73,7 @@ function MembersViewLoading() {
 }
 
 const getMemberName = (member: Member) =>
-  member.profiles.metadata.full_name ||
-  member.profiles.email;
+  member.profiles.metadata.full_name || member.profiles.email;
 
 // Add type for combined member/invite data
 type MemberTableRow = {
@@ -97,7 +98,9 @@ function MembersViewContent() {
   const { slug } = useCurrentTeam();
   const { data: team } = useTeam(slug);
   const teamId = team?.id;
-  const { data: { members, invites } } = useTeamMembers(teamId ?? null, {
+  const {
+    data: { members, invites },
+  } = useTeamMembers(teamId ?? null, {
     withActivity: true,
   });
   const { data: roles = [] } = useTeamRoles(teamId ?? null);
@@ -142,9 +145,10 @@ function MembersViewContent() {
   // Filter data based on search query
   const filteredData = useMemo(() => {
     if (!deferredQuery) return tableData;
-    return tableData.filter((row) =>
-      row.name.toLowerCase().includes(deferredQuery.toLowerCase()) ||
-      row.email.toLowerCase().includes(deferredQuery.toLowerCase())
+    return tableData.filter(
+      (row) =>
+        row.name.toLowerCase().includes(deferredQuery.toLowerCase()) ||
+        row.email.toLowerCase().includes(deferredQuery.toLowerCase()),
     );
   }, [tableData, deferredQuery]);
 
@@ -182,7 +186,7 @@ function MembersViewContent() {
     } catch (error) {
       toast.error(
         // deno-lint-ignore no-explicit-any
-        typeof error === "object" && (error as any)?.message ||
+        (typeof error === "object" && (error as any)?.message) ||
           "Failed to update role",
       );
       console.error("Failed to update member role:", error);
@@ -199,22 +203,14 @@ function MembersViewContent() {
           // For actual members, use the standardized UserInfo component
           if (row.type === "member" && row.userId) {
             return (
-              <UserInfo
-                userId={row.userId}
-                showDetails
-                maxWidth="250px"
-              />
+              <UserInfo userId={row.userId} showDetails maxWidth="250px" />
             );
           }
 
           // For pending invites, use custom implementation since they don't have userId yet
           return (
             <div className="flex gap-2 items-center min-w-[48px]">
-              <UserAvatar
-                fallback={row.email}
-                size="sm"
-                muted
-              />
+              <UserAvatar fallback={row.email} size="sm" muted />
               <div className="flex flex-col items-start text-left leading-tight w-full">
                 <span
                   className="truncate block text-xs font-medium text-foreground"
@@ -249,11 +245,7 @@ function MembersViewContent() {
                 roles={roles}
                 selectedRoles={row.roles}
                 onRoleClick={(role, checked) => {
-                  handleUpdateMemberRole(
-                    row.member!.user_id,
-                    role,
-                    checked,
-                  );
+                  handleUpdateMemberRole(row.member!.user_id, role, checked);
                 }}
                 disabled={updateRoleMutation.isPending}
               />
@@ -299,13 +291,17 @@ function MembersViewContent() {
                   handleRemoveMember(row.member.id);
                 }
               }}
-              disabled={removeMemberMutation.isPending ||
-                rejectInvite.isPending}
+              disabled={
+                removeMemberMutation.isPending || rejectInvite.isPending
+              }
             >
               {(() => {
                 // Check if this is the current user
-                const isCurrentUser = row.type === "member" && row.userId &&
-                  user && row.userId === user.id;
+                const isCurrentUser =
+                  row.type === "member" &&
+                  row.userId &&
+                  user &&
+                  row.userId === user.id;
 
                 if (row.type === "invite") {
                   // For pending invitations
@@ -313,7 +309,7 @@ function MembersViewContent() {
                     <>
                       <Icon name="delete" />
                       {rejectInvite.isPending &&
-                          rejectInvite.variables?.id === row.id
+                      rejectInvite.variables?.id === row.id
                         ? "Removing..."
                         : "Delete invitation"}
                     </>
@@ -324,7 +320,7 @@ function MembersViewContent() {
                     <>
                       <Icon name="waving_hand" />
                       {removeMemberMutation.isPending &&
-                          removeMemberMutation.variables?.memberId === row.id
+                      removeMemberMutation.variables?.memberId === row.id
                         ? "Leaving..."
                         : "Leave team"}
                     </>
@@ -335,7 +331,7 @@ function MembersViewContent() {
                     <>
                       <Icon name="waving_hand" />
                       {removeMemberMutation.isPending &&
-                          removeMemberMutation.variables?.memberId === row.id
+                      removeMemberMutation.variables?.memberId === row.id
                         ? "Removing..."
                         : "Remove Member"}
                     </>
@@ -368,7 +364,11 @@ function MembersViewContent() {
       case "name":
         return row.name.toLowerCase();
       case "roles":
-        return row.roles.map((r) => r.name).sort().join(",").toLowerCase();
+        return row.roles
+          .map((r) => r.name)
+          .sort()
+          .join(",")
+          .toLowerCase();
       case "lastActivity":
         return row.lastActivity
           ? new Date(row.lastActivity).getTime().toString()
@@ -380,7 +380,7 @@ function MembersViewContent() {
 
   function handleSort(key: string) {
     if (sortKey === key) {
-      setSortDirection((prev) => prev === "asc" ? "desc" : "asc");
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
       setSortKey(key);
       setSortDirection("asc");
@@ -403,21 +403,19 @@ function MembersViewContent() {
     <div className="px-6 py-10 flex flex-col gap-6">
       <div className="flex flex-col gap-4">
         <MemberTableHeader onChange={setQuery} teamId={teamId} />
-        {members.length === 0
-          ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No members found. Add team members to get started.
-            </div>
-          )
-          : (
-            <Table
-              columns={columns}
-              data={sortedData}
-              sortKey={sortKey}
-              sortDirection={sortDirection}
-              onSort={handleSort}
-            />
-          )}
+        {members.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No members found. Add team members to get started.
+          </div>
+        ) : (
+          <Table
+            columns={columns}
+            data={sortedData}
+            sortKey={sortKey}
+            sortDirection={sortDirection}
+            onSort={handleSort}
+          />
+        )}
       </div>
     </div>
   );

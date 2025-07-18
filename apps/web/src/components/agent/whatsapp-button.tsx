@@ -63,17 +63,18 @@ export function WhatsAppButton({ isMobile = false }: { isMobile?: boolean }) {
 
   const { workspace } = useSDK();
 
-  const isDecoTeam = workspace as string === "shared/deco.cx";
+  const isDecoTeam = (workspace as string) === "shared/deco.cx";
 
   const webhookTriggers =
-    triggers?.triggers?.filter((trigger) =>
-      trigger.type === "webhook" &&
-      "agentId" in trigger.data &&
-      trigger.data.agentId === agentId &&
-      trigger.data.title === WHATSAPP_TRIGGER.title
+    triggers?.triggers?.filter(
+      (trigger) =>
+        trigger.type === "webhook" &&
+        "agentId" in trigger.data &&
+        trigger.data.agentId === agentId &&
+        trigger.data.title === WHATSAPP_TRIGGER.title,
     ) ?? [];
-  const currentWhatsAppRouterTrigger = webhookTriggers.find((trigger) =>
-    whatsappUser?.trigger_id === trigger.id
+  const currentWhatsAppRouterTrigger = webhookTriggers.find(
+    (trigger) => whatsappUser?.trigger_id === trigger.id,
   );
 
   const { mutate: upsertWhatsAppUser } = useUpsertWhatsAppUser();
@@ -99,20 +100,20 @@ export function WhatsAppButton({ isMobile = false }: { isMobile?: boolean }) {
           onSuccess: async () => {
             // Refetch triggers to get the newly created trigger
             const { data: updatedTriggers } = await refetchTriggers();
-            const updatedWebhookTriggers = updatedTriggers?.triggers?.filter(
-              (trigger) =>
-                trigger.type === "webhook" &&
-                "agentId" in trigger.data &&
-                trigger.data.agentId === agentId,
-            ) ?? [];
+            const updatedWebhookTriggers =
+              updatedTriggers?.triggers?.filter(
+                (trigger) =>
+                  trigger.type === "webhook" &&
+                  "agentId" in trigger.data &&
+                  trigger.data.agentId === agentId,
+              ) ?? [];
             const newTrigger = updatedWebhookTriggers[0];
 
             if (newTrigger) {
               upsertWhatsAppUser(
                 {
-                  triggerUrl: "url" in newTrigger.data
-                    ? newTrigger.data.url ?? ""
-                    : "",
+                  triggerUrl:
+                    "url" in newTrigger.data ? (newTrigger.data.url ?? "") : "",
                   triggerId: newTrigger.id,
                   triggers: [...(whatsappUser?.triggers ?? [])],
                 },
@@ -138,7 +139,7 @@ export function WhatsAppButton({ isMobile = false }: { isMobile?: boolean }) {
       const data = currentWhatsAppRouterTrigger?.data ?? anyTrigger?.data;
       upsertWhatsAppUser(
         {
-          triggerUrl: "url" in data ? data.url ?? "" : "",
+          triggerUrl: "url" in data ? (data.url ?? "") : "",
           triggerId: currentWhatsAppRouterTrigger?.id ?? anyTrigger?.id,
           triggers: [...(whatsappUser?.triggers ?? [])],
         },
@@ -189,12 +190,13 @@ export function WhatsAppButton({ isMobile = false }: { isMobile?: boolean }) {
           onSuccess: async () => {
             // Refetch triggers to get the newly created trigger
             const { data: updatedTriggers } = await refetchTriggers();
-            const updatedWebhookTriggers = updatedTriggers?.triggers?.filter(
-              (trigger) =>
-                trigger.type === "webhook" &&
-                "agentId" in trigger.data &&
-                trigger.data.agentId === agentId,
-            ) ?? [];
+            const updatedWebhookTriggers =
+              updatedTriggers?.triggers?.filter(
+                (trigger) =>
+                  trigger.type === "webhook" &&
+                  "agentId" in trigger.data &&
+                  trigger.data.agentId === agentId,
+              ) ?? [];
             const newTrigger = updatedWebhookTriggers[0];
 
             if (newTrigger) {
@@ -240,8 +242,9 @@ export function WhatsAppButton({ isMobile = false }: { isMobile?: boolean }) {
     }
   }
 
-  const isWhatsAppEnabled = whatsappUser &&
-    (whatsappUser?.trigger_id === currentWhatsAppRouterTrigger?.id);
+  const isWhatsAppEnabled =
+    whatsappUser &&
+    whatsappUser?.trigger_id === currentWhatsAppRouterTrigger?.id;
 
   if (isWellKnownAgent) {
     return;
@@ -251,9 +254,11 @@ export function WhatsAppButton({ isMobile = false }: { isMobile?: boolean }) {
     <Button
       variant="ghost"
       size="icon"
-      onClick={isWhatsAppEnabled
-        ? () => globalThis.open(getWhatsAppLink(agent), "_blank")
-        : handleWhatsAppClick}
+      onClick={
+        isWhatsAppEnabled
+          ? () => globalThis.open(getWhatsAppLink(agent), "_blank")
+          : handleWhatsAppClick
+      }
       className={isMobile ? "w-full justify-center gap-4" : ""}
     >
       <img
@@ -283,29 +288,24 @@ export function WhatsAppButton({ isMobile = false }: { isMobile?: boolean }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {isWhatsAppEnabled
-                ? (
-                  <DropdownMenuItem onClick={handleTalkInWhatsApp}>
-                    Talk in WhatsApp
-                  </DropdownMenuItem>
-                )
-                : (
-                  <DropdownMenuItem onClick={handleWhatsAppClick}>
-                    Use in WhatsApp
-                  </DropdownMenuItem>
-                )}
-              {isDecoTeam &&
-                (
-                  <DropdownMenuItem onClick={handleInviteClick}>
-                    Invite
-                  </DropdownMenuItem>
-                )}
+              {isWhatsAppEnabled ? (
+                <DropdownMenuItem onClick={handleTalkInWhatsApp}>
+                  Talk in WhatsApp
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={handleWhatsAppClick}>
+                  Use in WhatsApp
+                </DropdownMenuItem>
+              )}
+              {isDecoTeam && (
+                <DropdownMenuItem onClick={handleInviteClick}>
+                  Invite
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </TooltipTrigger>
-        <TooltipContent>
-          WhatsApp Options
-        </TooltipContent>
+        <TooltipContent>WhatsApp Options</TooltipContent>
       </Tooltip>
 
       <WhatsAppInviteDialog

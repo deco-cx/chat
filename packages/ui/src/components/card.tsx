@@ -62,12 +62,7 @@ function CardAction({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 function CardContent({ ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-content"
-      {...props}
-    />
-  );
+  return <div data-slot="card-content" {...props} />;
 }
 
 function CardFooter({ className, ...props }: React.ComponentProps<"div">) {

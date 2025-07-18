@@ -11,6 +11,7 @@ export default defineConfig({
     inspect(),
     react() as PluginOption[],
     tailwindcss() as PluginOption[],
+    // @ts-ignore todo: fix types for this plugin
     reactScan(),
     VitePWA({
       registerType: "autoUpdate",

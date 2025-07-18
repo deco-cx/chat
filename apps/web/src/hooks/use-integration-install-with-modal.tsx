@@ -183,8 +183,11 @@ export function useIntegrationInstallWithModal() {
       integration: installState.integration,
       onSubmit: handleModalSubmit,
       onClose: handleModalClose,
-      isLoading: createAPIKey.isPending || getRegistryApp.isPending ||
-        createIntegration.isPending || permissionsLoading,
+      isLoading:
+        createAPIKey.isPending ||
+        getRegistryApp.isPending ||
+        createIntegration.isPending ||
+        permissionsLoading,
     },
 
     // Mutation state

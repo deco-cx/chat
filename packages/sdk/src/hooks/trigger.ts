@@ -71,15 +71,12 @@ export function useUpdateTriggerCache() {
     // Update the list
     const listKey = KEYS.TRIGGERS(workspace);
     client.cancelQueries({ queryKey: listKey });
-    client.setQueryData<ListTriggersOutput>(
-      listKey,
-      (old) => {
-        if (!old) return { triggers: [trigger] };
-        return {
-          triggers: old.triggers.map((t) => t.id === trigger.id ? trigger : t),
-        };
-      },
-    );
+    client.setQueryData<ListTriggersOutput>(listKey, (old) => {
+      if (!old) return { triggers: [trigger] };
+      return {
+        triggers: old.triggers.map((t) => (t.id === trigger.id ? trigger : t)),
+      };
+    });
   };
 
   return update;
@@ -101,13 +98,10 @@ export function useCreateTrigger() {
       // update list
       const listKey = KEYS.TRIGGERS(workspace);
       client.cancelQueries({ queryKey: listKey });
-      client.setQueryData<ListTriggersOutput>(
-        listKey,
-        (old) => {
-          if (!old) return { triggers: [result] };
-          return { triggers: [result, ...old.triggers] };
-        },
-      );
+      client.setQueryData<ListTriggersOutput>(listKey, (old) => {
+        if (!old) return { triggers: [result] };
+        return { triggers: [result, ...old.triggers] };
+      });
     },
   });
 }
@@ -143,17 +137,12 @@ export function useDeleteTrigger() {
       // Update the list
       const listKey = KEYS.TRIGGERS(workspace);
       client.cancelQueries({ queryKey: listKey });
-      client.setQueryData<ListTriggersOutput>(
-        listKey,
-        (old) => {
-          if (!old) return { triggers: [] };
-          return {
-            triggers: old.triggers.filter((trigger) =>
-              trigger.id !== triggerId
-            ),
-          };
-        },
-      );
+      client.setQueryData<ListTriggersOutput>(listKey, (old) => {
+        if (!old) return { triggers: [] };
+        return {
+          triggers: old.triggers.filter((trigger) => trigger.id !== triggerId),
+        };
+      });
     },
   });
 }
@@ -169,25 +158,21 @@ export function useActivateTrigger() {
         // Update the trigger's active status in cache
         const itemKey = KEYS.TRIGGER(workspace, triggerId);
         client.cancelQueries({ queryKey: itemKey });
-        client.setQueryData<TriggerOutput>(
-          itemKey,
-          (old) => old ? { ...old, active: true } : undefined,
+        client.setQueryData<TriggerOutput>(itemKey, (old) =>
+          old ? { ...old, active: true } : undefined,
         );
 
         // Update lists
         const listKey = KEYS.TRIGGERS(workspace);
         client.cancelQueries({ queryKey: listKey });
-        client.setQueryData<ListTriggersOutput>(
-          listKey,
-          (old) => {
-            if (!old) return old;
-            return {
-              triggers: old.triggers.map((t) =>
-                t.id === triggerId ? { ...t, active: true } : t
-              ),
-            };
-          },
-        );
+        client.setQueryData<ListTriggersOutput>(listKey, (old) => {
+          if (!old) return old;
+          return {
+            triggers: old.triggers.map((t) =>
+              t.id === triggerId ? { ...t, active: true } : t,
+            ),
+          };
+        });
       }
     },
   });
@@ -204,25 +189,21 @@ export function useDeactivateTrigger() {
         // Update the trigger's active status in cache
         const itemKey = KEYS.TRIGGER(workspace, triggerId);
         client.cancelQueries({ queryKey: itemKey });
-        client.setQueryData<TriggerOutput>(
-          itemKey,
-          (old) => old ? { ...old, active: false } : undefined,
+        client.setQueryData<TriggerOutput>(itemKey, (old) =>
+          old ? { ...old, active: false } : undefined,
         );
 
         // Update lists
         const listKey = KEYS.TRIGGERS(workspace);
         client.cancelQueries({ queryKey: listKey });
-        client.setQueryData<ListTriggersOutput>(
-          listKey,
-          (old) => {
-            if (!old) return old;
-            return {
-              triggers: old.triggers.map((t) =>
-                t.id === triggerId ? { ...t, active: false } : t
-              ),
-            };
-          },
-        );
+        client.setQueryData<ListTriggersOutput>(listKey, (old) => {
+          if (!old) return old;
+          return {
+            triggers: old.triggers.map((t) =>
+              t.id === triggerId ? { ...t, active: false } : t,
+            ),
+          };
+        });
       }
     },
   });

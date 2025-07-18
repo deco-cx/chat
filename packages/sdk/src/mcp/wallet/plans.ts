@@ -8,10 +8,11 @@ import {
 } from "../members/invites-utils.ts";
 
 export const getPlanFromDb = async (c: AppContext, planId: string) => {
-  const { data, error } = await c.db.from("deco_chat_plans").select("*").eq(
-    "id",
-    planId,
-  ).maybeSingle();
+  const { data, error } = await c.db
+    .from("deco_chat_plans")
+    .select("*")
+    .eq("id", planId)
+    .maybeSingle();
   if (error || !data) {
     throw new InternalServerError("Failed to fetch plan");
   }

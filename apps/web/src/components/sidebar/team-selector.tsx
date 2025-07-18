@@ -75,8 +75,8 @@ export function useUserTeams() {
     })),
   ];
 
-  const teamsWithoutCurrentTeam = allTeams.filter((team) =>
-    team.slug !== currentSlug
+  const teamsWithoutCurrentTeam = allTeams.filter(
+    (team) => team.slug !== currentSlug,
   );
 
   return teamsWithoutCurrentTeam;
@@ -96,9 +96,7 @@ function CurrentTeamDropdownTrigger() {
           size="xs"
         />
         <div className="flex items-center justify-start flex-1 min-w-0 gap-1">
-          <span className="text-sm font-medium truncate min-w-0">
-            {label}
-          </span>
+          <span className="text-sm font-medium truncate min-w-0">{label}</span>
           <Icon
             name="unfold_more"
             className="text-muted-foreground"
@@ -110,9 +108,11 @@ function CurrentTeamDropdownTrigger() {
   );
 }
 
-function CurrentTeamDropdownOptions(
-  { onRequestInvite }: { onRequestInvite: () => void },
-) {
+function CurrentTeamDropdownOptions({
+  onRequestInvite,
+}: {
+  onRequestInvite: () => void;
+}) {
   const buildWorkspaceLink = useWorkspaceLink();
 
   return (
@@ -125,9 +125,7 @@ function CurrentTeamDropdownOptions(
           <span className="grid place-items-center p-1">
             <Icon name="settings" size={16} className="text-muted-foreground" />
           </span>
-          <span className="md:text-sm">
-            Settings
-          </span>
+          <span className="md:text-sm">Settings</span>
         </Link>
       </ResponsiveDropdownItem>
       <ResponsiveDropdownItem
@@ -139,11 +137,7 @@ function CurrentTeamDropdownOptions(
         }}
       >
         <span className="grid place-items-center p-1">
-          <Icon
-            name="person_add"
-            size={16}
-            className="text-muted-foreground"
-          />
+          <Icon name="person_add" size={16} className="text-muted-foreground" />
         </span>
         <span className="md:text-sm flex-grow justify-self-start">
           Invite members
@@ -167,8 +161,9 @@ CurrentTeamDropdownOptions.Skeleton = () => (
 function TeamsToSwitch({ query }: { query: string }) {
   const availableTeamsToSwitch = useUserTeams();
 
-  const filteredTeams = availableTeamsToSwitch
-    .filter((team) => team.label.toLowerCase().includes(query.toLowerCase()));
+  const filteredTeams = availableTeamsToSwitch.filter((team) =>
+    team.label.toLowerCase().includes(query.toLowerCase()),
+  );
 
   if (filteredTeams.length === 0) {
     return (
@@ -194,9 +189,7 @@ function TeamsToSwitch({ query }: { query: string }) {
                 objectFit="contain"
                 size="xs"
               />
-              <span className="md:text-sm">
-                {team.label}
-              </span>
+              <span className="md:text-sm">{team.label}</span>
             </Link>
           </ResponsiveDropdownItem>
         ))}
@@ -208,17 +201,16 @@ function TeamsToSwitch({ query }: { query: string }) {
 TeamsToSwitch.Skeleton = () => (
   <div className="h-36 flex flex-col gap-2 overflow-y-auto">
     {Array.from({ length: 3 }).map((_, index) => (
-      <Skeleton
-        key={index}
-        className="h-9 w-full rounded-xl"
-      />
+      <Skeleton key={index} className="h-9 w-full rounded-xl" />
     ))}
   </div>
 );
 
-function SwitchTeam(
-  { onRequestCreateTeam }: { onRequestCreateTeam: () => void },
-) {
+function SwitchTeam({
+  onRequestCreateTeam,
+}: {
+  onRequestCreateTeam: () => void;
+}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
 
@@ -289,9 +281,7 @@ function SwitchTeam(
         <span className="grid place-items-center p-1">
           <Icon name="add" size={16} className="text-muted-foreground" />
         </span>
-        <span className="md:text-sm">
-          Create team
-        </span>
+        <span className="md:text-sm">Create team</span>
       </ResponsiveDropdownItem>
     </>
   );
@@ -320,9 +310,7 @@ export function TeamSelector() {
             />
           </Suspense>
           <ResponsiveDropdownSeparator />
-          <SwitchTeam
-            onRequestCreateTeam={() => setIsCreateDialogOpen(true)}
-          />
+          <SwitchTeam onRequestCreateTeam={() => setIsCreateDialogOpen(true)} />
         </ResponsiveDropdownContent>
       </ResponsiveDropdown>
       <CreateTeamDialog

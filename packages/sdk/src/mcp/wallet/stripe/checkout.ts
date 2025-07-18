@@ -27,8 +27,11 @@ const getOrCreateWorkspaceStripeCustomer = async (
 
   const workspace = ctx.workspace.value;
 
-  const { data: maybeCustomer } = await ctx.db.from("deco_chat_customer")
-    .select("customer_id").eq("workspace", workspace).maybeSingle();
+  const { data: maybeCustomer } = await ctx.db
+    .from("deco_chat_customer")
+    .select("customer_id")
+    .eq("workspace", workspace)
+    .maybeSingle();
 
   if (maybeCustomer) {
     const customer = await stripe.customers.retrieve(maybeCustomer.customer_id);
@@ -83,8 +86,8 @@ const convertUSDToBRL = async ({
   return amountInBrl;
 };
 
-const MANDATORY_CUSTOM_FIELDS:
-  Stripe.Checkout.SessionCreateParams.CustomField[] = [
+const MANDATORY_CUSTOM_FIELDS: Stripe.Checkout.SessionCreateParams.CustomField[] =
+  [
     {
       label: {
         custom: "Tax ID/CNPJ/CPF",
@@ -114,48 +117,46 @@ type ProductHandler<P extends Product> = (
 
 const MINIMUM_AMOUNT_IN_USD_CENTS = 200;
 
-const handleWorkspaceWalletDeposit: ProductHandler<WorkspaceWalletDeposit> =
-  async (
-    product,
-    stripe,
-    ctx,
-  ) => {
-    if (!ctx.envVars.CURRENCY_API_KEY) {
-      throw new Error("CURRENCY_API_KEY is not set");
-    }
+const handleWorkspaceWalletDeposit: ProductHandler<
+  WorkspaceWalletDeposit
+> = async (product, stripe, ctx) => {
+  if (!ctx.envVars.CURRENCY_API_KEY) {
+    throw new Error("CURRENCY_API_KEY is not set");
+  }
 
-    if (
-      Number.isNaN(product.amountUSD) ||
-      product.amountUSD < MINIMUM_AMOUNT_IN_USD_CENTS
-    ) {
-      throw new Error("Invalid amount");
-    }
+  if (
+    Number.isNaN(product.amountUSD) ||
+    product.amountUSD < MINIMUM_AMOUNT_IN_USD_CENTS
+  ) {
+    throw new Error("Invalid amount");
+  }
 
-    const customer = await getOrCreateWorkspaceStripeCustomer(stripe, ctx);
+  const customer = await getOrCreateWorkspaceStripeCustomer(stripe, ctx);
 
-    /**
-     * Since our Stripe account is based on Brazil and i want to make use of
-     * stripe adaptive pricing, we need to create a checkout with the amount
-     * in cents to BRL. Adaptive pricing will handle showing the local currency
-     * to the customer.
-     *
-     * At the moment, we show an input field for the customer to enter the
-     * amount in USD, so we use this API for converting the amount to BRL.
-     */
-    const amountInCents = product.amountUSD;
-    const amountInBrl = await convertUSDToBRL({
-      amountUSDCents: amountInCents,
-      currencyAPIKey: ctx.envVars.CURRENCY_API_KEY,
-    });
-    const unitAmount = amountInBrl;
+  /**
+   * Since our Stripe account is based on Brazil and i want to make use of
+   * stripe adaptive pricing, we need to create a checkout with the amount
+   * in cents to BRL. Adaptive pricing will handle showing the local currency
+   * to the customer.
+   *
+   * At the moment, we show an input field for the customer to enter the
+   * amount in USD, so we use this API for converting the amount to BRL.
+   */
+  const amountInCents = product.amountUSD;
+  const amountInBrl = await convertUSDToBRL({
+    amountUSDCents: amountInCents,
+    currencyAPIKey: ctx.envVars.CURRENCY_API_KEY,
+  });
+  const unitAmount = amountInBrl;
 
-    return {
-      mode: "payment",
-      customer: customer.id,
-      adaptive_pricing: {
-        enabled: true,
-      },
-      line_items: [{
+  return {
+    mode: "payment",
+    customer: customer.id,
+    adaptive_pricing: {
+      enabled: true,
+    },
+    line_items: [
+      {
         price_data: {
           currency: "brl",
           product_data: {
@@ -164,9 +165,10 @@ const handleWorkspaceWalletDeposit: ProductHandler<WorkspaceWalletDeposit> =
           unit_amount: unitAmount,
         },
         quantity: 1,
-      }],
-    };
+      },
+    ],
   };
+};
 
 const argsFor = ({
   product,
@@ -177,10 +179,7 @@ const argsFor = ({
   stripe: Stripe;
   ctx: AppContext;
 }): Promise<Partial<Stripe.Checkout.SessionCreateParams>> => {
-  const productHandlers: Record<
-    Product["id"],
-    ProductHandler<Product>
-  > = {
+  const productHandlers: Record<Product["id"], ProductHandler<Product>> = {
     WorkspaceWalletDeposit: handleWorkspaceWalletDeposit,
   };
 
@@ -224,10 +223,7 @@ export const createCheckoutSession = async ({
     ...args,
     success_url: successUrl,
     cancel_url: cancelUrl,
-    custom_fields: [
-      ...(args.custom_fields ?? []),
-      ...MANDATORY_CUSTOM_FIELDS,
-    ],
+    custom_fields: [...(args.custom_fields ?? []), ...MANDATORY_CUSTOM_FIELDS],
     metadata: {
       ...args.metadata,
       ...metadata,

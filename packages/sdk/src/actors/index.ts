@@ -6,16 +6,14 @@ export interface AuthMetadata {
   user?: AuthUser | null;
 }
 
-export abstract class BaseActor<
-  TMetadata extends AuthMetadata = AuthMetadata,
-> {
+export abstract class BaseActor<TMetadata extends AuthMetadata = AuthMetadata> {
   protected env: Record<string, string>;
   protected abstract state: { id: string };
   public metadata?: TMetadata;
   constructor(env?: object) {
     this.env = {
-      ...process?.env ?? {},
-      ...env ?? {},
+      ...(process?.env ?? {}),
+      ...(env ?? {}),
     } as Record<string, string>;
   }
 
@@ -37,11 +35,11 @@ export abstract class BaseActor<
       (this.env as Record<string, string>)?.DECO_CHAT_API_JWT_PRIVATE_KEY &&
         (this.env as Record<string, string>)?.DECO_CHAT_API_JWT_PUBLIC_KEY
         ? {
-          public: (this.env as Record<string, string>)
-            ?.DECO_CHAT_API_JWT_PUBLIC_KEY,
-          private: (this.env as Record<string, string>)
-            ?.DECO_CHAT_API_JWT_PRIVATE_KEY,
-        }
+            public: (this.env as Record<string, string>)
+              ?.DECO_CHAT_API_JWT_PUBLIC_KEY,
+            private: (this.env as Record<string, string>)
+              ?.DECO_CHAT_API_JWT_PRIVATE_KEY,
+          }
         : undefined,
     );
     return user ?? null;

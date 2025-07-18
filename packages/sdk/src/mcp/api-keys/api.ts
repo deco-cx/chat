@@ -39,8 +39,7 @@ function mapApiKey(
 const createTool = createToolGroup("APIKeys", {
   name: "API Key Management",
   description: "Create and manage API keys securely.",
-  icon:
-    "https://assets.decocache.com/mcp/5e6930c3-86f6-4913-8de3-0c1fefdf02e3/API-key.png",
+  icon: "https://assets.decocache.com/mcp/5e6930c3-86f6-4913-8de3-0c1fefdf02e3/API-key.png",
 });
 
 export const listApiKeys = createTool({
@@ -78,9 +77,10 @@ const StatementSchema = z.object({
   resource: z.string(),
 });
 
-const policiesSchema = z.array(StatementSchema).optional().describe(
-  "Policies for the API key",
-);
+const policiesSchema = z
+  .array(StatementSchema)
+  .optional()
+  .describe("Policies for the API key");
 
 export const createApiKey = createTool({
   name: "API_KEYS_CREATE",
@@ -98,7 +98,8 @@ export const createApiKey = createTool({
     const db = c.db;
 
     // Insert the API key metadata
-    const { data: apiKey, error } = await db.from("deco_chat_api_keys")
+    const { data: apiKey, error } = await db
+      .from("deco_chat_api_keys")
       .insert({
         name,
         workspace,
@@ -111,13 +112,14 @@ export const createApiKey = createTool({
     if (error) {
       throw new InternalServerError(error.message);
     }
-    const keyPair = c.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY &&
-        c.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY
-      ? {
-        public: c.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY,
-        private: c.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY,
-      }
-      : undefined;
+    const keyPair =
+      c.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY &&
+      c.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY
+        ? {
+            public: c.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY,
+            private: c.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY,
+          }
+        : undefined;
 
     const issuer = await JwtIssuer.forKeyPair(keyPair);
     const value = await issuer.issue({
@@ -136,9 +138,10 @@ export const reissueApiKey = createTool({
   description: "Reissue an existing API key with new claims",
   inputSchema: z.object({
     id: z.string().describe("The ID of the API key to reissue"),
-    claims: z.any().optional().describe(
-      "New claims to be added to the API key",
-    ),
+    claims: z
+      .any()
+      .optional()
+      .describe("New claims to be added to the API key"),
   }),
   handler: async ({ id, claims }, c) => {
     assertHasWorkspace(c);
@@ -148,7 +151,8 @@ export const reissueApiKey = createTool({
     const workspace = c.workspace.value;
 
     // First, verify the API key exists and is accessible
-    const { data: apiKey, error } = await db.from("deco_chat_api_keys")
+    const { data: apiKey, error } = await db
+      .from("deco_chat_api_keys")
       .select(SELECT_API_KEY_QUERY)
       .eq("id", id)
       .eq("workspace", workspace)
@@ -164,13 +168,14 @@ export const reissueApiKey = createTool({
     }
 
     // Generate new JWT token with the provided claims
-    const keyPair = c.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY &&
-        c.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY
-      ? {
-        public: c.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY,
-        private: c.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY,
-      }
-      : undefined;
+    const keyPair =
+      c.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY &&
+      c.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY
+        ? {
+            public: c.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY,
+            private: c.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY,
+          }
+        : undefined;
 
     const issuer = await JwtIssuer.forKeyPair(keyPair);
     const value = await issuer.issue({
@@ -197,7 +202,8 @@ export const getApiKey = createTool({
     const db = c.db;
     const workspace = c.workspace.value;
 
-    const { data: apiKey, error } = await db.from("deco_chat_api_keys")
+    const { data: apiKey, error } = await db
+      .from("deco_chat_api_keys")
       .select(SELECT_API_KEY_QUERY)
       .eq("id", id)
       .eq("workspace", workspace)
@@ -239,7 +245,8 @@ export const updateApiKey = createTool({
     if (policies !== undefined) updateData.policies = policies;
     updateData.updated_at = new Date().toISOString();
 
-    const { data: apiKey, error } = await db.from("deco_chat_api_keys")
+    const { data: apiKey, error } = await db
+      .from("deco_chat_api_keys")
       .update(updateData)
       .eq("id", id)
       .eq("workspace", workspace)
@@ -269,7 +276,8 @@ export const deleteApiKey = createTool({
     const workspace = c.workspace.value;
 
     // Soft delete by setting deleted_at timestamp
-    const { data: apiKey, error } = await db.from("deco_chat_api_keys")
+    const { data: apiKey, error } = await db
+      .from("deco_chat_api_keys")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", id)
       .eq("workspace", workspace)
@@ -301,7 +309,8 @@ export const enableApiKey = createTool({
     const db = c.db;
     const workspace = c.workspace.value;
 
-    const { data: apiKey, error } = await db.from("deco_chat_api_keys")
+    const { data: apiKey, error } = await db
+      .from("deco_chat_api_keys")
       .update({ enabled: true, updated_at: new Date().toISOString() })
       .eq("id", id)
       .eq("workspace", workspace)
@@ -330,7 +339,8 @@ export const disableApiKey = createTool({
     const db = c.db;
     const workspace = c.workspace.value;
 
-    const { data: apiKey, error } = await db.from("deco_chat_api_keys")
+    const { data: apiKey, error } = await db
+      .from("deco_chat_api_keys")
       .update({ enabled: false, updated_at: new Date().toISOString() })
       .eq("id", id)
       .eq("workspace", workspace)
@@ -350,9 +360,12 @@ export const checkAccess = createTool({
   name: "API_KEYS_CHECK_ACCESS",
   description: "Check if an API key has access to a resource",
   inputSchema: z.object({
-    key: z.string().optional().describe(
-      "The API key to check access for, if not provided, the current key from context will be used",
-    ),
+    key: z
+      .string()
+      .optional()
+      .describe(
+        "The API key to check access for, if not provided, the current key from context will be used",
+      ),
     tools: z.array(z.string()).describe("All tools that wants to check access"),
   }),
   outputSchema: z.object({
@@ -369,21 +382,23 @@ export const checkAccess = createTool({
         c.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY &&
           c.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY
           ? {
-            public: c.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY,
-            private: c.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY,
-          }
+              public: c.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY,
+              private: c.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY,
+            }
           : undefined,
       );
       user = fromJWT ?? user;
     }
-    const hasAccess = await Promise.all(tools.map(async (tool) => {
-      return [
-        tool,
-        await assertWorkspaceResourceAccess(tool, c).then(() => true).catch(
-          () => false,
-        ),
-      ];
-    }));
+    const hasAccess = await Promise.all(
+      tools.map(async (tool) => {
+        return [
+          tool,
+          await assertWorkspaceResourceAccess(tool, c)
+            .then(() => true)
+            .catch(() => false),
+        ];
+      }),
+    );
     return {
       access: Object.fromEntries(hasAccess),
     };
@@ -403,7 +418,8 @@ export const validateApiKey = createTool({
     const db = c.db;
     const workspace = c.workspace.value;
 
-    const { data: apiKey, error } = await db.from("deco_chat_api_keys")
+    const { data: apiKey, error } = await db
+      .from("deco_chat_api_keys")
       .select(SELECT_API_KEY_QUERY)
       .eq("id", id)
       .eq("workspace", workspace)

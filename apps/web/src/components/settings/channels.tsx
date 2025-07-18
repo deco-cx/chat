@@ -53,9 +53,11 @@ interface ChannelCardProps {
   variant?: "agent" | "available";
 }
 
-function ChannelCard(
-  { channel, children, variant = "agent" }: ChannelCardProps,
-) {
+function ChannelCard({
+  channel,
+  children,
+  variant = "agent",
+}: ChannelCardProps) {
   const integration = channel.integration;
   const isAgentVariant = variant === "agent";
 
@@ -89,12 +91,10 @@ export function Channels({ className }: ChannelsProps) {
   const [discriminator, setDiscriminator] = useState("");
   const [name, setName] = useState<string | undefined>(undefined);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [confirmChannelSwitch, setConfirmChannelSwitch] = useState<
-    {
-      channelId: string;
-      channelName: string;
-    } | null
-  >(null);
+  const [confirmChannelSwitch, setConfirmChannelSwitch] = useState<{
+    channelId: string;
+    channelName: string;
+  } | null>(null);
   const { agent } = useAgentSettingsForm();
   const { mutate: createChannel, isPending: isCreating } = useCreateChannel();
   const joinChannelMutation = useJoinChannel();
@@ -116,26 +116,32 @@ export function Channels({ className }: ChannelsProps) {
 
   // Helper functions to check if specific channel is being processed
   const isLeavingChannel = (channelId: string) => {
-    return leaveChannelMutation.isPending &&
-      leaveChannelMutation.variables?.channelId === channelId;
+    return (
+      leaveChannelMutation.isPending &&
+      leaveChannelMutation.variables?.channelId === channelId
+    );
   };
 
   const isJoiningChannel = (channelId: string) => {
-    return joinChannelMutation.isPending &&
-      joinChannelMutation.variables?.channelId === channelId;
+    return (
+      joinChannelMutation.isPending &&
+      joinChannelMutation.variables?.channelId === channelId
+    );
   };
 
   const isChannelRemoving = (channelId: string) => {
-    return removeChannelMutation.isPending &&
-      removeChannelMutation.variables === channelId;
+    return (
+      removeChannelMutation.isPending &&
+      removeChannelMutation.variables === channelId
+    );
   };
 
   const handleJoinChannel = (channelId: string) => {
     const channel = availableChannels.find((c: Channel) => c.id === channelId);
     if (!channel) return;
 
-    const isUsedByOtherAgent = channel.agentIds.length > 0 &&
-      channel.agentIds[0] !== agent.id;
+    const isUsedByOtherAgent =
+      channel.agentIds.length > 0 && channel.agentIds[0] !== agent.id;
     if (isUsedByOtherAgent) {
       setConfirmChannelSwitch({
         channelId,
@@ -144,63 +150,72 @@ export function Channels({ className }: ChannelsProps) {
       return;
     }
 
-    joinChannelMutation.mutate({
-      channelId,
-      agentId: agent.id,
-    }, {
-      onSuccess: () => {
-        toast.success("Channel joined successfully");
+    joinChannelMutation.mutate(
+      {
+        channelId,
+        agentId: agent.id,
       },
-      onError: (error) => {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to join channel",
-        );
+      {
+        onSuccess: () => {
+          toast.success("Channel joined successfully");
+        },
+        onError: (error) => {
+          toast.error(
+            error instanceof Error ? error.message : "Failed to join channel",
+          );
+        },
       },
-    });
+    );
   };
 
   const handleConfirmChannelSwitch = () => {
     if (!confirmChannelSwitch) return;
 
-    joinChannelMutation.mutate({
-      channelId: confirmChannelSwitch.channelId,
-      agentId: agent.id,
-    }, {
-      onSuccess: () => {
-        toast.success("Channel switched successfully");
-        setConfirmChannelSwitch(null);
+    joinChannelMutation.mutate(
+      {
+        channelId: confirmChannelSwitch.channelId,
+        agentId: agent.id,
       },
-      onError: (error) => {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to switch channel",
-        );
-        setConfirmChannelSwitch(null);
+      {
+        onSuccess: () => {
+          toast.success("Channel switched successfully");
+          setConfirmChannelSwitch(null);
+        },
+        onError: (error) => {
+          toast.error(
+            error instanceof Error ? error.message : "Failed to switch channel",
+          );
+          setConfirmChannelSwitch(null);
+        },
       },
-    });
+    );
   };
 
   const handleLeaveChannel = (channelId: string) => {
     const channel = agentChannels.find((c: Channel) => c.id === channelId);
     if (!channel) return;
 
-    leaveChannelMutation.mutate({
-      channelId: channel.id,
-      agentId: agent.id,
-    }, {
-      onSuccess: () => {
-        toast.success("Channel left successfully");
+    leaveChannelMutation.mutate(
+      {
+        channelId: channel.id,
+        agentId: agent.id,
       },
-      onError: (error) => {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to leave channel",
-        );
+      {
+        onSuccess: () => {
+          toast.success("Channel left successfully");
+        },
+        onError: (error) => {
+          toast.error(
+            error instanceof Error ? error.message : "Failed to leave channel",
+          );
+        },
       },
-    });
+    );
   };
 
   const handleCreateChannel = (bindingId: string) => {
-    const selectedBinding = integrations?.find((b: Integration) =>
-      b.id === bindingId
+    const selectedBinding = integrations?.find(
+      (b: Integration) => b.id === bindingId,
     );
     if (!selectedBinding) {
       toast.error("Please select a integration first");
@@ -212,23 +227,26 @@ export function Channels({ className }: ChannelsProps) {
       return;
     }
 
-    createChannel({
-      discriminator: discriminator.trim(),
-      integrationId: selectedBinding.id,
-      agentId: agent.id,
-      name: name?.trim(),
-    }, {
-      onSuccess: () => {
-        toast.success("Channel created successfully");
-        setDiscriminator("");
-        setShowCreateForm(false);
+    createChannel(
+      {
+        discriminator: discriminator.trim(),
+        integrationId: selectedBinding.id,
+        agentId: agent.id,
+        name: name?.trim(),
       },
-      onError: (error) => {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to create channel",
-        );
+      {
+        onSuccess: () => {
+          toast.success("Channel created successfully");
+          setDiscriminator("");
+          setShowCreateForm(false);
+        },
+        onError: (error) => {
+          toast.error(
+            error instanceof Error ? error.message : "Failed to create channel",
+          );
+        },
       },
-    });
+    );
   };
 
   const handleRemoveChannel = (channelId: string) => {
@@ -281,9 +299,11 @@ export function Channels({ className }: ChannelsProps) {
               onClick={() => handleLeaveChannel(channel.id)}
               disabled={isLeavingChannel(channel.id)}
             >
-              {isLeavingChannel(channel.id)
-                ? <Spinner size="sm" />
-                : <Icon name="close" size={16} />}
+              {isLeavingChannel(channel.id) ? (
+                <Spinner size="sm" />
+              ) : (
+                <Icon name="close" size={16} />
+              )}
             </button>
           </ChannelCard>
         );
@@ -302,8 +322,8 @@ export function Channels({ className }: ChannelsProps) {
             Available Channels
           </p>
           {availableChannels.map((channel: Channel) => {
-            const isInAgentChannels = agentChannels.some((c: Channel) =>
-              c.id === channel.id
+            const isInAgentChannels = agentChannels.some(
+              (c: Channel) => c.id === channel.id,
             );
             if (!channel) return null;
             return (
@@ -320,16 +340,16 @@ export function Channels({ className }: ChannelsProps) {
                     disabled={isJoiningChannel(channel.id)}
                     className="h-6 px-2 text-xs"
                   >
-                    {isJoiningChannel(channel.id)
-                      ? (
-                        <div className="flex items-center gap-1">
-                          <Spinner size="xs" />
-                          <span>Joining...</span>
-                        </div>
-                      )
-                      : (
-                        isInAgentChannels ? "Joined" : "Join"
-                      )}
+                    {isJoiningChannel(channel.id) ? (
+                      <div className="flex items-center gap-1">
+                        <Spinner size="xs" />
+                        <span>Joining...</span>
+                      </div>
+                    ) : isInAgentChannels ? (
+                      "Joined"
+                    ) : (
+                      "Join"
+                    )}
                   </Button>
                   <button
                     className="cursor-pointer hover:text-destructive"
@@ -337,9 +357,11 @@ export function Channels({ className }: ChannelsProps) {
                     onClick={() => handleRemoveChannel(channel.id)}
                     disabled={isChannelRemoving(channel.id)}
                   >
-                    {isChannelRemoving(channel.id)
-                      ? <Spinner size="xs" />
-                      : <Icon name="delete" size={16} />}
+                    {isChannelRemoving(channel.id) ? (
+                      <Spinner size="xs" />
+                    ) : (
+                      <Icon name="delete" size={16} />
+                    )}
                   </button>
                 </div>
               </ChannelCard>
@@ -363,16 +385,15 @@ export function Channels({ className }: ChannelsProps) {
           </FormItem>
 
           <div className="space-y-2">
-            {integration &&
-              (
-                <ConnectionChannels
-                  key={integration.id}
-                  binding={integration}
-                  discriminator={discriminator}
-                  setDiscriminator={setDiscriminator}
-                  setName={setName}
-                />
-              )}
+            {integration && (
+              <ConnectionChannels
+                key={integration.id}
+                binding={integration}
+                discriminator={discriminator}
+                setDiscriminator={setDiscriminator}
+                setName={setName}
+              />
+            )}
           </div>
 
           <div className="flex gap-2 pt-2">
@@ -397,19 +418,17 @@ export function Channels({ className }: ChannelsProps) {
               }}
               className="gap-2"
             >
-              {isCreating
-                ? (
-                  <>
-                    <Spinner size="sm" />
-                    Creating...
-                  </>
-                )
-                : (
-                  <>
-                    <Icon name="add" size={16} />
-                    Create Channel
-                  </>
-                )}
+              {isCreating ? (
+                <>
+                  <Spinner size="sm" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Icon name="add" size={16} />
+                  Create Channel
+                </>
+              )}
             </Button>
           </div>
         </>
@@ -456,8 +475,9 @@ function IntegrationSelect({
   const checkChannelsBinding = async (integration: Integration) => {
     try {
       const toolsData = await listTools(integration.connection);
-      const isChannelBinding = Binding(WellKnownBindings.Channel)
-        .isImplementedBy(toolsData.tools);
+      const isChannelBinding = Binding(
+        WellKnownBindings.Channel,
+      ).isImplementedBy(toolsData.tools);
       setIsChannelsBinding(isChannelBinding);
     } catch (error) {
       console.error("Error checking channels binding:", error);
@@ -492,7 +512,8 @@ function IntegrationSelect({
                 placeholder="Search for an integration"
                 value={query}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setQuery(e.target.value)}
+                  setQuery(e.target.value)
+                }
                 className="mb-4"
               />
               <InstalledConnections
@@ -531,14 +552,17 @@ function IntegrationSelect({
   );
 }
 
-function ConnectionChannels(
-  { binding, discriminator, setDiscriminator, setName }: {
-    binding: Integration;
-    discriminator: string;
-    setDiscriminator: (discriminator: string) => void;
-    setName: (name: string | undefined) => void;
-  },
-) {
+function ConnectionChannels({
+  binding,
+  discriminator,
+  setDiscriminator,
+  setName,
+}: {
+  binding: Integration;
+  discriminator: string;
+  setDiscriminator: (discriminator: string) => void;
+  setName: (name: string | undefined) => void;
+}) {
   const { data: availableChannels, isLoading: isLoadingAvailableChannels } =
     useConnectionChannels(binding);
   if (isLoadingAvailableChannels) {
@@ -552,46 +576,43 @@ function ConnectionChannels(
 
   return (
     <div className="w-full">
-      <Label htmlFor="discriminator">
-        Channel
-      </Label>
+      <Label htmlFor="discriminator">Channel</Label>
       <div className="mt-2 w-full">
         {availableChannels?.channels?.length &&
-            availableChannels?.channels?.length > 0
-          ? (
-            <Select
-              onValueChange={(value: string) => {
-                const nameForChannel = availableChannels?.channels?.find((
-                  channel,
-                ) => channel.value === value)?.label;
-                setDiscriminator(value);
-                setName(nameForChannel);
-              }}
-              disabled={isLoadingAvailableChannels}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a channel" />
-              </SelectTrigger>
-              <SelectContent className="w-full">
-                {availableChannels?.channels?.map((channel) => {
-                  return (
-                    <SelectItem key={channel.value} value={channel.value}>
-                      {channel.label}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          )
-          : (
-            <Input
-              id="discriminator"
-              placeholder="Enter unique identifier (e.g., phone number for WhatsApp)"
-              value={discriminator}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setDiscriminator(e.target.value)}
-            />
-          )}
+        availableChannels?.channels?.length > 0 ? (
+          <Select
+            onValueChange={(value: string) => {
+              const nameForChannel = availableChannels?.channels?.find(
+                (channel) => channel.value === value,
+              )?.label;
+              setDiscriminator(value);
+              setName(nameForChannel);
+            }}
+            disabled={isLoadingAvailableChannels}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a channel" />
+            </SelectTrigger>
+            <SelectContent className="w-full">
+              {availableChannels?.channels?.map((channel) => {
+                return (
+                  <SelectItem key={channel.value} value={channel.value}>
+                    {channel.label}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Input
+            id="discriminator"
+            placeholder="Enter unique identifier (e.g., phone number for WhatsApp)"
+            value={discriminator}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setDiscriminator(e.target.value)
+            }
+          />
+        )}
       </div>
     </div>
   );

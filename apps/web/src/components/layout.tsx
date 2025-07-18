@@ -27,11 +27,7 @@ import { useLocalStorage } from "../hooks/use-local-storage.ts";
 import { WithWorkspaceTheme } from "./theme.tsx";
 import { ProfileModalProvider, useProfileModal } from "./profile-modal.tsx";
 
-export function BaseRouteLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export function BaseRouteLayout({ children }: { children: ReactNode }) {
   const user = useUser();
   const { teamSlug } = useParams();
 
@@ -48,10 +44,10 @@ export function BaseRouteLayout({
 }
 
 export function RouteLayout() {
-  const {
-    value: defaultOpen,
-    update: setDefaultOpen,
-  } = useLocalStorage({ key: "deco-chat-sidebar", defaultValue: true });
+  const { value: defaultOpen, update: setDefaultOpen } = useLocalStorage({
+    key: "deco-chat-sidebar",
+    defaultValue: true,
+  });
   const [open, setOpen] = useState(defaultOpen);
   const { teamSlug } = useParams();
 
@@ -80,10 +76,12 @@ export function RouteLayout() {
               setOpen(open);
             }}
             className="h-full bg-sidebar"
-            style={{
-              "--sidebar-width": "16rem",
-              "--sidebar-width-mobile": "14rem",
-            } as Record<string, string>}
+            style={
+              {
+                "--sidebar-width": "16rem",
+                "--sidebar-width-mobile": "14rem",
+              } as Record<string, string>
+            }
           >
             <AppSidebar />
             <SidebarInset className="h-full flex-col bg-sidebar">
@@ -114,12 +112,7 @@ export function PageLayout({
 
   return (
     <Docked.Provider tabs={tabs}>
-      <div
-        className={cn(
-          "bg-sidebar",
-          "grid grid-cols-3 md:grid-cols-2 px-2",
-        )}
-      >
+      <div className={cn("bg-sidebar", "grid grid-cols-3 md:grid-cols-2 px-2")}>
         <div className="p-2 md:p-0 md:hidden">
           <Button
             onClick={toggleSidebar}
@@ -197,15 +190,14 @@ export function DefaultBreadcrumb({ items }: { items: BreadcrumbItem[] }) {
 
       <Breadcrumb>
         <BreadcrumbList>
-          {isMobile
-            ? (
-              <BreadcrumbItem key={`mobile-${items.at(-1)?.link || "last"}`}>
-                <BreadcrumbPage className="inline-flex items-center gap-2">
-                  {items.at(-1)?.label}
-                </BreadcrumbPage>
-              </BreadcrumbItem>
-            )
-            : items?.map((item, index) => {
+          {isMobile ? (
+            <BreadcrumbItem key={`mobile-${items.at(-1)?.link || "last"}`}>
+              <BreadcrumbPage className="inline-flex items-center gap-2">
+                {items.at(-1)?.label}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          ) : (
+            items?.map((item, index) => {
               const isLast = index === items.length - 1;
               const link = withWorkspace(item.link ?? "");
 
@@ -227,15 +219,14 @@ export function DefaultBreadcrumb({ items }: { items: BreadcrumbItem[] }) {
                       href={link}
                       className="inline-flex items-center gap-2"
                     >
-                      <Link to={link}>
-                        {item.label}
-                      </Link>
+                      <Link to={link}>{item.label}</Link>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />
                 </Fragment>
               );
-            })}
+            })
+          )}
         </BreadcrumbList>
       </Breadcrumb>
     </div>

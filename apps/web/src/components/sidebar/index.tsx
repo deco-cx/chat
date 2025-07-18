@@ -98,32 +98,31 @@ const editTitleSchema = z.object({
 
 type EditTitleForm = z.infer<typeof editTitleSchema>;
 
-const WithActive = (
-  { children, ...props }: {
-    to: string;
-    children: (props: { isActive: boolean }) => ReactNode;
-  },
-) => {
+const WithActive = ({
+  children,
+  ...props
+}: {
+  to: string;
+  children: (props: { isActive: boolean }) => ReactNode;
+}) => {
   const match = useMatch(props.to);
 
-  return (
-    <div {...props}>
-      {children({ isActive: !!match })}
-    </div>
-  );
+  return <div {...props}>{children({ isActive: !!match })}</div>;
 };
 
 function buildThreadUrl(thread: Thread): string {
   return `agent/${thread.metadata?.agentId ?? ""}/${thread.id}`;
 }
 
-function DeleteThreadModal(
-  { thread, open, onOpenChange }: {
-    thread: Thread;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-  },
-) {
+function DeleteThreadModal({
+  thread,
+  open,
+  onOpenChange,
+}: {
+  thread: Thread;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const deleteThread = useDeleteThread(thread.id);
 
   const handleDelete = async () => {
@@ -146,10 +145,7 @@ function DeleteThreadModal(
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button
@@ -165,7 +161,11 @@ function DeleteThreadModal(
   );
 }
 
-function ThreadActions({ thread, onEdit, className }: {
+function ThreadActions({
+  thread,
+  onEdit,
+  className,
+}: {
   thread: Thread;
   onEdit: () => void;
   className: string;
@@ -233,13 +233,15 @@ function ThreadActions({ thread, onEdit, className }: {
   );
 }
 
-function SidebarThreadItem(
-  { thread, onThreadClick, agent }: {
-    thread: Thread;
-    agent?: Agent;
-    onThreadClick: (thread: Thread) => void;
-  },
-) {
+function SidebarThreadItem({
+  thread,
+  onThreadClick,
+  agent,
+}: {
+  thread: Thread;
+  agent?: Agent;
+  onThreadClick: (thread: Thread) => void;
+}) {
   const [isEditing, setIsEditing] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const updateTitle = useUpdateThreadTitle();
@@ -279,10 +281,7 @@ function SidebarThreadItem(
   };
 
   return (
-    <SidebarMenuItem
-      key={thread.id}
-      className="relative group/item"
-    >
+    <SidebarMenuItem key={thread.id} className="relative group/item">
       <div className="w-full">
         <WithActive to={buildThreadUrl(thread)}>
           {({ isActive }) => (
@@ -292,44 +291,40 @@ function SidebarThreadItem(
               tooltip={thread.title}
               className="h-9 w-full -ml-1 pr-8 gap-3"
             >
-              {isEditing
-                ? (
-                  <Form {...methods}>
-                    <form
-                      ref={formRef}
-                      onSubmit={handleSubmit}
-                      className="flex-1"
-                    >
-                      <Input
-                        {...methods.register("title")}
-                        className="h-8 text-sm w-5/6"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleSubmit(e);
-                          }
-                        }}
-                        onBlur={handleBlur}
-                      />
-                    </form>
-                  </Form>
-                )
-                : (
-                  <Link
-                    to={buildThreadUrl(thread)}
-                    onClick={() => onThreadClick(thread)}
+              {isEditing ? (
+                <Form {...methods}>
+                  <form
+                    ref={formRef}
+                    onSubmit={handleSubmit}
+                    className="flex-1"
                   >
-                    <AgentAvatar
-                      url={agent?.avatar}
-                      fallback={agent?.name ?? WELL_KNOWN_AGENT_IDS.teamAgent}
-                      size="xs"
+                    <Input
+                      {...methods.register("title")}
+                      className="h-8 text-sm w-5/6"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleSubmit(e);
+                        }
+                      }}
+                      onBlur={handleBlur}
                     />
+                  </form>
+                </Form>
+              ) : (
+                <Link
+                  to={buildThreadUrl(thread)}
+                  onClick={() => onThreadClick(thread)}
+                >
+                  <AgentAvatar
+                    url={agent?.avatar}
+                    fallback={agent?.name ?? WELL_KNOWN_AGENT_IDS.teamAgent}
+                    size="xs"
+                  />
 
-                    <span className="truncate">
-                      {thread.title}
-                    </span>
-                  </Link>
-                )}
+                  <span className="truncate">{thread.title}</span>
+                </Link>
+              )}
             </SidebarMenuButton>
           )}
         </WithActive>
@@ -350,12 +345,13 @@ function SidebarThreadItem(
   );
 }
 
-function SidebarThreadList(
-  { threads, agents }: {
-    threads: Thread[];
-    agents: Agent[];
-  },
-) {
+function SidebarThreadList({
+  threads,
+  agents,
+}: {
+  threads: Thread[];
+  agents: Agent[];
+}) {
   const { isMobile, toggleSidebar } = useSidebar();
 
   const handleThreadClick = (thread: Thread) => {
@@ -418,20 +414,17 @@ function SidebarThreads() {
 
       {Object.entries(groupedThreads.older).length > 0
         ? Object.entries(groupedThreads.older).map(([date, threads]) => {
-          return (
-            <SidebarGroup key={date}>
-              <SidebarGroupContent>
-                <SidebarGroupLabel>{date}</SidebarGroupLabel>
-                <SidebarMenu className="gap-0.5">
-                  <SidebarThreadList
-                    threads={threads}
-                    agents={agents}
-                  />
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          );
-        })
+            return (
+              <SidebarGroup key={date}>
+                <SidebarGroupContent>
+                  <SidebarGroupLabel>{date}</SidebarGroupLabel>
+                  <SidebarMenu className="gap-0.5">
+                    <SidebarThreadList threads={threads} agents={agents} />
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            );
+          })
         : null}
     </>
   );
@@ -485,8 +478,9 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
 
-                  {STATIC_ITEMS.filter((item) =>
-                    item.title !== "Workflows" || preferences.displayWorkflow
+                  {STATIC_ITEMS.filter(
+                    (item) =>
+                      item.title !== "Workflows" || preferences.displayWorkflow,
                   ).map((item) => {
                     const href = workspaceLink(item.url);
 

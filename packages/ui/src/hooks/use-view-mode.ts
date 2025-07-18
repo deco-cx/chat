@@ -13,8 +13,8 @@ export function useViewMode(
   // Simple initialization: check localStorage, otherwise default to cards
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const stored = globalThis.localStorage?.getItem(storageKey);
-    return (stored === "cards" || stored === "table")
-      ? stored as ViewMode
+    return stored === "cards" || stored === "table"
+      ? (stored as ViewMode)
       : "cards";
   });
 

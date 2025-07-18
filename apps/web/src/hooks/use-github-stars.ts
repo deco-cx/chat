@@ -7,7 +7,7 @@ async function fetchGitHubStars() {
   if (!response.ok) {
     throw new Error("Failed to fetch GitHub stars");
   }
-  const data = await response.json() as { stargazers_count: number };
+  const data = (await response.json()) as { stargazers_count: number };
   return data.stargazers_count;
 }
 

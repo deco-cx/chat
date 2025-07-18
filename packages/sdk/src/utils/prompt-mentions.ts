@@ -46,7 +46,7 @@ export function toMention(id: string, type: Mentionables = "prompt") {
 export async function resolveMentions(
   content: string,
   workspace: string,
-  client?: ReturnType<typeof MCPClient["forWorkspace"]>,
+  client?: ReturnType<(typeof MCPClient)["forWorkspace"]>,
   options?: {
     /**
      * The id of the parent prompt. If provided, the resolution will skip the parent id to avoid infinite recursion.
@@ -58,9 +58,9 @@ export async function resolveMentions(
 
   const mentions = extractMentionsFromString(content);
 
-  const promptIds = mentions.filter((mention) => mention.type === "prompt").map(
-    (mention) => mention.id,
-  );
+  const promptIds = mentions
+    .filter((mention) => mention.type === "prompt")
+    .map((mention) => mention.id);
 
   if (!promptIds.length) {
     return contentWithoutComments;
@@ -87,8 +87,9 @@ export async function resolveMentions(
     prompts.map((prompt) => [prompt.id, prompt]),
   );
 
-  return contentWithoutComments
-    .replaceAll(MENTION_REGEX, (_match, id, type) => {
+  return contentWithoutComments.replaceAll(
+    MENTION_REGEX,
+    (_match, id, type) => {
       if (type === "prompt") {
         if (id === options?.parentPromptId) {
           return "";
@@ -103,5 +104,6 @@ export async function resolveMentions(
       }
 
       return "";
-    });
+    },
+  );
 }

@@ -72,23 +72,22 @@ export const useThreads = (partialOptions: ThreadFilterOptions = {}) => {
   const updateThreadTitle = useUpdateThreadTitle();
 
   const generateThreadTitle = useCallback(
-    async (
-      { firstMessage: _firstMessage, threadId }: {
-        firstMessage: string;
-        threadId: string;
-      },
-    ) => {
+    async ({
+      firstMessage: _firstMessage,
+      threadId,
+    }: {
+      firstMessage: string;
+      threadId: string;
+    }) => {
       const [result] = await Promise.all([
-        MCPClient
-          .forWorkspace(workspace)
-          .AI_GENERATE({
-            // This can break if the workspace disabled 4.1-nano.
-            // TODO: Implement something like a model price/quality/speed hinting system.
-            model: "openai:gpt-4.1-nano",
-            messages: [{
+        MCPClient.forWorkspace(workspace).AI_GENERATE({
+          // This can break if the workspace disabled 4.1-nano.
+          // TODO: Implement something like a model price/quality/speed hinting system.
+          model: "openai:gpt-4.1-nano",
+          messages: [
+            {
               role: "user",
-              content:
-                `Generate a title for the thread that started with the following user message:
+              content: `Generate a title for the thread that started with the following user message:
                 <Rule>Make it short and concise</Rule>
                 <Rule>Make it a single sentence</Rule>
                 <Rule>Keep the same language as the user message</Rule>
@@ -97,11 +96,12 @@ export const useThreads = (partialOptions: ThreadFilterOptions = {}) => {
                 <UserMessage>
                   ${_firstMessage}
                 </UserMessage>`,
-            }],
-          }),
+            },
+          ],
+        }),
         // ensure at least 2 seconds delay to avoid UI flickering.
         new Promise((resolve) =>
-          setTimeout(resolve, TITLE_GENERATION_MIN_DELAY_MS)
+          setTimeout(resolve, TITLE_GENERATION_MIN_DELAY_MS),
         ),
       ]);
       updateThreadTitle.mutate({ threadId, title: result.text, stream: true });
@@ -110,7 +110,11 @@ export const useThreads = (partialOptions: ThreadFilterOptions = {}) => {
   );
 
   const effect = useCallback(
-    ({ messages, threadId, agentId }: {
+    ({
+      messages,
+      threadId,
+      agentId,
+    }: {
       messages: UIMessage[];
       threadId: string;
       agentId: string;
@@ -119,17 +123,18 @@ export const useThreads = (partialOptions: ThreadFilterOptions = {}) => {
       client.setQueryData<Awaited<ReturnType<typeof listThreads>>>(
         key,
         (oldData) => {
-          const exists = oldData?.threads.find((thread: Thread) =>
-            thread.id === threadId
+          const exists = oldData?.threads.find(
+            (thread: Thread) => thread.id === threadId,
           );
 
           if (exists) {
             return oldData;
           }
 
-          const temporaryTitle = typeof messages[0]?.content === "string"
-            ? messages[0].content.slice(0, 20)
-            : "New chat";
+          const temporaryTitle =
+            typeof messages[0]?.content === "string"
+              ? messages[0].content.slice(0, 20)
+              : "New chat";
 
           generateThreadTitle({ firstMessage: messages[0].content, threadId });
 
@@ -208,7 +213,7 @@ export const useUpdateThreadTitle = () => {
                   threads: oldData.threads.map((thread) =>
                     thread.id === threadId
                       ? { ...thread, title: partialTitle }
-                      : thread
+                      : thread,
                   ),
                 };
               },
@@ -240,7 +245,7 @@ export const useUpdateThreadTitle = () => {
             return {
               ...oldData,
               threads: oldData.threads.map((thread) =>
-                thread.id === threadId ? { ...thread, title } : thread
+                thread.id === threadId ? { ...thread, title } : thread,
               ),
             };
           },

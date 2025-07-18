@@ -5,9 +5,9 @@ import { cn } from "../lib/utils.ts";
 import * as drawer from "./drawer.tsx";
 import * as dropdown from "./dropdown-menu.tsx";
 
-const ResponsiveDropdownContext = createContext<
-  { setOpen: (open: boolean) => void }
->({ setOpen: () => {} });
+const ResponsiveDropdownContext = createContext<{
+  setOpen: (open: boolean) => void;
+}>({ setOpen: () => {} });
 
 const useResponsiveDropdownContext = () =>
   useContext(ResponsiveDropdownContext);
@@ -44,24 +44,20 @@ const ResponsiveDropdownContent = ({
   const isMobile = useIsMobile();
   const { className, ...restProps } = props;
 
-  return isMobile
-    ? (
-      <drawer.DrawerContent {...restProps}>
-        <drawer.DrawerHeader className="hidden">
-          <drawer.DrawerTitle>
-            {title}
-          </drawer.DrawerTitle>
-        </drawer.DrawerHeader>
-        <div className={cn("flex flex-col gap-2 p-2 py-4", className)}>
-          {children}
-        </div>
-      </drawer.DrawerContent>
-    )
-    : (
-      <dropdown.DropdownMenuContent {...props}>
+  return isMobile ? (
+    <drawer.DrawerContent {...restProps}>
+      <drawer.DrawerHeader className="hidden">
+        <drawer.DrawerTitle>{title}</drawer.DrawerTitle>
+      </drawer.DrawerHeader>
+      <div className={cn("flex flex-col gap-2 p-2 py-4", className)}>
         {children}
-      </dropdown.DropdownMenuContent>
-    );
+      </div>
+    </drawer.DrawerContent>
+  ) : (
+    <dropdown.DropdownMenuContent {...props}>
+      {children}
+    </dropdown.DropdownMenuContent>
+  );
 };
 
 const ResponsiveDropdownItem = ({
@@ -72,30 +68,24 @@ const ResponsiveDropdownItem = ({
   const isMobile = useIsMobile();
   const { className, ...otherProps } = props;
 
-  return isMobile
-    ? (
-      <div
-        {...otherProps as React.HTMLAttributes<HTMLDivElement>}
-        onClick={(e) => {
-          setOpen(false);
-          const { onClick } = otherProps as React.HTMLAttributes<
-            HTMLDivElement
-          >;
-          onClick?.(e);
-        }}
-        className={cn(
-          "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-          className,
-        )}
-      >
-        {children}
-      </div>
-    )
-    : (
-      <dropdown.DropdownMenuItem {...props}>
-        {children}
-      </dropdown.DropdownMenuItem>
-    );
+  return isMobile ? (
+    <div
+      {...(otherProps as React.HTMLAttributes<HTMLDivElement>)}
+      onClick={(e) => {
+        setOpen(false);
+        const { onClick } = otherProps as React.HTMLAttributes<HTMLDivElement>;
+        onClick?.(e);
+      }}
+      className={cn(
+        "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  ) : (
+    <dropdown.DropdownMenuItem {...props}>{children}</dropdown.DropdownMenuItem>
+  );
 };
 
 const ResponsiveDropdownTrigger = ({
@@ -104,17 +94,13 @@ const ResponsiveDropdownTrigger = ({
 }: React.ComponentProps<typeof dropdown.DropdownMenuTrigger>) => {
   const isMobile = useIsMobile();
 
-  return isMobile
-    ? (
-      <drawer.DrawerTrigger asChild>
-        {children}
-      </drawer.DrawerTrigger>
-    )
-    : (
-      <dropdown.DropdownMenuTrigger {...props}>
-        {children}
-      </dropdown.DropdownMenuTrigger>
-    );
+  return isMobile ? (
+    <drawer.DrawerTrigger asChild>{children}</drawer.DrawerTrigger>
+  ) : (
+    <dropdown.DropdownMenuTrigger {...props}>
+      {children}
+    </dropdown.DropdownMenuTrigger>
+  );
 };
 
 const ResponsiveDropdownSeparator = ({
@@ -123,9 +109,11 @@ const ResponsiveDropdownSeparator = ({
 }: React.ComponentProps<typeof dropdown.DropdownMenuSeparator>) => {
   const isMobile = useIsMobile();
 
-  return isMobile
-    ? <dropdown.DropdownMenuSeparator className={cn(className)} {...props} />
-    : <dropdown.DropdownMenuSeparator className={cn(className)} {...props} />;
+  return isMobile ? (
+    <dropdown.DropdownMenuSeparator className={cn(className)} {...props} />
+  ) : (
+    <dropdown.DropdownMenuSeparator className={cn(className)} {...props} />
+  );
 };
 
 export {

@@ -112,9 +112,8 @@ export const useRejectInvite = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (
-      { id: id }: { id: string; teamId?: number },
-    ) => rejectInvite(id),
+    mutationFn: ({ id: id }: { id: string; teamId?: number }) =>
+      rejectInvite(id),
     onSuccess: (_, variables) => {
       variables.teamId === undefined &&
         queryClient.invalidateQueries({ queryKey: KEYS.MY_INVITES() });
@@ -167,14 +166,10 @@ export const useRemoveTeamMember = () => {
       const membersKey = KEYS.TEAM_MEMBERS(teamId);
 
       queryClient.cancelQueries({ queryKey: membersKey });
-      queryClient.setQueryData<{ members: Member[] }>(
-        membersKey,
-        (old) => ({
-          ...old,
-          members: old?.members?.filter((member) => member.id !== memberId) ??
-            [],
-        }),
-      );
+      queryClient.setQueryData<{ members: Member[] }>(membersKey, (old) => ({
+        ...old,
+        members: old?.members?.filter((member) => member.id !== memberId) ?? [],
+      }));
     },
   });
 };
@@ -217,9 +212,10 @@ export const useUpdateMemberRole = () => {
       const membersWithChangedRole = members.map((member) => {
         if (member.user_id !== userId) return member;
 
-        const newRoles = action === "grant"
-          ? [...member.roles, { id: roleId, name: roleName }]
-          : member.roles.filter((r) => r.id !== roleId);
+        const newRoles =
+          action === "grant"
+            ? [...member.roles, { id: roleId, name: roleName }]
+            : member.roles.filter((r) => r.id !== roleId);
         return { ...member, roles: newRoles };
       });
       queryClient.setQueryData<TeamMembers>(membersKey, {

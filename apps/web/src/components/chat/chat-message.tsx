@@ -133,15 +133,18 @@ function mergeParts(parts: Part[] | undefined): MessagePart[] {
   return mergedParts;
 }
 
-export function ChatMessage(
-  { message, isStreaming = false, isLastMessage = false }: ChatMessageProps,
-) {
+export function ChatMessage({
+  message,
+  isStreaming = false,
+  isLastMessage = false,
+}: ChatMessageProps) {
   const isUser = message.role === "user";
-  const timestamp = new Date(message.createdAt || Date.now())
-    .toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const timestamp = new Date(
+    message.createdAt || Date.now(),
+  ).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   const attachments = message.experimental_attachments?.filter(
     (attachment: MessageAttachment) =>
@@ -151,20 +154,24 @@ export function ChatMessage(
 
   const handleCopy = async () => {
     const content = message.parts
-      ? (message.parts as Part[]).filter((part) => part.type === "text").map((
-        part,
-      ) => part.text).join("\n")
+      ? (message.parts as Part[])
+          .filter((part) => part.type === "text")
+          .map((part) => part.text)
+          .join("\n")
       : message.content;
     await navigator.clipboard.writeText(content);
   };
 
-  const mergedParts = useMemo(() => mergeParts(message.parts as Part[]), [
-    message.parts,
-  ]);
+  const mergedParts = useMemo(
+    () => mergeParts(message.parts as Part[]),
+    [message.parts],
+  );
 
   const hasTextContent = useMemo(() => {
-    return (message.parts as Part[])?.some((part) => part.type === "text") ||
-      message.content;
+    return (
+      (message.parts as Part[])?.some((part) => part.type === "text") ||
+      message.content
+    );
   }, [message.parts, message.content]);
 
   const isReasoningStreaming = useMemo(() => {
@@ -210,74 +217,65 @@ export function ChatMessage(
             isUser ? "bg-muted p-3" : "bg-transparent",
           )}
         >
-          {message.parts
-            ? (
-              <div className="space-y-2 w-full">
-                {mergedParts.map((part, index) => {
-                  if (part.type === "reasoning") {
-                    const isLastReasoningPart = mergedParts
-                      .slice(index + 1)
-                      .every((p) => p.type !== "reasoning");
-                    return (
-                      <ReasoningPart
-                        key={index}
-                        reasoning={part.reasoning || ""}
-                        messageId={message.id}
-                        index={index}
-                        isStreaming={isLastReasoningPart &&
-                          isReasoningStreaming}
-                        isResponseStreaming={isResponseStreaming}
-                      />
-                    );
-                  } else if (part.type === "text") {
-                    return (
-                      <MemoizedMarkdown
-                        key={index}
-                        id={`${message.id}-${index}`}
-                        content={part.content || ""}
-                      />
-                    );
-                  } else if (part.type === "image") {
-                    if (!part.image) return null;
-                    return <ImagePart image={part.image} key={index} />;
-                  } else if (
-                    part.type === "tool-invocation-group" &&
-                    part.toolInvocations
-                  ) {
-                    return (
-                      <ToolMessage
-                        key={index}
-                        toolInvocations={part.toolInvocations}
-                        isLastMessage={isLastMessage}
-                      />
-                    );
-                  }
-                  return null;
-                })}
-              </div>
-            )
-            : (
-              <MemoizedMarkdown
-                id={message.id}
-                content={message.content}
-              />
-            )}
+          {message.parts ? (
+            <div className="space-y-2 w-full">
+              {mergedParts.map((part, index) => {
+                if (part.type === "reasoning") {
+                  const isLastReasoningPart = mergedParts
+                    .slice(index + 1)
+                    .every((p) => p.type !== "reasoning");
+                  return (
+                    <ReasoningPart
+                      key={index}
+                      reasoning={part.reasoning || ""}
+                      messageId={message.id}
+                      index={index}
+                      isStreaming={isLastReasoningPart && isReasoningStreaming}
+                      isResponseStreaming={isResponseStreaming}
+                    />
+                  );
+                } else if (part.type === "text") {
+                  return (
+                    <MemoizedMarkdown
+                      key={index}
+                      id={`${message.id}-${index}`}
+                      content={part.content || ""}
+                    />
+                  );
+                } else if (part.type === "image") {
+                  if (!part.image) return null;
+                  return <ImagePart image={part.image} key={index} />;
+                } else if (
+                  part.type === "tool-invocation-group" &&
+                  part.toolInvocations
+                ) {
+                  return (
+                    <ToolMessage
+                      key={index}
+                      toolInvocations={part.toolInvocations}
+                      isLastMessage={isLastMessage}
+                    />
+                  );
+                }
+                return null;
+              })}
+            </div>
+          ) : (
+            <MemoizedMarkdown id={message.id} content={message.content} />
+          )}
 
           {attachments && attachments.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
-              {attachments.map((
-                attachment: MessageAttachment,
-                index: number,
-              ) => (
-                <a
-                  key={`${message.id}-${index}`}
-                  href={attachment.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="relative group flex items-center gap-2 p-2 bg-muted rounded-xl border border-border hover:bg-muted/50 transition-colors"
-                >
-                  {attachment.contentType?.startsWith("image/")
-                    ? (
+              {attachments.map(
+                (attachment: MessageAttachment, index: number) => (
+                  <a
+                    key={`${message.id}-${index}`}
+                    href={attachment.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative group flex items-center gap-2 p-2 bg-muted rounded-xl border border-border hover:bg-muted/50 transition-colors"
+                  >
+                    {attachment.contentType?.startsWith("image/") ? (
                       <div className="relative">
                         <img
                           src={attachment.url}
@@ -285,9 +283,9 @@ export function ChatMessage(
                           className="rounded-lg max-h-[300px] object-cover"
                         />
                       </div>
-                    )
-                    : attachment.contentType?.startsWith("application/pdf")
-                    ? (
+                    ) : attachment.contentType?.startsWith(
+                        "application/pdf",
+                      ) ? (
                       <div className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-muted">
                           <Icon
@@ -301,8 +299,7 @@ export function ChatMessage(
                           </span>
                         </div>
                       </div>
-                    )
-                    : (
+                    ) : (
                       <div className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-muted">
                           <Icon
@@ -317,8 +314,9 @@ export function ChatMessage(
                         </div>
                       </div>
                     )}
-                </a>
-              ))}
+                  </a>
+                ),
+              )}
             </div>
           )}
 

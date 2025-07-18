@@ -91,16 +91,17 @@ const validateWalletBalance = async (c: AppContext) => {
 
 const setupLLMInstance = async (modelId: string, c: AppContext) => {
   assertHasWorkspace(c);
-  const wellKnownModel = WELL_KNOWN_MODELS.find((model) =>
-    model.id === modelId
+  const wellKnownModel = WELL_KNOWN_MODELS.find(
+    (model) => model.id === modelId,
   );
-  const llmVault = wellKnownModel || !c.envVars.LLMS_ENCRYPTION_KEY
-    ? undefined
-    : new SupabaseLLMVault(
-      c.db,
-      c.envVars.LLMS_ENCRYPTION_KEY,
-      c.workspace.value,
-    );
+  const llmVault =
+    wellKnownModel || !c.envVars.LLMS_ENCRYPTION_KEY
+      ? undefined
+      : new SupabaseLLMVault(
+          c.db,
+          c.envVars.LLMS_ENCRYPTION_KEY,
+          c.workspace.value,
+        );
   const llmConfig = await getLLMConfig({
     modelId,
     llmVault,
@@ -137,7 +138,7 @@ const prepareMessages = async (
           ...msg,
           id: msg.id || crypto.randomUUID(),
         },
-      })
+      }),
     ),
   );
 };
@@ -155,15 +156,17 @@ const processTransaction = async (
     model: modelId,
     modelId,
     plan,
-    userId: typeof c.user.id === "string"
-      ? c.user.id
-      : `apikey-${c.workspace.value}`,
+    userId:
+      typeof c.user.id === "string" ? c.user.id : `apikey-${c.workspace.value}`,
     workspace: c.workspace.value,
   });
 
-  const response = await wallet["POST /transactions"]({}, {
-    body: transaction,
-  });
+  const response = await wallet["POST /transactions"](
+    {},
+    {
+      body: transaction,
+    },
+  );
 
   if (!response.ok) {
     console.error(
@@ -182,81 +185,105 @@ const createTool = createToolGroup("AI", {
   name: "AI Gateway",
   description:
     "Unified LLM API, keeping the centralized observability and billing.",
-  icon:
-    "https://assets.decocache.com/mcp/6e1418f7-c962-406b-aceb-137197902709/ai-gateway.png",
+  icon: "https://assets.decocache.com/mcp/6e1418f7-c962-406b-aceb-137197902709/ai-gateway.png",
 });
 
 // Common input schema for messages
-const baseMessageSchema = z.array(z.object({
-  id: z.string().optional(),
-  role: z.enum(["user", "assistant", "system"]),
-  content: z.string(),
-  createdAt: z.date().optional(),
-  experimental_attachments: z.array(z.object({
-    name: z.string().optional().describe(
-      "The name of the attachment, usually the file name",
-    ),
-    contentType: z.string().optional().describe(
-      "Media type of the attachment",
-    ),
-    url: z.string().describe(
-      "URL of the attachment (hosted file or Data URL)",
-    ),
-  })).optional().describe(
-    "Additional attachments to be sent along with the message",
-  ),
-})).describe("Array of messages for the conversation");
+const baseMessageSchema = z
+  .array(
+    z.object({
+      id: z.string().optional(),
+      role: z.enum(["user", "assistant", "system"]),
+      content: z.string(),
+      createdAt: z.date().optional(),
+      experimental_attachments: z
+        .array(
+          z.object({
+            name: z
+              .string()
+              .optional()
+              .describe("The name of the attachment, usually the file name"),
+            contentType: z
+              .string()
+              .optional()
+              .describe("Media type of the attachment"),
+            url: z
+              .string()
+              .describe("URL of the attachment (hosted file or Data URL)"),
+          }),
+        )
+        .optional()
+        .describe("Additional attachments to be sent along with the message"),
+    }),
+  )
+  .describe("Array of messages for the conversation");
 
 const baseGenerationOptionsSchema = z.object({
-  model: z.string().optional().describe(
-    "Model ID to use for generation (defaults to workspace default)",
-  ),
-  maxTokens: z.number().default(8192).optional().describe(
-    "Maximum number of tokens to generate",
-  ),
-  temperature: z.number().default(0.7).optional().describe(
-    "Temperature for the generation",
-  ),
-  tools: z.record(z.string(), z.array(z.string())).optional().describe(
-    "Tools available for the generation",
-  ),
+  model: z
+    .string()
+    .optional()
+    .describe("Model ID to use for generation (defaults to workspace default)"),
+  maxTokens: z
+    .number()
+    .default(8192)
+    .optional()
+    .describe("Maximum number of tokens to generate"),
+  temperature: z
+    .number()
+    .default(0.7)
+    .optional()
+    .describe("Temperature for the generation"),
+  tools: z
+    .record(z.string(), z.array(z.string()))
+    .optional()
+    .describe("Tools available for the generation"),
 });
 
 // Common usage schema
-const usageSchema = z.object({
-  promptTokens: z.number().describe("Number of tokens in the prompt"),
-  completionTokens: z.number().describe("Number of tokens in the completion"),
-  totalTokens: z.number().describe("Total number of tokens used"),
-  transactionId: z.string().describe("Transaction ID"),
-}).describe("Token usage information");
+const usageSchema = z
+  .object({
+    promptTokens: z.number().describe("Number of tokens in the prompt"),
+    completionTokens: z.number().describe("Number of tokens in the completion"),
+    totalTokens: z.number().describe("Total number of tokens used"),
+    transactionId: z.string().describe("Transaction ID"),
+  })
+  .describe("Token usage information");
 
-const AIGenerateInputSchema = z.object({
-  messages: baseMessageSchema,
-}).merge(baseGenerationOptionsSchema);
+const AIGenerateInputSchema = z
+  .object({
+    messages: baseMessageSchema,
+  })
+  .merge(baseGenerationOptionsSchema);
 
 const AIGenerateOutputSchema = z.object({
   text: z.string().describe("The generated text response"),
   usage: usageSchema,
-  finishReason: z.string().optional().describe(
-    "Reason why generation finished",
-  ),
+  finishReason: z
+    .string()
+    .optional()
+    .describe("Reason why generation finished"),
 });
 
-const AIGenerateObjectInputSchema = z.object({
-  messages: baseMessageSchema,
-  schema: z.record(z.any()).describe(
-    "JSON Schema that defines the structure of the object to generate",
-  ),
-}).merge(baseGenerationOptionsSchema);
+const AIGenerateObjectInputSchema = z
+  .object({
+    messages: baseMessageSchema,
+    schema: z
+      .record(z.any())
+      .describe(
+        "JSON Schema that defines the structure of the object to generate",
+      ),
+  })
+  .merge(baseGenerationOptionsSchema);
 
 const AIGenerateObjectOutputSchema = z.object({
-  object: z.any().describe(
-    "The generated object according to the provided schema",
-  ),
+  object: z
+    .any()
+    .describe("The generated object according to the provided schema"),
   usage: usageSchema,
-  finishReason: z.string().optional().describe(
-    "Reason why generation finished",
-  ),
+  finishReason: z
+    .string()
+    .optional()
+    .describe("Reason why generation finished"),
 });
 
 export const aiGenerate = createTool({

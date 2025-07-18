@@ -74,25 +74,15 @@ export function SetupIntegrationModal({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          {loading
-            ? (
-              <Button disabled={loading}>
-                Connecting...
-              </Button>
-            )
-            : createdIntegrationId
-            ? (
-              <div className="flex gap-3">
-                <Button onClick={onEdit}>
-                  Configure
-                </Button>
-              </div>
-            )
-            : (
-              <Button onClick={onConnect}>
-                Connect
-              </Button>
-            )}
+          {loading ? (
+            <Button disabled={loading}>Connecting...</Button>
+          ) : createdIntegrationId ? (
+            <div className="flex gap-3">
+              <Button onClick={onEdit}>Configure</Button>
+            </div>
+          ) : (
+            <Button onClick={onConnect}>Connect</Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -120,17 +110,18 @@ function VerifiedBadge() {
   );
 }
 
-function CardsView(
-  { integrations, onRowClick }: {
-    integrations: MarketplaceIntegration[];
-    onRowClick: (integration: MarketplaceIntegration) => void;
-  },
-) {
+function CardsView({
+  integrations,
+  onRowClick,
+}: {
+  integrations: MarketplaceIntegration[];
+  onRowClick: (integration: MarketplaceIntegration) => void;
+}) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
       {integrations.map((integration) => {
-        const showVerifiedBadge = integration.id !== NEW_CUSTOM_CONNECTION.id &&
-          integration.verified;
+        const showVerifiedBadge =
+          integration.id !== NEW_CUSTOM_CONNECTION.id && integration.verified;
         return (
           <Card
             key={integration.id}
@@ -191,12 +182,17 @@ export function Marketplace({
     ];
 
     return filter
-      ? integrations.filter((integration: MarketplaceIntegration) =>
-        integration.name.toLowerCase().includes(searchTerm) ||
-        (integration.description?.toLowerCase() ?? "").includes(searchTerm) ||
-        integration.provider.toLowerCase().includes(searchTerm) ||
-        (integration.friendlyName?.toLowerCase() ?? "").includes(searchTerm)
-      )
+      ? integrations.filter(
+          (integration: MarketplaceIntegration) =>
+            integration.name.toLowerCase().includes(searchTerm) ||
+            (integration.description?.toLowerCase() ?? "").includes(
+              searchTerm,
+            ) ||
+            integration.provider.toLowerCase().includes(searchTerm) ||
+            (integration.friendlyName?.toLowerCase() ?? "").includes(
+              searchTerm,
+            ),
+        )
       : integrations;
   }, [marketplace, filter]);
 
@@ -207,10 +203,7 @@ export function Marketplace({
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className="flex-1 min-h-0 overflow-x-auto">
-        <CardsView
-          integrations={filteredIntegrations}
-          onRowClick={onClick}
-        />
+        <CardsView integrations={filteredIntegrations} onRowClick={onClick} />
       </div>
     </div>
   );

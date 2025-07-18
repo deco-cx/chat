@@ -18,10 +18,11 @@ export const handleCodeExchange = async (c: Context<AppEnv>) => {
 
     const { code } = await c.req.json();
 
-    const { data, error } = await appCtx.db.from("deco_chat_oauth_codes")
-      .select(
-        "*",
-      ).eq("code", code).maybeSingle();
+    const { data, error } = await appCtx.db
+      .from("deco_chat_oauth_codes")
+      .select("*")
+      .eq("code", code)
+      .maybeSingle();
 
     if (error || !data) {
       throw new HTTPException(500, { message: "Failed to exchange code" });
@@ -29,22 +30,21 @@ export const handleCodeExchange = async (c: Context<AppEnv>) => {
 
     const { claims } = data as unknown as { claims: JWTPayload };
 
-    const keyPair = appCtx.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY &&
-        appCtx.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY
-      ? {
-        public: appCtx.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY,
-        private: appCtx.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY,
-      }
-      : undefined;
+    const keyPair =
+      appCtx.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY &&
+      appCtx.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY
+        ? {
+            public: appCtx.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY,
+            private: appCtx.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY,
+          }
+        : undefined;
     const issuer = await JwtIssuer.forKeyPair(keyPair);
     const token = await issuer.issue({
       ...claims,
       user: "user" in claims ? tryParseUser(claims.user) : undefined,
     });
 
-    await appCtx.db.from("deco_chat_oauth_codes")
-      .delete()
-      .eq("code", code);
+    await appCtx.db.from("deco_chat_oauth_codes").delete().eq("code", code);
 
     return c.json({ access_token: token });
   } catch {

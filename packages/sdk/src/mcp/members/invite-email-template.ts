@@ -4,9 +4,11 @@ interface InviteEmailTemplateProps {
   formattedRoles: string;
 }
 
-export function getInviteEmailTemplate(
-  { cleanInviter, cleanTeamName, formattedRoles }: InviteEmailTemplateProps,
-): string {
+export function getInviteEmailTemplate({
+  cleanInviter,
+  cleanTeamName,
+  formattedRoles,
+}: InviteEmailTemplateProps): string {
   return `
 <!DOCTYPE html>
 <html lang="en">

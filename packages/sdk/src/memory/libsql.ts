@@ -27,22 +27,22 @@ export class LibSQLStore extends MastraLibSQLStore {
     );
   }
 
-  override async updateThread(
-    args: {
-      id: string;
-      title: string;
-      metadata: Record<string, unknown>;
-    },
-  ): Promise<StorageThreadType> {
+  override async updateThread(args: {
+    id: string;
+    title: string;
+    metadata: Record<string, unknown>;
+  }): Promise<StorageThreadType> {
     await this.threadCache.delete(args.id);
     return super.updateThread(args).then(async (thread) => {
       await this.threadCache.set(thread.id, thread);
       return thread;
     });
   }
-  override async saveThread(
-    { thread }: { thread: StorageThreadType },
-  ): Promise<StorageThreadType> {
+  override async saveThread({
+    thread,
+  }: {
+    thread: StorageThreadType;
+  }): Promise<StorageThreadType> {
     await this.threadCache.delete(thread.id).catch(() => {
       // ignore saveThread error
       // Error untracked: Unable to delete cached response
@@ -53,26 +53,29 @@ export class LibSQLStore extends MastraLibSQLStore {
     });
   }
 
-  override async deleteThread(
-    { threadId }: { threadId: string },
-  ): Promise<void> {
+  override async deleteThread({
+    threadId,
+  }: {
+    threadId: string;
+  }): Promise<void> {
     await this.threadCache.delete(threadId);
     return super.deleteThread({ threadId });
   }
 
-  override async load<R>(
-    { tableName, keys }: {
-      tableName: TABLE_NAMES;
-      keys: Record<string, string>;
-    },
-  ): Promise<R | null> {
+  override async load<R>({
+    tableName,
+    keys,
+  }: {
+    tableName: TABLE_NAMES;
+    keys: Record<string, string>;
+  }): Promise<R | null> {
     const byId = "id" in keys;
     if (byId) {
       const id = keys.id;
-      return await sf.do(id, async () => {
+      return (await sf.do(id, async () => {
         const cached = await this.threadCache.get(id);
-        return cached ?? await super.load({ tableName, keys });
-      }) as Promise<R | null>;
+        return cached ?? (await super.load({ tableName, keys }));
+      })) as Promise<R | null>;
     }
     return await super.load({ tableName, keys });
   }
@@ -100,9 +103,7 @@ const TURSO_GROUP = "deco-agents-v2";
  */
 export class LibSQLFactory {
   private turso: TursoAPIClient;
-  constructor(
-    public opts: LibSQLFactoryOpts,
-  ) {
+  constructor(public opts: LibSQLFactoryOpts) {
     this.turso = createTursoAPIClient({
       token: this.opts.tursoAdminToken,
       org: this.opts.tursoOrganization,
@@ -126,20 +127,21 @@ export class LibSQLFactory {
       return newToken.jwt;
     };
 
-    const url =
-      `libsql://${uniqueDbName}-${this.opts.tursoOrganization}.aws-us-east-1.turso.io`;
-    const { authToken, created } = await this.turso.databases.get(uniqueDbName)
-      .then(
-        async () => {
-          return {
-            authToken: await dbAuthToken(),
-            created: false,
-          };
-        },
-      ).catch(async () => {
-        await this.turso.databases.create(uniqueDbName, { group: TURSO_GROUP })
+    const url = `libsql://${uniqueDbName}-${this.opts.tursoOrganization}.aws-us-east-1.turso.io`;
+    const { authToken, created } = await this.turso.databases
+      .get(uniqueDbName)
+      .then(async () => {
+        return {
+          authToken: await dbAuthToken(),
+          created: false,
+        };
+      })
+      .catch(async () => {
+        await this.turso.databases
+          .create(uniqueDbName, { group: TURSO_GROUP })
           .catch((err) => {
-            if (err.name === "TursoClientError" && err.status === 409) { // alreadyExists
+            if (err.name === "TursoClientError" && err.status === 409) {
+              // alreadyExists
               return; // ignore
             }
             throw err;
@@ -172,9 +174,10 @@ export class LibSQLFactory {
 
     // On turso create, the database is not ready to be used.
     // So we need to wait for it to be ready.
-    const promise = storage.init()
+    const promise = storage
+      .init()
       .catch((e) =>
-        console.error("MASTRA tables creation failed with error", e)
+        console.error("MASTRA tables creation failed with error", e),
       );
 
     if (created) {

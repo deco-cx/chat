@@ -7,9 +7,7 @@ export * from "@deco/sdk/mcp";
 export type Bindings = EnvVars & {
   DECO_CHAT_APP_ORIGIN?: string;
   PROD_DISPATCHER: {
-    get: <
-      TOutbound extends Record<string, unknown> = Record<string, unknown>,
-    >(
+    get: <TOutbound extends Record<string, unknown> = Record<string, unknown>>(
       script: string,
       ctx?: Record<string, unknown>,
       metadata?: { outbound?: TOutbound },

@@ -18,9 +18,14 @@ interface AgentCardProps {
   displayLink?: boolean;
 }
 
-export function AgentCard(
-  { id, name, description, avatar, onEdit, displayLink = true }: AgentCardProps,
-) {
+export function AgentCard({
+  id,
+  name,
+  description,
+  avatar,
+  onEdit,
+  displayLink = true,
+}: AgentCardProps) {
   const focusChat = useFocusChat();
 
   if (!avatar || !name || !description) {

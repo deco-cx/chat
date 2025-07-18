@@ -17,11 +17,14 @@ export const listApps = async ({ workspace }: Options) => {
   console.log(`🔍 Listing apps in workspace '${workspace}'...`);
 
   const client = await createWorkspaceClient({ workspace });
-  const response = await client.callTool({
-    name: "HOSTING_APPS_LIST",
-    arguments: {},
+  const response = await client.callTool(
+    {
+      name: "HOSTING_APPS_LIST",
+      arguments: {},
+    },
     // deno-lint-ignore no-explicit-any
-  }, z.any() as any);
+    z.any() as any,
+  );
 
   if (response.isError && Array.isArray(response.content)) {
     throw new Error(response.content[0]?.text ?? "Unknown error");

@@ -27,14 +27,12 @@ import {
 } from "react";
 import { ViewsButton } from "./views-button.tsx";
 
-const Context = createContext<
-  {
-    tabs: Record<string, Tab>;
-    totalTabs: number;
-    openPanels: Set<string>;
-    setOpenPanels: Dispatch<SetStateAction<Set<string>>>;
-  } | null
->(null);
+const Context = createContext<{
+  tabs: Record<string, Tab>;
+  totalTabs: number;
+  openPanels: Set<string>;
+  setOpenPanels: Dispatch<SetStateAction<Set<string>>>;
+} | null>(null);
 
 const NO_DROP_TARGET = "no-drop-target";
 
@@ -100,17 +98,13 @@ type Message = {
   payload: AddPanelOptions<object>;
 };
 
-export const togglePanel = <T extends object>(
-  detail: AddPanelOptions<T>,
-) => {
+export const togglePanel = <T extends object>(detail: AddPanelOptions<T>) => {
   channel.dispatchEvent(
     new CustomEvent("message", { detail: { type: "toggle", payload: detail } }),
   );
 };
 
-export const openPanel = <T extends object>(
-  detail: AddPanelOptions<T>,
-) => {
+export const openPanel = <T extends object>(detail: AddPanelOptions<T>) => {
   channel.dispatchEvent(
     new CustomEvent("message", { detail: { type: "open", payload: detail } }),
   );
@@ -142,27 +136,27 @@ export interface Tab {
   metadata?: TabMetadata;
 }
 
-type Props =
-  & Partial<Omit<ComponentProps<typeof DockviewReact>, "components">>
-  & {
-    tabs: Record<string, Tab>;
-    hideViewsButton?: boolean;
-  };
+type Props = Partial<
+  Omit<ComponentProps<typeof DockviewReact>, "components">
+> & {
+  tabs: Record<string, Tab>;
+  hideViewsButton?: boolean;
+};
 
 const addPanel = (
   options: AddPanelOptions,
   api: DockviewApi,
   isMobile: boolean,
 ) => {
-  const targetGroup = api.groups.findLast((group) =>
-    group.locked !== NO_DROP_TARGET
+  const targetGroup = api.groups.findLast(
+    (group) => group.locked !== NO_DROP_TARGET,
   );
 
   const { position, ...otherOptions } = options;
 
   const panelOptions: AddPanelOptions = {
     position: {
-      direction: isMobile ? "within" : (position?.direction || "within"),
+      direction: isMobile ? "within" : position?.direction || "within",
       referenceGroup: targetGroup?.id,
     },
     ...otherOptions,
@@ -182,84 +176,85 @@ const equals = (a: Set<string>, b: Set<string>) => {
   return a.isSubsetOf(b) && b.isSubsetOf(a);
 };
 
-function Docked(
-  { tabs, hideViewsButton, ...props }: Props,
-) {
+function Docked({ tabs, hideViewsButton, ...props }: Props) {
   const isMobile = useIsMobile();
   const [api, setApi] = useState<DockviewApi | null>(null);
   const { setOpenPanels, totalTabs } = useDock();
-  const wrappedTabs = useMemo(
-    () => {
-      const entries = Object.entries(tabs).map(([key, value]) => [
-        key,
-        adapter(value.Component),
-      ]);
+  const wrappedTabs = useMemo(() => {
+    const entries = Object.entries(tabs).map(([key, value]) => [
+      key,
+      adapter(value.Component),
+    ]);
 
-      return Object.fromEntries(entries);
-    },
-    [tabs],
-  );
+    return Object.fromEntries(entries);
+  }, [tabs]);
 
-  const handleReady = useCallback((event: DockviewReadyEvent) => {
-    setApi(event.api);
+  const handleReady = useCallback(
+    (event: DockviewReadyEvent) => {
+      setApi(event.api);
 
-    const initialPanels = new Set<string>();
-    for (const [key, value] of Object.entries(tabs)) {
-      if (!value.initialOpen) {
-        continue;
-      }
+      const initialPanels = new Set<string>();
+      for (const [key, value] of Object.entries(tabs)) {
+        if (!value.initialOpen) {
+          continue;
+        }
 
-      initialPanels.add(key);
-      addPanel(
-        {
-          id: key,
-          component: key,
-          title: value.title,
-          renderer: value.metadata?.isSavedView ? "always" : "onlyWhenVisible",
-          initialHeight: !isMobile ? value.initialHeight : undefined,
-          initialWidth: !isMobile ? value.initialWidth : undefined,
-          maximumHeight: !isMobile ? value.maximumHeight : undefined,
-          maximumWidth: !isMobile ? value.maximumWidth : undefined,
-          position:
-            initialOpenDirections.includes(value.initialOpen as initialOpen)
+        initialPanels.add(key);
+        addPanel(
+          {
+            id: key,
+            component: key,
+            title: value.title,
+            renderer: value.metadata?.isSavedView
+              ? "always"
+              : "onlyWhenVisible",
+            initialHeight: !isMobile ? value.initialHeight : undefined,
+            initialWidth: !isMobile ? value.initialWidth : undefined,
+            maximumHeight: !isMobile ? value.maximumHeight : undefined,
+            maximumWidth: !isMobile ? value.maximumWidth : undefined,
+            position: initialOpenDirections.includes(
+              value.initialOpen as initialOpen,
+            )
               ? { direction: value.initialOpen as initialOpen }
               : undefined,
-        },
-        event.api,
-        isMobile,
-      );
-    }
-
-    const activeTabs = Object.entries(tabs).filter(([, tab]) => tab.active);
-    if (activeTabs.length > 0) {
-      for (const [id] of activeTabs) {
-        event.api.getPanel(id)?.api.setActive();
+          },
+          event.api,
+          isMobile,
+        );
       }
-    }
 
-    setOpenPanels(initialPanels);
+      const activeTabs = Object.entries(tabs).filter(([, tab]) => tab.active);
+      if (activeTabs.length > 0) {
+        for (const [id] of activeTabs) {
+          event.api.getPanel(id)?.api.setActive();
+        }
+      }
 
-    const disposable = event.api.onDidLayoutChange(() => {
-      const currentPanels = new Set(event.api.panels.map((panel) => panel.id));
+      setOpenPanels(initialPanels);
 
-      setOpenPanels((prev) =>
-        equals(prev, currentPanels) ? prev : currentPanels
-      );
-    });
+      const disposable = event.api.onDidLayoutChange(() => {
+        const currentPanels = new Set(
+          event.api.panels.map((panel) => panel.id),
+        );
 
-    return () => {
-      disposable.dispose();
-    };
-  }, [tabs, isMobile]);
+        setOpenPanels((prev) =>
+          equals(prev, currentPanels) ? prev : currentPanels,
+        );
+      });
+
+      return () => {
+        disposable.dispose();
+      };
+    },
+    [tabs, isMobile],
+  );
 
   useEffect(() => {
     if (!api) {
       return;
     }
 
-    const handleMessage = (
-      event: CustomEvent<Message>,
-    ) => {
+    const handleMessage = (event: CustomEvent<Message>) => {
       const { type, payload } = event.detail;
       const panel = api.getPanel(payload.id);
 
@@ -310,12 +305,17 @@ function Docked(
   );
 }
 
-Docked.Provider = (
-  { children, tabs }: { children: ReactNode; tabs: Record<string, Tab> },
-) => {
+Docked.Provider = ({
+  children,
+  tabs,
+}: {
+  children: ReactNode;
+  tabs: Record<string, Tab>;
+}) => {
   const [openPanels, setOpenPanels] = useState(new Set<string>());
-  const totalTabs =
-    Object.values(tabs).filter((tab) => !tab.hideFromViews).length;
+  const totalTabs = Object.values(tabs).filter(
+    (tab) => !tab.hideFromViews,
+  ).length;
 
   return (
     <Context.Provider

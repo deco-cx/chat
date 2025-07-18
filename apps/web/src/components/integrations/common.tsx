@@ -16,9 +16,12 @@ export interface IntegrationIconProps {
   size?: "xs" | "sm" | "base" | "lg" | "xl" | "2xl" | "3xl";
 }
 
-export function IntegrationIcon(
-  { icon, name, className, size = "base" }: IntegrationIconProps,
-) {
+export function IntegrationIcon({
+  icon,
+  name,
+  className,
+  size = "base",
+}: IntegrationIconProps) {
   return (
     <Suspense fallback={<Skeleton className={className} />}>
       <IntegrationAvatar
@@ -43,9 +46,7 @@ export function VerifiedIntegrationBadge() {
           <span className="font-medium">deco.chat</span>
         </Badge>
       </TooltipTrigger>
-      <TooltipContent side="bottom">
-        Verified connection
-      </TooltipContent>
+      <TooltipContent side="bottom">Verified connection</TooltipContent>
     </Tooltip>
   );
 }

@@ -237,17 +237,15 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     this.workspace = getWorkspace(this.state.id);
     this.agentMemoryConfig = null as unknown as AgentMemoryConfig;
     this.agentId = this.state.id.split("/").pop() ?? "";
-    this.db = createServerClient(
-      SUPABASE_URL,
-      this.env.SUPABASE_SERVER_TOKEN,
-      { cookies: { getAll: () => [] } },
-    );
+    this.db = createServerClient(SUPABASE_URL, this.env.SUPABASE_SERVER_TOKEN, {
+      cookies: { getAll: () => [] },
+    });
     this.llmVault = this.env.LLMS_ENCRYPTION_KEY
       ? new SupabaseLLMVault(
-        this.db,
-        this.env.LLMS_ENCRYPTION_KEY,
-        this.workspace,
-      )
+          this.db,
+          this.env.LLMS_ENCRYPTION_KEY,
+          this.workspace,
+        )
       : undefined;
 
     this.agentScoppedMcpClient = this._createMCPClient();
@@ -300,16 +298,20 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     connection: string | MCPConnection,
     signal?: AbortSignal,
   ): Promise<ToolsInput | null> {
-    const [mcpId, integration] = typeof connection === "string"
-      ? [
-        connection,
-        await this.metadata?.mcpClient?.INTEGRATIONS_GET({
-          id: connection,
-        }),
-      ]
-      : [normalizeMCPId(connection), {
-        connection,
-      }];
+    const [mcpId, integration] =
+      typeof connection === "string"
+        ? [
+            connection,
+            await this.metadata?.mcpClient?.INTEGRATIONS_GET({
+              id: connection,
+            }),
+          ]
+        : [
+            normalizeMCPId(connection),
+            {
+              connection,
+            },
+          ];
 
     if (!integration) {
       console.log("integration not found", mcpId);
@@ -338,9 +340,10 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     toolsetsFromOptions?: Toolset[],
   ): Promise<ToolsetsInput> {
     const tools: ToolsetsInput = {};
-    const toolsets = toolsetsFromOptions?.map(({ connection, filters }) => {
-      return [connection, filters] as [MCPConnection, string[]];
-    }) ?? [];
+    const toolsets =
+      toolsetsFromOptions?.map(({ connection, filters }) => {
+        return [connection, filters] as [MCPConnection, string[]];
+      }) ?? [];
     await Promise.all(
       [...Object.entries(tool_set), ...toolsets].map(
         async ([connection, filterList]) => {
@@ -349,25 +352,21 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
             `connect-mcp-${mcpId}`,
           );
           const timeout = new AbortController();
-          const allToolsFor = await Promise.race(
-            [
-              this._getOrCreateCallableToolSet(
-                connection,
-                timeout.signal,
-              )
-                .catch((err) => {
-                  console.error("list tools error", err);
-                  return null;
-                }),
-              new Promise((resolve) =>
-                setTimeout(() => resolve(null), LOAD_TOOLS_TIMEOUT_MS)
-              ).then(() => {
-                // should not rely only on timeout abort because it also aborts subsequent requests
-                timeout.abort();
+          const allToolsFor = await Promise.race([
+            this._getOrCreateCallableToolSet(connection, timeout.signal).catch(
+              (err) => {
+                console.error("list tools error", err);
                 return null;
-              }),
-            ],
-          );
+              },
+            ),
+            new Promise((resolve) =>
+              setTimeout(() => resolve(null), LOAD_TOOLS_TIMEOUT_MS),
+            ).then(() => {
+              // should not rely only on timeout abort because it also aborts subsequent requests
+              timeout.abort();
+              return null;
+            }),
+          ]);
           if (!allToolsFor) {
             console.warn(`No tools found for server: ${mcpId}. Skipping.`);
             getOrCreateCallableToolSetTiming?.end("timeout"); // sinalize timeout for timings
@@ -398,10 +397,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     return tools;
   }
 
-  private async _initMemory(
-    config: Configuration,
-    tokenLimit: number,
-  ) {
+  private async _initMemory(config: Configuration, tokenLimit: number) {
     const tursoOrganization = this.env.TURSO_ORGANIZATION ?? "decoai";
     const tokenStorage = this.env.TURSO_GROUP_DATABASE_TOKEN ?? {
       getToken: (memoryId: string) => {
@@ -425,9 +421,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
       tursoAdminToken: this.env.TURSO_ADMIN_TOKEN,
       tursoOrganization,
       tokenStorage,
-      processors: [
-        new TokenLimiter({ limit: tokenLimit }),
-      ],
+      processors: [new TokenLimiter({ limit: tokenLimit })],
       openAPIKey: this.env.OPENAI_API_KEY ?? undefined,
       workspace: this.workspace,
       options: {
@@ -442,10 +436,9 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
         workingMemory: agentWorkingMemoryToWorkingMemoryConfig(
           memory?.working_memory ?? DEFAULT_MEMORY.working_memory,
         ),
-        semanticRecall: memory?.semantic_recall ??
-          DEFAULT_MEMORY.semantic_recall,
-        lastMessages: memory?.last_messages ??
-          DEFAULT_MEMORY.last_messages,
+        semanticRecall:
+          memory?.semantic_recall ?? DEFAULT_MEMORY.semantic_recall,
+        lastMessages: memory?.last_messages ?? DEFAULT_MEMORY.last_messages,
       },
     });
   }
@@ -533,8 +526,8 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     const threadId = this.metadata?.threadId ?? this._memory.generateId(); // private thread with the given resource
     return {
       threadId,
-      resourceId: this.metadata?.resourceId ?? this.metadata?.user?.id ??
-        threadId,
+      resourceId:
+        this.metadata?.resourceId ?? this.metadata?.user?.id ?? threadId,
     };
   }
 
@@ -559,7 +552,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     toolsetsFromOptions?: Toolset[],
   ): Promise<ToolsetsInput> {
     const getThreadToolsTiming = timings?.start("get-thread-tools");
-    const tool_set = tools ?? await this.getThreadTools(thread);
+    const tool_set = tools ?? (await this.getThreadTools(thread));
     getThreadToolsTiming?.end();
 
     const pickCallableToolsTiming = timings?.start("pick-callable-tools");
@@ -573,9 +566,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     return toolsets;
   }
 
-  private async _withAgentOverrides(
-    options?: GenerateOptions,
-  ): Promise<Agent> {
+  private async _withAgentOverrides(options?: GenerateOptions): Promise<Agent> {
     let agent = this._agent;
     if (!options) {
       return agent;
@@ -603,8 +594,8 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
         memory: this._memory,
         name: this._configuration?.name ?? ANONYMOUS_NAME,
         model: llm,
-        instructions: this._configuration?.instructions ??
-          ANONYMOUS_INSTRUCTIONS,
+        instructions:
+          this._configuration?.instructions ?? ANONYMOUS_INSTRUCTIONS,
         voice: this.env.OPENAI_API_KEY
           ? createAgentOpenAIVoice({ apiKey: this.env.OPENAI_API_KEY })
           : undefined,
@@ -619,29 +610,33 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     return agent;
   }
   private _runWithContext<T>(fn: () => Promise<T>) {
-    return contextStorage.run({
-      env: this.actorEnv,
-      ctx: {
-        passThroughOnException: () => {},
-        waitUntil: () => {},
-        props: {},
+    return contextStorage.run(
+      {
+        env: this.actorEnv,
+        ctx: {
+          passThroughOnException: () => {},
+          waitUntil: () => {},
+          props: {},
+        },
       },
-    }, fn);
+      fn,
+    );
   }
 
   _token() {
-    const keyPair = this.env.DECO_CHAT_API_JWT_PRIVATE_KEY &&
-        this.env.DECO_CHAT_API_JWT_PUBLIC_KEY
-      ? {
-        public: this.env.DECO_CHAT_API_JWT_PUBLIC_KEY,
-        private: this.env.DECO_CHAT_API_JWT_PRIVATE_KEY,
-      }
-      : undefined;
+    const keyPair =
+      this.env.DECO_CHAT_API_JWT_PRIVATE_KEY &&
+      this.env.DECO_CHAT_API_JWT_PUBLIC_KEY
+        ? {
+            public: this.env.DECO_CHAT_API_JWT_PUBLIC_KEY,
+            private: this.env.DECO_CHAT_API_JWT_PRIVATE_KEY,
+          }
+        : undefined;
     return JwtIssuer.forKeyPair(keyPair).then((issuer) =>
       issuer.issue({
         sub: `agent:${this.id}`,
         aud: this.workspace,
-      })
+      }),
     );
   }
 
@@ -688,7 +683,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     const response = await this._runWithContext(async () => {
       return await next({
         ...opts,
-        metadata: { ...opts?.metadata ?? {}, timings },
+        metadata: { ...(opts?.metadata ?? {}), timings },
       });
     });
     methodTiming.end();
@@ -714,9 +709,11 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
 
     // this is a weak check, but it works for now
     if (
-      req.headers.get("host") !== null && runtimeKey !== "deno" &&
+      req.headers.get("host") !== null &&
+      runtimeKey !== "deno" &&
       this._configuration?.visibility !== "PUBLIC"
-    ) { // if host is set so its not an internal request so checks must be applied
+    ) {
+      // if host is set so its not an internal request so checks must be applied
       await assertWorkspaceResourceAccess("AGENTS_GET", ctx);
     } else if (req.headers.get("host") !== null && runtimeKey === "deno") {
       console.warn(
@@ -775,18 +772,18 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
 
   async query(options?: ThreadQueryOptions): Promise<Message[]> {
     const currentThreadId = this._thread;
-    const { uiMessages, messages } = await this._memory.query({
-      ...currentThreadId,
-      threadId: options?.threadId ?? currentThreadId.threadId,
-    }).catch(
-      (error) => {
+    const { uiMessages, messages } = await this._memory
+      .query({
+        ...currentThreadId,
+        threadId: options?.threadId ?? currentThreadId.threadId,
+      })
+      .catch((error) => {
         console.error("Error querying memory", error);
         return {
           messages: [],
           uiMessages: [],
         };
-      },
-    );
+      });
 
     const messagesById: Record<string, Message> = {};
     for (const msg of messages as Message[]) {
@@ -873,7 +870,8 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
   public async getThreadTools(
     threadLocator = this._thread,
   ): Promise<Configuration["tools_set"]> {
-    const thread = await this._memory.getThreadById(threadLocator)
+    const thread = await this._memory
+      .getThreadById(threadLocator)
       .catch(() => null);
 
     if (!thread) {
@@ -887,20 +885,21 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
   }
 
   public getTools(): Promise<Configuration["tools_set"]> {
-    return Promise.resolve(
-      this._configuration?.tools_set ?? {},
-    );
+    return Promise.resolve(this._configuration?.tools_set ?? {});
   }
 
   // Warning: This method also updates the configuration in memory
   async configuration(): Promise<Configuration> {
     const client = this.metadata?.mcpClient ?? this.agentScoppedMcpClient;
-    const manifest = this.agentId in WELL_KNOWN_AGENTS
-      ? WELL_KNOWN_AGENTS[this.agentId as keyof typeof WELL_KNOWN_AGENTS]
-      : await client.AGENTS_GET({ id: this.agentId }).catch((err: unknown) => {
-        console.error("Error getting agent", err);
-        return null;
-      });
+    const manifest =
+      this.agentId in WELL_KNOWN_AGENTS
+        ? WELL_KNOWN_AGENTS[this.agentId as keyof typeof WELL_KNOWN_AGENTS]
+        : await client
+            .AGENTS_GET({ id: this.agentId })
+            .catch((err: unknown) => {
+              console.error("Error getting agent", err);
+              return null;
+            });
 
     const merged: Configuration = {
       name: ANONYMOUS_NAME,
@@ -942,10 +941,13 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
         message: `Tool ${toolName} not found`,
       };
     }
-    const result = await tool?.execute?.({ context: input }, {
-      toolCallId: crypto.randomUUID(),
-      messages: [],
-    });
+    const result = await tool?.execute?.(
+      { context: input },
+      {
+        toolCallId: crypto.randomUUID(),
+        messages: [],
+      },
+    );
     return result;
   }
 
@@ -957,8 +959,8 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     const threadId = this.metadata?.threadId ?? this.memory.generateId(); // private thread with the given resource
     return {
       threadId,
-      resourceId: this.metadata?.resourceId ?? this.metadata?.user?.id ??
-        threadId,
+      resourceId:
+        this.metadata?.resourceId ?? this.metadata?.user?.id ?? threadId,
     };
   }
 
@@ -973,15 +975,15 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
 
     const aiMessages = await Promise.all(
       payload.map((msg) =>
-        convertToAIMessage({ message: msg, agent: this._agent })
+        convertToAIMessage({ message: msg, agent: this._agent }),
       ),
     );
-    const result = await this._agent.generate(aiMessages, {
+    const result = (await this._agent.generate(aiMessages, {
       ...this.thread,
       output: jsonSchema,
       maxSteps: this._maxSteps(),
       maxTokens: this._maxTokens(),
-    }) as GenerateObjectResult<TObject>;
+    })) as GenerateObjectResult<TObject>;
 
     assertConfiguration(this._configuration);
     this._handleGenerationFinish({
@@ -1006,9 +1008,9 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
 
     const isClaude = this._configuration?.model.includes("claude");
     const hasPdf = payload.some((message) =>
-      message.experimental_attachments?.some((attachment) =>
-        attachment.contentType === "application/pdf"
-      )
+      message.experimental_attachments?.some(
+        (attachment) => attachment.contentType === "application/pdf",
+      ),
     );
     const bypassOpenRouter = isClaude && hasPdf;
 
@@ -1019,17 +1021,17 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
 
     const aiMessages = await Promise.all(
       payload.map((msg) =>
-        convertToAIMessage({ message: msg, agent: this._agent })
+        convertToAIMessage({ message: msg, agent: this._agent }),
       ),
     );
 
-    const result = await agent.generate(aiMessages, {
+    const result = (await agent.generate(aiMessages, {
       ...this.thread,
       maxSteps: this._maxSteps(options?.maxSteps),
       maxTokens: this._maxTokens(),
       instructions: options?.instructions,
       toolsets,
-    }) as GenerateTextResult<any, any>;
+    })) as GenerateTextResult<any, any>;
 
     assertConfiguration(this._configuration);
     this._handleGenerationFinish({
@@ -1055,9 +1057,9 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
 
     const isClaude = this._configuration?.model.includes("claude");
     const hasPdf = payload.some((message) =>
-      message.experimental_attachments?.some((attachment) =>
-        attachment.contentType === "application/pdf"
-      )
+      message.experimental_attachments?.some(
+        (attachment) => attachment.contentType === "application/pdf",
+      ),
     );
     const bypassOpenRouter = isClaude && hasPdf;
 
@@ -1069,15 +1071,18 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     const context = payload.flatMap((message) =>
       Array.isArray(message.annotations)
         ? message.annotations.map((annotation) => ({
-          role: "user" as const,
-          content: typeof annotation === "string" ? annotation : [
-            {
-              type: "text",
-              text: JSON.stringify(annotation),
-            } as TextPart,
-          ],
-        }))
-        : []
+            role: "user" as const,
+            content:
+              typeof annotation === "string"
+                ? annotation
+                : [
+                    {
+                      type: "text",
+                      text: JSON.stringify(annotation),
+                    } as TextPart,
+                  ],
+          }))
+        : [],
     );
 
     const toolsets = await this._withToolOverrides(
@@ -1125,11 +1130,11 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
 
     const experimentalTransform = options?.smoothStream
       ? smoothStream({
-        delayInMs: options.smoothStream.delayInMs,
-        // The default chunking breaks cloudflare due to using too much CPU.
-        // This is a simpler function that does the job.
-        chunking: (buffer) => buffer.slice(0, 5) || null,
-      })
+          delayInMs: options.smoothStream.delayInMs,
+          // The default chunking breaks cloudflare due to using too much CPU.
+          // This is a simpler function that does the job.
+          chunking: (buffer) => buffer.slice(0, 5) || null,
+        })
       : undefined;
 
     const maxLimit = Math.max(MIN_MAX_TOKENS, this._maxTokens());
@@ -1140,7 +1145,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
 
     const aiMessages = await Promise.all(
       payload.map((msg) =>
-        convertToAIMessage({ message: msg, agent: this._agent })
+        convertToAIMessage({ message: msg, agent: this._agent }),
       ),
     );
 
@@ -1154,42 +1159,40 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
       );
     }
 
-    const response = await agent.stream(
-      aiMessages,
-      {
-        ...thread,
-        context,
-        toolsets,
-        instructions: processedInstructions,
-        maxSteps: this._maxSteps(options?.maxSteps),
-        maxTokens: this._maxTokens(),
-        temperature: this._configuration?.temperature ?? undefined,
-        experimental_transform: experimentalTransform,
-        providerOptions: budgetTokens > DEFAULT_MIN_THINKING_TOKENS
+    const response = await agent.stream(aiMessages, {
+      ...thread,
+      context,
+      toolsets,
+      instructions: processedInstructions,
+      maxSteps: this._maxSteps(options?.maxSteps),
+      maxTokens: this._maxTokens(),
+      temperature: this._configuration?.temperature ?? undefined,
+      experimental_transform: experimentalTransform,
+      providerOptions:
+        budgetTokens > DEFAULT_MIN_THINKING_TOKENS
           ? {
-            anthropic: {
-              thinking: {
-                type: "enabled",
-                budgetTokens,
+              anthropic: {
+                thinking: {
+                  type: "enabled",
+                  budgetTokens,
+                },
               },
-            },
-          }
+            }
           : {},
-        onChunk: endTtfbSpan,
-        onError: (err) => {
-          console.error("agent stream error", err);
-          // TODO(@mcandeia): add error tracking with posthog
-        },
-        onFinish: (result) => {
-          assertConfiguration(this._configuration);
-          this._handleGenerationFinish({
-            threadId: thread.threadId,
-            usedModelId: options?.model ?? this._configuration.model,
-            usage: result.usage,
-          });
-        },
+      onChunk: endTtfbSpan,
+      onError: (err) => {
+        console.error("agent stream error", err);
+        // TODO(@mcandeia): add error tracking with posthog
       },
-    );
+      onFinish: (result) => {
+        assertConfiguration(this._configuration);
+        this._handleGenerationFinish({
+          threadId: thread.threadId,
+          usedModelId: options?.model ?? this._configuration.model,
+          usage: result.usage,
+        });
+      },
+    });
     streamTiming.end();
 
     const dataStreamResponseTiming = timings.start("data-stream-response");

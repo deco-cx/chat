@@ -36,8 +36,8 @@ export function RolesDropdown({
       if (typeof selectedRoles[0] === "string") {
         return (selectedRoles as string[]).includes(role.id.toString());
       } else {
-        return (selectedRoles as Role[]).some((selectedRole) =>
-          selectedRole.id === role.id
+        return (selectedRoles as Role[]).some(
+          (selectedRole) => selectedRole.id === role.id,
         );
       }
     }
@@ -75,9 +75,7 @@ export function RolesDropdown({
         align="start"
         className={`w-56 p-2 ${contentClassName || ""}`}
       >
-        <div className="text-xs font-medium px-2 py-1.5">
-          Roles
-        </div>
+        <div className="text-xs font-medium px-2 py-1.5">Roles</div>
         {roles.map((role) => {
           const checked = isRoleSelected(role);
           return (
@@ -87,9 +85,7 @@ export function RolesDropdown({
               onSelect={(e) => e.preventDefault()}
               onClick={(e) => handleRoleClick(role, e)}
             >
-              <span className="capitalize">
-                {role.name}
-              </span>
+              <span className="capitalize">{role.name}</span>
             </DropdownMenuCheckboxItem>
           );
         })}

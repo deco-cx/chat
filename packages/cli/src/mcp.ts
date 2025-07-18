@@ -8,9 +8,7 @@ interface Options {
   local?: boolean;
 }
 
-export const createWorkspaceClient = async (
-  { workspace, local }: Options,
-) => {
+export const createWorkspaceClient = async ({ workspace, local }: Options) => {
   const headers = await getRequestAuthHeaders();
 
   const client = new Client({ name: "deco-chat-cli", version: "1.0.0" });
@@ -24,10 +22,7 @@ export const createWorkspaceClient = async (
   );
 
   await client.connect(
-    new StreamableHTTPClientTransport(
-      url,
-      { requestInit: { headers } },
-    ),
+    new StreamableHTTPClientTransport(url, { requestInit: { headers } }),
   );
 
   return client;

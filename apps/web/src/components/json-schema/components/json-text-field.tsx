@@ -41,9 +41,11 @@ export function JsonTextField<T extends FieldValues = FieldValues>({
           <FormControl>
             <Textarea
               {...field}
-              value={typeof field.value === "object"
-                ? JSON.stringify(field.value, null, 2)
-                : field.value}
+              value={
+                typeof field.value === "object"
+                  ? JSON.stringify(field.value, null, 2)
+                  : field.value
+              }
               onChange={(e) => {
                 try {
                   const value = JSON.parse(e.target.value);

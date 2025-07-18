@@ -1,20 +1,17 @@
 export const OLD_MENTION_REGEX = /(?:<|&lt;)(\w+):([\w-]+)(?:>|&gt;)/g;
 
 export function mentionToTag(mention: string, removeNewLines = false) {
-  const result = mention.replaceAll(
-    OLD_MENTION_REGEX,
-    (match, type, id) => {
-      if (type === "comment") {
-        return `<span data-type="comment">${id}</span>`;
-      }
+  const result = mention.replaceAll(OLD_MENTION_REGEX, (match, type, id) => {
+    if (type === "comment") {
+      return `<span data-type="comment">${id}</span>`;
+    }
 
-      if (type === "prompt") {
-        return `<span data-type="mention" data-id="${id}" data-mention-type="prompt"></span>`;
-      }
+    if (type === "prompt") {
+      return `<span data-type="mention" data-id="${id}" data-mention-type="prompt"></span>`;
+    }
 
-      return match;
-    },
-  );
+    return match;
+  });
 
   if (removeNewLines) {
     return result.replaceAll(

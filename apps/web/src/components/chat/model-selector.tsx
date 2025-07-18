@@ -26,7 +26,7 @@ const mapLegacyModelId = (modelId: string): string => {
 };
 
 const CAPABILITY_CONFIGS = {
-  "reasoning": {
+  reasoning: {
     icon: "neurology",
     bg: "bg-purple-100",
     text: "text-purple-700",
@@ -52,9 +52,11 @@ const CAPABILITY_CONFIGS = {
   },
 } as const;
 
-function CapabilityBadge(
-  { capability }: { capability: keyof typeof CAPABILITY_CONFIGS },
-) {
+function CapabilityBadge({
+  capability,
+}: {
+  capability: keyof typeof CAPABILITY_CONFIGS;
+}) {
   const config = CAPABILITY_CONFIGS[capability] || {
     icon: "check",
     bg: "bg-slate-200",
@@ -94,9 +96,11 @@ function ModelItemContent({ model }: { model: Model }) {
   );
 }
 
-function SelectedModelDisplay(
-  { model }: { model: typeof WELL_KNOWN_MODELS[0] },
-) {
+function SelectedModelDisplay({
+  model,
+}: {
+  model: (typeof WELL_KNOWN_MODELS)[0];
+}) {
   return (
     <div className="flex items-center gap-1.5">
       {model.logo && <img src={model.logo} className="w-4 h-4" />}

@@ -56,7 +56,9 @@ interface Props {
 const Chat = () => {
   const { agentId, chat } = useChatContext();
   const { data: agent } = useAgent(agentId);
-  const { chat: { messages } } = useChatContext();
+  const {
+    chat: { messages },
+  } = useChatContext();
   const { hasChanges } = useAgentSettingsForm();
   const focusChat = useFocusChat();
 
@@ -77,15 +79,18 @@ const Chat = () => {
                 </h1>
               </div>
               <Button
-                className={messages.length > 0 && !hasChanges
-                  ? "inline-flex text-xs"
-                  : "hidden"}
+                className={
+                  messages.length > 0 && !hasChanges
+                    ? "inline-flex text-xs"
+                    : "hidden"
+                }
                 variant="outline"
                 size="sm"
                 onClick={() =>
                   focusChat(agentId, crypto.randomUUID(), {
                     history: false,
-                  })}
+                  })
+                }
               >
                 New Thread
               </Button>
@@ -204,25 +209,22 @@ function ActionButtons({
         className={hasChanges ? "inline-flex" : "hidden"}
         variant="special"
         onClick={handleSubmit}
-        disabled={!numberOfChanges ||
-          form.formState.isSubmitting}
+        disabled={!numberOfChanges || form.formState.isSubmitting}
       >
-        {form.formState.isSubmitting
-          ? (
-            <>
-              <Spinner size="xs" />
-              <span>Saving...</span>
-            </>
-          )
-          : (
-            <span>
-              {isWellKnownAgent
-                ? "Save Agent"
-                : `Save ${numberOfChanges} change${
+        {form.formState.isSubmitting ? (
+          <>
+            <Spinner size="xs" />
+            <span>Saving...</span>
+          </>
+        ) : (
+          <span>
+            {isWellKnownAgent
+              ? "Save Agent"
+              : `Save ${numberOfChanges} change${
                   numberOfChanges > 1 ? "s" : ""
                 }`}
-            </span>
-          )}
+          </span>
+        )}
       </Button>
       <WhatsAppButton />
     </div>
@@ -257,7 +259,9 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
       ? (agent.description ?? agent.instructions ?? "")
       : undefined,
     favicon: isFilePath(agent?.avatar)
-      ? (typeof resolvedAvatar === "string" ? resolvedAvatar : undefined)
+      ? typeof resolvedAvatar === "string"
+        ? resolvedAvatar
+        : undefined
       : agent?.avatar,
     socialImage: agent?.avatar,
   });
@@ -275,29 +279,27 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
 
   const blocked = useBlocker(hasChanges && !isWellKnownAgent);
 
-  const handleSubmit = form.handleSubmit(
-    async (data: Agent) => {
-      try {
-        if (isWellKnownAgent) {
-          const id = crypto.randomUUID();
-          const agent = { ...data, id };
-          await createAgent(agent, {});
-          const wellKnownAgent =
-            WELL_KNOWN_AGENTS[agentId as keyof typeof WELL_KNOWN_AGENTS];
-          form.reset(wellKnownAgent);
-          updateAgentCache(wellKnownAgent);
-          return;
-        }
-
-        await updateAgent.mutateAsync(data);
-        form.reset(data);
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to update agent",
-        );
+  const handleSubmit = form.handleSubmit(async (data: Agent) => {
+    try {
+      if (isWellKnownAgent) {
+        const id = crypto.randomUUID();
+        const agent = { ...data, id };
+        await createAgent(agent, {});
+        const wellKnownAgent =
+          WELL_KNOWN_AGENTS[agentId as keyof typeof WELL_KNOWN_AGENTS];
+        form.reset(wellKnownAgent);
+        updateAgentCache(wellKnownAgent);
+        return;
       }
-    },
-  );
+
+      await updateAgent.mutateAsync(data);
+      form.reset(data);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update agent",
+      );
+    }
+  });
 
   function handleCancel() {
     blocked.reset?.();
@@ -397,10 +399,7 @@ export default function Page(props: Props) {
     [props.threadId, params.threadId, agentId],
   );
 
-  const chatKey = useMemo(
-    () => `${agentId}-${threadId}`,
-    [agentId, threadId],
-  );
+  const chatKey = useMemo(() => `${agentId}-${threadId}`, [agentId, threadId]);
 
   if (!agentId) {
     throw new NotFoundError("Agent not found");

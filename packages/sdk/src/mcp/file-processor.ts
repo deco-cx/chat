@@ -66,9 +66,7 @@ export class FileProcessor {
 
     // Only allow specific file extensions
     if (!isAllowedFileExt(fileExt)) {
-      throw new Error(
-        `Unsupported file type: ${fileExt}.`,
-      );
+      throw new Error(`Unsupported file type: ${fileExt}.`);
     }
 
     let content = "";
@@ -173,9 +171,10 @@ export class FileProcessor {
     const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
     const rows = lines.slice(1).map((line) => {
       const values = line.split(",").map((v) => v.trim());
-      return values.map((v, i) => !v ? "" : `${headers[i]}: ${v}`).filter(
-        Boolean,
-      ).join(". ");
+      return values
+        .map((v, i) => (!v ? "" : `${headers[i]}: ${v}`))
+        .filter(Boolean)
+        .join(". ");
     });
 
     return rows.join("\n");
@@ -250,7 +249,10 @@ export class FileProcessor {
       case ".md": {
         return MDocument.fromMarkdown(text).chunk({
           maxSize: this.config.chunkSize,
-          headers: [["#", "title"], ["##", "section"]],
+          headers: [
+            ["#", "title"],
+            ["##", "section"],
+          ],
         });
       }
       case ".txt":

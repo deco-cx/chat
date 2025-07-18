@@ -94,10 +94,7 @@ export interface AIAgent extends Actor {
    * @param payload - Input content as string, string array, or CoreMessage array
    * @returns AsyncIterator that yields text stream parts and final result
    */
-  stream(
-    payload: Message[],
-    options?: StreamOptions,
-  ): Promise<Response>;
+  stream(payload: Message[], options?: StreamOptions): Promise<Response>;
 
   /**
    * Calls a specific tool with the given input

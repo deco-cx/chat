@@ -23,12 +23,13 @@ export function AgentTriggers() {
   }
 
   // Filter triggers by agentId
-  const agentTriggers = data?.triggers?.filter((trigger) => {
-    if ("agentId" in trigger.data && trigger.data.agentId) {
-      return trigger.data.agentId === agentId;
-    }
-    return false;
-  }) || [];
+  const agentTriggers =
+    data?.triggers?.filter((trigger) => {
+      if ("agentId" in trigger.data && trigger.data.agentId) {
+        return trigger.data.agentId === agentId;
+      }
+      return false;
+    }) || [];
 
   if (!agentTriggers.length) {
     return <ListTriggersEmpty />;
@@ -43,7 +44,7 @@ export function AgentTriggers() {
   }
 
   const filteredTriggers = agentTriggers.filter((trigger) =>
-    trigger.data.title.toLowerCase().includes(search.toLowerCase())
+    trigger.data.title.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
@@ -52,11 +53,7 @@ export function AgentTriggers() {
         <div className="flex gap-2 flex-1">
           <div className="border border-border rounded-lg flex-1">
             <div className="flex items-center h-10 px-4 gap-2">
-              <Icon
-                name="search"
-                size={20}
-                className="text-muted-foreground"
-              />
+              <Icon name="search" size={20} className="text-muted-foreground" />
               <Input
                 placeholder="Search"
                 value={search}
@@ -110,10 +107,7 @@ export function ListTriggersEmpty() {
   return (
     <div className="mx-2 p-4 mt-4 m-4 border border-dashed rounded-lg flex flex-col items-center justify-center text-center">
       <div className="bg-muted rounded-full p-3 mb-4 h-10">
-        <Icon
-          name="notifications_active"
-          className="text-muted-foreground"
-        />
+        <Icon name="notifications_active" className="text-muted-foreground" />
       </div>
       <h3 className="text-lg font-medium text-foreground mb-2">
         No triggers configured

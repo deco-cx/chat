@@ -11,7 +11,8 @@ export const loginCommand = async () => {
     {
       port: AUTH_PORT_CLI,
       onListen: () => {
-        const browser = Deno.env.get("BROWSER") ??
+        const browser =
+          Deno.env.get("BROWSER") ??
           {
             linux: "xdg-open",
             solaris: "xdg-open",
@@ -22,7 +23,8 @@ export const loginCommand = async () => {
             windows: "start",
             darwin: "open",
             aix: "open",
-          }[Deno.build.os] ?? "open";
+          }[Deno.build.os] ??
+          "open";
 
         const command = new Deno.Command(browser, { args: [DECO_CHAT_LOGIN] });
         command.spawn();

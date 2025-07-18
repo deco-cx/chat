@@ -29,9 +29,7 @@ export type {
   UpdateModelInput,
 };
 
-export const useModels = (
-  options: ListModelsInput = {},
-) => {
+export const useModels = (options: ListModelsInput = {}) => {
   const { workspace } = useSDK();
   return useSuspenseQuery({
     queryKey: KEYS.MODELS(workspace, options),

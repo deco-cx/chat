@@ -191,7 +191,7 @@ test("Markup.remove with rounding precision", () => {
 test("Markup operations are inverses with various percentages", () => {
   const testCases = [
     { amount: usd(50), markup: 5 },
-    { amount: usd(75.50), markup: 12.5 },
+    { amount: usd(75.5), markup: 12.5 },
     { amount: usd(200), markup: 20 },
     { amount: usd(999.99), markup: 33.33 },
     { amount: 1, markup: 50 },

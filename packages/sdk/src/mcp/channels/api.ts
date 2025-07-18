@@ -47,8 +47,7 @@ function mapChannel(
 const createTool = createToolGroup("Channel", {
   name: "Channel Management",
   description: "Create and manage communication channels.",
-  icon:
-    "https://assets.decocache.com/mcp/9e5d7fcd-3a3a-469b-9450-f2af05cdcc7e/Channel-Management.png",
+  icon: "https://assets.decocache.com/mcp/9e5d7fcd-3a3a-469b-9450-f2af05cdcc7e/Channel-Management.png",
 });
 
 export const listChannels = createTool({
@@ -83,16 +82,13 @@ export const createChannel = createTool({
   name: "CHANNELS_CREATE",
   description: "Create a channel",
   inputSchema: z.object({
-    discriminator: z.string().describe(
-      "The channel discriminator",
-    ),
+    discriminator: z.string().describe("The channel discriminator"),
     integrationId: z.string().describe("The ID of the integration to use"),
-    agentId: z.string().optional().describe(
-      "The ID of the agent to join the channel.",
-    ),
-    name: z.string().optional().describe(
-      "The name of the channel",
-    ),
+    agentId: z
+      .string()
+      .optional()
+      .describe("The ID of the agent to join the channel."),
+    name: z.string().optional().describe("The name of the channel"),
   }),
   handler: async ({ discriminator, integrationId, agentId, name }, c) => {
     assertHasWorkspace(c);
@@ -100,9 +96,8 @@ export const createChannel = createTool({
     const workspace = c.workspace.value;
 
     const integrationIdWithoutPrefix = integrationId.replace("i:", "");
-    const { data: integration, error: integrationError } = await c.db.from(
-      "deco_chat_integrations",
-    )
+    const { data: integration, error: integrationError } = await c.db
+      .from("deco_chat_integrations")
       .select("*")
       .eq("workspace", workspace) // this ensures the integration is in the same workspace as the channel
       .eq("id", integrationIdWithoutPrefix)
@@ -118,7 +113,8 @@ export const createChannel = createTool({
     const db = c.db;
 
     // Insert the new channel
-    const { data: channel, error } = await db.from("deco_chat_channels")
+    const { data: channel, error } = await db
+      .from("deco_chat_channels")
       .insert({
         discriminator,
         workspace,
@@ -140,8 +136,7 @@ export const createChannel = createTool({
 
       const [trigger, { data, error }] = await Promise.all([
         createWebhookTrigger(discriminator, agentId, c),
-        c.db.from("deco_chat_agents").select("name")
-          .eq("id", agentId).single(),
+        c.db.from("deco_chat_agents").select("name").eq("id", agentId).single(),
       ]);
       if (error) {
         throw new InternalServerError(error.message);
@@ -165,9 +160,8 @@ export const createChannel = createTool({
     }
 
     // Re-fetch with agents
-    const { data: fullChannel, error: fetchError } = await db.from(
-      "deco_chat_channels",
-    )
+    const { data: fullChannel, error: fetchError } = await db
+      .from("deco_chat_channels")
       .select(SELECT_CHANNEL_QUERY)
       .eq("id", channel.id)
       .single();
@@ -189,20 +183,20 @@ const getAgentName = (
   channel: QueryResult<"deco_chat_channels", typeof SELECT_CHANNEL_QUERY>,
   agentId: string,
 ) => {
-  return channel.agents.find((agent) => agent.agent_id === agentId)?.agent
-    ?.name ?? "Deco Agent";
+  return (
+    channel.agents.find((agent) => agent.agent_id === agentId)?.agent?.name ??
+    "Deco Agent"
+  );
 };
 
 export const channelJoin = createTool({
   name: "CHANNELS_JOIN",
   description: "Invite an agent to a channel",
   inputSchema: z.object({
-    id: z.string().describe(
-      "The ID of the channel to join, use only UUIDs.",
-    ),
-    agentId: z.string().describe(
-      "The ID of the agent to join the channel to, use only UUIDs.",
-    ),
+    id: z.string().describe("The ID of the channel to join, use only UUIDs."),
+    agentId: z
+      .string()
+      .describe("The ID of the agent to join the channel to, use only UUIDs."),
   }),
   handler: async ({ id, agentId }, c) => {
     assertHasWorkspace(c);
@@ -212,7 +206,8 @@ export const channelJoin = createTool({
     const workspace = c.workspace.value;
 
     // Fetch channel with agents
-    const { data: channel, error } = await db.from("deco_chat_channels")
+    const { data: channel, error } = await db
+      .from("deco_chat_channels")
       .select(SELECT_CHANNEL_QUERY)
       .eq("id", id)
       .eq("workspace", workspace)
@@ -244,10 +239,12 @@ export const channelJoin = createTool({
     }
 
     // Insert into join table (if not exists)
-    await db.from("deco_chat_channel_agents")
-      .upsert({ channel_id: id, agent_id: agentId }, {
+    await db.from("deco_chat_channel_agents").upsert(
+      { channel_id: id, agent_id: agentId },
+      {
         onConflict: "channel_id,agent_id",
-      });
+      },
+    );
 
     const result = mapChannel(channel);
     return { ...result, agentIds: [...new Set([...result.agentIds, agentId])] };
@@ -258,12 +255,10 @@ export const channelLeave = createTool({
   name: "CHANNELS_LEAVE",
   description: "Remove an agent from a channel",
   inputSchema: z.object({
-    id: z.string().describe(
-      "The ID of the channel to unlink, use only UUIDs.",
-    ),
-    agentId: z.string().describe(
-      "The ID of the agent to unlink, use only UUIDs.",
-    ),
+    id: z.string().describe("The ID of the channel to unlink, use only UUIDs."),
+    agentId: z
+      .string()
+      .describe("The ID of the agent to unlink, use only UUIDs."),
   }),
   handler: async ({ id, agentId }, c) => {
     assertHasWorkspace(c);
@@ -273,7 +268,8 @@ export const channelLeave = createTool({
     const workspace = c.workspace.value;
 
     // Fetch channel with agents
-    const { data: channel, error } = await db.from("deco_chat_channels")
+    const { data: channel, error } = await db
+      .from("deco_chat_channels")
       .select(SELECT_CHANNEL_QUERY)
       .eq("id", id)
       .eq("workspace", workspace)
@@ -294,7 +290,8 @@ export const channelLeave = createTool({
     }
 
     // Remove from join table
-    await db.from("deco_chat_channel_agents")
+    await db
+      .from("deco_chat_channel_agents")
       .delete()
       .eq("channel_id", id)
       .eq("agent_id", agentId);
@@ -317,7 +314,8 @@ export const getChannel = createTool({
     const db = c.db;
     const workspace = c.workspace.value;
 
-    const { data: channel, error } = await db.from("deco_chat_channels")
+    const { data: channel, error } = await db
+      .from("deco_chat_channels")
       .select(SELECT_CHANNEL_QUERY)
       .eq("id", id)
       .eq("workspace", workspace)
@@ -371,9 +369,8 @@ export const deleteChannel = createTool({
     const db = c.db;
     const workspace = c.workspace.value;
 
-    const { data: channel, error: selectError } = await db.from(
-      "deco_chat_channels",
-    )
+    const { data: channel, error: selectError } = await db
+      .from("deco_chat_channels")
       .select(SELECT_CHANNEL_QUERY)
       .eq("id", id)
       .eq("workspace", workspace)
@@ -391,7 +388,8 @@ export const deleteChannel = createTool({
       workspace,
     });
 
-    const { error } = await db.from("deco_chat_channels")
+    const { error } = await db
+      .from("deco_chat_channels")
       .delete()
       .eq("id", id)
       .eq("workspace", workspace);

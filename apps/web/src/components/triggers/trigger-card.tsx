@@ -9,7 +9,10 @@ import { UserAvatar } from "../common/avatar/user.tsx";
 
 export type Trigger = TriggerOutput;
 
-export function TriggerCard({ trigger, onClick }: {
+export function TriggerCard({
+  trigger,
+  onClick,
+}: {
   trigger: Trigger;
   onClick: (trigger: Trigger) => void;
 }) {
@@ -50,11 +53,7 @@ export function TriggerCard({ trigger, onClick }: {
         </div>
       </CardContent>
       <div className="absolute top-6 right-6">
-        <TriggerActions
-          trigger={trigger}
-          open={open}
-          onOpenChange={setOpen}
-        />
+        <TriggerActions trigger={trigger} open={open} onOpenChange={setOpen} />
       </div>
     </Card>
   );

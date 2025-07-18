@@ -64,16 +64,11 @@ const LOGOS = {
     "https://assets.decocache.com/webdraw/6ae2b0e1-7b81-48f7-9707-998751698b6f/anthropic.svg",
   gemini:
     "https://assets.decocache.com/webdraw/17df85af-1578-42ef-ae07-4300de0d1723/gemini.svg",
-  xai:
-    "https://assets.decocache.com/webdraw/7a8003ff-8f2d-4988-8693-3feb20e87eca/xai.svg",
+  xai: "https://assets.decocache.com/webdraw/7a8003ff-8f2d-4988-8693-3feb20e87eca/xai.svg",
 };
 
 // TODO(@camudo): Make native web search work
-type Capability =
-  | "reasoning"
-  | "image-upload"
-  | "file-upload"
-  | "web-search";
+type Capability = "reasoning" | "image-upload" | "file-upload" | "web-search";
 
 /**
  * First one is the default model for agents, so choose wisely.
@@ -178,8 +173,8 @@ export const WELL_KNOWN_MODELS: Model[] = [
 export const DEFAULT_MODEL = WELL_KNOWN_MODELS[0];
 
 export function isWellKnownModel(modelId: string): boolean {
-  return WELL_KNOWN_MODELS.some((m) =>
-    m.id === modelId || m.legacyId === modelId
+  return WELL_KNOWN_MODELS.some(
+    (m) => m.id === modelId || m.legacyId === modelId,
   );
 }
 
@@ -192,8 +187,10 @@ export function getTraceDebugId(): string {
   if (!href) {
     return crypto.randomUUID();
   }
-  return new URL(globalThis.location.href).searchParams.get("__d") ||
-    crypto.randomUUID();
+  return (
+    new URL(globalThis.location.href).searchParams.get("__d") ||
+    crypto.randomUUID()
+  );
 }
 
 export const NEW_INTEGRATION_TEMPLATE: Omit<Integration, "id"> = {
@@ -278,10 +275,7 @@ check if the agent is active and configure the agent.
     model: DEFAULT_MODEL.id,
     visibility: "PUBLIC",
     tools_set: {
-      "i:workspace-management": [
-        "PROMPTS_GET",
-        "PROMPTS_UPDATE",
-      ],
+      "i:workspace-management": ["PROMPTS_GET", "PROMPTS_UPDATE"],
     },
     views: [],
     instructions: `

@@ -52,62 +52,83 @@ import { IntegrationAvatar } from "../common/avatar/integration.tsx";
 import { EmptyState } from "../common/empty-state.tsx";
 
 // Form schema for the new trigger form
-const TriggerFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  triggerType: z.enum(["webhook", "cron"]),
-  passphrase: z.string().optional(),
-  frequency: z.string().optional(),
-  targetType: z.enum(["agent", "tool"]),
-  agentId: z.string().optional(),
-  integrationId: z.string().optional(),
-  toolName: z.string().optional(),
-  // Agent-specific fields
-  outputSchema: z.string().optional(),
-  prompt: z.string().optional(),
-  // Tool-specific fields
-  arguments: z.string().optional(),
-}).refine((data) => {
-  if (data.targetType === "agent") {
-    return data.agentId && data.agentId.length > 0;
-  }
-  return true;
-}, {
-  message: "Agent is required for agent triggers",
-  path: ["agentId"],
-}).refine((data) => {
-  if (data.targetType === "tool") {
-    return data.integrationId && data.integrationId.length > 0;
-  }
-  return true;
-}, {
-  message: "Integration is required for tool triggers",
-  path: ["integrationId"],
-}).refine((data) => {
-  if (data.targetType === "tool") {
-    return data.toolName && data.toolName.length > 0;
-  }
-  return true;
-}, {
-  message: "Tool is required for tool triggers",
-  path: ["toolName"],
-}).refine((data) => {
-  if (data.triggerType === "cron") {
-    return data.frequency && data.frequency.length > 0;
-  }
-  return true;
-}, {
-  message: "Frequency is required for cron triggers",
-  path: ["frequency"],
-}).refine((data) => {
-  if (data.targetType === "tool" && data.triggerType === "cron") {
-    return data.arguments && data.arguments.length > 0;
-  }
-  return true;
-}, {
-  message: "Arguments are required for cron tool triggers",
-  path: ["arguments"],
-});
+const TriggerFormSchema = z
+  .object({
+    name: z.string().min(1, "Name is required"),
+    description: z.string().optional(),
+    triggerType: z.enum(["webhook", "cron"]),
+    passphrase: z.string().optional(),
+    frequency: z.string().optional(),
+    targetType: z.enum(["agent", "tool"]),
+    agentId: z.string().optional(),
+    integrationId: z.string().optional(),
+    toolName: z.string().optional(),
+    // Agent-specific fields
+    outputSchema: z.string().optional(),
+    prompt: z.string().optional(),
+    // Tool-specific fields
+    arguments: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.targetType === "agent") {
+        return data.agentId && data.agentId.length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Agent is required for agent triggers",
+      path: ["agentId"],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.targetType === "tool") {
+        return data.integrationId && data.integrationId.length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Integration is required for tool triggers",
+      path: ["integrationId"],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.targetType === "tool") {
+        return data.toolName && data.toolName.length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Tool is required for tool triggers",
+      path: ["toolName"],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.triggerType === "cron") {
+        return data.frequency && data.frequency.length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Frequency is required for cron triggers",
+      path: ["frequency"],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.targetType === "tool" && data.triggerType === "cron") {
+        return data.arguments && data.arguments.length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Arguments are required for cron tool triggers",
+      path: ["arguments"],
+    },
+  );
 
 type TriggerFormData = z.infer<typeof TriggerFormSchema>;
 
@@ -124,7 +145,10 @@ function isValidCron(cron: string) {
   return /^(\S+\s+){4}\S+$/.test(cron);
 }
 
-function JsonSchemaInput({ value, onChange }: {
+function JsonSchemaInput({
+  value,
+  onChange,
+}: {
   value: string | undefined;
   onChange: (v: string) => void;
 }) {
@@ -169,14 +193,13 @@ function JsonSchemaInput({ value, onChange }: {
           </li>
           <li>Define the expected properties in the trigger's response.</li>
           <li>
-            Use <code>type</code> for the data type and <code>required</code>
-            {" "}
+            Use <code>type</code> for the data type and <code>required</code>{" "}
             for required fields.
           </li>
         </ul>
         <div className="font-semibold mb-1">Example:</div>
         <pre className="bg-white border rounded p-2 text-xs overflow-x-auto">
-{`{
+          {`{
   "type": "object",
   "properties": {
     "name": { "type": "string" },
@@ -190,7 +213,11 @@ function JsonSchemaInput({ value, onChange }: {
   );
 }
 
-function ArgumentsInput({ value, onChange, jsonSchema }: {
+function ArgumentsInput({
+  value,
+  onChange,
+  jsonSchema,
+}: {
   value: string | undefined;
   onChange: (v: string) => void;
   jsonSchema?: JSONSchema7;
@@ -256,7 +283,8 @@ function ArgumentsInput({ value, onChange, jsonSchema }: {
   }, [jsonSchema, schemaForm]);
 
   // Check if JSON schema is provided and has meaningful content
-  const hasValidSchema = jsonSchema &&
+  const hasValidSchema =
+    jsonSchema &&
     jsonSchema.type === "object" &&
     jsonSchema.properties &&
     Object.keys(jsonSchema.properties).length > 0;
@@ -301,12 +329,10 @@ function ArgumentsInput({ value, onChange, jsonSchema }: {
         <div className="font-semibold mb-1">How to fill the Arguments:</div>
         <ul className="list-disc pl-4 mb-2">
           <li>
-            The value must be a valid <b>JSON object</b>{" "}
-            containing the arguments for the selected tool.
+            The value must be a valid <b>JSON object</b> containing the
+            arguments for the selected tool.
           </li>
-          <li>
-            Arguments are required for cron triggers that call tools.
-          </li>
+          <li>Arguments are required for cron triggers that call tools.</li>
           <li>Define the parameters that the tool expects to receive.</li>
           <li>
             Use the tool's schema to understand what arguments are required.
@@ -314,7 +340,7 @@ function ArgumentsInput({ value, onChange, jsonSchema }: {
         </ul>
         <div className="font-semibold mb-1">Example:</div>
         <pre className="bg-white border rounded p-2 text-xs overflow-x-auto">
-{`{
+          {`{
   "query": "search term",
   "limit": 10,
   "filter": "active"
@@ -325,7 +351,11 @@ function ArgumentsInput({ value, onChange, jsonSchema }: {
   );
 }
 
-function CronSelectInput({ value, onChange, required }: {
+function CronSelectInput({
+  value,
+  onChange,
+  required,
+}: {
   value: string;
   onChange: (v: string) => void;
   required?: boolean;
@@ -405,12 +435,13 @@ function CronSelectInput({ value, onChange, required }: {
                 className="text-primary underline"
               >
                 Use this generator to create and test expressions
-              </a>.
+              </a>
+              .
             </li>
           </ul>
           <div className="font-semibold mb-1">Example:</div>
           <pre className="bg-muted border rounded p-2 text-xs overflow-x-auto">
-{`0 9 * * *     (every day at 9am UTC)
+            {`0 9 * * *     (every day at 9am UTC)
 0 17 * * *    (every day at 5pm UTC)
 */5 * * * *   (every 5 minutes)`}
           </pre>
@@ -452,20 +483,22 @@ export function TriggerModal({
   const initialTargetType = agentId
     ? "agent"
     : integrationId || hasCallTool
-    ? "tool"
-    : "agent";
+      ? "tool"
+      : "agent";
   // @ts-expect-error triggerData is not typed for this
   const initialAgentId = agentId || triggerData.agentId || "";
-  const initialIntegrationId = integrationId ||
+  const initialIntegrationId =
+    integrationId ||
     // @ts-expect-error triggerData is not typed for this
-    triggerData.callTool?.integrationId || "";
+    triggerData.callTool?.integrationId ||
+    "";
   const initialTriggerType = trigger?.data.type === "cron" ? "cron" : "webhook";
 
   // Filter out agent integrations and innate integrations
   const filteredIntegrations = useMemo(
     () =>
-      integrations.filter((i) =>
-        !(i.id.startsWith("a:") || i.connection.type === "INNATE")
+      integrations.filter(
+        (i) => !(i.id.startsWith("a:") || i.connection.type === "INNATE"),
       ),
     [integrations],
   );
@@ -476,33 +509,38 @@ export function TriggerModal({
       name: trigger?.data.title || "",
       description: trigger?.data.description || "",
       triggerType: initialTriggerType,
-      passphrase: trigger?.data.type === "webhook"
-        ? trigger.data.passphrase || ""
-        : "",
-      frequency: trigger?.data.type === "cron"
-        ? trigger.data.cronExp || cronPresets[0].value
-        : "",
+      passphrase:
+        trigger?.data.type === "webhook" ? trigger.data.passphrase || "" : "",
+      frequency:
+        trigger?.data.type === "cron"
+          ? trigger.data.cronExp || cronPresets[0].value
+          : "",
       targetType: initialTargetType,
       agentId: initialAgentId,
-      integrationId: trigger?.data.type === "cron" && "callTool" in trigger.data
-        ? trigger.data.callTool.integrationId || initialIntegrationId
-        : trigger?.data.type === "webhook" && "callTool" in trigger.data
-        ? trigger.data.callTool.integrationId || initialIntegrationId
-        : initialIntegrationId,
-      toolName: trigger?.data.type === "cron" && "callTool" in trigger.data
-        ? trigger.data.callTool.toolName || ""
-        : trigger?.data.type === "webhook" && "callTool" in trigger.data
-        ? trigger.data.callTool.toolName || ""
-        : "",
-      outputSchema: trigger?.data.type === "webhook" && "schema" in trigger.data
-        ? JSON.stringify(trigger.data.schema, null, 2)
-        : "",
-      prompt: trigger?.data.type === "cron" && "prompt" in trigger.data
-        ? trigger.data.prompt.messages[0]?.content || ""
-        : "",
-      arguments: trigger?.data.type === "cron" && "callTool" in trigger.data
-        ? JSON.stringify(trigger.data.callTool.arguments, null, 2)
-        : "",
+      integrationId:
+        trigger?.data.type === "cron" && "callTool" in trigger.data
+          ? trigger.data.callTool.integrationId || initialIntegrationId
+          : trigger?.data.type === "webhook" && "callTool" in trigger.data
+            ? trigger.data.callTool.integrationId || initialIntegrationId
+            : initialIntegrationId,
+      toolName:
+        trigger?.data.type === "cron" && "callTool" in trigger.data
+          ? trigger.data.callTool.toolName || ""
+          : trigger?.data.type === "webhook" && "callTool" in trigger.data
+            ? trigger.data.callTool.toolName || ""
+            : "",
+      outputSchema:
+        trigger?.data.type === "webhook" && "schema" in trigger.data
+          ? JSON.stringify(trigger.data.schema, null, 2)
+          : "",
+      prompt:
+        trigger?.data.type === "cron" && "prompt" in trigger.data
+          ? trigger.data.prompt.messages[0]?.content || ""
+          : "",
+      arguments:
+        trigger?.data.type === "cron" && "callTool" in trigger.data
+          ? JSON.stringify(trigger.data.callTool.arguments, null, 2)
+          : "",
     },
   });
 
@@ -511,8 +549,8 @@ export function TriggerModal({
   const watchedIntegrationId = form.watch("integrationId");
 
   // Get tools for selected integration
-  const selectedIntegration = integrations.find((i) =>
-    i.id === watchedIntegrationId
+  const selectedIntegration = integrations.find(
+    (i) => i.id === watchedIntegrationId,
   );
   const { data: toolsData, isLoading: isLoadingTools } = useTools(
     selectedIntegration?.connection || { type: "HTTP", url: "" },
@@ -550,17 +588,20 @@ export function TriggerModal({
         };
 
         if (isEditing && trigger) {
-          updateTrigger({
-            triggerId: trigger.id,
-            trigger: triggerData,
-          }, {
-            onSuccess: () => onOpenChange?.(false),
-            onError: (error: Error) => {
-              form.setError("root", {
-                message: error?.message || "Failed to update trigger",
-              });
+          updateTrigger(
+            {
+              triggerId: trigger.id,
+              trigger: triggerData,
             },
-          });
+            {
+              onSuccess: () => onOpenChange?.(false),
+              onError: (error: Error) => {
+                form.setError("root", {
+                  message: error?.message || "Failed to update trigger",
+                });
+              },
+            },
+          );
         } else {
           createTrigger(triggerData, {
             onSuccess: () => onOpenChange?.(false),
@@ -592,17 +633,20 @@ export function TriggerModal({
         };
 
         if (isEditing && trigger) {
-          updateTrigger({
-            triggerId: trigger.id,
-            trigger: triggerData,
-          }, {
-            onSuccess: () => onOpenChange?.(false),
-            onError: (error: Error) => {
-              form.setError("root", {
-                message: error?.message || "Failed to update trigger",
-              });
+          updateTrigger(
+            {
+              triggerId: trigger.id,
+              trigger: triggerData,
             },
-          });
+            {
+              onSuccess: () => onOpenChange?.(false),
+              onError: (error: Error) => {
+                form.setError("root", {
+                  message: error?.message || "Failed to update trigger",
+                });
+              },
+            },
+          );
         } else {
           createTrigger(triggerData, {
             onSuccess: () => onOpenChange?.(false),
@@ -662,17 +706,20 @@ export function TriggerModal({
         };
 
         if (isEditing && trigger) {
-          updateTrigger({
-            triggerId: trigger.id,
-            trigger: triggerData,
-          }, {
-            onSuccess: () => onOpenChange?.(false),
-            onError: (error: Error) => {
-              form.setError("root", {
-                message: error?.message || "Failed to update trigger",
-              });
+          updateTrigger(
+            {
+              triggerId: trigger.id,
+              trigger: triggerData,
             },
-          });
+            {
+              onSuccess: () => onOpenChange?.(false),
+              onError: (error: Error) => {
+                form.setError("root", {
+                  message: error?.message || "Failed to update trigger",
+                });
+              },
+            },
+          );
         } else {
           createTrigger(triggerData, {
             onSuccess: () => onOpenChange?.(false),
@@ -697,17 +744,20 @@ export function TriggerModal({
         };
 
         if (isEditing && trigger) {
-          updateTrigger({
-            triggerId: trigger.id,
-            trigger: triggerData,
-          }, {
-            onSuccess: () => onOpenChange?.(false),
-            onError: (error: Error) => {
-              form.setError("root", {
-                message: error?.message || "Failed to update trigger",
-              });
+          updateTrigger(
+            {
+              triggerId: trigger.id,
+              trigger: triggerData,
             },
-          });
+            {
+              onSuccess: () => onOpenChange?.(false),
+              onError: (error: Error) => {
+                form.setError("root", {
+                  message: error?.message || "Failed to update trigger",
+                });
+              },
+            },
+          );
         } else {
           createTrigger(triggerData, {
             onSuccess: () => onOpenChange?.(false),
@@ -726,10 +776,7 @@ export function TriggerModal({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{triggerAction}</DialogTrigger>
       <Form {...form}>
-        <form
-          id="trigger-form"
-          onSubmit={form.handleSubmit(onSubmit)}
-        >
+        <form id="trigger-form" onSubmit={form.handleSubmit(onSubmit)}>
           <DialogContent
             onClick={(e) => e.stopPropagation()}
             className="max-w-2xl h-[90vh] grid grid-rows-[auto_1fr_auto]"
@@ -745,41 +792,151 @@ export function TriggerModal({
               </DialogDescription>
             </DialogHeader>
 
-            {!hasAgents && !hasIntegrations
-              ? (
-                <EmptyState
-                  icon="robot_2"
-                  title="No agents or integrations yet"
-                  description="You need to create an agent or add an integration before adding a trigger."
-                  buttonProps={{
-                    onClick: () => {
-                      onOpenChange?.(false);
-                      navigateWorkspace("/agents");
-                    },
-                    variant: "special",
-                    className: "mt-2",
-                    children: (
-                      <>
-                        <Icon name="add" />
-                        New Agent
-                      </>
-                    ),
-                  }}
-                />
-              )
-              : (
-                <div className="flex flex-col gap-4 flex-grow overflow-y-auto p-1">
-                  {/* Basic Information */}
-                  <div className="space-y-4">
+            {!hasAgents && !hasIntegrations ? (
+              <EmptyState
+                icon="robot_2"
+                title="No agents or integrations yet"
+                description="You need to create an agent or add an integration before adding a trigger."
+                buttonProps={{
+                  onClick: () => {
+                    onOpenChange?.(false);
+                    navigateWorkspace("/agents");
+                  },
+                  variant: "special",
+                  className: "mt-2",
+                  children: (
+                    <>
+                      <Icon name="add" />
+                      New Agent
+                    </>
+                  ),
+                }}
+              />
+            ) : (
+              <div className="flex flex-col gap-4 flex-grow overflow-y-auto p-1">
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter trigger name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Enter trigger description (optional)"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Trigger Type Selection */}
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="triggerType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Trigger Type</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="flex space-x-4"
+                            disabled={isEditing}
+                          >
+                            <div
+                              className={`flex items-center space-x-2 ${
+                                isEditing
+                                  ? "cursor-not-allowed"
+                                  : "cursor-pointer"
+                              }`}
+                            >
+                              <RadioGroupItem
+                                value="webhook"
+                                id="webhook"
+                                className={
+                                  isEditing
+                                    ? "cursor-not-allowed"
+                                    : "cursor-pointer"
+                                }
+                              />
+                              <Label
+                                htmlFor="webhook"
+                                className={`flex items-center gap-2 ${
+                                  isEditing
+                                    ? "cursor-not-allowed"
+                                    : "cursor-pointer"
+                                }`}
+                              >
+                                <Icon name="webhook" className="h-4 w-4" />
+                                Webhook
+                              </Label>
+                            </div>
+                            <div
+                              className={`flex items-center space-x-2 ${
+                                isEditing
+                                  ? "cursor-not-allowed"
+                                  : "cursor-pointer"
+                              }`}
+                            >
+                              <RadioGroupItem
+                                value="cron"
+                                id="cron"
+                                className={
+                                  isEditing
+                                    ? "cursor-not-allowed"
+                                    : "cursor-pointer"
+                                }
+                              />
+                              <Label
+                                htmlFor="cron"
+                                className={`flex items-center gap-2 ${
+                                  isEditing
+                                    ? "cursor-not-allowed"
+                                    : "cursor-pointer"
+                                }`}
+                              >
+                                <Icon name="schedule" className="h-4 w-4" />
+                                Cron
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Webhook-specific fields */}
+                  {watchedTriggerType === "webhook" && (
                     <FormField
                       control={form.control}
-                      name="name"
+                      name="passphrase"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Name *</FormLabel>
+                          <FormLabel>Passphrase</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="Enter trigger name"
+                              placeholder="Enter passphrase (optional)"
                               {...field}
                             />
                           </FormControl>
@@ -787,257 +944,221 @@ export function TriggerModal({
                         </FormItem>
                       )}
                     />
+                  )}
 
+                  {/* Cron-specific fields */}
+                  {watchedTriggerType === "cron" && (
                     <FormField
                       control={form.control}
-                      name="description"
+                      name="frequency"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
                           <FormControl>
-                            <Textarea
-                              placeholder="Enter trigger description (optional)"
-                              {...field}
+                            <CronSelectInput
+                              value={field.value || ""}
+                              onChange={field.onChange}
+                              required
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  </div>
+                  )}
+                </div>
 
-                  {/* Trigger Type Selection */}
-                  <div className="space-y-4">
+                {/* Target Type Selection */}
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="targetType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Target Type</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="flex space-x-4"
+                            disabled={isEditing || !!agentId || !!integrationId}
+                          >
+                            <div
+                              className={`flex items-center space-x-2 ${
+                                isEditing || !!agentId || !!integrationId
+                                  ? "cursor-not-allowed"
+                                  : "cursor-pointer"
+                              }`}
+                            >
+                              <RadioGroupItem
+                                value="agent"
+                                id="agent"
+                                className={
+                                  isEditing || !!agentId || !!integrationId
+                                    ? "cursor-not-allowed"
+                                    : "cursor-pointer"
+                                }
+                              />
+                              <Label
+                                htmlFor="agent"
+                                className={`flex items-center gap-2 ${
+                                  isEditing || !!agentId || !!integrationId
+                                    ? "cursor-not-allowed"
+                                    : "cursor-pointer"
+                                }`}
+                              >
+                                <Icon name="robot_2" className="h-4 w-4" />
+                                Agent
+                              </Label>
+                            </div>
+                            <div
+                              className={`flex items-center space-x-2 ${
+                                isEditing || !!agentId || !!integrationId
+                                  ? "cursor-not-allowed"
+                                  : "cursor-pointer"
+                              }`}
+                            >
+                              <RadioGroupItem
+                                value="tool"
+                                id="tool"
+                                className={
+                                  isEditing || !!agentId || !!integrationId
+                                    ? "cursor-not-allowed"
+                                    : "cursor-pointer"
+                                }
+                              />
+                              <Label
+                                htmlFor="tool"
+                                className={`flex items-center gap-2 ${
+                                  isEditing || !!agentId || !!integrationId
+                                    ? "cursor-not-allowed"
+                                    : "cursor-pointer"
+                                }`}
+                              >
+                                <Icon name="build" filled className="h-4 w-4" />
+                                Tool
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Agent Selection */}
+                  {watchedTargetType === "agent" && (
                     <FormField
                       control={form.control}
-                      name="triggerType"
+                      name="agentId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Trigger Type</FormLabel>
+                          <FormLabel>Agent *</FormLabel>
                           <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
+                            <Select
                               value={field.value}
-                              className="flex space-x-4"
-                              disabled={isEditing}
+                              onValueChange={field.onChange}
+                              disabled={isEditing || !!agentId}
                             >
-                              <div
-                                className={`flex items-center space-x-2 ${
-                                  isEditing
-                                    ? "cursor-not-allowed"
-                                    : "cursor-pointer"
-                                }`}
-                              >
-                                <RadioGroupItem
-                                  value="webhook"
-                                  id="webhook"
-                                  className={isEditing
-                                    ? "cursor-not-allowed"
-                                    : "cursor-pointer"}
-                                />
-                                <Label
-                                  htmlFor="webhook"
-                                  className={`flex items-center gap-2 ${
-                                    isEditing
-                                      ? "cursor-not-allowed"
-                                      : "cursor-pointer"
-                                  }`}
-                                >
-                                  <Icon name="webhook" className="h-4 w-4" />
-                                  Webhook
-                                </Label>
-                              </div>
-                              <div
-                                className={`flex items-center space-x-2 ${
-                                  isEditing
-                                    ? "cursor-not-allowed"
-                                    : "cursor-pointer"
-                                }`}
-                              >
-                                <RadioGroupItem
-                                  value="cron"
-                                  id="cron"
-                                  className={isEditing
-                                    ? "cursor-not-allowed"
-                                    : "cursor-pointer"}
-                                />
-                                <Label
-                                  htmlFor="cron"
-                                  className={`flex items-center gap-2 ${
-                                    isEditing
-                                      ? "cursor-not-allowed"
-                                      : "cursor-pointer"
-                                  }`}
-                                >
-                                  <Icon name="schedule" className="h-4 w-4" />
-                                  Cron
-                                </Label>
-                              </div>
-                            </RadioGroup>
+                              <SelectTrigger className="w-full h-12 rounded-full border border-border text-left px-4">
+                                <SelectValue placeholder="Select agent">
+                                  {(() => {
+                                    const selectedAgent = agents.find(
+                                      (a) => a.id === field.value,
+                                    );
+
+                                    if (!selectedAgent) {
+                                      return null;
+                                    }
+
+                                    return (
+                                      <div className="flex items-center gap-2">
+                                        <span className="w-6 h-6">
+                                          <AgentAvatar
+                                            size="xs"
+                                            url={selectedAgent.avatar}
+                                            fallback={selectedAgent.name}
+                                          />
+                                        </span>
+                                        <span className="truncate text-sm">
+                                          {selectedAgent.name}
+                                        </span>
+                                      </div>
+                                    );
+                                  })()}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60 overflow-y-auto rounded-xl w-[var(--radix-select-trigger-width)]">
+                                {agents.map((agent) => (
+                                  <SelectItem
+                                    key={agent.id}
+                                    value={agent.id}
+                                    className="[&>span]:max-w-full"
+                                  >
+                                    <div className="flex items-center gap-2 px-3 py-2 min-w-0">
+                                      <AgentAvatar
+                                        size="xs"
+                                        url={agent.avatar}
+                                        fallback={agent.name}
+                                      />
+
+                                      <div className="flex flex-col min-w-0 flex-1">
+                                        <span className="truncate text-sm font-medium">
+                                          {agent.name}
+                                        </span>
+                                        {agent.description && (
+                                          <span className="text-xs text-muted-foreground truncate">
+                                            {agent.description}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                  )}
 
-                    {/* Webhook-specific fields */}
-                    {watchedTriggerType === "webhook" && (
+                  {/* Integration Selection */}
+                  {watchedTargetType === "tool" && (
+                    <>
                       <FormField
                         control={form.control}
-                        name="passphrase"
+                        name="integrationId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Passphrase</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Enter passphrase (optional)"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-
-                    {/* Cron-specific fields */}
-                    {watchedTriggerType === "cron" && (
-                      <FormField
-                        control={form.control}
-                        name="frequency"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <CronSelectInput
-                                value={field.value || ""}
-                                onChange={field.onChange}
-                                required
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </div>
-
-                  {/* Target Type Selection */}
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="targetType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Target Type</FormLabel>
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              value={field.value}
-                              className="flex space-x-4"
-                              disabled={isEditing || !!agentId ||
-                                !!integrationId}
-                            >
-                              <div
-                                className={`flex items-center space-x-2 ${
-                                  (isEditing || !!agentId || !!integrationId)
-                                    ? "cursor-not-allowed"
-                                    : "cursor-pointer"
-                                }`}
-                              >
-                                <RadioGroupItem
-                                  value="agent"
-                                  id="agent"
-                                  className={(isEditing || !!agentId ||
-                                      !!integrationId)
-                                    ? "cursor-not-allowed"
-                                    : "cursor-pointer"}
-                                />
-                                <Label
-                                  htmlFor="agent"
-                                  className={`flex items-center gap-2 ${
-                                    (isEditing || !!agentId || !!integrationId)
-                                      ? "cursor-not-allowed"
-                                      : "cursor-pointer"
-                                  }`}
-                                >
-                                  <Icon name="robot_2" className="h-4 w-4" />
-                                  Agent
-                                </Label>
-                              </div>
-                              <div
-                                className={`flex items-center space-x-2 ${
-                                  (isEditing || !!agentId || !!integrationId)
-                                    ? "cursor-not-allowed"
-                                    : "cursor-pointer"
-                                }`}
-                              >
-                                <RadioGroupItem
-                                  value="tool"
-                                  id="tool"
-                                  className={(isEditing || !!agentId ||
-                                      !!integrationId)
-                                    ? "cursor-not-allowed"
-                                    : "cursor-pointer"}
-                                />
-                                <Label
-                                  htmlFor="tool"
-                                  className={`flex items-center gap-2 ${
-                                    (isEditing || !!agentId || !!integrationId)
-                                      ? "cursor-not-allowed"
-                                      : "cursor-pointer"
-                                  }`}
-                                >
-                                  <Icon
-                                    name="build"
-                                    filled
-                                    className="h-4 w-4"
-                                  />
-                                  Tool
-                                </Label>
-                              </div>
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Agent Selection */}
-                    {watchedTargetType === "agent" && (
-                      <FormField
-                        control={form.control}
-                        name="agentId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Agent *</FormLabel>
+                            <FormLabel>Integration *</FormLabel>
                             <FormControl>
                               <Select
                                 value={field.value}
                                 onValueChange={field.onChange}
-                                disabled={isEditing || !!agentId}
+                                disabled={isEditing || !!integrationId}
                               >
                                 <SelectTrigger className="w-full h-12 rounded-full border border-border text-left px-4">
-                                  <SelectValue placeholder="Select agent">
+                                  <SelectValue placeholder="Select integration">
                                     {(() => {
-                                      const selectedAgent = agents.find((a) =>
-                                        a.id === field.value
-                                      );
+                                      const selectedIntegration =
+                                        filteredIntegrations.find(
+                                          (i) => i.id === field.value,
+                                        );
 
-                                      if (!selectedAgent) {
+                                      if (!selectedIntegration) {
                                         return null;
                                       }
 
                                       return (
                                         <div className="flex items-center gap-2">
-                                          <span className="w-6 h-6">
-                                            <AgentAvatar
-                                              size="xs"
-                                              url={selectedAgent.avatar}
-                                              fallback={selectedAgent.name}
-                                            />
-                                          </span>
+                                          <IntegrationAvatar
+                                            url={selectedIntegration.icon}
+                                            fallback={selectedIntegration.name}
+                                            size="xs"
+                                          />
                                           <span className="truncate text-sm">
-                                            {selectedAgent.name}
+                                            {selectedIntegration.name}
                                           </span>
                                         </div>
                                       );
@@ -1045,26 +1166,25 @@ export function TriggerModal({
                                   </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent className="max-h-60 overflow-y-auto rounded-xl w-[var(--radix-select-trigger-width)]">
-                                  {agents.map((agent) => (
+                                  {filteredIntegrations.map((integration) => (
                                     <SelectItem
-                                      key={agent.id}
-                                      value={agent.id}
+                                      key={integration.id}
+                                      value={integration.id}
                                       className="[&>span]:max-w-full"
                                     >
                                       <div className="flex items-center gap-2 px-3 py-2 min-w-0">
-                                        <AgentAvatar
+                                        <IntegrationAvatar
+                                          url={integration.icon}
+                                          fallback={integration.name}
                                           size="xs"
-                                          url={agent.avatar}
-                                          fallback={agent.name}
                                         />
-
                                         <div className="flex flex-col min-w-0 flex-1">
                                           <span className="truncate text-sm font-medium">
-                                            {agent.name}
+                                            {integration.name}
                                           </span>
-                                          {agent.description && (
+                                          {integration.description && (
                                             <span className="text-xs text-muted-foreground truncate">
-                                              {agent.description}
+                                              {integration.description}
                                             </span>
                                           )}
                                         </div>
@@ -1078,45 +1198,54 @@ export function TriggerModal({
                           </FormItem>
                         )}
                       />
-                    )}
 
-                    {/* Integration Selection */}
-                    {watchedTargetType === "tool" && (
-                      <>
+                      {/* Tool Selection */}
+                      {watchedIntegrationId && (
                         <FormField
                           control={form.control}
-                          name="integrationId"
+                          name="toolName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Integration *</FormLabel>
+                              <div className="flex items-center gap-4">
+                                <FormLabel className="flex items-center gap-2">
+                                  Tool *
+                                </FormLabel>
+                                <div className="flex items-center gap-2">
+                                  {isLoadingTools && (
+                                    <>
+                                      <span className="text-xs text-muted-foreground">
+                                        Loading tools...
+                                      </span>{" "}
+                                      <Spinner size="xs" />
+                                    </>
+                                  )}
+                                </div>
+                              </div>
                               <FormControl>
                                 <Select
                                   value={field.value}
                                   onValueChange={field.onChange}
-                                  disabled={isEditing || !!integrationId}
+                                  disabled={isEditing}
                                 >
                                   <SelectTrigger className="w-full h-12 rounded-full border border-border text-left px-4">
-                                    <SelectValue placeholder="Select integration">
+                                    <SelectValue placeholder="Select tool">
                                       {(() => {
-                                        const selectedIntegration =
-                                          filteredIntegrations.find((i) =>
-                                            i.id === field.value
-                                          );
+                                        const selectedTool = tools.find(
+                                          (t) => t.name === field.value,
+                                        );
 
-                                        if (!selectedIntegration) {
+                                        if (!selectedTool) {
                                           return null;
                                         }
 
                                         return (
                                           <div className="flex items-center gap-2">
-                                            <IntegrationAvatar
-                                              url={selectedIntegration.icon}
-                                              fallback={selectedIntegration
-                                                .name}
-                                              size="xs"
+                                            <Icon
+                                              name="build"
+                                              className="w-5 h-5 text-muted-foreground"
                                             />
                                             <span className="truncate text-sm">
-                                              {selectedIntegration.name}
+                                              {selectedTool.name}
                                             </span>
                                           </div>
                                         );
@@ -1124,28 +1253,27 @@ export function TriggerModal({
                                     </SelectValue>
                                   </SelectTrigger>
                                   <SelectContent className="max-h-60 overflow-y-auto rounded-xl w-[var(--radix-select-trigger-width)]">
-                                    {filteredIntegrations.map((integration) => (
+                                    {tools.map((tool) => (
                                       <SelectItem
-                                        key={integration.id}
-                                        value={integration.id}
+                                        key={tool.name}
+                                        value={tool.name}
                                         className="[&>span]:max-w-full"
                                       >
-                                        <div className="flex items-center gap-2 px-3 py-2 min-w-0">
-                                          <IntegrationAvatar
-                                            url={integration.icon}
-                                            fallback={integration.name}
-                                            size="xs"
-                                          />
-                                          <div className="flex flex-col min-w-0 flex-1">
-                                            <span className="truncate text-sm font-medium">
-                                              {integration.name}
+                                        <div className="flex flex-col items-start gap-1 px-3 py-2 w-full min-w-0">
+                                          <div className="flex items-center gap-2 w-full">
+                                            <Icon
+                                              name="build"
+                                              className="w-4 h-4 text-muted-foreground flex-shrink-0"
+                                            />
+                                            <span className="font-medium text-sm truncate">
+                                              {tool.name}
                                             </span>
-                                            {integration.description && (
-                                              <span className="text-xs text-muted-foreground truncate">
-                                                {integration.description}
-                                              </span>
-                                            )}
                                           </div>
+                                          {tool.description && (
+                                            <span className="text-xs text-muted-foreground truncate w-full pl-6">
+                                              {tool.description?.trim()}
+                                            </span>
+                                          )}
                                         </div>
                                       </SelectItem>
                                     ))}
@@ -1156,100 +1284,14 @@ export function TriggerModal({
                             </FormItem>
                           )}
                         />
+                      )}
+                    </>
+                  )}
+                </div>
 
-                        {/* Tool Selection */}
-                        {watchedIntegrationId && (
-                          <FormField
-                            control={form.control}
-                            name="toolName"
-                            render={({ field }) => (
-                              <FormItem>
-                                <div className="flex items-center gap-4">
-                                  <FormLabel className="flex items-center gap-2">
-                                    Tool *
-                                  </FormLabel>
-                                  <div className="flex items-center gap-2">
-                                    {isLoadingTools && (
-                                      <>
-                                        <span className="text-xs text-muted-foreground">
-                                          Loading tools...
-                                        </span>{" "}
-                                        <Spinner size="xs" />
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                                <FormControl>
-                                  <Select
-                                    value={field.value}
-                                    onValueChange={field.onChange}
-                                    disabled={isEditing}
-                                  >
-                                    <SelectTrigger className="w-full h-12 rounded-full border border-border text-left px-4">
-                                      <SelectValue placeholder="Select tool">
-                                        {(() => {
-                                          const selectedTool = tools.find((t) =>
-                                            t.name === field.value
-                                          );
-
-                                          if (!selectedTool) {
-                                            return null;
-                                          }
-
-                                          return (
-                                            <div className="flex items-center gap-2">
-                                              <Icon
-                                                name="build"
-                                                className="w-5 h-5 text-muted-foreground"
-                                              />
-                                              <span className="truncate text-sm">
-                                                {selectedTool.name}
-                                              </span>
-                                            </div>
-                                          );
-                                        })()}
-                                      </SelectValue>
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-60 overflow-y-auto rounded-xl w-[var(--radix-select-trigger-width)]">
-                                      {tools.map((tool) => (
-                                        <SelectItem
-                                          key={tool.name}
-                                          value={tool.name}
-                                          className="[&>span]:max-w-full"
-                                        >
-                                          <div className="flex flex-col items-start gap-1 px-3 py-2 w-full min-w-0">
-                                            <div className="flex items-center gap-2 w-full">
-                                              <Icon
-                                                name="build"
-                                                className="w-4 h-4 text-muted-foreground flex-shrink-0"
-                                              />
-                                              <span className="font-medium text-sm truncate">
-                                                {tool.name}
-                                              </span>
-                                            </div>
-                                            {tool.description && (
-                                              <span className="text-xs text-muted-foreground truncate w-full pl-6">
-                                                {tool.description?.trim()}
-                                              </span>
-                                            )}
-                                          </div>
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        )}
-                      </>
-                    )}
-                  </div>
-
-                  {/* Conditional Fields Based on Trigger Type and Target Type */}
-                  {watchedTargetType === "agent" &&
-                    watchedTriggerType === "webhook" && (
+                {/* Conditional Fields Based on Trigger Type and Target Type */}
+                {watchedTargetType === "agent" &&
+                  watchedTriggerType === "webhook" && (
                     <div className="space-y-4">
                       <FormField
                         control={form.control}
@@ -1270,8 +1312,8 @@ export function TriggerModal({
                     </div>
                   )}
 
-                  {watchedTargetType === "agent" &&
-                    watchedTriggerType === "cron" && (
+                {watchedTargetType === "agent" &&
+                  watchedTriggerType === "cron" && (
                     <FormField
                       control={form.control}
                       name="prompt"
@@ -1291,15 +1333,15 @@ export function TriggerModal({
                     />
                   )}
 
-                  {watchedTargetType === "tool" &&
-                    watchedTriggerType === "cron" && (
+                {watchedTargetType === "tool" &&
+                  watchedTriggerType === "cron" && (
                     <FormField
                       control={form.control}
                       name="arguments"
                       render={({ field }) => {
                         // Get the selected tool's input schema
-                        const selectedTool = tools.find((tool) =>
-                          tool.name === form.watch("toolName")
+                        const selectedTool = tools.find(
+                          (tool) => tool.name === form.watch("toolName"),
                         );
                         const inputSchema = selectedTool?.inputSchema as
                           | JSONSchema7
@@ -1321,8 +1363,8 @@ export function TriggerModal({
                       }}
                     />
                   )}
-                </div>
-              )}
+              </div>
+            )}
 
             <DialogFooter>
               <div className="flex justify-end gap-2 pt-4">
@@ -1340,12 +1382,12 @@ export function TriggerModal({
                   form="trigger-form"
                 >
                   {isPending
-                    ? (
-                      isEditing ? "Updating..." : "Creating..."
-                    )
-                    : (
-                      isEditing ? "Update Trigger" : "Create Trigger"
-                    )}
+                    ? isEditing
+                      ? "Updating..."
+                      : "Creating..."
+                    : isEditing
+                      ? "Update Trigger"
+                      : "Create Trigger"}
                 </Button>
               </div>
             </DialogFooter>

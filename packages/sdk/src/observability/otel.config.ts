@@ -34,15 +34,11 @@ const processSpan = (span: ReadableSpan): ReadableSpan => {
             span.attributes["actor.id"] = locator.id;
             friendlyName = `${locator.id} ${friendlyName}`;
           }
-          (span as unknown as Span).updateName(
-            `ACTOR@${friendlyName}`,
-          );
+          (span as unknown as Span).updateName(`ACTOR@${friendlyName}`);
         }
       } else {
         // Handle external service calls
-        (span as unknown as Span).updateName(
-          `DO@${method} ${fullUrl}`,
-        );
+        (span as unknown as Span).updateName(`DO@${method} ${fullUrl}`);
       }
     } else {
       // Handle regular HTTP requests
@@ -52,9 +48,7 @@ const processSpan = (span: ReadableSpan): ReadableSpan => {
     }
   } else if (span.name.startsWith("fetch")) {
     // Handle external service calls
-    (span as unknown as Span).updateName(
-      `${method} ${fullUrl}`,
-    );
+    (span as unknown as Span).updateName(`${method} ${fullUrl}`);
   }
 
   // Add request.internal flag if not present

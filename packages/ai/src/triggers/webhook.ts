@@ -12,9 +12,15 @@ export interface WebhookArgs {
 }
 
 const isAIMessage = (m: unknown | Message): m is Message => {
-  return typeof m === "object" && m !== null && "role" in m &&
+  return (
+    typeof m === "object" &&
+    m !== null &&
+    "role" in m &&
     ("content" in m || "audioBase64" in m) &&
-    "id" in m && typeof m.id === "string" && typeof m.role === "string";
+    "id" in m &&
+    typeof m.id === "string" &&
+    typeof m.role === "string"
+  );
 };
 
 const isAIMessages = (m: unknown | Message[]): m is Message[] => {
@@ -61,10 +67,12 @@ export const hooks: TriggerHooks<TriggerData & { type: "webhook" }> = {
       };
     }
 
-    if (("callTool" in data)) {
+    if ("callTool" in data) {
       return await trigger._callTool(
         data.callTool,
-        typeof args === "object" ? args as Record<string, unknown> ?? {} : {},
+        typeof args === "object"
+          ? ((args as Record<string, unknown>) ?? {})
+          : {},
       );
     }
 
@@ -91,10 +99,13 @@ export const hooks: TriggerHooks<TriggerData & { type: "webhook" }> = {
       .new(trigger.agentId)
       .withMetadata({ threadId, resourceId });
 
-    const messagesFromArgs = args && typeof args === "object" &&
-        "messages" in args && isAIMessages(args.messages)
-      ? args.messages
-      : undefined;
+    const messagesFromArgs =
+      args &&
+      typeof args === "object" &&
+      "messages" in args &&
+      isAIMessages(args.messages)
+        ? args.messages
+        : undefined;
 
     const messages = messagesFromArgs ?? [
       {
@@ -104,27 +115,26 @@ export const hooks: TriggerHooks<TriggerData & { type: "webhook" }> = {
       },
       ...(args
         ? [
-          {
-            id: crypto.randomUUID(),
-            role: "user" as const,
-            content: `\`\`\`json\n${JSON.stringify(args)}\`\`\``,
-          },
-        ]
+            {
+              id: crypto.randomUUID(),
+              role: "user" as const,
+              content: `\`\`\`json\n${JSON.stringify(args)}\`\`\``,
+            },
+          ]
         : []),
     ];
 
-    const schema = "schema" in data && data.schema
-      ? data.schema
-      : (typeof args === "object" && args !== null &&
-          "schema" in args && typeof args.schema === "object"
-        ? args.schema
-        : undefined);
-    if (
-      schema
-    ) {
-      return await agent
-        .generateObject(messages, schema)
-        .then((r) => r.object);
+    const schema =
+      "schema" in data && data.schema
+        ? data.schema
+        : typeof args === "object" &&
+            args !== null &&
+            "schema" in args &&
+            typeof args.schema === "object"
+          ? args.schema
+          : undefined;
+    if (schema) {
+      return await agent.generateObject(messages, schema).then((r) => r.object);
     }
 
     return useStream

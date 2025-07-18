@@ -68,11 +68,11 @@ export function useTabsForAgent(
     // If we have views, close all base tabs so only the first view is open
     const tabs = hasViews
       ? Object.fromEntries(
-        Object.entries(baseTabs).map(([key, tab]) => [
-          key,
-          { ...tab, initialOpen: false },
-        ]),
-      )
+          Object.entries(baseTabs).map(([key, tab]) => [
+            key,
+            { ...tab, initialOpen: false },
+          ]),
+        )
       : { ...baseTabs };
 
     // Insert view tabs after chat tab

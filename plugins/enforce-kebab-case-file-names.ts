@@ -27,8 +27,7 @@ const plugin: Deno.lint.Plugin = {
                 if (!kebabCasePattern.test(filename)) {
                   context.report({
                     node,
-                    message:
-                      `Filename "${filename}" should be in kebab-case format (e.g., "my-component.tsx")`,
+                    message: `Filename "${filename}" should be in kebab-case format (e.g., "my-component.tsx")`,
                   });
                 }
               }

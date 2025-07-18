@@ -6,9 +6,7 @@ import MentionDropdown, { type Option } from "./dropdown.tsx";
 
 export const suggestion: (
   items: Prompt[],
-) => Partial<SuggestionOptions<Option>> = (
-  items,
-) => {
+) => Partial<SuggestionOptions<Option>> = (items) => {
   return {
     char: "/",
     items: (props) => {
@@ -25,17 +23,22 @@ export const suggestion: (
               type: "category",
               label: "Prompts",
               icon: "text_snippet",
-              children: items.filter((prompt) =>
-                prompt.name.toLowerCase().includes(query?.toLowerCase())
-              ).map((prompt): Option => ({
-                id: prompt.id,
-                type: "option",
-                label: prompt.name,
-                icon: "text_snippet",
-                tooltip: prompt.content,
-                handle: ({ command }) =>
-                  command({ id: prompt.id, label: prompt.name }),
-              })).slice(0, 10),
+              children: items
+                .filter((prompt) =>
+                  prompt.name.toLowerCase().includes(query?.toLowerCase()),
+                )
+                .map(
+                  (prompt): Option => ({
+                    id: prompt.id,
+                    type: "option",
+                    label: prompt.name,
+                    icon: "text_snippet",
+                    tooltip: prompt.content,
+                    handle: ({ command }) =>
+                      command({ id: prompt.id, label: prompt.name }),
+                  }),
+                )
+                .slice(0, 10),
             },
             // {
             //   id: "tools",

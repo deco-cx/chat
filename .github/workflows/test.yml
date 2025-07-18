@@ -24,11 +24,11 @@ jobs:
       - name: Install dependencies
         run: deno install
 
+      - name: Run format
+        run: deno run fmt:check
+
       - name: Run lint
         run: deno run lint
-
-      - name: Run format
-        run: deno run fmt --check
 
       - name: Run check
         env:

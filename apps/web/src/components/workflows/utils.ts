@@ -34,12 +34,7 @@ function isErrorStatus(status: string): boolean {
  * Determines if a status is considered pending
  */
 function isPendingStatus(status: string): boolean {
-  const pendingStatuses = [
-    "pending",
-    "queued",
-    "waiting",
-    "scheduled",
-  ];
+  const pendingStatuses = ["pending", "queued", "waiting", "scheduled"];
   return pendingStatuses.includes(status.toLowerCase());
 }
 
@@ -94,14 +89,18 @@ export function transformToUniqueWorkflows(
       const lastRun = sortedRuns[0];
 
       // Calculate statistics - debug the status counting
-      const successCount =
-        workflowRuns.filter((run) => isSuccessStatus(run.status)).length;
-      const errorCount =
-        workflowRuns.filter((run) => isErrorStatus(run.status)).length;
-      const runningCount =
-        workflowRuns.filter((run) => isRunningStatus(run.status)).length;
-      const pendingCount =
-        workflowRuns.filter((run) => isPendingStatus(run.status)).length;
+      const successCount = workflowRuns.filter((run) =>
+        isSuccessStatus(run.status),
+      ).length;
+      const errorCount = workflowRuns.filter((run) =>
+        isErrorStatus(run.status),
+      ).length;
+      const runningCount = workflowRuns.filter((run) =>
+        isRunningStatus(run.status),
+      ).length;
+      const pendingCount = workflowRuns.filter((run) =>
+        isPendingStatus(run.status),
+      ).length;
 
       // Debug status breakdown - remove this after testing
       console.log(`🔢 Status breakdown for ${workflowName}:`, {
@@ -110,10 +109,13 @@ export function transformToUniqueWorkflows(
         error: errorCount,
         running: runningCount,
         pending: pendingCount,
-        statusCounts: workflowRuns.reduce((acc, run) => {
-          acc[run.status] = (acc[run.status] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>),
+        statusCounts: workflowRuns.reduce(
+          (acc, run) => {
+            acc[run.status] = (acc[run.status] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>,
+        ),
       });
 
       // Find first and last dates
@@ -182,16 +184,16 @@ export function calculateWorkflowStats(runs: WorkflowRun[]): WorkflowStats {
     successRate: Math.round(successRate * 100) / 100, // Round to 2 decimal places
     lastRun: lastRun
       ? {
-        date: lastRun.updatedAt,
-        status: lastRun.status,
-        runId: lastRun.runId,
-      }
+          date: lastRun.updatedAt,
+          status: lastRun.status,
+          runId: lastRun.runId,
+        }
       : undefined,
     firstRun: firstRun
       ? {
-        date: firstRun.createdAt,
-        runId: firstRun.runId,
-      }
+          date: firstRun.createdAt,
+          runId: firstRun.runId,
+        }
       : undefined,
   };
 }
@@ -244,8 +246,8 @@ export function sortUniqueWorkflows(
         bVal = b.totalRuns;
         break;
       case "successRate":
-        aVal = a.totalRuns > 0 ? (a.successCount / a.totalRuns) : 0;
-        bVal = b.totalRuns > 0 ? (b.successCount / b.totalRuns) : 0;
+        aVal = a.totalRuns > 0 ? a.successCount / a.totalRuns : 0;
+        bVal = b.totalRuns > 0 ? b.successCount / b.totalRuns : 0;
         break;
       case "lastRun":
         aVal = a.lastRun.date;

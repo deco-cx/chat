@@ -8,7 +8,9 @@ import { useChatContext } from "./context.tsx";
 import { EmptyState } from "./empty-state.tsx";
 
 function Dots() {
-  const { chat: { status } } = useChatContext();
+  const {
+    chat: { status },
+  } = useChatContext();
 
   if (status !== "streaming" && status !== "submitted") {
     return null;
@@ -17,27 +19,17 @@ function Dots() {
   return (
     <div className="animate-in slide-in-from-bottom duration-300 flex items-center gap-2 text-muted-foreground ml-4">
       <span className="inline-flex items-center gap-1">
-        <span className="animate-bounce [animation-delay:-0.3s]">
-          .
-        </span>
-        <span className="animate-bounce [animation-delay:-0.2s]">
-          .
-        </span>
-        <span className="animate-bounce [animation-delay:-0.1s]">
-          .
-        </span>
+        <span className="animate-bounce [animation-delay:-0.3s]">.</span>
+        <span className="animate-bounce [animation-delay:-0.2s]">.</span>
+        <span className="animate-bounce [animation-delay:-0.1s]">.</span>
       </span>
     </div>
   );
 }
 
 export function ChatMessages() {
-  const {
-    scrollRef,
-    chat,
-    isAutoScrollEnabled,
-    setAutoScroll,
-  } = useChatContext();
+  const { scrollRef, chat, isAutoScrollEnabled, setAutoScroll } =
+    useChatContext();
 
   const isStreaming = chat.status === "streaming";
   const { messages } = chat;
@@ -65,12 +57,15 @@ export function ChatMessages() {
 
     if (!scrollRef.current || !root) return;
 
-    const observer = new IntersectionObserver((entries) => {
-      if (cancel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (cancel) return;
 
-      const autoScroll = entries.some((e) => e.isIntersecting);
-      setAutoScroll(scrollRef.current, autoScroll);
-    }, { root: root, rootMargin: "100px", threshold: 0 });
+        const autoScroll = entries.some((e) => e.isIntersecting);
+        setAutoScroll(scrollRef.current, autoScroll);
+      },
+      { root: root, rootMargin: "100px", threshold: 0 },
+    );
 
     observer.observe(scrollRef.current);
 
@@ -84,7 +79,9 @@ export function ChatMessages() {
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      {isEmpty ? <EmptyState /> : (
+      {isEmpty ? (
+        <EmptyState />
+      ) : (
         <div className="flex flex-col gap-4">
           {messages.map((message, index) => (
             <ChatMessage

@@ -18,8 +18,7 @@ import { generateUUIDv5, toAlphanumericId } from "../slugify.ts";
 const createTool = createToolGroup("Thread", {
   name: "Thread Management",
   description: "Track conversation history and usage.",
-  icon:
-    "https://assets.decocache.com/mcp/4306211f-3d5e-4f1b-b55f-b46787ac82fe/Thread-Management.png",
+  icon: "https://assets.decocache.com/mcp/4306211f-3d5e-4f1b-b55f-b46787ac82fe/Thread-Management.png",
 });
 
 async function getWorkspaceMemory(c: AppContext) {
@@ -76,12 +75,8 @@ const createSQLClientFor = async (
   organization: string,
   authToken: string,
 ) => {
-  const memoryId = toAlphanumericId(
-    `${workspace}/default`,
-  );
-  const uniqueDbName = await generateUUIDv5(
-    `${memoryId}-${TURSO_GROUP}`,
-  );
+  const memoryId = toAlphanumericId(`${workspace}/default`);
+  const uniqueDbName = await generateUUIDv5(`${memoryId}-${TURSO_GROUP}`);
 
   return createClient({
     url: `libsql://${uniqueDbName}-${organization}.turso.io`,
@@ -97,18 +92,18 @@ export const listThreads = createTool({
     limit: z.number().min(1).max(20).default(10).optional(),
     agentId: z.string().optional(),
     resourceId: z.string().optional(),
-    orderBy: z.enum([
-      "createdAt_desc",
-      "createdAt_asc",
-      "updatedAt_desc",
-      "updatedAt_asc",
-    ]).default("createdAt_desc").optional(),
+    orderBy: z
+      .enum([
+        "createdAt_desc",
+        "createdAt_asc",
+        "updatedAt_desc",
+        "updatedAt_asc",
+      ])
+      .default("createdAt_desc")
+      .optional(),
     cursor: z.string().optional(),
   }),
-  handler: async (
-    { limit, agentId, orderBy, cursor, resourceId },
-    c,
-  ) => {
+  handler: async ({ limit, agentId, orderBy, cursor, resourceId }, c) => {
     assertHasWorkspace(c);
 
     await assertWorkspaceResourceAccess(c.tool.name, c);
@@ -162,29 +157,26 @@ export const listThreads = createTool({
       prevWhereClauses[cursorWhereClauseIdx] = `${field} ${operator} ?`;
     }
 
-    const whereClause = whereClauses.length > 0
-      ? `WHERE ${whereClauses.join(" AND ")}`
-      : "";
-    const prevWhereClause = whereClauses.length > 0
-      ? `WHERE ${prevWhereClauses.join(" AND ")}`
-      : "";
+    const whereClause =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+    const prevWhereClause =
+      whereClauses.length > 0 ? `WHERE ${prevWhereClauses.join(" AND ")}` : "";
 
     limit ??= 10;
 
     const generateQuery = ({ where }: { where: string }) =>
       safeExecute(client, {
-        sql:
-          `SELECT * FROM mastra_threads ${where} ORDER BY ${field} ${direction.toUpperCase()} LIMIT ?`,
+        sql: `SELECT * FROM mastra_threads ${where} ORDER BY ${field} ${direction.toUpperCase()} LIMIT ?`,
         args: [...args, limit + 1], // Fetch one extra to determine if there are more
       });
 
-    const [{ data: result, error }, { data: prevCursorResult }] = await Promise
-      .all([
+    const [{ data: result, error }, { data: prevCursorResult }] =
+      await Promise.all([
         generateQuery({ where: whereClause }),
 
         hasCursor
           ? generateQuery({ where: prevWhereClause })
-          : { data: { rows: [] } } as const,
+          : ({ data: { rows: [] } } as const),
       ]);
 
     if (!result || error) {
@@ -194,9 +186,9 @@ export const listThreads = createTool({
     const threads = result.rows
       .map((row: unknown) => ThreadSchema.safeParse(row)?.data)
       .filter((a): a is Thread => !!a);
-    const prevThreads = prevCursorResult?.rows.map((row) =>
-      ThreadSchema.safeParse(row)?.data
-    ).filter((t) => t !== undefined);
+    const prevThreads = prevCursorResult?.rows
+      .map((row) => ThreadSchema.safeParse(row)?.data)
+      .filter((t) => t !== undefined);
 
     // Check if there are more results
     const hasMore = threads.length > limit;
@@ -205,17 +197,19 @@ export const listThreads = createTool({
     }
 
     // Get the cursor for the next page
-    const nextCursor = threads.length > 0
-      ? field === "createdAt"
-        ? threads[threads.length - 1].createdAt
-        : threads[threads.length - 1].updatedAt
-      : null;
+    const nextCursor =
+      threads.length > 0
+        ? field === "createdAt"
+          ? threads[threads.length - 1].createdAt
+          : threads[threads.length - 1].updatedAt
+        : null;
 
-    const _prevCursor = prevThreads && prevThreads.length > 0
-      ? field === "createdAt"
-        ? prevThreads.at(0)?.createdAt
-        : prevThreads.at(0)?.updatedAt
-      : null;
+    const _prevCursor =
+      prevThreads && prevThreads.length > 0
+        ? field === "createdAt"
+          ? prevThreads.at(0)?.createdAt
+          : prevThreads.at(0)?.updatedAt
+        : null;
 
     const prevCursor = !!_prevCursor && new Date(_prevCursor);
     if (prevCursor) {
@@ -255,8 +249,7 @@ export const getThreadMessages = createTool({
     );
 
     const { data: result, error } = await safeExecute(client, {
-      sql:
-        `SELECT * FROM mastra_messages WHERE thread_id = ? ORDER BY createdAt ASC`,
+      sql: `SELECT * FROM mastra_messages WHERE thread_id = ? ORDER BY createdAt ASC`,
       args: [id],
     });
 
@@ -369,12 +362,14 @@ export const updateThreadTitle = createTool({
 
     return {
       ...result,
-      createdAt: result.createdAt instanceof Date
-        ? result.createdAt.toISOString()
-        : result.createdAt,
-      updatedAt: result.updatedAt instanceof Date
-        ? result.updatedAt.toISOString()
-        : result.updatedAt,
+      createdAt:
+        result.createdAt instanceof Date
+          ? result.createdAt.toISOString()
+          : result.createdAt,
+      updatedAt:
+        result.updatedAt instanceof Date
+          ? result.updatedAt.toISOString()
+          : result.updatedAt,
     };
   },
 });
@@ -409,12 +404,14 @@ export const updateThreadMetadata = createTool({
 
     return {
       ...result,
-      createdAt: result.createdAt instanceof Date
-        ? result.createdAt.toISOString()
-        : result.createdAt,
-      updatedAt: result.updatedAt instanceof Date
-        ? result.updatedAt.toISOString()
-        : result.updatedAt,
+      createdAt:
+        result.createdAt instanceof Date
+          ? result.createdAt.toISOString()
+          : result.createdAt,
+      updatedAt:
+        result.updatedAt instanceof Date
+          ? result.updatedAt.toISOString()
+          : result.updatedAt,
     };
   },
 });

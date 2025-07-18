@@ -2,9 +2,7 @@ import type { TriggerOutput } from "@deco/sdk";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import cronstrue from "cronstrue";
 
-export function TriggerType({ trigger }: {
-  trigger: TriggerOutput;
-}) {
+export function TriggerType({ trigger }: { trigger: TriggerOutput }) {
   if (trigger.data.type === "webhook") {
     return (
       <div className="flex items-center gap-1">

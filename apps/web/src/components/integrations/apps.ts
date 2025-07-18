@@ -63,8 +63,7 @@ export const WELL_KNOWN_APPS: Record<string, GroupedApp> = {
   [WELL_KNOWN_DECO_CHAT_APP_KEY]: {
     id: WELL_KNOWN_DECO_CHAT_APP_KEY,
     name: "Deco Chat",
-    icon:
-      "https://assets.decocache.com/mcp/306fcf27-d5dd-4d8c-8ddd-567d763372ee/decochat.png",
+    icon: "https://assets.decocache.com/mcp/306fcf27-d5dd-4d8c-8ddd-567d763372ee/decochat.png",
     description: "Native deco.chat tools.",
     instances: 1,
     usedBy: [],
@@ -72,8 +71,7 @@ export const WELL_KNOWN_APPS: Record<string, GroupedApp> = {
   [WELL_KNOWN_KNOWLEDGE_BASE_APP_KEY]: {
     id: WELL_KNOWN_KNOWLEDGE_BASE_APP_KEY,
     name: "Knowledge Base",
-    icon:
-      "https://assets.decocache.com/mcp/85269424-f5c7-4473-a67e-c3d6a120f586/knowledgebase.png",
+    icon: "https://assets.decocache.com/mcp/85269424-f5c7-4473-a67e-c3d6a120f586/knowledgebase.png",
     description: "Native knowledge base tools",
     instances: 1,
     usedBy: [],
@@ -81,15 +79,15 @@ export const WELL_KNOWN_APPS: Record<string, GroupedApp> = {
 } as const;
 
 export function isWellKnownApp(appKey: string): boolean {
-  return WELL_KNOWN_DECO_CHAT_APP_KEY === appKey ||
-    WELL_KNOWN_KNOWLEDGE_BASE_APP_KEY === appKey;
+  return (
+    WELL_KNOWN_DECO_CHAT_APP_KEY === appKey ||
+    WELL_KNOWN_KNOWLEDGE_BASE_APP_KEY === appKey
+  );
 }
 
 export function getConnectionAppKey(connection: Integration): AppKey {
   try {
-    if (
-      WellKnownMcpGroupIds.some((id) => connection.id.startsWith(id))
-    ) {
+    if (WellKnownMcpGroupIds.some((id) => connection.id.startsWith(id))) {
       return AppKeys.parse(WELL_KNOWN_DECO_CHAT_APP_KEY);
     }
 
@@ -201,31 +199,25 @@ const isAgentIntegration = (integration: Integration) =>
 const isInnateIntegration = (integration: Integration) =>
   integration.connection.type === "INNATE";
 
-export function useGroupedApps({
-  filter,
-}: {
-  filter: string;
-}) {
+export function useGroupedApps({ filter }: { filter: string }) {
   const { data: installedIntegrations } = useIntegrations();
   const { data: marketplace } = useMarketplaceIntegrations();
   useRefetchIntegrationsOnNotification();
 
   const groupedApps: GroupedApp[] = useMemo(() => {
-    const filteredIntegrations = installedIntegrations?.filter((integration) =>
-      integration.name.toLowerCase().includes(filter.toLowerCase()) &&
-      !isAgentIntegration(integration) &&
-      !isInnateIntegration(integration)
-    ) ?? [];
+    const filteredIntegrations =
+      installedIntegrations?.filter(
+        (integration) =>
+          integration.name.toLowerCase().includes(filter.toLowerCase()) &&
+          !isAgentIntegration(integration) &&
+          !isInnateIntegration(integration),
+      ) ?? [];
 
     const grouped = groupConnections(filteredIntegrations);
     const apps: GroupedApp[] = [];
 
     for (const [key, integrations] of Object.entries(grouped)) {
-      if (
-        LEGACY_INTEGRATIONS.some((id) =>
-          key.endsWith(id)
-        )
-      ) {
+      if (LEGACY_INTEGRATIONS.some((id) => key.endsWith(id))) {
         continue;
       }
 
@@ -235,8 +227,8 @@ export function useGroupedApps({
       }
 
       const { appId, provider } = AppKeys.parse(key);
-      const marketplaceApp = marketplace?.integrations?.find((app) =>
-        app.id === appId && app.provider === provider
+      const marketplaceApp = marketplace?.integrations?.find(
+        (app) => app.id === appId && app.provider === provider,
       );
 
       if (marketplaceApp) {
@@ -281,11 +273,7 @@ export function useGroupedApps({
   return groupedApps;
 }
 
-export function useGroupedApp({
-  appKey,
-}: {
-  appKey: string;
-}) {
+export function useGroupedApp({ appKey }: { appKey: string }) {
   const { data: installedIntegrations } = useIntegrations();
   const { data: marketplace } = useMarketplaceIntegrations();
   useRefetchIntegrationsOnNotification();
@@ -301,11 +289,12 @@ export function useGroupedApp({
       return wellKnownApp;
     }
 
-    const marketplaceApp = marketplace?.integrations?.find((app) =>
-      AppKeys.build({
-        appId: app.id,
-        provider: app.provider,
-      }) === appKey
+    const marketplaceApp = marketplace?.integrations?.find(
+      (app) =>
+        AppKeys.build({
+          appId: app.id,
+          provider: app.provider,
+        }) === appKey,
     );
 
     if (marketplaceApp) {
