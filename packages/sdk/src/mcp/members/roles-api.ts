@@ -103,7 +103,8 @@ export const createTeamRole = createTool({
           .in("user_id", members.map((m) => m.user_id));
 
         const memberRolePromises = dbMembers?.map(async (member) => {
-          const action = members.find((m) => m.user_id === member.user_id)?.action;
+          const action = members.find((m) => m.user_id === member.user_id)
+            ?.action;
           if (!member.profiles?.email || !action) return;
 
           return await c.policy.updateUserRole(teamId, member.profiles.email, {
@@ -219,7 +220,8 @@ export const updateTeamRole = createTool({
           .in("user_id", members.map((m) => m.user_id));
 
         const memberRolePromises = dbMembers?.map(async (member) => {
-          const action = members.find((m) => m.user_id === member.user_id)?.action;
+          const action = members.find((m) => m.user_id === member.user_id)
+            ?.action;
           if (!member.profiles?.email || !action) return;
 
           return await c.policy.updateUserRole(teamId, member.profiles.email, {

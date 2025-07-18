@@ -1,5 +1,9 @@
 import { MCPClient } from "../fetcher.ts";
-import type { MemberRoleAction, RoleFormData, ToolPermission } from "../mcp/members/roles-api.ts";
+import type {
+  MemberRoleAction,
+  RoleFormData,
+  ToolPermission,
+} from "../mcp/members/roles-api.ts";
 export type { MemberRoleAction };
 
 export interface TeamRole {

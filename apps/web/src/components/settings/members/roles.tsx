@@ -571,10 +571,12 @@ function RoleMembersPanel({
     if (formData.members.length > 0) {
       setFormData((prev) => ({ ...prev, members: [] }));
     } else {
-      const allMemberActions: MemberRoleAction[] = filteredMembers.map((member) => ({
-        user_id: member.user_id,
-        action: "grant" as const,
-      }));
+      const allMemberActions: MemberRoleAction[] = filteredMembers.map(
+        (member) => ({
+          user_id: member.user_id,
+          action: "grant" as const,
+        }),
+      );
       setFormData((prev) => ({
         ...prev,
         members: allMemberActions,
@@ -611,7 +613,7 @@ function RoleMembersPanel({
               onClick={() =>
                 handleMemberToggle(
                   member.user_id,
-                  !formData.members.some(m => m.user_id === member.user_id),
+                  !formData.members.some((m) => m.user_id === member.user_id),
                 )}
             >
               <CardContent className="flex items-start p-3 w-full">
@@ -638,7 +640,9 @@ function RoleMembersPanel({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Checkbox
-                    checked={formData.members.some(m => m.user_id === member.user_id)}
+                    checked={formData.members.some(
+                      (m) => m.user_id === member.user_id,
+                    )}
                     onCheckedChange={(checked: boolean) =>
                       handleMemberToggle(member.user_id, checked)}
                   />
@@ -1226,23 +1230,23 @@ function RoleDialogContent({
   const handleSave = () => {
     // Determine member actions based on original vs current state
     const originalMembers = teamRoleData?.members || [];
-    const currentMemberIds = new Set(formData.members.map(m => m.user_id));
-    const originalMemberIds = new Set(originalMembers.map(m => m.user_id));
-    
+    const currentMemberIds = new Set(formData.members.map((m) => m.user_id));
+    const originalMemberIds = new Set(originalMembers.map((m) => m.user_id));
+
     // Only send member actions for changes (diff between original and current state)
     // Members who already have the role and remain selected: no action needed (maintains access)
     // Members who don't have the role and remain unselected: no action needed (maintains no access)
     const memberActions: MemberRoleAction[] = [];
-    
+
     // Grant action for new members (added to role)
-    currentMemberIds.forEach(userId => {
+    currentMemberIds.forEach((userId) => {
       if (!originalMemberIds.has(userId)) {
         memberActions.push({ user_id: userId, action: "grant" });
       }
     });
-    
+
     // Revoke action for removed members (removed from role)
-    originalMemberIds.forEach(userId => {
+    originalMemberIds.forEach((userId) => {
       if (!currentMemberIds.has(userId)) {
         memberActions.push({ user_id: userId, action: "revoke" });
       }
@@ -1484,7 +1488,7 @@ function RoleMembersColumn({ role, teamId, handleEditRole }: BaseColumnProps) {
   const roleMembersList = useMemo(() => {
     if (!teamRoleData?.members) return [];
     return members.filter((member) =>
-      teamRoleData.members.some(m => m.user_id === member.user_id)
+      teamRoleData.members.some((m) => m.user_id === member.user_id)
     );
   }, [teamRoleData?.members]);
 
