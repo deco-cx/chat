@@ -7,7 +7,7 @@ import {
 import { assertTeamResourceAccess } from "../assertions.ts";
 import { createTool } from "./api.ts";
 import { Policy, RoleUpdateAction, Statement } from "../../auth/policy.ts";
-import { resourceGroupMap } from "../context.ts";
+import { type AppContext, resourceGroupMap } from "../context.ts";
 
 const ToolPermissionSchema = z.object({
   toolName: z.string(),
@@ -64,6 +64,40 @@ const mapToolsToPolicies = (tools: z.infer<typeof ToolsSchema>) =>
     return policy;
   }).filter((p) => p !== null) as Omit<Policy, "id" | "team_id">[];
 
+/**
+ * Helper function to assign roles to members
+ * Handles the common pattern of fetching member profiles and updating their roles
+ */
+async function assignRoleToMembers(
+  c: AppContext,
+  teamId: number,
+  roleId: number,
+  members: MemberRoleAction[],
+) {
+  if (!members || members.length === 0) {
+    return;
+  }
+
+  // Assign role to specified members
+  const { data: dbMembers } = await c.db
+    .from("members")
+    .select("profiles(email), user_id")
+    .eq("team_id", teamId)
+    .in("user_id", members.map((m) => m.user_id));
+
+  const memberRolePromises = dbMembers?.map(async (member: { profiles: { email: string } | null; user_id: string | null }) => {
+    const action = members.find((m) => m.user_id === member.user_id)?.action;
+    if (!member.profiles?.email || !action) return;
+
+    return await c.policy.updateUserRole(teamId, member.profiles.email, {
+      roleId,
+      action,
+    });
+  }) ?? [];
+
+  await Promise.all(memberRolePromises);
+}
+
 export const createTeamRole = createTool({
   name: "TEAM_ROLE_CREATE",
   description:
@@ -93,27 +127,8 @@ export const createTeamRole = createTool({
         policies,
       );
 
-      // TODO: should check the user role to add this?
       if (members && members.length > 0) {
-        // Assign role to specified members
-        const { data: dbMembers } = await c.db
-          .from("members")
-          .select("profiles(email), user_id")
-          .eq("team_id", teamId)
-          .in("user_id", members.map((m) => m.user_id));
-
-        const memberRolePromises = dbMembers?.map(async (member) => {
-          const action = members.find((m) => m.user_id === member.user_id)
-            ?.action;
-          if (!member.profiles?.email || !action) return;
-
-          return await c.policy.updateUserRole(teamId, member.profiles.email, {
-            roleId: role.id,
-            action,
-          });
-        }) ?? [];
-
-        await Promise.all(memberRolePromises);
+        await assignRoleToMembers(c, teamId, role.id, members);
       }
 
       // if (agents && agents.length > 0) {
@@ -159,7 +174,6 @@ export const deleteTeamRole = createTool({
       throw new UserInputError("Team ID is required");
     }
 
-    // c.resourceAccess.grant();
     await assertTeamResourceAccess(c.tool.name, teamId, c);
 
     try {
@@ -210,27 +224,8 @@ export const updateTeamRole = createTool({
         throw new InternalServerError("Failed to update role");
       }
 
-      // TODO: should check the user role to add this?
       if (members && members.length > 0) {
-        // Assign role to specified members
-        const { data: dbMembers } = await c.db
-          .from("members")
-          .select("profiles(email), user_id")
-          .eq("team_id", teamId)
-          .in("user_id", members.map((m) => m.user_id));
-
-        const memberRolePromises = dbMembers?.map(async (member) => {
-          const action = members.find((m) => m.user_id === member.user_id)
-            ?.action;
-          if (!member.profiles?.email || !action) return;
-
-          return await c.policy.updateUserRole(teamId, member.profiles.email, {
-            roleId: updatedRole.id,
-            action,
-          });
-        }) ?? [];
-
-        await Promise.all(memberRolePromises);
+        await assignRoleToMembers(c, teamId, updatedRole.id, members);
       }
 
       // TODO: update agents roles
