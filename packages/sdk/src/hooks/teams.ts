@@ -5,18 +5,18 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import {
-  createTeam,
   type CreateTeamInput,
+  createTeam,
   deleteTeam,
   getTeam,
   getWorkspaceTheme,
   listTeams,
-  updateTeam,
   type UpdateTeamInput,
+  updateTeam,
 } from "../crud/teams.ts";
-import { KEYS } from "./api.ts";
 import { InternalServerError } from "../errors.ts";
 import { DEFAULT_THEME } from "../theme.ts";
+import { KEYS } from "./api.ts";
 import { useSDK } from "./store.tsx";
 
 export const useTeams = () => {

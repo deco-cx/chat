@@ -25,8 +25,10 @@ export function generateDefaultValue(
 
   // Special handling for primitive types
   if (
-    schema.type && typeof schema.type === "string" &&
-    schema.type !== "object" && schema.type !== "array"
+    schema.type &&
+    typeof schema.type === "string" &&
+    schema.type !== "object" &&
+    schema.type !== "array"
   ) {
     // For primitive types, check if form data matches the schema type
     if (formData !== undefined && formData !== null) {
@@ -56,7 +58,7 @@ export function generateDefaultValue(
 
   // Handle arrays of types (e.g. ["string", "null"])
   const type = Array.isArray(schema.type)
-    ? schema.type.find((prop) => prop !== "null") ?? "null"
+    ? (schema.type.find((prop) => prop !== "null") ?? "null")
     : schema.type;
 
   switch (type) {
@@ -64,8 +66,8 @@ export function generateDefaultValue(
       return schema.default !== undefined
         ? schema.default
         : schema.enum && schema.enum.length > 0
-        ? schema.enum[0]
-        : "";
+          ? schema.enum[0]
+          : "";
     case "number":
     case "integer":
       return schema.default !== undefined ? schema.default : 0;
@@ -151,16 +153,18 @@ export function generateDefaultValue(
         // Otherwise, check for minItems and create defaults
         const minItems = schema.minItems || 0;
         if (minItems > 0) {
-          return Array(minItems).fill(null).map((_, index) => {
-            const itemPath = fieldPath
-              ? `${fieldPath}[${index}]`
-              : `[${index}]`;
-            return generateDefaultValue(
-              schema.items as JSONSchema7,
-              undefined,
-              itemPath,
-            );
-          });
+          return Array(minItems)
+            .fill(null)
+            .map((_, index) => {
+              const itemPath = fieldPath
+                ? `${fieldPath}[${index}]`
+                : `[${index}]`;
+              return generateDefaultValue(
+                schema.items as JSONSchema7,
+                undefined,
+                itemPath,
+              );
+            });
         }
       }
       return [];

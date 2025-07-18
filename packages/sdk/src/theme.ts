@@ -30,7 +30,7 @@ export const THEME_VARIABLES = [
   "--splash",
 ] as const;
 
-export type ThemeVariable = typeof THEME_VARIABLES[number];
+export type ThemeVariable = (typeof THEME_VARIABLES)[number];
 
 export interface GoogleFontsThemeFont {
   type: "Google Fonts";

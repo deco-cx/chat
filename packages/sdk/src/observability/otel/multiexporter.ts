@@ -1,6 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
-import type { SpanExporter } from "@opentelemetry/sdk-trace-base";
+
 import { type ExportResult, ExportResultCode } from "@opentelemetry/core";
+import type { SpanExporter } from "@opentelemetry/sdk-trace-base";
 
 // First implementation, completely synchronous, more tested.
 
@@ -40,8 +41,8 @@ export class MultiSpanExporterAsync implements SpanExporter {
     );
 
     Promise.all(promises).then((results) => {
-      const failed = results.filter((result) =>
-        result.code === ExportResultCode.FAILED
+      const failed = results.filter(
+        (result) => result.code === ExportResultCode.FAILED,
       );
       if (failed.length > 0) {
         // not ideal, but just return the first error

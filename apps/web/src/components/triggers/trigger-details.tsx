@@ -1,4 +1,4 @@
-import { type Trigger, useTrigger } from "@deco/sdk";
+import { NotFoundError, type Trigger, useTrigger } from "@deco/sdk";
 import { Badge } from "@deco/ui/components/badge.tsx";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
@@ -23,15 +23,14 @@ export function TriggerDetails({ id: _triggerId, onBack }: Props) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const triggerId = _triggerId || params.id;
+  const { data: trigger, isLoading } = useTrigger(triggerId ?? null);
 
-  if (!triggerId) {
-    return <div>No agent or trigger ID</div>;
+  if (isLoading) {
+    return <TriggerDetailsSkeleton />;
   }
 
-  const { data: trigger, isLoading } = useTrigger(triggerId);
-
-  if (!trigger || isLoading) {
-    return <TriggerDetailsSkeleton />;
+  if (!trigger) {
+    throw new NotFoundError("Trigger not found");
   }
 
   return (
@@ -103,12 +102,11 @@ export function TriggerDetails({ id: _triggerId, onBack }: Props) {
 export default function Page() {
   const params = useParams();
   const triggerId = params.id;
+  const { data: trigger } = useTrigger(triggerId ?? null);
 
-  if (!triggerId) {
+  if (!trigger) {
     return null;
   }
-
-  const { data: trigger } = useTrigger(triggerId);
 
   return (
     <PageLayout
@@ -132,9 +130,7 @@ export default function Page() {
   );
 }
 
-function TriggerIcon(
-  { type }: { type: Trigger["type"] },
-) {
+function TriggerIcon({ type }: { type: Trigger["type"] }) {
   return (
     <div className="flex items-center justify-center p-2 bg-primary/10 rounded-md">
       {type === "cron" && (

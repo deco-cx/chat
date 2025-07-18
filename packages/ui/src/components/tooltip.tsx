@@ -1,9 +1,8 @@
 "use client";
 
-import type * as React from "react";
-import * as TooltipPrimitive from "@radix-ui/react-tooltip";
-
 import { cn } from "@deco/ui/lib/utils.ts";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+import type * as React from "react";
 
 function TooltipProvider({
   delayDuration = 0,

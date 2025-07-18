@@ -10,17 +10,20 @@ import { readSession } from "./session.ts";
 const envFile = ".dev.vars";
 
 export async function getCurrentEnvVars(projectRoot: string) {
-  const devVarsFile = await Deno.readTextFile(
-    join(projectRoot, envFile),
-  ).catch(() => "");
-  return devVarsFile.split("\n").reduce((acc, line) => {
-    if (!line) {
+  const devVarsFile = await Deno.readTextFile(join(projectRoot, envFile)).catch(
+    () => "",
+  );
+  return devVarsFile.split("\n").reduce(
+    (acc, line) => {
+      if (!line) {
+        return acc;
+      }
+      const [key, value] = line.split("=");
+      acc[key] = value;
       return acc;
-    }
-    const [key, value] = line.split("=");
-    acc[key] = value;
-    return acc;
-  }, {} as Record<string, string>);
+    },
+    {} as Record<string, string>,
+  );
 }
 
 export async function writeEnvVars(
@@ -75,9 +78,7 @@ export async function getEnvVars(projectRoot?: string) {
   return env;
 }
 
-async function ensureEnvVarsGitIgnore(
-  projectRoot: string,
-) {
+async function ensureEnvVarsGitIgnore(projectRoot: string) {
   const gitignorePath = join(projectRoot, ".gitignore");
 
   try {
@@ -85,8 +86,8 @@ async function ensureEnvVarsGitIgnore(
     const lines = gitignoreContent.split("\n");
 
     // Check if entry already exists (exact match or as part of a line)
-    const entryExists = lines.some((line) =>
-      line.trim() === envFile || line.trim() === `/${envFile}`
+    const entryExists = lines.some(
+      (line) => line.trim() === envFile || line.trim() === `/${envFile}`,
     );
 
     if (!entryExists) {

@@ -34,22 +34,25 @@ function ExpandableString({
   const stringValue = typeof value === "string" ? value : String(value);
   const isTruncated = stringValue.length > 100;
 
-  const content = showFull || !isTruncated ? stringValue : (
-    <span>
-      {stringValue.slice(0, 100)}
-      <button
-        type="button"
-        className="text-primary hover:text-primary/80 underline ml-1 text-xs font-normal bg-transparent border-none cursor-pointer"
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowFull(true);
-        }}
-        title="Click to show full content"
-      >
-        ... show {stringValue.length - 100} more chars
-      </button>
-    </span>
-  );
+  const content =
+    showFull || !isTruncated ? (
+      stringValue
+    ) : (
+      <span>
+        {stringValue.slice(0, 100)}
+        <button
+          type="button"
+          className="text-primary hover:text-primary/80 underline ml-1 text-xs font-normal bg-transparent border-none cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowFull(true);
+          }}
+          title="Click to show full content"
+        >
+          ... show {stringValue.length - 100} more chars
+        </button>
+      </span>
+    );
 
   return (
     <span className={className}>
@@ -136,8 +139,9 @@ function JsonTreeNode({
   };
 
   const isExpandable = (value: unknown): boolean => {
-    return Array.isArray(value) ||
-      (typeof value === "object" && value !== null);
+    return (
+      Array.isArray(value) || (typeof value === "object" && value !== null)
+    );
   };
 
   const renderPrimitive = (value: unknown) => {
@@ -148,11 +152,7 @@ function JsonTreeNode({
       // Ensure we're definitely passing a string
       const stringValue = String(value);
       return (
-        <ExpandableString
-          value={stringValue}
-          className={colorClass}
-          isQuoted
-        />
+        <ExpandableString value={stringValue} className={colorClass} isQuoted />
       );
     }
 
@@ -161,11 +161,7 @@ function JsonTreeNode({
 
   const renderKey = () => {
     if (!keyName) return null;
-    return (
-      <span className="text-foreground font-medium">
-        "{keyName}":
-      </span>
-    );
+    return <span className="text-foreground font-medium">"{keyName}":</span>;
   };
 
   const indentLevel = level * 16;
@@ -186,9 +182,9 @@ function JsonTreeNode({
   const entries = Array.isArray(data)
     ? data.map((item, index) => [String(index), item] as const)
     : Object.entries(data as Record<string, unknown>).map(([key, value]) => {
-      // Ensure we're not accidentally stringifying objects
-      return [key, value] as const;
-    });
+        // Ensure we're not accidentally stringifying objects
+        return [key, value] as const;
+      });
 
   return (
     <div className="font-mono text-sm">
@@ -200,14 +196,9 @@ function JsonTreeNode({
           setIsExpanded(!isExpanded);
         }}
       >
-        <Icon
-          name={isExpanded ? "expand_more" : "chevron_right"}
-          size={16}
-        />
+        <Icon name={isExpanded ? "expand_more" : "chevron_right"} size={16} />
         {renderKey()}
-        <span className={getTypeColor(data)}>
-          {getValuePreview(data)}
-        </span>
+        <span className={getTypeColor(data)}>{getValuePreview(data)}</span>
       </div>
 
       {isExpanded && (
@@ -226,9 +217,13 @@ function JsonTreeNode({
   );
 }
 
-export function JsonTreeViewer(
-  { value, compact = false }: { value: unknown; compact?: boolean },
-) {
+export function JsonTreeViewer({
+  value,
+  compact = false,
+}: {
+  value: unknown;
+  compact?: boolean;
+}) {
   const parsed = tryParseJson(value);
 
   // Handle simple string values

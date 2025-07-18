@@ -46,17 +46,13 @@ function ImageActionButton({
       aria-label={label}
       {...(href ? { asChild: true } : {})}
     >
-      {href
-        ? (
-          <a
-            href={href}
-            download={download}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Icon name={icon} className={BUTTON_STYLES.icon} />
-          </a>
-        )
-        : <Icon name={icon} className={BUTTON_STYLES.icon} />}
+      {href ? (
+        <a href={href} download={download} onClick={(e) => e.stopPropagation()}>
+          <Icon name={icon} className={BUTTON_STYLES.icon} />
+        </a>
+      ) : (
+        <Icon name={icon} className={BUTTON_STYLES.icon} />
+      )}
     </Button>
   );
 
@@ -129,12 +125,7 @@ interface ImageDialogProps {
   onExpand: () => void;
 }
 
-function ImageDialog({
-  src,
-  title,
-  isOpen,
-  onClose,
-}: ImageDialogProps) {
+function ImageDialog({ src, title, isOpen, onClose }: ImageDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[95vw] max-h-[95vh] sm:max-w-2xl sm:max-h-2xl p-0 border-none shadow-xl rounded-2xl">

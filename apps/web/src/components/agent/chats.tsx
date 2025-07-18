@@ -121,10 +121,12 @@ function Page() {
             }}
           >
             <SidebarProvider
-              style={{
-                "--sidebar-width": "16rem",
-                "--sidebar-width-mobile": "14rem",
-              } as Record<string, string>}
+              style={
+                {
+                  "--sidebar-width": "16rem",
+                  "--sidebar-width-mobile": "14rem",
+                } as Record<string, string>
+              }
             >
               <SidebarInset>
                 <PageLayout

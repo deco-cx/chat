@@ -98,7 +98,7 @@ export const readWranglerConfig = async (cwd?: string) => {
  */
 const readConfigFile = async (cwd?: string) => {
   const wranglerConfig = await readWranglerConfig(cwd);
-  const decoConfig = wranglerConfig.deco ?? {} as Partial<Config>;
+  const decoConfig = wranglerConfig.deco ?? ({} as Partial<Config>);
   return decoConfig;
 };
 
@@ -124,8 +124,8 @@ export const writeWranglerConfig = async (
   const targetCwd = cwd || Deno.cwd();
   const currentConfig = await readWranglerConfig(targetCwd);
   const mergedConfig = { ...currentConfig, ...config };
-  const configPath = getConfigFilePath(targetCwd) ??
-    `${targetCwd}/${CONFIG_FILE}`;
+  const configPath =
+    getConfigFilePath(targetCwd) ?? `${targetCwd}/${CONFIG_FILE}`;
   await Deno.writeTextFile(
     configPath,
     addSchemaNotation(stringify(mergedConfig)),
@@ -138,8 +138,8 @@ export const addWorkflowDO = async () => {
   const currentDOs = wranglerConfig.durable_objects?.bindings ?? [];
   const workflowsBindings = {
     migrations: [
-      ...(wranglerConfig.migrations ?? []).filter((m) =>
-        !m.new_classes?.includes(DECO_CHAT_WORKFLOW_BINDING.class_name)
+      ...(wranglerConfig.migrations ?? []).filter(
+        (m) => !m.new_classes?.includes(DECO_CHAT_WORKFLOW_BINDING.class_name),
       ),
       {
         tag: "v1",
@@ -171,17 +171,19 @@ export const writeConfigFile = async (
 ) => {
   const targetCwd = cwd || Deno.cwd();
   const wranglerConfig = await readWranglerConfig(targetCwd);
-  const current = wranglerConfig.deco ?? {} as Partial<Config>;
+  const current = wranglerConfig.deco ?? ({} as Partial<Config>);
   const mergedConfig = merge ? { ...current, ...config } : config;
 
-  const configPath = getConfigFilePath(targetCwd) ??
-    `${targetCwd}/${CONFIG_FILE}`;
+  const configPath =
+    getConfigFilePath(targetCwd) ?? `${targetCwd}/${CONFIG_FILE}`;
   await Deno.writeTextFile(
     configPath,
-    addSchemaNotation(stringify({
-      ...wranglerConfig,
-      deco: mergedConfig,
-    })),
+    addSchemaNotation(
+      stringify({
+        ...wranglerConfig,
+        deco: mergedConfig,
+      }),
+    ),
   );
   console.log(`✅ Deco configuration written to: ${configPath}`);
 };
@@ -193,12 +195,13 @@ export const writeConfigFile = async (
  * @param cwd - The current working directory to read config from.
  * @returns The config.
  */
-export const getConfig = async (
-  { inlineOptions = {}, cwd }: {
-    inlineOptions?: Partial<Config>;
-    cwd?: string;
-  } = {},
-) => {
+export const getConfig = async ({
+  inlineOptions = {},
+  cwd,
+}: {
+  inlineOptions?: Partial<Config>;
+  cwd?: string;
+} = {}) => {
   const config = await readConfigFile(cwd);
   const merged = { ...config, ...inlineOptions };
   if (!merged.workspace) {
@@ -295,8 +298,9 @@ export async function getMCPConfig(
 export const getMCPConfigVersion = () => md5Hash(getMCPConfig.toString());
 
 export const getRulesConfig = async () => {
-  const content = await fetch(import.meta.resolve("./rules/deco-chat.mdc"))
-    .then((res) => res.text());
+  const content = await fetch(
+    import.meta.resolve("./rules/deco-chat.mdc"),
+  ).then((res) => res.text());
 
   return {
     "deco-chat.mdc": content,

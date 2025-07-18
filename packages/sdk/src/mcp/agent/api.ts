@@ -13,77 +13,87 @@ export interface AgentContext extends AppContext {
   agent: string;
 }
 
-const createAgentTool = createToolFactory<WithTool<AgentContext>>((c) =>
-  ({
-    ...c,
-    agent: c.params.agentId ?? "teamAgent",
-  }) as unknown as WithTool<AgentContext>
+const createAgentTool = createToolFactory<WithTool<AgentContext>>(
+  (c) =>
+    ({
+      ...c,
+      agent: c.params.agentId ?? "teamAgent",
+    }) as unknown as WithTool<AgentContext>,
 );
 
-export const agentGenerateText = createAgentTool(
-  {
-    name: "AGENT_GENERATE_TEXT",
-    description: "Generate text output using an agent",
-    inputSchema: z.object({
-      message: z.string().describe("The message to send to the agent"),
-      options: AgentGenerateOptions.optional().nullable(),
-    }),
-    outputSchema: z.object({
-      text: z.string().optional().describe("The text output from the agent"),
-    }),
-    handler: async ({ message }, c) => {
-      assertHasWorkspace(c);
-      await assertWorkspaceResourceAccess(c.tool.name, c);
+export const agentGenerateText = createAgentTool({
+  name: "AGENT_GENERATE_TEXT",
+  description: "Generate text output using an agent",
+  inputSchema: z.object({
+    message: z.string().describe("The message to send to the agent"),
+    options: AgentGenerateOptions.optional().nullable(),
+  }),
+  outputSchema: z.object({
+    text: z.string().optional().describe("The text output from the agent"),
+  }),
+  handler: async ({ message }, c) => {
+    assertHasWorkspace(c);
+    await assertWorkspaceResourceAccess(c.tool.name, c);
 
-      const agentStub = stub<AIAgent>("AIAgent")
-        .new(`${c.workspace.value}/Agents/${c.agent}`);
+    const agentStub = stub<AIAgent>("AIAgent").new(
+      `${c.workspace.value}/Agents/${c.agent}`,
+    );
 
-      const response = await agentStub.generate([{
+    const response = await agentStub.generate([
+      {
         id: crypto.randomUUID(),
         role: "user" as const,
         content: message,
-      }]);
+      },
+    ]);
 
-      return { text: response.text };
-    },
+    return { text: response.text };
   },
-);
+});
 
-export const agentGenerateObject = createAgentTool(
-  {
-    name: "AGENT_GENERATE_OBJECT",
-    description: "Generate an object using an agent",
-    inputSchema: z.object({
-      message: z.string().describe("The message to send to the agent"),
-      schema: z.any().describe(
+export const agentGenerateObject = createAgentTool({
+  name: "AGENT_GENERATE_OBJECT",
+  description: "Generate an object using an agent",
+  inputSchema: z.object({
+    message: z.string().describe("The message to send to the agent"),
+    schema: z
+      .any()
+      .describe(
         "The JSON schema to use for a structured response. If provided, the response will be an object.",
       ),
-    }),
-    outputSchema: z.object({
-      object: z.any().describe("The object output from the agent"),
-    }),
-    handler: async ({ message, schema }, c) => {
-      assertHasWorkspace(c);
-      await assertWorkspaceResourceAccess(c.tool.name, c);
+  }),
+  outputSchema: z.object({
+    object: z.any().describe("The object output from the agent"),
+  }),
+  handler: async ({ message, schema }, c) => {
+    assertHasWorkspace(c);
+    await assertWorkspaceResourceAccess(c.tool.name, c);
 
-      const agentStub = stub<AIAgent>("AIAgent")
-        .new(`${c.workspace.value}/Agents/${c.agent}`);
+    const agentStub = stub<AIAgent>("AIAgent").new(
+      `${c.workspace.value}/Agents/${c.agent}`,
+    );
 
-      const response = await agentStub.generateObject([{
-        id: crypto.randomUUID(),
-        role: "user" as const,
-        content: message,
-      }], schema);
+    const response = await agentStub.generateObject(
+      [
+        {
+          id: crypto.randomUUID(),
+          role: "user" as const,
+          content: message,
+        },
+      ],
+      schema,
+    );
 
-      return response;
-    },
+    return response;
   },
-);
+});
 
 const TranscribeAudioInputSchema = z.object({
-  audioUrl: z.string().describe(
-    "URL to the audio file to transcribe (supports mp3, wav, m4a, etc.)",
-  ),
+  audioUrl: z
+    .string()
+    .describe(
+      "URL to the audio file to transcribe (supports mp3, wav, m4a, etc.)",
+    ),
 });
 
 const TranscribeAudioOutputSchema = z.object({
@@ -151,8 +161,8 @@ export const agentListen = createAgentTool({
       }
 
       // Check content type to ensure it's not HTML or other non-audio content
-      const contentType = response.headers.get("content-type")?.toLowerCase() ||
-        "";
+      const contentType =
+        response.headers.get("content-type")?.toLowerCase() || "";
       if (
         contentType.includes("text/html") ||
         contentType.includes("application/json") ||
@@ -169,8 +179,9 @@ export const agentListen = createAgentTool({
       const audioBuffer = await response.arrayBuffer();
       const audioBufferUint8Array = new Uint8Array(audioBuffer);
 
-      const agentStub = stub<AIAgent>("AIAgent")
-        .new(`${c.workspace.value}/Agents/${c.agent}`);
+      const agentStub = stub<AIAgent>("AIAgent").new(
+        `${c.workspace.value}/Agents/${c.agent}`,
+      );
 
       const transcription = await agentStub.listen(audioBufferUint8Array);
 
@@ -185,9 +196,9 @@ export const agentListen = createAgentTool({
       return {
         transcription,
         success: true,
-        message: `Successfully transcribed audio (${
-          Math.round(audioBufferUint8Array.length * 0.75 / 1024)
-        }KB)`,
+        message: `Successfully transcribed audio (${Math.round(
+          (audioBufferUint8Array.length * 0.75) / 1024,
+        )}KB)`,
       };
     } catch (error) {
       console.error("💥 Error in TRANSCRIBE_AUDIO tool:", error);

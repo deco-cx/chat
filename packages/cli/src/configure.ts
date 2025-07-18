@@ -12,13 +12,13 @@ import { promptIntegrations } from "./utils/prompt-integrations.ts";
 import { promptWorkspace } from "./utils/prompt-workspace.ts";
 
 export async function configureCommand(local?: boolean) {
-  const currentConfig = await getConfig({ inlineOptions: { local } })
-    .catch((): Partial<Config> => ({}));
+  const currentConfig = await getConfig({ inlineOptions: { local } }).catch(
+    (): Partial<Config> => ({}),
+  );
 
   const wranglerConfig = await readWranglerConfig();
-  const defaultApp = typeof wranglerConfig.name === "string"
-    ? wranglerConfig.name
-    : "my-app";
+  const defaultApp =
+    typeof wranglerConfig.name === "string" ? wranglerConfig.name : "my-app";
 
   const app = await Input.prompt({
     message: "Enter app name:",
@@ -46,7 +46,7 @@ export async function configureCommand(local?: boolean) {
     deco: {
       ...wranglerConfig.deco,
       workspace,
-      bindings: [...bindings, ...wranglerConfig.deco?.bindings ?? []],
+      bindings: [...bindings, ...(wranglerConfig.deco?.bindings ?? [])],
     },
   });
 

@@ -1,6 +1,5 @@
-import type * as React from "react";
-
 import { cn } from "@deco/ui/lib/utils.ts";
+import type * as React from "react";
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (

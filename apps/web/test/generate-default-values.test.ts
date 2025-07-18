@@ -1,6 +1,7 @@
-import { generateDefaultValues } from "../src/components/json-schema/utils/generate-default-values.ts";
+/** biome-ignore-all lint/suspicious/noExplicitAny: fine for tests */
 import type { JSONSchema7 } from "json-schema";
 import { expect, test } from "vitest";
+import { generateDefaultValues } from "../src/components/json-schema/utils/generate-default-values.ts";
 
 test("generateDefaultValues - empty or invalid schema", () => {
   // Test with null or undefined schema
@@ -143,7 +144,6 @@ test("generateDefaultValues - nested objects", () => {
     required: ["user"],
   };
 
-  // deno-lint-ignore no-explicit-any
   const result = generateDefaultValues(nestedSchema) as any;
 
   // Check nested structure
@@ -191,7 +191,6 @@ test("generateDefaultValues - nested objects with formData", () => {
 
   const result = generateDefaultValues(nestedSchema, formData) as Record<
     string,
-    // deno-lint-ignore no-explicit-any
     any
   >;
 

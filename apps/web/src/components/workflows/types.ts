@@ -63,3 +63,148 @@ export interface WorkflowsListResponse {
     per_page?: number;
   };
 }
+
+// Step execution data from context
+export interface StepExecutionData {
+  startedAt?: number;
+  endedAt?: number;
+  input?: unknown;
+  output?: unknown;
+  error?: unknown;
+  status?: string;
+}
+
+// Context map type - maps step IDs to their execution data
+export type ContextMap = Record<string, StepExecutionData>;
+
+// Base step graph node interface
+export interface BaseStepGraphNode {
+  id: string;
+  type: string;
+}
+
+// Step graph node types
+export interface StepGraphStepNode extends BaseStepGraphNode {
+  type: "step";
+  step: {
+    id: string;
+    [key: string]: unknown;
+  };
+}
+
+export interface StepGraphSleepNode extends BaseStepGraphNode {
+  type: "sleep";
+  id: string;
+  [key: string]: unknown;
+}
+
+export interface StepGraphSleepUntilNode extends BaseStepGraphNode {
+  type: "sleepUntil";
+  id: string;
+  [key: string]: unknown;
+}
+
+export interface StepGraphWaitForEventNode extends BaseStepGraphNode {
+  type: "waitForEvent";
+  step: {
+    id: string;
+    [key: string]: unknown;
+  };
+}
+
+export interface StepGraphParallelNode extends BaseStepGraphNode {
+  type: "parallel";
+  steps: StepGraphNode[];
+}
+
+export interface StepGraphIfNode extends BaseStepGraphNode {
+  type: "if";
+  id: string;
+  if?: StepGraphNode[];
+  else?: StepGraphNode[];
+  [key: string]: unknown;
+}
+
+export interface StepGraphTryNode extends BaseStepGraphNode {
+  type: "try";
+  id: string;
+  try?: StepGraphNode[];
+  catch?: StepGraphNode[];
+  [key: string]: unknown;
+}
+
+export interface StepGraphUnknownNode extends BaseStepGraphNode {
+  type: string;
+  id: string;
+  [key: string]: unknown;
+}
+
+// Union type for all step graph node types
+export type StepGraphNode =
+  | StepGraphStepNode
+  | StepGraphSleepNode
+  | StepGraphSleepUntilNode
+  | StepGraphWaitForEventNode
+  | StepGraphParallelNode
+  | StepGraphIfNode
+  | StepGraphTryNode
+  | StepGraphUnknownNode;
+
+// Processed step types for the visualization
+export interface ProcessedStep {
+  id: string;
+  type: string;
+  node: StepGraphNode;
+  isParallel: false;
+}
+
+export interface ProcessedParallelStep {
+  type: "parallel";
+  isParallel: true;
+  steps: ProcessedStep[];
+}
+
+// Union type for all processed step types
+export type ProcessedStepType = ProcessedStep | ProcessedParallelStep;
+
+// Workflow snapshot structure
+export interface WorkflowSnapshot {
+  status: WorkflowStatus;
+  context: ContextMap;
+  serializedStepGraph: StepGraphNode[];
+  result?: unknown;
+  input?: unknown;
+}
+
+// Workflow status API response
+export interface WorkflowStatusResponse {
+  snapshot: WorkflowSnapshot | string;
+}
+
+// Node data for React Flow visualization
+export interface WorkflowNodeData {
+  label: string;
+  status: string;
+  stepData?: StepExecutionData;
+  duration?: string;
+  isParallel?: boolean;
+  showHandles: boolean;
+  onClick: () => void;
+}
+
+// Start/End node data
+export interface StartEndNodeData {
+  label: string;
+  showHandles: boolean;
+}
+
+// Step detail modal data
+export interface StepDetailData {
+  id: string;
+  data: {
+    label: string;
+    status: string;
+    stepData?: StepExecutionData;
+    duration?: string;
+  };
+}

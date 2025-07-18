@@ -6,9 +6,9 @@ interface ListOptions {
 }
 
 export const listFiles = async ({ workspace, root }: ListOptions) => {
-  const data = await MCPClient
-    .forWorkspace(workspace)
-    .FS_LIST({ prefix: root });
+  const data = await MCPClient.forWorkspace(workspace).FS_LIST({
+    prefix: root,
+  });
 
   return data;
 };
@@ -30,14 +30,12 @@ export const writeFile = async ({
   expiresIn,
   metadata,
 }: WriteOptions) => {
-  const { url: uploadUrl } = await MCPClient
-    .forWorkspace(workspace)
-    .FS_WRITE({
-      path,
-      contentType,
-      metadata,
-      ...(expiresIn ? { expiresIn } : {}),
-    });
+  const { url: uploadUrl } = await MCPClient.forWorkspace(workspace).FS_WRITE({
+    path,
+    contentType,
+    metadata,
+    ...(expiresIn ? { expiresIn } : {}),
+  });
 
   const response = await fetch(uploadUrl!, {
     method: "PUT",
@@ -61,18 +59,15 @@ interface ReadOptions {
   expiresIn?: number;
 }
 
-export const readFile = async ({
-  workspace,
-  path,
-  expiresIn,
-}: ReadOptions) => {
+export const readFile = async ({ workspace, path, expiresIn }: ReadOptions) => {
   if (!path) {
     return null;
   }
 
-  const { url } = await MCPClient
-    .forWorkspace(workspace)
-    .FS_READ({ path, ...(expiresIn ? { expiresIn } : {}) });
+  const { url } = await MCPClient.forWorkspace(workspace).FS_READ({
+    path,
+    ...(expiresIn ? { expiresIn } : {}),
+  });
 
   return url;
 };

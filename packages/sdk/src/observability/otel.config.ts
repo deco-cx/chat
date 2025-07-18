@@ -1,3 +1,4 @@
+import process from "node:process";
 import { getActorLocator } from "@deco/actors";
 import { context, type Span } from "@opentelemetry/api";
 import {
@@ -13,7 +14,6 @@ import {
 import type { ResolveConfigFn } from "./otel/sdk.ts";
 import { DebugSampler } from "./samplers/debug.ts";
 import { headersStringToObject } from "./utils.ts";
-import process from "node:process";
 
 const processSpan = (span: ReadableSpan): ReadableSpan => {
   const method = span.attributes["http.request.method"] as string;
@@ -34,15 +34,11 @@ const processSpan = (span: ReadableSpan): ReadableSpan => {
             span.attributes["actor.id"] = locator.id;
             friendlyName = `${locator.id} ${friendlyName}`;
           }
-          (span as unknown as Span).updateName(
-            `ACTOR@${friendlyName}`,
-          );
+          (span as unknown as Span).updateName(`ACTOR@${friendlyName}`);
         }
       } else {
         // Handle external service calls
-        (span as unknown as Span).updateName(
-          `DO@${method} ${fullUrl}`,
-        );
+        (span as unknown as Span).updateName(`DO@${method} ${fullUrl}`);
       }
     } else {
       // Handle regular HTTP requests
@@ -52,9 +48,7 @@ const processSpan = (span: ReadableSpan): ReadableSpan => {
     }
   } else if (span.name.startsWith("fetch")) {
     // Handle external service calls
-    (span as unknown as Span).updateName(
-      `${method} ${fullUrl}`,
-    );
+    (span as unknown as Span).updateName(`${method} ${fullUrl}`);
   }
 
   // Add request.internal flag if not present

@@ -29,9 +29,9 @@ export class MicroDollar {
 
   public static from(dollars: number | string): MicroDollar {
     if (typeof dollars === "number") {
-      return this.fromDollars(dollars);
+      return MicroDollar.fromDollars(dollars);
     }
-    return this.fromMicrodollarString(dollars);
+    return MicroDollar.fromMicrodollarString(dollars);
   }
 
   /**

@@ -1,11 +1,12 @@
 // deno-lint-ignore-file no-explicit-any
+
+import { AsyncLocalStorage } from "node:async_hooks";
 import type { ActorConstructor, StubFactory } from "@deco/actors";
 import type { AIAgent, Trigger } from "@deco/ai/actors";
 import type { Client } from "@deco/sdk/storage";
 import type { ToolAnnotations } from "@modelcontextprotocol/sdk/types.d.ts";
 import type { User as SupaUser } from "@supabase/supabase-js";
 import type Cloudflare from "cloudflare";
-import { AsyncLocalStorage } from "node:async_hooks";
 import { z } from "zod";
 import type { JWTPayload } from "../auth/jwt.ts";
 import type {
@@ -24,9 +25,7 @@ export interface JWTPrincipal extends JWTPayload {
   policies?: Pick<Policy, "statements">[];
 }
 
-export type Principal =
-  | UserPrincipal
-  | JWTPrincipal;
+export type Principal = UserPrincipal | JWTPrincipal;
 export interface Vars {
   params: Record<string, string>;
   workspace?: {
@@ -49,9 +48,7 @@ export interface Vars {
   immutableRes?: boolean;
   kbFileProcessor?: Workflow;
   stub: <
-    Constructor extends
-      | ActorConstructor<Trigger>
-      | ActorConstructor<AIAgent>,
+    Constructor extends ActorConstructor<Trigger> | ActorConstructor<AIAgent>,
   >(
     c: Constructor,
   ) => StubFactory<InstanceType<Constructor>>;
@@ -168,9 +165,7 @@ export interface Tool<
   description: string;
   inputSchema: z.ZodType<TInput>;
   outputSchema?: z.ZodType<TReturn>;
-  handler: (
-    props: TInput,
-  ) => Promise<TReturn> | TReturn;
+  handler: (props: TInput) => Promise<TReturn> | TReturn;
 }
 
 export const createToolGroup = (
@@ -183,63 +178,60 @@ export const createToolGroup = (
     integration,
   );
 
-export const withMCPErrorHandling = <
-  TInput = any,
-  TReturn extends object | null | boolean = object,
->(f: (props: TInput) => Promise<TReturn>) =>
-async (props: TInput) => {
-  try {
-    const result = await f(props);
+export const withMCPErrorHandling =
+  <TInput = any, TReturn extends object | null | boolean = object>(
+    f: (props: TInput) => Promise<TReturn>,
+  ) =>
+  async (props: TInput) => {
+    try {
+      const result = await f(props);
 
-    return {
-      isError: false,
-      structuredContent: result,
-    };
-  } catch (error) {
-    return {
-      isError: true,
-      content: [{ type: "text", text: serializeError(error) }],
-    };
-  }
-};
-
-export const createToolFactory = <
-  TAppContext extends AppContext = AppContext,
->(
-  contextFactory: (c: AppContext) => TAppContext,
-  group?: string,
-  integration?: GroupIntegration,
-) =>
-<
-  TName extends string = string,
-  TInput = any,
-  TReturn extends object | null | boolean = object,
->(
-  def: ToolDefinition<TAppContext, TName, TInput, TReturn>,
-): Tool<TName, TInput, TReturn> => {
-  group && integration && addGroup(group, integration);
-  return {
-    group,
-    ...def,
-    handler: async (props: TInput): Promise<TReturn> => {
-      const context = contextFactory(State.getStore());
-      context.tool = { name: def.name };
-
-      const result = await def.handler(props, context);
-
-      if (!context.resourceAccess.granted()) {
-        console.warn(
-          `User cannot access this tool ${def.name}. Did you forget to call ctx.authTools.setAccess(true)?`,
-        );
-        throw new ForbiddenError(
-          `User cannot access this tool ${def.name}.`,
-        );
-      }
-
-      return result;
-    },
+      return {
+        isError: false,
+        structuredContent: result,
+      };
+    } catch (error) {
+      return {
+        isError: true,
+        content: [{ type: "text", text: serializeError(error) }],
+      };
+    }
   };
-};
+
+export const createToolFactory =
+  <TAppContext extends AppContext = AppContext>(
+    contextFactory: (c: AppContext) => TAppContext,
+    group?: string,
+    integration?: GroupIntegration,
+  ) =>
+  <
+    TName extends string = string,
+    TInput = any,
+    TReturn extends object | null | boolean = object,
+  >(
+    def: ToolDefinition<TAppContext, TName, TInput, TReturn>,
+  ): Tool<TName, TInput, TReturn> => {
+    group && integration && addGroup(group, integration);
+    return {
+      group,
+      ...def,
+      handler: async (props: TInput): Promise<TReturn> => {
+        const context = contextFactory(State.getStore());
+        context.tool = { name: def.name };
+
+        const result = await def.handler(props, context);
+
+        if (!context.resourceAccess.granted()) {
+          console.warn(
+            `User cannot access this tool ${def.name}. Did you forget to call ctx.authTools.setAccess(true)?`,
+          );
+          throw new ForbiddenError(`User cannot access this tool ${def.name}.`);
+        }
+
+        return result;
+      },
+    };
+  };
 
 export const createTool = createToolFactory<WithTool<AppContext>>(
   (c) => c as unknown as WithTool<AppContext>,

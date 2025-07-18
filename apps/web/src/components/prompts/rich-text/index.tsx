@@ -62,38 +62,39 @@ export default function RichTextArea({
     ];
 
     if (enableMentions) {
-      extensions.push(
-        mentions(prompts ?? []),
-      );
+      extensions.push(mentions(prompts ?? []));
     }
 
     return extensions;
   }, [enableMentions, placeholder, prompts]);
 
-  const editor = useEditor({
-    extensions,
-    content: mentionToTag(removeMarkdownCodeBlock(value), true),
-    editable: !disabled,
-    onUpdate: ({ editor }) => {
-      const markdown = editor.storage.markdown.getMarkdown();
+  const editor = useEditor(
+    {
+      extensions,
+      content: mentionToTag(removeMarkdownCodeBlock(value), true),
+      editable: !disabled,
+      onUpdate: ({ editor }) => {
+        const markdown = editor.storage.markdown.getMarkdown();
 
-      if (!hadUserInteraction.current && editor.isFocused) {
-        hadUserInteraction.current = true;
-      }
+        if (!hadUserInteraction.current && editor.isFocused) {
+          hadUserInteraction.current = true;
+        }
 
-      if (hadUserInteraction.current) {
-        onChange(markdown);
-      }
-    },
-    editorProps: {
-      attributes: {
-        class: cn(
-          "h-full placeholder:text-muted-foreground field-sizing-content w-full bg-transparent text-base transition-[color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50 prose whitespace-pre-wrap break-words wrap-anywhere",
-          className,
-        ),
+        if (hadUserInteraction.current) {
+          onChange(markdown);
+        }
+      },
+      editorProps: {
+        attributes: {
+          class: cn(
+            "h-full placeholder:text-muted-foreground field-sizing-content w-full bg-transparent text-base transition-[color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50 prose whitespace-pre-wrap break-words wrap-anywhere",
+            className,
+          ),
+        },
       },
     },
-  }, [prompts]);
+    [prompts],
+  );
 
   // sync external value changes to the editor
   useEffect(() => {
@@ -116,9 +117,7 @@ export default function RichTextArea({
       {enableMentions && !hideMentionsLabel && (
         <div className="rounded-full flex gap-1 bg-muted text-muted-foreground w-fit items-center px-1.5 py-0.5 mb-2.5 select-none">
           <Icon name="info" size={10} />
-          <p className="text-xs font-medium">
-            Type / to add tools and more
-          </p>
+          <p className="text-xs font-medium">Type / to add tools and more</p>
         </div>
       )}
       <BubbleMenu editor={editor} />

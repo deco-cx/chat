@@ -1,11 +1,12 @@
 // deno-lint-ignore-file no-explicit-any
+
+import { env } from "cloudflare:workers";
 import { z } from "zod";
-import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import type { z as zv4 } from "zod/v4";
+import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import type { MCPConnection } from "./connection.ts";
 import type { DefaultEnv } from "./index.ts";
 import { createMCPClientProxy } from "./proxy.ts";
-import { env } from "cloudflare:workers";
 
 export interface FetchOptions extends RequestInit {
   path?: string;
@@ -24,7 +25,8 @@ const Meta = z.object({
   rows_read: z.number().optional(),
   rows_written: z.number().optional(),
   served_by_primary: z.boolean().optional(),
-  served_by_region: z.enum(["WNAM", "ENAM", "WEUR", "EEUR", "APAC", "OC"])
+  served_by_region: z
+    .enum(["WNAM", "ENAM", "WEUR", "EEUR", "APAC", "OC"])
     .optional(),
   size_after: z.number().optional(),
   timings: Timings.optional(),
@@ -38,26 +40,29 @@ const QueryResult = z.object({
 
 export type QueryResult = z.infer<typeof QueryResult>;
 
-const workspaceTools = [{
-  name: "INTEGRATIONS_GET" as const,
-  inputSchema: z.object({
-    id: z.string(),
-  }),
-  outputSchema: z.object({
-    connection: z.object({}),
-  }),
-}, {
-  name: "DATABASES_RUN_SQL" as const,
-  inputSchema: z.object({
-    sql: z.string().describe("The SQL query to run"),
-    params: z.array(z.string()).describe(
-      "The parameters to pass to the SQL query",
-    ),
-  }),
-  outputSchema: z.object({
-    result: z.array(QueryResult),
-  }),
-}] satisfies ToolBinder<string, unknown, object>[];
+const workspaceTools = [
+  {
+    name: "INTEGRATIONS_GET" as const,
+    inputSchema: z.object({
+      id: z.string(),
+    }),
+    outputSchema: z.object({
+      connection: z.object({}),
+    }),
+  },
+  {
+    name: "DATABASES_RUN_SQL" as const,
+    inputSchema: z.object({
+      sql: z.string().describe("The SQL query to run"),
+      params: z
+        .array(z.string())
+        .describe("The parameters to pass to the SQL query"),
+    }),
+    outputSchema: z.object({
+      result: z.array(QueryResult),
+    }),
+  },
+] satisfies ToolBinder<string, unknown, object>[];
 
 // Default fetcher instance with API_SERVER_URL and API_HEADERS
 const global = createMCPFetchStub<[]>({});
@@ -106,20 +111,22 @@ export interface ToolBinder<
   opt?: true;
 }
 export type MCPClientStub<TDefinition extends readonly ToolBinder[]> = {
-  [K in TDefinition[number] as K["name"]]: K extends
-    ToolBinder<string, infer TInput, infer TReturn> ? (
-      params: TInput,
-      init?: RequestInit,
-    ) => Promise<TReturn>
+  [K in TDefinition[number] as K["name"]]: K extends ToolBinder<
+    string,
+    infer TInput,
+    infer TReturn
+  >
+    ? (params: TInput, init?: RequestInit) => Promise<TReturn>
     : never;
 };
 
 export type MCPClientFetchStub<TDefinition extends readonly ToolBinder[]> = {
-  [K in TDefinition[number] as K["name"]]: K extends
-    ToolBinder<string, infer TInput, infer TReturn> ? (
-      params: TInput,
-      init?: RequestInit,
-    ) => Promise<TReturn>
+  [K in TDefinition[number] as K["name"]]: K extends ToolBinder<
+    string,
+    infer TInput,
+    infer TReturn
+  >
+    ? (params: TInput, init?: RequestInit) => Promise<TReturn>
     : never;
 };
 
@@ -146,7 +153,7 @@ export function createMCPFetchStub<TDefinition extends readonly ToolBinder[]>(
   options?: CreateStubAPIOptions,
 ): MCPClientFetchStub<TDefinition> {
   return createMCPClientProxy<MCPClientFetchStub<TDefinition>>({
-    ...options ?? {},
+    ...(options ?? {}),
     jsonSchemaToZod: convertJsonSchemaToZod,
   });
 }

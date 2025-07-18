@@ -1,7 +1,7 @@
-import type { Message as AIMessage } from "../types.ts";
-import type { Message } from "ai";
-import { isAudioMessage, transcribeBase64Audio } from "./audio.ts";
 import type { Agent as MastraAgent } from "@mastra/core/agent";
+import type { Message } from "ai";
+import type { Message as AIMessage } from "../types.ts";
+import { isAudioMessage, transcribeBase64Audio } from "./audio.ts";
 
 export async function convertToAIMessage({
   message,

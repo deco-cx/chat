@@ -13,11 +13,8 @@ export const listModels = (
   init?: RequestInit,
 ) => MCPClient.forWorkspace(workspace).MODELS_LIST(options, init);
 
-export const getModel = (
-  workspace: string,
-  id: string,
-  init?: RequestInit,
-) => MCPClient.forWorkspace(workspace).MODELS_GET({ id }, init);
+export const getModel = (workspace: string, id: string, init?: RequestInit) =>
+  MCPClient.forWorkspace(workspace).MODELS_GET({ id }, init);
 
 export const createModel = (
   workspace: string,
@@ -46,6 +43,6 @@ export const deleteModel = (
   id: string,
   init?: RequestInit,
 ): Promise<{ success: boolean }> =>
-  MCPClient.forWorkspace(workspace).MODELS_DELETE({ id }, init) as Promise<
-    { success: boolean }
-  >;
+  MCPClient.forWorkspace(workspace).MODELS_DELETE({ id }, init) as Promise<{
+    success: boolean;
+  }>;

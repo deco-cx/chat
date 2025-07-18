@@ -21,12 +21,10 @@ export const EMAIL_TOOLS = impl(WellKnownBindings.Channel, [
         throw new UserInputError("Invalid discriminator");
       }
 
-      const { count, error } = await c.db.from("deco_chat_channels")
+      const { count, error } = await c.db
+        .from("deco_chat_channels")
         .select("discriminator", { count: "exact", head: true })
-        .eq(
-          "discriminator",
-          discriminator,
-        );
+        .eq("discriminator", discriminator);
 
       if (error) {
         throw new Error(error.message);

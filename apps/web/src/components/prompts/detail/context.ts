@@ -16,5 +16,9 @@ export const Context = createContext<IContext | null>(null);
 export const useFormContext = () => {
   const context = useContextReact(Context);
 
-  return context!;
+  if (!context) {
+    throw new Error("useFormContext must be used within a FormProvider");
+  }
+
+  return context;
 };

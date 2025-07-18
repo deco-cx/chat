@@ -1,5 +1,4 @@
 import { Icon } from "@deco/ui/components/icon.tsx";
-import { openPanel, type Tab, useDock } from "./index.tsx";
 import {
   ResponsiveDropdown,
   ResponsiveDropdownContent,
@@ -8,30 +7,29 @@ import {
 } from "@deco/ui/components/responsive-dropdown.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import { createPrependPortal } from "../../utils/react-prepend-portal.ts";
+import { openPanel, type Tab, useDock } from "./index.tsx";
 
 // The order of this object's properties matters for sorting
 const WELL_KNOWN_VIEW_ICONS = {
-  "chat": "chat",
-  "profile": "robot_2",
-  "prompt": "assignment",
-  "integrations": "linked_services",
-  "triggers": "cable",
-  "general": "settings",
-  "members": "group",
-  "models": "batch_prediction",
-  "usage": "monitoring",
-  "wallet": "wallet",
-  "audit": "forum",
-  "advanced": "settings",
+  chat: "chat",
+  profile: "robot_2",
+  prompt: "assignment",
+  integrations: "linked_services",
+  triggers: "cable",
+  general: "settings",
+  members: "group",
+  models: "batch_prediction",
+  usage: "monitoring",
+  wallet: "wallet",
+  audit: "forum",
+  advanced: "settings",
 };
 
-function ViewsButtonInner(
-  { tabs }: { tabs: Record<string, Tab> },
-) {
+function ViewsButtonInner({ tabs }: { tabs: Record<string, Tab> }) {
   const all = Object.entries(tabs);
   const saved = all.filter(([_, tab]) => tab.metadata?.isSavedView);
-  const views = all.filter(([_, tab]) =>
-    !tab.metadata?.isSavedView && !tab.hideFromViews
+  const views = all.filter(
+    ([_, tab]) => !tab.metadata?.isSavedView && !tab.hideFromViews,
   );
 
   // Sort views based on WELL_KNOWN_VIEW_ICONS order
@@ -60,17 +58,17 @@ function ViewsButtonInner(
         {sortedViews.map(([id, tab]) => (
           <ResponsiveDropdownItem
             key={id}
-            className={cn(
-              "text-sm mb-1 rounded-lg hover:bg-muted",
-            )}
+            className={cn("text-sm mb-1 rounded-lg hover:bg-muted")}
             onClick={() => {
               openPanel({ id, component: id, title: tab.title });
             }}
           >
             <Icon
-              name={WELL_KNOWN_VIEW_ICONS[
-                id as keyof typeof WELL_KNOWN_VIEW_ICONS
-              ] || "atr"}
+              name={
+                WELL_KNOWN_VIEW_ICONS[
+                  id as keyof typeof WELL_KNOWN_VIEW_ICONS
+                ] || "atr"
+              }
               className="text-muted-foreground"
               size={16}
             />

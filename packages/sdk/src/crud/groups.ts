@@ -24,7 +24,6 @@ export const WellKnownMcpGroups = {
 
 export type WellKnownMcpGroup = keyof typeof WellKnownMcpGroups;
 
-export const WellKnownMcpGroupIds = Object.values(WellKnownMcpGroups)
-  .map(
-    (group) => `i:${group}`,
-  );
+export const WellKnownMcpGroupIds = Object.values(WellKnownMcpGroups).map(
+  (group) => `i:${group}`,
+);

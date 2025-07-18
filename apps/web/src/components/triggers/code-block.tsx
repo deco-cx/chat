@@ -2,7 +2,10 @@ import { Icon } from "@deco/ui/components/icon.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import { type ReactNode, useState } from "react";
 
-export function CodeBlock({ children, className }: {
+export function CodeBlock({
+  children,
+  className,
+}: {
   children: ReactNode;
   className?: string;
 }) {

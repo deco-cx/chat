@@ -1,3 +1,4 @@
+import { Button } from "@deco/ui/components/button.tsx";
 import {
   Dialog,
   DialogContent,
@@ -5,7 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@deco/ui/components/dialog.tsx";
-import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 
 interface OAuthCompletionDialogProps {
@@ -39,8 +39,8 @@ export function OAuthCompletionDialog({
             </div>
           </div>
           <DialogDescription className="text-left">
-            Complete the authentication flow with {integrationName}{" "}
-            by clicking the link below. This will open in a new tab.
+            Complete the authentication flow with {integrationName} by clicking
+            the link below. This will open in a new tab.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

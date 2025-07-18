@@ -30,18 +30,16 @@ export interface Props extends HTMLAttributes<HTMLSpanElement> {
  * Uses material-icons library.
  * For available icons, see: https://fonts.google.com/icons?icon.set=Material+Icons
  */
-export function Icon(
-  {
-    name,
-    filled = false,
-    weight = 400,
-    grade = 0,
-    size = 16,
-    style,
-    className,
-    ...props
-  }: Props,
-) {
+export function Icon({
+  name,
+  filled = false,
+  weight = 400,
+  grade = 0,
+  size = 16,
+  style,
+  className,
+  ...props
+}: Props) {
   return (
     <span
       translate="no"
@@ -51,7 +49,9 @@ export function Icon(
           FILL: filled ? "1" : "0",
           wght: weight,
           GRAD: grade,
-        }).map(([key, value]) => `'${key}' ${value}`).join(", "),
+        })
+          .map(([key, value]) => `'${key}' ${value}`)
+          .join(", "),
         ...style,
         fontSize: `${size}px`,
       }}

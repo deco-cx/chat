@@ -1,4 +1,5 @@
 import type { Agent, Member } from "@deco/sdk";
+import { Combobox } from "@deco/ui/components/combobox.tsx";
 import {
   Select,
   SelectContent,
@@ -6,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@deco/ui/components/select.tsx";
-import { Combobox } from "@deco/ui/components/combobox.tsx";
 
 interface AuditFiltersProps {
   agents: Agent[];
@@ -27,10 +27,10 @@ export function AuditFilters({
 }: AuditFiltersProps) {
   // Ordenar membros por nome
   const sortedMembers = [...(members ?? [])].sort((a, b) => {
-    const nameA = a.profiles?.metadata?.full_name || a.profiles?.email ||
-      a.user_id;
-    const nameB = b.profiles?.metadata?.full_name || b.profiles?.email ||
-      b.user_id;
+    const nameA =
+      a.profiles?.metadata?.full_name || a.profiles?.email || a.user_id;
+    const nameB =
+      b.profiles?.metadata?.full_name || b.profiles?.email || b.user_id;
     return nameA.localeCompare(nameB);
   });
 
@@ -50,18 +50,17 @@ export function AuditFilters({
       </div>
       {sortedMembers.length > 0 && (
         <div className="flex flex-col gap-2 min-w-[180px]">
-          <Select
-            value={selectedUser ?? "all"}
-            onValueChange={onUserChange}
-          >
+          <Select value={selectedUser ?? "all"} onValueChange={onUserChange}>
             <SelectTrigger id="user-select" className="w-full">
               <SelectValue placeholder="All users" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All users</SelectItem>
               {sortedMembers.map((member) => {
-                const name = member.profiles?.metadata?.full_name ||
-                  member.profiles?.email || member.user_id;
+                const name =
+                  member.profiles?.metadata?.full_name ||
+                  member.profiles?.email ||
+                  member.user_id;
                 const email = member.profiles?.email;
                 return (
                   <SelectItem key={member.user_id} value={member.user_id}>

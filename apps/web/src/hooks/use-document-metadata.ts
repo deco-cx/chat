@@ -18,9 +18,12 @@ export interface DocumentMetadataOptions {
   socialImage?: string;
 }
 
-export function useDocumentMetadata(
-  { title, description, favicon, socialImage }: DocumentMetadataOptions,
-): void {
+export function useDocumentMetadata({
+  title,
+  description,
+  favicon,
+  socialImage,
+}: DocumentMetadataOptions): void {
   useEffect(() => {
     // Early-exit if nothing to update – avoids touching DOM unnecessarily.
     if (!title && !description && !favicon && !socialImage) return;

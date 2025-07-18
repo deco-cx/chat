@@ -132,17 +132,17 @@ const Mappers = {
 const createTool = createToolGroup("Registry", {
   name: "App Registry",
   description: "Manage and discover published apps in the registry.",
-  icon:
-    "https://assets.decocache.com/mcp/09e44283-f47d-4046-955f-816d227c626f/app.png",
+  icon: "https://assets.decocache.com/mcp/09e44283-f47d-4046-955f-816d227c626f/app.png",
 });
 
 export const listRegistryScopes = createTool({
   name: "REGISTRY_LIST_SCOPES",
   description: "List all registry scopes",
   inputSchema: z.object({
-    search: z.string().optional().describe(
-      "Search term to filter scopes by name",
-    ),
+    search: z
+      .string()
+      .optional()
+      .describe("Search term to filter scopes by name"),
   }),
   outputSchema: z.object({ scopes: z.array(RegistryScopeSchema) }),
   handler: async ({ search }, c) => {
@@ -232,12 +232,10 @@ export const getRegistryApp = createTool({
   outputSchema: RegistryAppSchema,
   handler: async (ctx, c) => {
     c.resourceAccess.grant(); // this method is public
-    let data:
-      | QueryResult<
-        typeof DECO_CHAT_APPS_REGISTRY_TABLE,
-        typeof SELECT_REGISTRY_APP_WITH_SCOPE_QUERY
-      >
-      | null = null;
+    let data: QueryResult<
+      typeof DECO_CHAT_APPS_REGISTRY_TABLE,
+      typeof SELECT_REGISTRY_APP_WITH_SCOPE_QUERY
+    > | null = null;
 
     if ("id" in ctx && ctx.id) {
       const result = await c.db
@@ -270,9 +268,10 @@ export const listRegistryApps = createTool({
   name: "REGISTRY_LIST_APPS",
   description: "List all apps in the registry for the current workspace",
   inputSchema: z.object({
-    search: z.string().optional().describe(
-      "Search term to filter apps by name or description",
-    ),
+    search: z
+      .string()
+      .optional()
+      .describe("Search term to filter apps by name or description"),
     scopeName: z.string().optional().describe("Filter apps by scope name"),
   }),
   outputSchema: z.object({ apps: z.array(RegistryAppSchema) }),
@@ -310,9 +309,11 @@ export const publishApp = createTool({
   description:
     "Publish an app to the registry (automatically claims scope on first use)",
   inputSchema: z.object({
-    scopeName: z.string().describe(
-      "The scope to publish to (defaults to team slug, automatically claimed on first use)",
-    ),
+    scopeName: z
+      .string()
+      .describe(
+        "The scope to publish to (defaults to team slug, automatically claimed on first use)",
+      ),
     name: z.string().describe("The name of the app"),
     friendlyName: z.string().optional().describe("A friendly name for the app"),
     description: z.string().optional().describe("A description of the app"),
@@ -320,9 +321,10 @@ export const publishApp = createTool({
     connection: MCPConnectionSchema.describe(
       "The MCP connection configuration for the app",
     ),
-    unlisted: z.boolean().optional().describe(
-      "Whether the app should be unlisted",
-    ),
+    unlisted: z
+      .boolean()
+      .optional()
+      .describe("Whether the app should be unlisted"),
   }),
   outputSchema: RegistryAppSchema,
   handler: async (
@@ -354,19 +356,22 @@ export const publishApp = createTool({
 
     const { data, error } = await c.db
       .from(DECO_CHAT_APPS_REGISTRY_TABLE)
-      .upsert({
-        workspace,
-        scope_id: scopeId,
-        friendly_name: friendlyName?.trim() || null,
-        name: name.trim(),
-        description: description?.trim() || null,
-        icon: icon?.trim() || null,
-        connection,
-        updated_at: new Date().toISOString(),
-        unlisted: unlisted ?? true,
-      }, {
-        onConflict: "scope_id,name",
-      })
+      .upsert(
+        {
+          workspace,
+          scope_id: scopeId,
+          friendly_name: friendlyName?.trim() || null,
+          name: name.trim(),
+          description: description?.trim() || null,
+          icon: icon?.trim() || null,
+          connection,
+          updated_at: new Date().toISOString(),
+          unlisted: unlisted ?? true,
+        },
+        {
+          onConflict: "scope_id,name",
+        },
+      )
       .select(SELECT_REGISTRY_APP_WITH_SCOPE_QUERY)
       .single();
 

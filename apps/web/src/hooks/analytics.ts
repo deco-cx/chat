@@ -12,7 +12,7 @@ export const ANALYTICS = posthog.init(POSTHOG_PROJECT_API_KEY, {
   capture_pageview: false,
 });
 
-let lastUserId: string | undefined = undefined;
+let lastUserId: string | undefined;
 
 onUserChange((user) => {
   if (!user || user.is_anonymous) return;
@@ -24,8 +24,7 @@ onUserChange((user) => {
 });
 
 const maybeDisableTracking =
-  // deno-lint-ignore no-explicit-any
-  <T extends (...args: any[]) => void>(callback: T) =>
+  <T extends (...args: unknown[]) => void>(callback: T) =>
   (...args: Parameters<T>) =>
     POSTHOG_SHOULD_TRACK ? callback(...args) : undefined;
 

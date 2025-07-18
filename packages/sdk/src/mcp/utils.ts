@@ -3,9 +3,7 @@ import {
   SSEClientTransport,
   type SSEClientTransportOptions,
 } from "@modelcontextprotocol/sdk/client/sse.js";
-import {
-  StreamableHTTPClientTransport,
-} from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { WebSocketClientTransport } from "@modelcontextprotocol/sdk/client/websocket.js";
 import type { Integration, MCPConnection } from "../models/mcp.ts";
 
@@ -27,7 +25,7 @@ export const createTransport = (
 
   const headers: Record<string, string> = {
     ...authHeaders,
-    ..."headers" in connection ? (connection.headers || {}) : {},
+    ...("headers" in connection ? connection.headers || {} : {}),
   };
 
   if (connection.type === "SSE") {

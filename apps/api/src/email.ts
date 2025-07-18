@@ -1,4 +1,6 @@
+import { EmailMessage } from "cloudflare:email";
 import { processDataStream } from "@ai-sdk/ui-utils";
+import type { ForwardableEmailMessage } from "@cloudflare/workers-types";
 import type { ActorConstructor, StubFactory } from "@deco/actors";
 import { ActorCfRuntime } from "@deco/actors/cf";
 import { actors } from "@deco/actors/proxy";
@@ -6,18 +8,16 @@ import { AIAgent } from "@deco/ai/actors";
 import { DECO_BOTS_DOMAIN } from "@deco/sdk/constants";
 import { contextStorage } from "@deco/sdk/fetch";
 import { getServerClient } from "@deco/sdk/storage";
-import type { ForwardableEmailMessage } from "@cloudflare/workers-types";
-import { EmailMessage } from "cloudflare:email";
 // @ts-ignore: this is an import from cf
 import { createMimeMessage } from "mimetext";
-import { runtime } from "./middlewares/actors.ts";
-import type { Bindings } from "./utils/context.ts";
 // Add postal-mime import at the top
 import PostalMime from "postal-mime";
+import { runtime } from "./middlewares/actors.ts";
+import type { Bindings } from "./utils/context.ts";
 
 const readContent = async (message: ForwardableEmailMessage) => {
   // Parse the MIME message to extract structured content
-  // deno-lint-ignore no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: fixing in the future.
   const email = await PostalMime.parse(message.raw as any);
 
   // Return the text content, fallback to HTML if text is not available
@@ -30,14 +30,12 @@ export function email(
 ) {
   return contextStorage.run({ env, ctx }, async () => {
     const db = getServerClient(env.SUPABASE_URL, env.SUPABASE_SERVER_TOKEN);
-    const stub: <
-      Constructor extends ActorConstructor<AIAgent>,
-    >(
+    const stub: <Constructor extends ActorConstructor<AIAgent>>(
       c: Constructor,
     ) => StubFactory<InstanceType<Constructor>> = (c) => {
       return runtime instanceof ActorCfRuntime
-        // deno-lint-ignore no-explicit-any
-        ? runtime.stub(c, env as any)
+        ? // biome-ignore lint/suspicious/noExplicitAny: fixing in the future.
+          runtime.stub(c, env as any)
         : actors.stub(c.name);
     };
     const originalMessageId = message.headers.get("Message-ID");
@@ -86,13 +84,11 @@ export function email(
     msg.setSubject(replySubject); // Use the threaded subject instead of generic text
 
     const targetEmail = message.to;
-    const { data, error } = await db.from("deco_chat_channels").select(
-      "*, deco_chat_agents(id)",
-    )
-      .eq(
-        "discriminator",
-        targetEmail,
-      ).single();
+    const { data, error } = await db
+      .from("deco_chat_channels")
+      .select("*, deco_chat_agents(id)")
+      .eq("discriminator", targetEmail)
+      .single();
 
     if (error) {
       throw new Error(error.message);
@@ -107,18 +103,27 @@ export function email(
       `${data.workspace}/Agents/${firstAgent.id}`,
     );
 
-    const stream = await agent.stream([{
-      id: crypto.randomUUID(),
-      role: "user",
-      content: await readContent(message),
-    }], {
-      threadId: originalMessageId,
-      resourceId: originalMessageId,
-    });
+    const stream = await agent.stream(
+      [
+        {
+          id: crypto.randomUUID(),
+          role: "user",
+          content: await readContent(message),
+        },
+      ],
+      {
+        threadId: originalMessageId,
+        resourceId: originalMessageId,
+      },
+    );
+
+    if (!stream.body) {
+      throw new Error("No stream body");
+    }
 
     let text = "";
     await processDataStream({
-      stream: stream.body!,
+      stream: stream.body,
       onTextPart: (part) => {
         text += part;
       },

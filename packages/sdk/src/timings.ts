@@ -47,9 +47,9 @@ export function createServerTimings(): ServerTimingsBuilder {
       .map(({ name, desc, start, end }) => {
         if (!end || !name) return;
 
-        return `${encodeURIComponent(name)}${desc ? `;desc=${desc}` : ""};dur=${
-          (end - start).toFixed(0)
-        }`;
+        return `${encodeURIComponent(name)}${desc ? `;desc=${desc}` : ""};dur=${(
+          end - start
+        ).toFixed(0)}`;
       })
       .filter(Boolean)
       .join(", ");

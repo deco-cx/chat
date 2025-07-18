@@ -40,8 +40,8 @@ import { Link, useLocation, useMatch } from "react-router";
 import { ErrorBoundary } from "../../error-boundary.tsx";
 import { trackEvent } from "../../hooks/analytics.ts";
 import { useGitHubStars } from "../../hooks/use-github-stars.ts";
-import { useUserPreferences } from "../../hooks/use-user-preferences.ts";
 import { useUser } from "../../hooks/use-user.ts";
+import { useUserPreferences } from "../../hooks/use-user-preferences.ts";
 import { ModelSelector } from "../chat/model-selector.tsx";
 import { UserAvatar } from "../common/avatar/user.tsx";
 import { ProfileSettings } from "../settings/profile.tsx";
@@ -73,7 +73,10 @@ function InvitesCount() {
   );
 }
 
-function UserPreferencesModal({ open, onOpenChange }: {
+function UserPreferencesModal({
+  open,
+  onOpenChange,
+}: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -87,7 +90,10 @@ function UserPreferencesModal({ open, onOpenChange }: {
       displayWorkflow: preferences.displayWorkflow,
     },
   });
-  const { handleSubmit, formState: { isDirty } } = form;
+  const {
+    handleSubmit,
+    formState: { isDirty },
+  } = form;
 
   function onSubmit(data: {
     defaultModel: string;
@@ -278,7 +284,9 @@ function LoggedUser() {
   const userAvatarURL = user?.metadata?.avatar_url ?? undefined;
   const userName = user?.metadata?.full_name || user?.email;
   const formattedStars = stars
-    ? (stars >= 1000 ? `${(stars / 1000).toFixed(1)}k` : stars)
+    ? stars >= 1000
+      ? `${(stars / 1000).toFixed(1)}k`
+      : stars
     : null;
 
   const handleClickInvite = () => {
@@ -291,11 +299,7 @@ function LoggedUser() {
     <ResponsiveDropdown>
       <ResponsiveDropdownTrigger asChild>
         <SidebarMenuButton className="ml-1 cursor-pointer gap-3 group-data-[collapsible=icon]:px-1! group-data-[collapsible=icon]:py-2!">
-          <UserAvatar
-            url={userAvatarURL}
-            fallback={userName}
-            size="xs"
-          />
+          <UserAvatar url={userAvatarURL} fallback={userName} size="xs" />
           <span className="text-sm grow">{user.metadata?.full_name}</span>
 
           <Suspense fallback={null}>

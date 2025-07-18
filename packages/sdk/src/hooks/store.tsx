@@ -21,14 +21,10 @@ const client = new QueryClient({
 
 const Context = createContext<State | null>(null);
 
-export function SDKProvider(
-  { children, ...props }: PropsWithChildren<State>,
-) {
+export function SDKProvider({ children, ...props }: PropsWithChildren<State>) {
   return (
     <QueryClientProvider client={client}>
-      <Context.Provider value={props}>
-        {children}
-      </Context.Provider>
+      <Context.Provider value={props}>{children}</Context.Provider>
     </QueryClientProvider>
   );
 }

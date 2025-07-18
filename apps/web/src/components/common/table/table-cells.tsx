@@ -33,17 +33,17 @@ function AgentInfo({ agentId, className }: AgentInfoProps) {
         >
           <AgentAvatar
             url={agent?.avatar}
-            fallback={agentId === WELL_KNOWN_AGENT_IDS.teamAgent
-              ? agentId
-              : agent?.name}
+            fallback={
+              agentId === WELL_KNOWN_AGENT_IDS.teamAgent ? agentId : agent?.name
+            }
             size="sm"
           />
           <span className="truncate hidden md:inline">
             {agentId === WELL_KNOWN_AGENT_IDS.teamAgent
               ? "New chat"
               : agent
-              ? agent.name
-              : "Deleted agent"}
+                ? agent.name
+                : "Deleted agent"}
           </span>
         </div>
       </TooltipTrigger>
@@ -77,10 +77,10 @@ function UserInfo({
   // If userId matches current user, use user data directly
   const isCurrentUser = userId && user && userId === user.id;
 
-  const { data: { members: teamMembers = [] } } = useTeamMembers(
-    teamId ?? null,
-  );
-  const members = (!isCurrentUser && teamId !== null) ? teamMembers : [];
+  const {
+    data: { members: teamMembers = [] },
+  } = useTeamMembers(teamId ?? null);
+  const members = !isCurrentUser && teamId !== null ? teamMembers : [];
   const member = useMemo(
     () => members.find((m) => m.user_id === userId),
     [members, userId],
@@ -101,11 +101,7 @@ function UserInfo({
         <div
           className={`flex items-center gap-2 min-w-[48px] ${className ?? ""}`}
         >
-          <UserAvatar
-            url={avatarUrl}
-            fallback={name}
-            size="sm"
-          />
+          <UserAvatar url={avatarUrl} fallback={name} size="sm" />
           <div
             className={`flex-col items-start text-left leading-tight w-full ${
               showDetails ? "hidden md:flex" : "flex"
@@ -127,14 +123,14 @@ function UserInfo({
         </div>
       </TooltipTrigger>
       <TooltipContent>
-        {name
-          ? (
-            <div className="flex flex-col">
-              <span>{name}</span>
-              <span>{email}</span>
-            </div>
-          )
-          : <span>{userId}</span>}
+        {name ? (
+          <div className="flex flex-col">
+            <span>{name}</span>
+            <span>{email}</span>
+          </div>
+        ) : (
+          <span>{userId}</span>
+        )}
       </TooltipContent>
     </Tooltip>
   );
@@ -177,9 +173,11 @@ interface IntegrationInfoProps {
   className?: string;
 }
 
-function IntegrationInfo(
-  { integration, toolName, className }: IntegrationInfoProps,
-) {
+function IntegrationInfo({
+  integration,
+  toolName,
+  className,
+}: IntegrationInfoProps) {
   const integrationId = integration?.id;
 
   return (
@@ -249,16 +247,11 @@ function ActivityStatusCell({
   }
 
   if (!lastActivity) {
-    return (
-      <span className={`text-muted-foreground ${className}`}>
-        Never
-      </span>
-    );
+    return <span className={`text-muted-foreground ${className}`}>Never</span>;
   }
 
-  const activityDate = typeof lastActivity === "string"
-    ? new Date(lastActivity)
-    : lastActivity;
+  const activityDate =
+    typeof lastActivity === "string" ? new Date(lastActivity) : lastActivity;
 
   const relativeTime = formatRelativeTime(activityDate);
   const isActive = relativeTime === "Active";

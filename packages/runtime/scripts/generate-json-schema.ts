@@ -1,7 +1,7 @@
 // heavily inspired by https://github.com/cloudflare/workers-sdk/blob/main/packages/wrangler/scripts/generate-json-schema.ts
 import { join } from "node:path";
-import { createGenerator } from "ts-json-schema-generator";
 import type { Config, Schema } from "ts-json-schema-generator";
+import { createGenerator } from "ts-json-schema-generator";
 
 const config: Config = {
   path: join(import.meta.dirname!, "../src/wrangler.ts"),

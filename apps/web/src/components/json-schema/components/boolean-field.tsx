@@ -1,4 +1,6 @@
 // filepath: /Users/igorbrasileiro/dev/deco/chat/apps/web/src/components/common/jsonSchemaForm/components/BooleanField.tsx
+
+import { Checkbox } from "@deco/ui/components/checkbox.tsx";
 import {
   FormControl,
   FormDescription,
@@ -7,7 +9,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@deco/ui/components/form.tsx";
-import { Checkbox } from "@deco/ui/components/checkbox.tsx";
 import type { FieldPath, FieldValues, UseFormReturn } from "react-hook-form";
 
 interface BooleanFieldProps<T extends FieldValues = FieldValues> {

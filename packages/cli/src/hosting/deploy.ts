@@ -1,9 +1,9 @@
+import { Buffer } from "node:buffer";
 import { Confirm } from "@cliffy/prompt";
 import { walk } from "@std/fs";
+import { relative } from "@std/path/relative";
 import { createWorkspaceClient } from "../mcp.ts";
 import { getCurrentEnvVars } from "../wrangler.ts";
-import { relative } from "@std/path/relative";
-import { Buffer } from "node:buffer";
 
 function tryParseJson(text: string): Record<string, unknown> | null {
   try {
@@ -31,17 +31,15 @@ interface Options {
 
 const WRANGLER_CONFIG_FILES = ["wrangler.toml", "wrangler.json"];
 
-export const deploy = async (
-  {
-    cwd,
-    workspace,
-    app: appSlug,
-    local,
-    assetsDirectory,
-    skipConfirmation,
-    unlisted = true,
-  }: Options,
-) => {
+export const deploy = async ({
+  cwd,
+  workspace,
+  app: appSlug,
+  local,
+  assetsDirectory,
+  skipConfirmation,
+  unlisted = true,
+}: Options) => {
   console.log(`\n🚀 Deploying '${appSlug}' to '${workspace}'...\n`);
 
   // Ensure the target directory exists
@@ -58,31 +56,29 @@ export const deploy = async (
   let foundWranglerConfigName = "";
 
   // Recursively walk cwd/ and add all files
-  for await (
-    const entry of walk(cwd, {
-      includeDirs: false,
-      skip: [
-        /node_modules/,
-        /\.git/,
-        /\.DS_Store/,
-        /\.env/,
-        /\.env.local/,
-        /\.dev.vars/,
-      ],
-      exts: [
-        ".ts",
-        ".mjs",
-        ".js",
-        ".cjs",
-        ".toml",
-        ".json",
-        ".css",
-        ".html",
-        ".txt",
-        ".wasm",
-      ],
-    })
-  ) {
+  for await (const entry of walk(cwd, {
+    includeDirs: false,
+    skip: [
+      /node_modules/,
+      /\.git/,
+      /\.DS_Store/,
+      /\.env/,
+      /\.env.local/,
+      /\.dev.vars/,
+    ],
+    exts: [
+      ".ts",
+      ".mjs",
+      ".js",
+      ".cjs",
+      ".toml",
+      ".json",
+      ".css",
+      ".html",
+      ".txt",
+      ".wasm",
+    ],
+  })) {
     const realPath = relative(cwd, entry.path);
     const content = await Deno.readTextFile(entry.path);
     files.push({ path: realPath, content });
@@ -96,19 +92,17 @@ export const deploy = async (
   }
 
   if (assetsDirectory) {
-    for await (
-      const entry of walk(assetsDirectory, {
-        includeDirs: false,
-        skip: [
-          /node_modules/,
-          /\.git/,
-          /\.DS_Store/,
-          /\.env/,
-          /\.env.local/,
-          /\.dev.vars/,
-        ],
-      })
-    ) {
+    for await (const entry of walk(assetsDirectory, {
+      includeDirs: false,
+      skip: [
+        /node_modules/,
+        /\.git/,
+        /\.DS_Store/,
+        /\.env/,
+        /\.env.local/,
+        /\.dev.vars/,
+      ],
+    })) {
       const realPath = relative(assetsDirectory, entry.path);
       const content = await Deno.readFile(entry.path);
       const base64Content = Buffer.from(content).toString("base64");
@@ -136,8 +130,7 @@ export const deploy = async (
       wranglerConfigStatus = "wrangler.toml/json ❌";
     }
   } else {
-    wranglerConfigStatus =
-      `${foundWranglerConfigName} ✅ (found in project files)`;
+    wranglerConfigStatus = `${foundWranglerConfigName} ✅ (found in project files)`;
   }
 
   // 3. Load envVars from .dev.vars
@@ -150,8 +143,8 @@ export const deploy = async (
   console.log(`  Files: ${files.length}`);
   console.log(`  ${wranglerConfigStatus}`);
 
-  const confirmed = skipConfirmation ||
-    await Confirm.prompt("Proceed with deployment?");
+  const confirmed =
+    skipConfirmation || (await Confirm.prompt("Proceed with deployment?"));
   if (!confirmed) {
     console.log("❌ Deployment cancelled");
     Deno.exit(0);

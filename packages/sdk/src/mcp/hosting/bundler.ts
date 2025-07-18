@@ -9,16 +9,13 @@ export const bundler = async (
   files: Record<string, string>,
   entrypoint: string = "index.ts",
 ): Promise<string> => {
-  const response = await fetch(
-    "https://bundler.deco.site",
-    {
-      method: "POST",
-      body: JSON.stringify({ files, entrypoint }),
-      headers: {
-        "content-type": "application/json",
-      },
+  const response = await fetch("https://bundler.deco.site", {
+    method: "POST",
+    body: JSON.stringify({ files, entrypoint }),
+    headers: {
+      "content-type": "application/json",
     },
-  );
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to bundle ${await response.text()}`);

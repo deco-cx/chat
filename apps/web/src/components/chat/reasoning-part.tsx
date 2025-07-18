@@ -1,7 +1,7 @@
-import { MemoizedMarkdown } from "./chat-markdown.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
-import { useEffect, useState } from "react";
 import { cn } from "@deco/ui/lib/utils.ts";
+import { useEffect, useState } from "react";
+import { MemoizedMarkdown } from "./chat-markdown.tsx";
 
 interface ReasoningPartProps {
   reasoning: string;
@@ -48,10 +48,7 @@ export function ReasoningPart({
         )}
       >
         <div className="flex items-center gap-2">
-          <Icon
-            name="psychology"
-            className="text-muted-foreground"
-          />
+          <Icon name="psychology" className="text-muted-foreground" />
           <span className="text-sm font-medium text-foreground">
             Agent thinking
           </span>
@@ -67,12 +64,7 @@ export function ReasoningPart({
           isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0",
         )}
       >
-        <div
-          className={cn(
-            "p-4 border-t",
-            isStreaming && "bg-muted",
-          )}
-        >
+        <div className={cn("p-4 border-t", isStreaming && "bg-muted")}>
           <div
             className={cn(
               "prose prose-sm max-w-none text-sm",

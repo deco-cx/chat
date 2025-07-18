@@ -1,4 +1,12 @@
-import { useDeleteTeam, useSDK, useUpdateTeam, useWriteFile } from "@deco/sdk";
+import {
+  DEFAULT_THEME,
+  THEME_VARIABLES,
+  type ThemeVariable,
+  useDeleteTeam,
+  useSDK,
+  useUpdateTeam,
+  useWriteFile,
+} from "@deco/sdk";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,27 +28,26 @@ import {
   FormLabel,
   FormMessage,
 } from "@deco/ui/components/form.tsx";
+import { Icon } from "@deco/ui/components/icon.tsx";
 import { Input } from "@deco/ui/components/input.tsx";
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
 import { Separator } from "@deco/ui/components/separator.tsx";
+import { toast } from "@deco/ui/components/sonner.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { Textarea } from "@deco/ui/components/textarea.tsx";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { Avatar } from "../common/avatar/index.tsx";
-import { useCurrentTeam } from "../sidebar/team-selector.tsx";
-import { Icon } from "@deco/ui/components/icon.tsx";
-import { DEFAULT_THEME, THEME_VARIABLES, type ThemeVariable } from "@deco/sdk";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@deco/ui/components/tooltip.tsx";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Avatar } from "../common/avatar/index.tsx";
+import { useCurrentTeam } from "../sidebar/team-selector.tsx";
 import { clearThemeCache } from "../theme.tsx";
-import { toast } from "@deco/ui/components/sonner.tsx";
 
 interface GeneralSettingsFormValues {
   teamName: string;
@@ -54,12 +61,10 @@ interface GeneralSettingsFormValues {
 
 const generalSettingsSchema = z.object({
   teamName: z.string(),
-  teamSlug: z
-    .string()
-    .regex(/^[a-zA-Z0-9_.-]+$/, {
-      message:
-        "Team slug can only contain letters, numbers, dashes, underscores, and dots.",
-    }),
+  teamSlug: z.string().regex(/^[a-zA-Z0-9_.-]+$/, {
+    message:
+      "Team slug can only contain letters, numbers, dashes, underscores, and dots.",
+  }),
   workspaceEmailDomain: z.boolean(),
   teamSystemPrompt: z.string(),
   personalSystemPrompt: z.string(),
@@ -143,8 +148,8 @@ function ThemeVariableInput({
           <div
             className="absolute inset-0 pointer-events-none rounded-md border border-border"
             style={{
-              backgroundColor: variable.value || variable.defaultValue ||
-                "#000000",
+              backgroundColor:
+                variable.value || variable.defaultValue || "#000000",
             }}
           />
         </div>
@@ -153,12 +158,13 @@ function ThemeVariableInput({
   );
 }
 
-function ThemeEditor(
-  { value, onChange }: {
-    value: Record<string, string | undefined>;
-    onChange: (value: Record<string, string | undefined>) => void;
-  },
-) {
+function ThemeEditor({
+  value,
+  onChange,
+}: {
+  value: Record<string, string | undefined>;
+  onChange: (value: Record<string, string | undefined>) => void;
+}) {
   const variables = useMemo(() => {
     try {
       return THEME_VARIABLES.map((key) => ({
@@ -241,15 +247,11 @@ function DeleteTeamDialog({
             and all its data.
           </AlertDialogDescription>
           {error && (
-            <div className="text-destructive text-sm mt-2">
-              {error}
-            </div>
+            <div className="text-destructive text-sm mt-2">{error}</div>
           )}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>
-            Cancel
-          </AlertDialogCancel>
+          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             type="button"
             disabled={isPending}
@@ -260,15 +262,13 @@ function DeleteTeamDialog({
             }}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40"
           >
-            {isPending
-              ? (
-                <span className="flex items-center gap-2">
-                  <Spinner size="xs" variant="destructive" /> Deleting...
-                </span>
-              )
-              : (
-                "Delete"
-              )}
+            {isPending ? (
+              <span className="flex items-center gap-2">
+                <Spinner size="xs" variant="destructive" /> Deleting...
+              </span>
+            ) : (
+              "Delete"
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -372,9 +372,10 @@ export function GeneralSettings() {
     }
 
     await updateTeam.mutateAsync({
-      id: typeof currentTeamId === "number"
-        ? currentTeamId
-        : Number(currentTeamId) || 0,
+      id:
+        typeof currentTeamId === "number"
+          ? currentTeamId
+          : Number(currentTeamId) || 0,
       data: {
         name: data.teamName,
         slug: data.teamSlug,
@@ -424,9 +425,9 @@ export function GeneralSettings() {
                     <FormField
                       control={form.control}
                       name="avatar"
-                      render={(
-                        { field: { value: _value, onChange, ...field } },
-                      ) => (
+                      render={({
+                        field: { value: _value, onChange, ...field },
+                      }) => (
                         <FormItem className="w-full flex flex-col items-center">
                           <FormControl>
                             <div
@@ -635,16 +636,23 @@ export function GeneralSettings() {
                       type="button"
                       variant="outline"
                       onClick={() => form.reset()}
-                      disabled={isReadOnly || !form.formState.isDirty ||
-                        form.formState.isSubmitting}
+                      disabled={
+                        isReadOnly ||
+                        !form.formState.isDirty ||
+                        form.formState.isSubmitting
+                      }
                     >
                       Discard
                     </Button>
                     <Button
                       type="submit"
                       variant="default"
-                      disabled={isReadOnly || !form.formState.isDirty ||
-                        form.formState.isSubmitting || updateTeam.isPending}
+                      disabled={
+                        isReadOnly ||
+                        !form.formState.isDirty ||
+                        form.formState.isSubmitting ||
+                        updateTeam.isPending
+                      }
                     >
                       {updateTeam.isPending ? "Saving..." : "Save"}
                     </Button>

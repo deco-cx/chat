@@ -17,9 +17,11 @@ interface TriggerActionsProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function TriggerActions(
-  { trigger, open, onOpenChange }: TriggerActionsProps,
-) {
+export function TriggerActions({
+  trigger,
+  open,
+  onOpenChange,
+}: TriggerActionsProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   return (

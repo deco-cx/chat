@@ -1,3 +1,4 @@
+import { redeemWalletVoucher, useSDK } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import {
   Dialog,
@@ -8,9 +9,8 @@ import {
 } from "@deco/ui/components/dialog.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Input } from "@deco/ui/components/input.tsx";
-import { redeemWalletVoucher, useSDK } from "@deco/sdk";
-import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 export function VoucherDialog() {
   const [voucher, setVoucher] = useState("");

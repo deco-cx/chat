@@ -1,3 +1,5 @@
+import { Button } from "@deco/ui/components/button.tsx";
+import { Card, CardContent } from "@deco/ui/components/card.tsx";
 import {
   FormControl,
   FormDescription,
@@ -6,8 +8,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@deco/ui/components/form.tsx";
-import { Button } from "@deco/ui/components/button.tsx";
-import { Card, CardContent } from "@deco/ui/components/card.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import type { JSONSchema7 } from "json-schema";
 import type {
@@ -51,7 +51,7 @@ export function ArrayField<T extends FieldValues = FieldValues>({
     name: name as ArrayPath<T>,
   });
 
-  const itemSchema = schema.items as JSONSchema7 || { type: "string" };
+  const itemSchema = (schema.items as JSONSchema7) || { type: "string" };
 
   const handleAddItem = () => {
     const defaultValue = generateDefaultValue(itemSchema);
@@ -101,8 +101,7 @@ export function ArrayField<T extends FieldValues = FieldValues>({
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() =>
-                            handleMoveUp(index)}
+                          onClick={() => handleMoveUp(index)}
                           disabled={disabled || index === 0}
                           className="w-8"
                         >
@@ -113,8 +112,7 @@ export function ArrayField<T extends FieldValues = FieldValues>({
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() =>
-                            handleMoveDown(index)}
+                          onClick={() => handleMoveDown(index)}
                           disabled={disabled || index === fields.length - 1}
                           className="w-8"
                         >

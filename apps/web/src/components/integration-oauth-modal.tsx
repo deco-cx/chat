@@ -1,4 +1,11 @@
-import { FormProvider, useForm } from "react-hook-form";
+import {
+  getRegistryApp,
+  type Integration,
+  listIntegrations,
+  useSDK,
+} from "@deco/sdk";
+import { Alert, AlertDescription } from "@deco/ui/components/alert.tsx";
+import { Badge } from "@deco/ui/components/badge.tsx";
 import { Button } from "@deco/ui/components/button.tsx";
 import {
   Dialog,
@@ -6,18 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@deco/ui/components/dialog.tsx";
-import { Badge } from "@deco/ui/components/badge.tsx";
 import { Separator } from "@deco/ui/components/separator.tsx";
-import { Alert, AlertDescription } from "@deco/ui/components/alert.tsx";
 import type { JSONSchema7 } from "json-schema";
+import { FormProvider, useForm } from "react-hook-form";
 import JsonSchemaForm, { type OptionItem } from "./json-schema/index.tsx";
 import { generateDefaultValues } from "./json-schema/utils/generate-default-values.ts";
-import {
-  getRegistryApp,
-  type Integration,
-  listIntegrations,
-  useSDK,
-} from "@deco/sdk";
 
 interface Permission {
   scope: string;
@@ -73,9 +73,11 @@ export function IntegrationOAuthModal({
       const matchingIntegrations = installedIntegrations.filter(
         (integration: Integration) => {
           // Match by name (case-insensitive)
-          return integration.connection.type === "HTTP" &&
+          return (
+            integration.connection.type === "HTTP" &&
             registryApp.connection.type === "HTTP" &&
-            integration.connection.url === registryApp.connection.url;
+            integration.connection.url === registryApp.connection.url
+          );
         },
       );
 
@@ -95,9 +97,7 @@ export function IntegrationOAuthModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            Install {integrationName}
-          </DialogTitle>
+          <DialogTitle>Install {integrationName}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
@@ -106,8 +106,8 @@ export function IntegrationOAuthModal({
             <div className="space-y-4">
               <Alert>
                 <AlertDescription>
-                  <strong>{integrationName}</strong>{" "}
-                  will have access to the following permissions:
+                  <strong>{integrationName}</strong> will have access to the
+                  following permissions:
                 </AlertDescription>
               </Alert>
 
@@ -117,9 +117,7 @@ export function IntegrationOAuthModal({
                     key={index}
                     className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
                   >
-                    <div className="flex-shrink-0 text-success">
-                      ✓
-                    </div>
+                    <div className="flex-shrink-0 text-success">✓</div>
                     <div className="flex-1">
                       <div className="text-sm font-medium">
                         {permission.description}

@@ -1,10 +1,11 @@
 // deno-lint-ignore-file no-explicit-any
-import { createExportTraceServiceRequest } from "@opentelemetry/otlp-transformer";
+
+import { type ExportResult, ExportResultCode } from "@opentelemetry/core";
 import {
   type ExportServiceError,
   OTLPExporterError,
 } from "@opentelemetry/otlp-exporter-base";
-import { type ExportResult, ExportResultCode } from "@opentelemetry/core";
+import { createExportTraceServiceRequest } from "@opentelemetry/otlp-transformer";
 import type { SpanExporter } from "@opentelemetry/sdk-trace-base";
 import { unwrap } from "./wrap.ts";
 

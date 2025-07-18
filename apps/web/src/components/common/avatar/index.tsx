@@ -1,7 +1,7 @@
 import {
-  Avatar as AvatarUI,
   AvatarFallback,
   AvatarImage,
+  Avatar as AvatarUI,
 } from "@deco/ui/components/avatar.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
@@ -171,42 +171,30 @@ function UnifiedAvatar({
 
   return (
     <AvatarUI
-      className={cn(
-        avatarVariants({ shape, size }),
-        className,
-      )}
+      className={cn(avatarVariants({ shape, size }), className)}
       {...props}
     >
-      {isIconUrl && iconName
-        ? (
-          <div
-            className={cn(
-              "flex items-center justify-center w-full h-full",
-              fallbackColor,
-            )}
-          >
-            <Icon
-              name={iconName}
-              size={getIconSize(size)}
-            />
-          </div>
-        )
-        : (
-          <>
-            <AvatarImage
-              src={url}
-              alt="Avatar"
-              className={cn(
-                avatarImageVariants({ objectFit }),
-              )}
-            />
-            <AvatarFallback
-              className={cn(fallbackColor, "rounded-none")}
-            >
-              {fallbackContent}
-            </AvatarFallback>
-          </>
-        )}
+      {isIconUrl && iconName ? (
+        <div
+          className={cn(
+            "flex items-center justify-center w-full h-full",
+            fallbackColor,
+          )}
+        >
+          <Icon name={iconName} size={getIconSize(size)} />
+        </div>
+      ) : (
+        <>
+          <AvatarImage
+            src={url}
+            alt="Avatar"
+            className={cn(avatarImageVariants({ objectFit }))}
+          />
+          <AvatarFallback className={cn(fallbackColor, "rounded-none")}>
+            {fallbackContent}
+          </AvatarFallback>
+        </>
+      )}
     </AvatarUI>
   );
 }

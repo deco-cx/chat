@@ -89,7 +89,7 @@ export const handleAuthCallback = async (
       return new Response("Authentication failed", { status: 401 });
     }
 
-    const { access_token } = await exchangeResponse.json() as {
+    const { access_token } = (await exchangeResponse.json()) as {
       access_token: string;
     };
 
@@ -101,8 +101,7 @@ export const handleAuthCallback = async (
       status: 302,
       headers: {
         Location: next,
-        "Set-Cookie":
-          `deco_page_auth=${access_token}; HttpOnly; Secure; SameSite=Lax; Path=/`,
+        "Set-Cookie": `deco_page_auth=${access_token}; HttpOnly; Secure; SameSite=Lax; Path=/`,
       },
     });
   } catch (err) {

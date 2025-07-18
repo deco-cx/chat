@@ -11,24 +11,28 @@ export const appsDomainOf = (req: Request, url?: URL) => {
   url ??= new URL(req.url);
   const referer = req.headers.get("referer");
 
-  return url.searchParams.get(APPS_DOMAIN_QS) ||
-    (referer && new URL(referer).searchParams.get(APPS_DOMAIN_QS));
+  return (
+    url.searchParams.get(APPS_DOMAIN_QS) ||
+    (referer && new URL(referer).searchParams.get(APPS_DOMAIN_QS))
+  );
 };
 
 const normalizeHost = (req: Request) => {
-  const host = req.headers.get("host") ?? new URL(req.url).hostname ??
-    "localhost";
+  const host =
+    req.headers.get("host") ?? new URL(req.url).hostname ?? "localhost";
 
   const appsHost = appsDomainOf(req);
   if (appsHost) {
     return Hosts.APPS;
   }
-  return {
-    [Hosts.API]: Hosts.API,
-    localhost: Hosts.API,
-    "localhost:3001": Hosts.API,
-    "localhost:8000": Hosts.API,
-  }[host] ?? Hosts.APPS;
+  return (
+    {
+      [Hosts.API]: Hosts.API,
+      localhost: Hosts.API,
+      "localhost:3001": Hosts.API,
+      "localhost:8000": Hosts.API,
+    }[host] ?? Hosts.APPS
+  );
 };
 
 export const app = new Hono<AppEnv>({

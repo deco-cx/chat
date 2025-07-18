@@ -18,16 +18,21 @@ export interface LLMConfigWithModelId extends LLMConfig {
 }
 
 const isUUID = (modelId: string): boolean => {
-  return modelId.match(
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-  ) !== null;
+  return (
+    modelId.match(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    ) !== null
+  );
 };
 
 /**
  * Gets the LLM config for a given model id.
  * If not a managed model, will read the api key from the current workspace's llm vault.
  */
-export async function getLLMConfig({ modelId, llmVault }: {
+export async function getLLMConfig({
+  modelId,
+  llmVault,
+}: {
   modelId: string;
   llmVault?: LLMVault;
 }): Promise<LLMConfigWithModelId> {

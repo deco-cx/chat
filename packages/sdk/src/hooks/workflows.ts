@@ -132,10 +132,7 @@ export const useAllUniqueWorkflows = () => {
   };
 };
 
-export const useWorkflowStatus = (
-  workflowName: string,
-  instanceId: string,
-) => {
+export const useWorkflowStatus = (workflowName: string, instanceId: string) => {
   const { workspace } = useSDK();
   return useSuspenseQuery({
     queryKey: ["workflow-status", workspace, workflowName, instanceId],
@@ -146,10 +143,7 @@ export const useWorkflowStatus = (
     refetchInterval: (query) => {
       const snapshot = query.state.data?.snapshot;
       const status = typeof snapshot === "string" ? snapshot : snapshot?.status;
-      if (
-        status === "success" ||
-        status === "failed"
-      ) {
+      if (status === "success" || status === "failed") {
         return false;
       }
       return 1000; // Poll every 1 second by default

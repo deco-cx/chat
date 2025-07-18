@@ -1,13 +1,12 @@
 import {
   context,
-  trace,
   type Tracer,
   type TracerOptions,
   type TracerProvider,
+  trace,
 } from "@opentelemetry/api";
-
-import type { SpanProcessor } from "@opentelemetry/sdk-trace-base";
 import type { Resource } from "@opentelemetry/resources";
+import type { SpanProcessor } from "@opentelemetry/sdk-trace-base";
 
 import { AsyncLocalStorageContextManager } from "./context.ts";
 import { WorkerTracer } from "./tracer.ts";

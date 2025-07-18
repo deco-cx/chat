@@ -44,16 +44,15 @@ export function EmptyState({
           {description}
         </div>
       </div>
-      {buttonComponent ?? (
-        buttonProps && (
+      {buttonComponent ??
+        (buttonProps && (
           <Button
             variant="outline"
             size="default"
             className={cn("gap-2", buttonProps?.className)}
             {...buttonProps}
           />
-        )
-      )}
+        ))}
     </div>
   );
 }

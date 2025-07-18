@@ -36,40 +36,36 @@ export const createSupabaseSessionClient = (
   ignoreCookie?: boolean,
 ): CreateSupabaseSessionClientResult => {
   const headers = new Headers();
-  const supabase = createServerClient(
-    SUPABASE_URL,
-    supabaseToken,
-    {
-      cookies: {
-        getAll: () => {
-          // Keep this getCookies from Deno here!
-          const cookies = getCookies(request.headers);
-          if (ignoreCookie) {
-            return [];
-          }
-          return Object.entries(cookies).map(([name, value]) => ({
-            name,
-            value,
-          }));
-        },
-        setAll(cookies) {
-          const url = new URL(request.url);
-          const rootDomain = url.hostname.split(".").slice(-2).join(".");
-          for (const { name, value, options } of cookies) {
-            headers.append(
-              "set-cookie",
-              serializeCookieHeader(name, value, {
-                ...options,
-                sameSite: "none", // allow for subdomains.
-                secure: true,
-                domain: `.${rootDomain}`,
-              }),
-            );
-          }
-        },
+  const supabase = createServerClient(SUPABASE_URL, supabaseToken, {
+    cookies: {
+      getAll: () => {
+        // Keep this getCookies from Deno here!
+        const cookies = getCookies(request.headers);
+        if (ignoreCookie) {
+          return [];
+        }
+        return Object.entries(cookies).map(([name, value]) => ({
+          name,
+          value,
+        }));
+      },
+      setAll(cookies) {
+        const url = new URL(request.url);
+        const rootDomain = url.hostname.split(".").slice(-2).join(".");
+        for (const { name, value, options } of cookies) {
+          headers.append(
+            "set-cookie",
+            serializeCookieHeader(name, value, {
+              ...options,
+              sameSite: "none", // allow for subdomains.
+              secure: true,
+              domain: `.${rootDomain}`,
+            }),
+          );
+        }
       },
     },
-  );
+  });
 
   return { supabase, headers };
 };

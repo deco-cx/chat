@@ -1,5 +1,5 @@
-import type { Agent, Integration } from "../models/index.ts";
 import { WELL_KNOWN_KNOWLEDGE_BASE_CONNECTION_ID_STARTSWITH } from "../constants.ts";
+import type { Agent, Integration } from "../models/index.ts";
 import { extractAgentUuidFromKnowledgeBaseId } from "./knowledge.ts";
 
 /**
@@ -68,9 +68,7 @@ export class KnowledgeBaseNameProvider implements IntegrationNameProvider {
 export function createNameProviders(
   agents: Agent[] | undefined,
 ): IntegrationNameProvider[] {
-  return [
-    new KnowledgeBaseNameProvider(agents),
-  ];
+  return [new KnowledgeBaseNameProvider(agents)];
 }
 
 /**

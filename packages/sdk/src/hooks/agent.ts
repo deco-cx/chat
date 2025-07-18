@@ -35,9 +35,8 @@ export const useCreateAgent = () => {
       // update list
       const listKey = KEYS.AGENT(workspace);
       client.cancelQueries({ queryKey: listKey });
-      client.setQueryData<Agent[]>(
-        listKey,
-        (old) => !old ? [result] : [result, ...old],
+      client.setQueryData<Agent[]>(listKey, (old) =>
+        !old ? [result] : [result, ...old],
       );
     },
   });
@@ -58,9 +57,8 @@ export const useUpdateAgentCache = () => {
     // Update the list
     const listKey = KEYS.AGENT(workspace);
     client.cancelQueries({ queryKey: listKey });
-    client.setQueryData<Agent[]>(
-      listKey,
-      (old) => !old ? [agent] : old.map((a) => a.id === agent.id ? agent : a),
+    client.setQueryData<Agent[]>(listKey, (old) =>
+      !old ? [agent] : old.map((a) => (a.id === agent.id ? agent : a)),
     );
   };
 
@@ -94,9 +92,8 @@ export const useRemoveAgent = () => {
       // Update the list
       const listKey = KEYS.AGENT(workspace);
       client.cancelQueries({ queryKey: listKey });
-      client.setQueryData<Agent[]>(
-        listKey,
-        (old) => !old ? [] : old.filter((agent) => agent.id !== id),
+      client.setQueryData<Agent[]>(listKey, (old) =>
+        !old ? [] : old.filter((agent) => agent.id !== id),
       );
 
       // Invalidate triggers

@@ -1,6 +1,6 @@
+import { Badge } from "@deco/ui/components/badge.tsx";
 import { Card } from "@deco/ui/components/card.tsx";
 import { Label } from "@deco/ui/components/label.tsx";
-import { Badge } from "@deco/ui/components/badge.tsx";
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
 
 export interface SchemaProperty {
@@ -21,12 +21,13 @@ interface SchemaDisplayProps {
   title?: string;
 }
 
-function PropertyType(
-  { type, anyOf }: {
-    type?: string;
-    anyOf?: Array<{ type: string; const?: string }>;
-  },
-) {
+function PropertyType({
+  type,
+  anyOf,
+}: {
+  type?: string;
+  anyOf?: Array<{ type: string; const?: string }>;
+}) {
   if (anyOf) {
     return (
       <div className="flex gap-1">
@@ -45,9 +46,13 @@ function PropertyType(
   );
 }
 
-function PropertyDisplay(
-  { name, property }: { name: string; property: SchemaProperty },
-) {
+function PropertyDisplay({
+  name,
+  property,
+}: {
+  name: string;
+  property: SchemaProperty;
+}) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">

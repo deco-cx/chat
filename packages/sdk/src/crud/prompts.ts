@@ -9,7 +9,7 @@ export const listPrompts = (
     excludeIds?: string[];
   },
   init?: RequestInit,
-  client?: ReturnType<typeof MCPClient["forWorkspace"]>,
+  client?: ReturnType<(typeof MCPClient)["forWorkspace"]>,
 ): Promise<Prompt[]> =>
   (client ?? MCPClient.forWorkspace(workspace)).PROMPTS_LIST(
     input || {},
@@ -21,9 +21,10 @@ export const getPrompt = (
   id: string,
   init?: RequestInit,
 ): Promise<Prompt> =>
-  MCPClient.forWorkspace(workspace).PROMPTS_GET({ id }, init) as Promise<
-    Prompt
-  >;
+  MCPClient.forWorkspace(workspace).PROMPTS_GET(
+    { id },
+    init,
+  ) as Promise<Prompt>;
 
 export interface CreatePromptInput {
   name: string;
@@ -37,15 +38,14 @@ export const createPrompt = (
   input: CreatePromptInput,
   init?: RequestInit,
 ): Promise<Prompt> =>
-  MCPClient.forWorkspace(workspace).PROMPTS_CREATE(input, init) as Promise<
-    Prompt
-  >;
+  MCPClient.forWorkspace(workspace).PROMPTS_CREATE(
+    input,
+    init,
+  ) as Promise<Prompt>;
 
 export interface UpdatePromptInput {
   id: string;
-  data: Partial<
-    Pick<Prompt, "name" | "description" | "content">
-  >;
+  data: Partial<Pick<Prompt, "name" | "description" | "content">>;
   versionName?: string;
   [key: string]: unknown;
 }
@@ -55,18 +55,19 @@ export const updatePrompt = (
   input: UpdatePromptInput,
   init?: RequestInit,
 ): Promise<Prompt> =>
-  MCPClient.forWorkspace(workspace).PROMPTS_UPDATE(input, init) as Promise<
-    Prompt
-  >;
+  MCPClient.forWorkspace(workspace).PROMPTS_UPDATE(
+    input,
+    init,
+  ) as Promise<Prompt>;
 
 export const deletePrompt = (
   workspace: string,
   id: string,
   init?: RequestInit,
 ): Promise<{ success: boolean }> =>
-  MCPClient.forWorkspace(workspace).PROMPTS_DELETE({ id }, init) as Promise<
-    { success: boolean }
-  >;
+  MCPClient.forWorkspace(workspace).PROMPTS_DELETE({ id }, init) as Promise<{
+    success: boolean;
+  }>;
 
 interface SearchPromptsInput {
   query: string;
@@ -97,9 +98,7 @@ export const getPromptVersions = (
   MCPClient.forWorkspace(workspace).PROMPTS_GET_VERSIONS(
     input,
     init,
-  ) as Promise<
-    PromptVersion[]
-  >;
+  ) as Promise<PromptVersion[]>;
 
 interface RenamePromptVersionInput {
   id: string;
@@ -114,6 +113,4 @@ export const renamePromptVersion = (
   MCPClient.forWorkspace(workspace).PROMPTS_RENAME_VERSION(
     input,
     init,
-  ) as Promise<
-    PromptVersion
-  >;
+  ) as Promise<PromptVersion>;

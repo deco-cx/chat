@@ -1,6 +1,6 @@
 import type {
-  PostgrestFilterBuilder,
   UnstableGetResult as GetResult,
+  PostgrestFilterBuilder,
 } from "@supabase/postgrest-js";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "./schema.ts";
@@ -33,11 +33,9 @@ export const getServerClient = (
   supabaseUrl: Options[0],
   supabaseKey: Options[1],
 ): Client => {
-  client ||= createServerClient<Database, "public">(
-    supabaseUrl,
-    supabaseKey,
-    { cookies: { getAll: () => [] } },
-  );
+  client ||= createServerClient<Database, "public">(supabaseUrl, supabaseKey, {
+    cookies: { getAll: () => [] },
+  });
 
   return client;
 };

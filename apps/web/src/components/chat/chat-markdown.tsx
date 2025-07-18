@@ -1,11 +1,18 @@
-import { marked } from "marked";
-import { memo, Suspense, useCallback, useMemo, useRef } from "react";
+import { Button } from "@deco/ui/components/button.tsx";
+import { Icon } from "@deco/ui/components/icon.tsx";
+import { marked, type Token } from "marked";
+import {
+  lazy,
+  memo,
+  Suspense,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
-import { lazy, useState } from "react";
-import { Button } from "@deco/ui/components/button.tsx";
-import { Icon } from "@deco/ui/components/icon.tsx";
 
 const LazyHighlighter = lazy(() => import("./lazy-highlighter.tsx"));
 
@@ -23,11 +30,8 @@ function LazyHighlighterFallback() {
       }}
     >
       {lines.map((width, i) => (
-        <div
-          key={i}
-          className="flex gap-2 items-center my-1"
-        >
-          {(i > 2 && i < 7) && (
+        <div key={width} className="flex gap-2 items-center my-1">
+          {i > 2 && i < 7 && (
             <div
               className="w-4 h-4 rounded-sm opacity-40 animate-pulse"
               style={{
@@ -103,7 +107,7 @@ function Table(props: React.HTMLAttributes<HTMLTableElement>) {
             }
             return text;
           })
-          .join(",")
+          .join(","),
       )
       .join("\n");
   }, []);
@@ -203,10 +207,7 @@ const MemoizedMarkdownBlock = memo(
             />
           ),
           td: (props) => (
-            <td
-              {...props}
-              className="px-4 py-2 border-b border-border"
-            />
+            <td {...props} className="px-4 py-2 border-b border-border" />
           ),
         }}
       >
@@ -217,9 +218,13 @@ const MemoizedMarkdownBlock = memo(
   (prevProps, nextProps) => prevProps.content === nextProps.content,
 );
 
-function CodeBlock(
-  { language, content }: { language: string; content: string },
-) {
+function CodeBlock({
+  language,
+  content,
+}: {
+  language: string;
+  content: string;
+}) {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<number | null>(null);
 
@@ -257,28 +262,32 @@ function CodeBlock(
 
 MemoizedMarkdownBlock.displayName = "MemoizedMarkdownBlock";
 
-export const MemoizedMarkdown = (
-  { content, id }: { content: string; id: string },
-) => {
+export const MemoizedMarkdown = ({
+  content,
+  id,
+}: {
+  content: string;
+  id: string;
+}) => {
   const blocks = useMemo(() => marked.lexer(content), [content]);
 
-  return blocks.map((block, index) => {
+  const blockKey = useCallback(
+    (block: Token) => {
+      const contentHash = block.raw ? block.raw.slice(0, 50) : "";
+      const type = block.type;
+      return `${id}-${type}-${contentHash}`;
+    },
+    [id],
+  );
+
+  return blocks.map((block) => {
+    const key = blockKey(block);
+
     if (block.type === "code") {
-      return (
-        <CodeBlock
-          language={block.lang}
-          content={block.text}
-          key={`${id}-block_${index}`}
-        />
-      );
+      return <CodeBlock language={block.lang} content={block.text} key={key} />;
     }
 
-    return (
-      <MemoizedMarkdownBlock
-        content={block.raw}
-        key={`${id}-block_${index}`}
-      />
-    );
+    return <MemoizedMarkdownBlock content={block.raw} key={key} />;
   });
 };
 

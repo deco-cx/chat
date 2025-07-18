@@ -78,16 +78,14 @@ export function RemoveConnectionAlert({
             disabled={isDeleting}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
           >
-            {isDeleting
-              ? (
-                <>
-                  <Spinner />
-                  Deleting...
-                </>
-              )
-              : (
-                "Delete"
-              )}
+            {isDeleting ? (
+              <>
+                <Spinner />
+                Deleting...
+              </>
+            ) : (
+              "Delete"
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

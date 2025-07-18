@@ -2,7 +2,7 @@ import { useCreatePrompt } from "@deco/sdk";
 import { toMention } from "@deco/sdk/utils";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
-import { BubbleMenu as TiptapBubbleMenu, type Editor } from "@tiptap/react";
+import { type Editor, BubbleMenu as TiptapBubbleMenu } from "@tiptap/react";
 import { mentionToTag } from "./common.ts";
 
 interface Props {
@@ -46,8 +46,7 @@ export default function BubbleMenu({ editor }: Props) {
       className="rounded-xl border bg-background shadow-md flex"
       editor={editor}
     >
-      {
-        /* <Button
+      {/* <Button
         type="button"
         variant="ghost"
         size="sm"
@@ -57,8 +56,7 @@ export default function BubbleMenu({ editor }: Props) {
         <span className="text-sm text-foreground font-medium">
           Edit in chat
         </span>
-      </Button> */
-      }
+      </Button> */}
       <Button
         type="button"
         variant="ghost"

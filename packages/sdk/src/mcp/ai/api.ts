@@ -58,59 +58,78 @@ const createTool = createToolGroup("AI", {
   name: "AI Gateway",
   description:
     "Unified LLM API, keeping the centralized observability and billing.",
-  icon:
-    "https://assets.decocache.com/mcp/6e1418f7-c962-406b-aceb-137197902709/ai-gateway.png",
+  icon: "https://assets.decocache.com/mcp/6e1418f7-c962-406b-aceb-137197902709/ai-gateway.png",
 });
 
 const AIGenerateInputSchema = z.object({
-  messages: z.array(z.object({
-    id: z.string().optional(),
-    role: z.enum(["user", "assistant", "system"]),
-    content: z.string(),
-    createdAt: z.date().optional(),
-    experimental_attachments: z.array(z.object({
-      name: z.string().optional().describe(
-        "The name of the attachment, usually the file name",
-      ),
-      contentType: z.string().optional().describe(
-        "Media type of the attachment",
-      ),
-      url: z.string().describe(
-        "URL of the attachment (hosted file or Data URL)",
-      ),
-    })).optional().describe(
-      "Additional attachments to be sent along with the message",
-    ),
-  })).describe("Array of messages for the conversation"),
+  messages: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        role: z.enum(["user", "assistant", "system"]),
+        content: z.string(),
+        createdAt: z.date().optional(),
+        experimental_attachments: z
+          .array(
+            z.object({
+              name: z
+                .string()
+                .optional()
+                .describe("The name of the attachment, usually the file name"),
+              contentType: z
+                .string()
+                .optional()
+                .describe("Media type of the attachment"),
+              url: z
+                .string()
+                .describe("URL of the attachment (hosted file or Data URL)"),
+            }),
+          )
+          .optional()
+          .describe("Additional attachments to be sent along with the message"),
+      }),
+    )
+    .describe("Array of messages for the conversation"),
 
-  model: z.string().optional().describe(
-    "Model ID to use for generation (defaults to workspace default)",
-  ),
+  model: z
+    .string()
+    .optional()
+    .describe("Model ID to use for generation (defaults to workspace default)"),
 
-  maxTokens: z.number().default(8192).optional().describe(
-    "Maximum number of tokens to generate",
-  ),
+  maxTokens: z
+    .number()
+    .default(8192)
+    .optional()
+    .describe("Maximum number of tokens to generate"),
 
-  temperature: z.number().default(0.7).optional().describe(
-    "Temperature for the generation",
-  ),
+  temperature: z
+    .number()
+    .default(0.7)
+    .optional()
+    .describe("Temperature for the generation"),
 
-  tools: z.record(z.string(), z.array(z.string())).optional().describe(
-    "Tools available for the generation",
-  ),
+  tools: z
+    .record(z.string(), z.array(z.string()))
+    .optional()
+    .describe("Tools available for the generation"),
 });
 
 const AIGenerateOutputSchema = z.object({
   text: z.string().describe("The generated text response"),
-  usage: z.object({
-    promptTokens: z.number().describe("Number of tokens in the prompt"),
-    completionTokens: z.number().describe("Number of tokens in the completion"),
-    totalTokens: z.number().describe("Total number of tokens used"),
-    transactionId: z.string().describe("Transaction ID"),
-  }).describe("Token usage information"),
-  finishReason: z.string().optional().describe(
-    "Reason why generation finished",
-  ),
+  usage: z
+    .object({
+      promptTokens: z.number().describe("Number of tokens in the prompt"),
+      completionTokens: z
+        .number()
+        .describe("Number of tokens in the completion"),
+      totalTokens: z.number().describe("Total number of tokens used"),
+      transactionId: z.string().describe("Transaction ID"),
+    })
+    .describe("Token usage information"),
+  finishReason: z
+    .string()
+    .optional()
+    .describe("Reason why generation finished"),
 });
 
 export const aiGenerate = createTool({
@@ -174,7 +193,7 @@ export const aiGenerate = createTool({
             ...msg,
             id: msg.id || crypto.randomUUID(),
           },
-        })
+        }),
       ),
     );
 
@@ -191,15 +210,19 @@ export const aiGenerate = createTool({
       model: modelId,
       modelId,
       plan,
-      userId: typeof c.user.id === "string"
-        ? c.user.id
-        : `apikey-${c.workspace.value}`,
+      userId:
+        typeof c.user.id === "string"
+          ? c.user.id
+          : `apikey-${c.workspace.value}`,
       workspace: c.workspace.value,
     });
 
-    const response = await wallet["POST /transactions"]({}, {
-      body: transaction,
-    });
+    const response = await wallet["POST /transactions"](
+      {},
+      {
+        body: transaction,
+      },
+    );
 
     if (!response.ok) {
       console.error(

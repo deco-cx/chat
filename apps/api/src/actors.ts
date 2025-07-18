@@ -1,4 +1,5 @@
 export { AIAgent, Trigger };
+
 import { AIAgent as _AIAgent, Trigger as _Trigger } from "@deco/ai/actors";
 import { instrumentDO } from "@deco/sdk/observability";
 

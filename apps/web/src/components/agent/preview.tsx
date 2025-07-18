@@ -1,3 +1,4 @@
+import type { Agent } from "@deco/sdk";
 import {
   type DetailedHTMLProps,
   type IframeHTMLAttributes,
@@ -5,7 +6,6 @@ import {
 } from "react";
 import { ALLOWANCES } from "../../constants.ts";
 import { IMAGE_REGEXP } from "../chat/utils/preview.ts";
-import type { Agent } from "@deco/sdk";
 import type { Tab } from "../dock/index.tsx";
 
 type Props = DetailedHTMLProps<
@@ -68,11 +68,11 @@ export function useTabsForAgent(
     // If we have views, close all base tabs so only the first view is open
     const tabs = hasViews
       ? Object.fromEntries(
-        Object.entries(baseTabs).map(([key, tab]) => [
-          key,
-          { ...tab, initialOpen: false },
-        ]),
-      )
+          Object.entries(baseTabs).map(([key, tab]) => [
+            key,
+            { ...tab, initialOpen: false },
+          ]),
+        )
       : { ...baseTabs };
 
     // Insert view tabs after chat tab

@@ -1,5 +1,5 @@
-import { createPortal } from "react-dom";
 import { type ReactNode, type ReactPortal, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Same thing as React.createPortal, but prepends

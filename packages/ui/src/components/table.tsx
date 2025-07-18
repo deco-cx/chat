@@ -1,8 +1,7 @@
 "use client";
 
-import type * as React from "react";
-
 import { cn } from "@deco/ui/lib/utils.ts";
+import type * as React from "react";
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (

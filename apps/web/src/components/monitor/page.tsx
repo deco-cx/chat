@@ -1,7 +1,7 @@
+import AuditList from "../audit/list.tsx";
 import type { Tab } from "../dock/index.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
 import UsageSettings from "../settings/usage.tsx";
-import AuditList from "../audit/list.tsx";
 
 const TABS: Record<string, Tab> = {
   usage: {

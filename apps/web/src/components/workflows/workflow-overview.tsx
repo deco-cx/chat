@@ -55,9 +55,7 @@ function WorkflowStatsChart({ stats }: { stats: WorkflowStats }) {
         <span className="text-lg font-bold text-foreground leading-none">
           {stats.totalRuns}
         </span>
-        <span className="text-xs text-muted-foreground leading-none">
-          runs
-        </span>
+        <span className="text-xs text-muted-foreground leading-none">runs</span>
       </div>
     </div>
   );
@@ -155,7 +153,10 @@ function WorkflowStatsCard({ stats }: { stats: WorkflowStats }) {
   );
 }
 
-function WorkflowRunsTable({ runs, onRunClick }: {
+function WorkflowRunsTable({
+  runs,
+  onRunClick,
+}: {
   runs: WorkflowRun[];
   onRunClick: (run: WorkflowRun) => void;
 }) {
@@ -318,15 +319,15 @@ function WorkflowOverviewTab() {
                 <Icon
                   name="refresh"
                   size={16}
-                  className={(isRefetchingAllRuns || isRefetchingInstances)
-                    ? "animate-spin"
-                    : ""}
+                  className={
+                    isRefetchingAllRuns || isRefetchingInstances
+                      ? "animate-spin"
+                      : ""
+                  }
                 />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              Refresh
-            </TooltipContent>
+            <TooltipContent>Refresh</TooltipContent>
           </Tooltip>
         </div>
 
@@ -345,32 +346,26 @@ function WorkflowOverviewTab() {
 
           {/* Content */}
           <div className="flex-1 min-h-0 overflow-hidden">
-            {paginatedRuns.length === 0
-              ? (
-                <div className="flex items-center justify-center h-full text-center text-muted-foreground">
-                  <div className="space-y-4">
-                    <Icon
-                      name="work"
-                      size={48}
-                      className="mx-auto opacity-50"
-                    />
-                    <div className="space-y-2">
-                      <p className="text-lg font-medium">No runs found</p>
-                      <p className="text-sm">
-                        This workflow hasn't been executed yet.
-                      </p>
-                    </div>
+            {paginatedRuns.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                <div className="space-y-4">
+                  <Icon name="work" size={48} className="mx-auto opacity-50" />
+                  <div className="space-y-2">
+                    <p className="text-lg font-medium">No runs found</p>
+                    <p className="text-sm">
+                      This workflow hasn't been executed yet.
+                    </p>
                   </div>
                 </div>
-              )
-              : (
-                <div className="h-full overflow-auto">
-                  <WorkflowRunsTable
-                    runs={paginatedRuns}
-                    onRunClick={handleRunClick}
-                  />
-                </div>
-              )}
+              </div>
+            ) : (
+              <div className="h-full overflow-auto">
+                <WorkflowRunsTable
+                  runs={paginatedRuns}
+                  onRunClick={handleRunClick}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -16,7 +16,6 @@ export interface Option {
   type: "category" | "option";
   label: string;
   icon?: string;
-  // deno-lint-ignore no-explicit-any
   handle?: (props: { editor: Editor; command: (props: any) => void }) => void;
   tooltip?: string | React.ReactNode;
   children?: Option[];
@@ -25,7 +24,6 @@ export interface Option {
 interface Props {
   items: Option[];
   editor: Editor;
-  // deno-lint-ignore no-explicit-any
   command: (props: any) => void;
   range: Range;
   ref: Ref<unknown>;
@@ -35,7 +33,10 @@ interface Props {
 function FormattingTooltip({
   children,
   label,
-}: { children: React.ReactNode; label: string }) {
+}: {
+  children: React.ReactNode;
+  label: string;
+}) {
   return (
     <div className="flex flex-col gap-2 min-w-40">
       <p className="text-sm font-medium">{label}</p>
@@ -59,11 +60,9 @@ export default function MentionDropdown({
 
   const currentCategory: Option[] = useMemo(() => {
     if (selectedCategory) {
-      const category = defaultOptions.flatMap((category) =>
-        category.children ?? []
-      ).find(
-        (option) => option.id === selectedCategory,
-      );
+      const category = defaultOptions
+        .flatMap((category) => category.children ?? [])
+        .find((option) => option.id === selectedCategory);
 
       if (category) {
         return [category];
@@ -71,8 +70,8 @@ export default function MentionDropdown({
     }
 
     if (query) {
-      return defaultOptions.flatMap((category) =>
-        category.children?.map((option) => option) ?? []
+      return defaultOptions.flatMap(
+        (category) => category.children?.map((option) => option) ?? [],
       );
     }
 
@@ -257,7 +256,7 @@ export default function MentionDropdown({
     onKeyDown: ({ event }: { event: KeyboardEvent }) => {
       if (event.key === "ArrowUp") {
         setSelected((prev) =>
-          prev === null ? 0 : (prev - 1 + items.length) % items.length
+          prev === null ? 0 : (prev - 1 + items.length) % items.length,
         );
         return true;
       }
@@ -308,18 +307,17 @@ export default function MentionDropdown({
           <span className="text-xs text-muted-foreground font-medium px-2 py-1.5">
             {category.label}
           </span>
-          {category.children?.length
-            ? category.children.map((item) => {
+          {category.children?.length ? (
+            category.children.map((item) => {
               return (
-                <Tooltip open={isSelected(item)}>
+                <Tooltip key={item.id} open={isSelected(item)}>
                   <TooltipTrigger asChild>
                     <Button
                       key={item.id}
                       onClick={() => handleOptionClick(item)}
                       variant="ghost"
                       size="sm"
-                      onMouseEnter={() =>
-                        handleMouseEnter(item)}
+                      onMouseEnter={() => handleMouseEnter(item)}
                       onMouseLeave={handleMouseLeave}
                       className={cn(
                         "w-full line-clamp-1 text-left justify-start flex gap-2 rounded-lg px-2 py-1.5 hover:bg-accent",
@@ -346,30 +344,31 @@ export default function MentionDropdown({
                       align="start"
                       side="right"
                     >
-                      {typeof item.tooltip === "string"
-                        ? (
-                          <>
-                            <div className="flex items-center justify-between gap-2 text-muted-foreground">
-                              <p className="font-medium text-xs px-3 italic mt-4 mb-2">
-                                Full prompt
-                              </p>
-                            </div>
-                            <div className="px-2.5 py-1.5 prose italic text-sm max-h-96 overflow-y-auto">
-                              <Markdown>{mentionToTag(item.tooltip)}</Markdown>
-                            </div>
-                          </>
-                        )
-                        : item.tooltip}
+                      {typeof item.tooltip === "string" ? (
+                        <>
+                          <div className="flex items-center justify-between gap-2 text-muted-foreground">
+                            <p className="font-medium text-xs px-3 italic mt-4 mb-2">
+                              Full prompt
+                            </p>
+                          </div>
+                          <div className="px-2.5 py-1.5 prose italic text-sm max-h-96 overflow-y-auto">
+                            <Markdown>{mentionToTag(item.tooltip)}</Markdown>
+                          </div>
+                        </>
+                      ) : (
+                        item.tooltip
+                      )}
                     </TooltipContent>
                   )}
                 </Tooltip>
               );
             })
-            : (
-              <span className="text-xs my-2 text-muted-foreground flex items-center justify-center gap-1">
-                <Icon name="quick_reference_all" size={14} />No results found
-              </span>
-            )}
+          ) : (
+            <span className="text-xs my-2 text-muted-foreground flex items-center justify-center gap-1">
+              <Icon name="quick_reference_all" size={14} />
+              No results found
+            </span>
+          )}
         </div>
       ))}
     </div>

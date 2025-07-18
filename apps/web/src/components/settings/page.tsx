@@ -2,9 +2,9 @@ import type { Tab } from "../dock/index.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
 import GeneralSettings from "./general.tsx";
 import MembersSettings from "./members.tsx";
-import WalletSettings from "./wallet.tsx";
-import UsageSettings from "./usage.tsx";
 import ModelsSettings from "./models.tsx";
+import UsageSettings from "./usage.tsx";
+import WalletSettings from "./wallet.tsx";
 
 const TABS: Record<string, Tab> = {
   general: {

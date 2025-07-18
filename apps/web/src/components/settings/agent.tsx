@@ -39,9 +39,13 @@ import { useCurrentTeam } from "../sidebar/team-selector.tsx";
 
 const AVATAR_FILE_PATH = "assets/avatars";
 
-function CopyLinkButton(
-  { className, link }: { className: string; link: string },
-) {
+function CopyLinkButton({
+  className,
+  link,
+}: {
+  className: string;
+  link: string;
+}) {
   const [isCopied, setIsCopied] = useState(false);
 
   return (
@@ -66,8 +70,8 @@ function CopyLinkButton(
 
 const useAvatarFilename = () => {
   const generate = (originalFile: File) => {
-    const extension = originalFile.name.split(".").pop()?.toLowerCase() ||
-      "png";
+    const extension =
+      originalFile.name.split(".").pop()?.toLowerCase() || "png";
     return `avatar-${crypto.randomUUID()}.${extension}`;
   };
 
@@ -83,12 +87,9 @@ export const useCurrentTeamRoles = () => {
 };
 
 function SettingsTab() {
-  const {
-    form,
-    agent,
-    handleSubmit,
-  } = useAgentSettingsForm();
+  const { form, agent, handleSubmit } = useAgentSettingsForm();
   const roles = useCurrentTeamRoles();
+  const { workspace } = useSDK();
 
   const writeFileMutation = useWriteFile();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -135,10 +136,7 @@ function SettingsTab() {
     <ScrollArea className="h-full w-full">
       <Form {...form}>
         <div className="h-full w-full p-4 max-w-3xl mx-auto">
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-6 py-2 pb-16"
-          >
+          <form onSubmit={handleSubmit} className="space-y-6 py-2 pb-16">
             <FormField
               name="name"
               render={({ field }) => (
@@ -162,30 +160,26 @@ function SettingsTab() {
                                 className="w-16 h-16 group aspect-square rounded-xl border flex flex-col items-center justify-center gap-1 cursor-pointer relative overflow-hidden"
                                 onClick={triggerFileInput}
                               >
-                                {isUploading
-                                  ? (
-                                    <Skeleton
-                                      className={cn(
-                                        "w-full h-full rounded-xl",
-                                      )}
+                                {isUploading ? (
+                                  <Skeleton
+                                    className={cn("w-full h-full rounded-xl")}
+                                  />
+                                ) : (
+                                  <>
+                                    <AgentAvatar
+                                      url={field.value || agent.avatar}
+                                      fallback={agent.name}
+                                      size="xl"
                                     />
-                                  )
-                                  : (
-                                    <>
-                                      <AgentAvatar
-                                        url={field.value || agent.avatar}
-                                        fallback={agent.name}
-                                        size="xl"
+                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                      <Icon
+                                        name="upload"
+                                        className="text-white text-xl"
                                       />
-                                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                        <Icon
-                                          name="upload"
-                                          className="text-white text-xl"
-                                        />
-                                      </div>
-                                      <Input type="hidden" {...field} />
-                                    </>
-                                  )}
+                                    </div>
+                                    <Input type="hidden" {...field} />
+                                  </>
+                                )}
                               </div>
                             </FormControl>
                           </div>
@@ -196,10 +190,7 @@ function SettingsTab() {
                     <div className="flex-1 flex flex-col gap-1">
                       <FormLabel>Name</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Enter agent name"
-                          {...field}
-                        />
+                        <Input placeholder="Enter agent name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </div>
@@ -274,7 +265,6 @@ function SettingsTab() {
             <FormField
               name="visibility"
               render={({ field }) => {
-                const { workspace } = useSDK();
                 const isPublic = field.value === "PUBLIC";
                 const publicLink = getPublicChatLink(agent.id, workspace);
 
@@ -361,9 +351,11 @@ function SettingsTab() {
                             {roles.map((role) => (
                               <SelectItem key={role.id} value={role.name}>
                                 <Icon
-                                  name={role.name === "owner"
-                                    ? "lock_person"
-                                    : "groups"}
+                                  name={
+                                    role.name === "owner"
+                                      ? "lock_person"
+                                      : "groups"
+                                  }
                                 />
                                 {role.name}
                               </SelectItem>
@@ -400,9 +392,7 @@ function SettingsTab() {
               )}
             />
 
-            <div className="border-t pt-6">
-              {/* <Channels /> */}
-            </div>
+            <div className="border-t pt-6">{/* <Channels /> */}</div>
           </form>
         </div>
       </Form>

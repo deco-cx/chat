@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSDK } from "./index.ts";
 import {
   createKnowledge,
   knowledgeAddFile,
@@ -8,6 +7,7 @@ import {
 } from "../crud/knowledge.ts";
 import type { Integration } from "../index.ts";
 import { KEYS } from "./api.ts";
+import { useSDK } from "./index.ts";
 
 const getConnectionUrl = ({ connection }: ForConnection) =>
   connection && "url" in connection ? connection.url : "";
@@ -20,9 +20,8 @@ export const useCreateKnowledge = () => {
   const { workspace } = useSDK();
 
   return useMutation({
-    mutationFn: ({ name }: {
-      name: string;
-    }) => createKnowledge({ workspace, name }),
+    mutationFn: ({ name }: { name: string }) =>
+      createKnowledge({ workspace, name }),
   });
 };
 
@@ -38,10 +37,13 @@ export const useKnowledgeAddFile = () => {
   const client = useQueryClient();
 
   return useMutation({
-    mutationFn: (
-      { fileUrl, metadata, path, filename, connection }:
-        AddFileToKnowledgeParams,
-    ) =>
+    mutationFn: ({
+      fileUrl,
+      metadata,
+      path,
+      filename,
+      connection,
+    }: AddFileToKnowledgeParams) =>
       knowledgeAddFile({
         workspace,
         fileUrl,
@@ -56,7 +58,7 @@ export const useKnowledgeAddFile = () => {
       client.cancelQueries({ queryKey: knowledgeFilesKey });
       client.setQueryData<Awaited<ReturnType<typeof knowledgeListFiles>>>(
         knowledgeFilesKey,
-        (old) => !old ? [fileResponse] : [fileResponse, ...old],
+        (old) => (!old ? [fileResponse] : [fileResponse, ...old]),
       );
     },
   });
@@ -80,7 +82,7 @@ export const useKnowledgeDeleteFile = () => {
       client.cancelQueries({ queryKey: knowledgeFilesKey });
       client.setQueryData<Awaited<ReturnType<typeof knowledgeListFiles>>>(
         knowledgeFilesKey,
-        (old) => !old ? [] : old.filter((file) => file.fileUrl !== fileUrl),
+        (old) => (!old ? [] : old.filter((file) => file.fileUrl !== fileUrl)),
       );
     },
   });
@@ -88,9 +90,7 @@ export const useKnowledgeDeleteFile = () => {
 
 interface KnowledgeListFilesParams extends ForConnection {}
 
-export const useKnowledgeListFiles = (
-  params: KnowledgeListFilesParams,
-) => {
+export const useKnowledgeListFiles = (params: KnowledgeListFilesParams) => {
   const { workspace } = useSDK();
   const { connection } = params;
   const connectionUrl = getConnectionUrl(params);

@@ -1,9 +1,9 @@
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from "./constants.ts";
 import {
   createServerClient,
   parseCookieHeader,
   serializeCookieHeader,
 } from "@supabase/ssr";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "./constants.ts";
 
 export function createClient(requestHeaders: Headers = new Headers()) {
   const cookies = parseCookieHeader(requestHeaders.get("cookie") ?? "");

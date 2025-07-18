@@ -12,8 +12,7 @@ export const updateAgent = async (workspace: string, agent: Agent) => {
   const agentRoot = `/${workspace}/Agents/${agent.id}`;
 
   // deno-lint-ignore no-explicit-any
-  const agentStub = stub<any>("AIAgent")
-    .new(agentRoot);
+  const agentStub = stub<any>("AIAgent").new(agentRoot);
 
   await agentStub.configure(agent);
 
@@ -24,10 +23,7 @@ export const updateAgent = async (workspace: string, agent: Agent) => {
  * Create a new agent
  * @returns The new agent
  */
-export const createAgent = (
-  workspace: string,
-  template: Partial<Agent> = {},
-) =>
+export const createAgent = (workspace: string, template: Partial<Agent> = {}) =>
   MCPClient.forWorkspace(workspace).AGENTS_CREATE({
     id: crypto.randomUUID(),
     ...template,
@@ -43,20 +39,13 @@ export const loadAgent = (
   agentId: string,
   signal?: AbortSignal,
 ): Promise<Agent> =>
-  MCPClient.forWorkspace(workspace)
-    .AGENTS_GET(
-      { id: agentId },
-      { signal },
-    );
+  MCPClient.forWorkspace(workspace).AGENTS_GET({ id: agentId }, { signal });
 
 export const listAgents = (
   workspace: string,
   signal?: AbortSignal,
 ): Promise<Agent[]> =>
-  MCPClient.forWorkspace(workspace).AGENTS_LIST(
-    {},
-    { signal },
-  );
+  MCPClient.forWorkspace(workspace).AGENTS_LIST({}, { signal });
 
 /**
  * Delete an agent from the file system

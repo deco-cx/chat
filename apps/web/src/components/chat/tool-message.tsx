@@ -29,7 +29,7 @@ const CUSTOM_UI_TOOLS = [
   "CONFIGURE",
   "AGENT_CREATE",
 ] as const;
-type CustomUITool = typeof CUSTOM_UI_TOOLS[number];
+type CustomUITool = (typeof CUSTOM_UI_TOOLS)[number];
 
 interface ToolInvocation {
   toolCallId: string;
@@ -48,7 +48,11 @@ function ToolStatus({
   tool,
   isLast,
   isSingle,
-}: { tool: ToolInvocation; isLast: boolean; isSingle: boolean }) {
+}: {
+  tool: ToolInvocation;
+  isLast: boolean;
+  isSingle: boolean;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showCopyButton, setShowCopyButton] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -190,7 +194,10 @@ function ToolStatus({
   );
 }
 
-function CustomToolUI({ tool, isLastMessage }: {
+function CustomToolUI({
+  tool,
+  isLastMessage,
+}: {
   tool: ToolInvocation;
   isLastMessage?: boolean;
 }) {
@@ -231,12 +238,12 @@ function CustomToolUI({ tool, isLastMessage }: {
     }
     case "SHOW_PICKER":
     case "CONFIRM": {
-      const options = (tool.result.options as ConfirmOption[]).map((
-        option,
-      ) => ({
-        id: option.value,
-        ...option,
-      }));
+      const options = (tool.result.options as ConfirmOption[]).map(
+        (option) => ({
+          id: option.value,
+          ...option,
+        }),
+      );
 
       return (
         <Picker

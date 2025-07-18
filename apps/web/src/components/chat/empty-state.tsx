@@ -65,11 +65,7 @@ EmptyState.UI = () => {
       <div className="flex flex-col items-center justify-center max-w-2xl mx-auto p-4 duration-300 transition-all">
         <div className="flex flex-col items-center gap-4 mb-6">
           <div className="w-12 h-12 flex items-center justify-center ">
-            <AgentAvatar
-              url={agent?.avatar}
-              fallback={agent?.name}
-              size="lg"
-            />
+            <AgentAvatar url={agent?.avatar} fallback={agent?.name} size="lg" />
           </div>
           <div className="flex flex-col items-center gap-4">
             <div className="flex items-center gap-2">

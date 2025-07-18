@@ -1,3 +1,4 @@
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
   getAgentsUsage,
   getThreadsUsage,
@@ -6,7 +7,6 @@ import {
 } from "../crud/wallet.ts";
 import { KEYS } from "./api.ts";
 import { useSDK } from "./store.tsx";
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 export function useWorkspaceWalletBalance() {
   const { workspace } = useSDK();

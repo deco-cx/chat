@@ -3,6 +3,7 @@ export * from "./assertions.ts";
 export { createResourceAccess } from "./auth/index.ts";
 export * from "./bindings/binder.ts";
 export * from "./context.ts";
+export { EMAIL_TOOLS } from "./email/api.ts";
 export {
   getPresignedReadUrl_WITHOUT_CHECKING_AUTHORIZATION,
   getWorkspaceBucketName,
@@ -11,30 +12,29 @@ export { HOSTING_APPS_DOMAIN } from "./hosting/api.ts";
 export * from "./models/llm-vault.ts";
 export * from "./wallet/stripe/webhook.ts";
 
-export { EMAIL_TOOLS } from "./email/api.ts";
-import * as agentsAPI from "./agents/api.ts";
 import * as agentAPI from "./agent/api.ts";
+import * as agentsAPI from "./agents/api.ts";
 import * as aiAPI from "./ai/api.ts";
 import * as apiKeysAPI from "./api-keys/api.ts";
 import * as channelsAPI from "./channels/api.ts";
 import { type AppContext, State, type Tool } from "./context.ts";
+import * as databasesAPI from "./databases/api.ts";
 import * as fsAPI from "./fs/api.ts";
 import * as hostingAPI from "./hosting/api.ts";
 import * as integrationsAPI from "./integrations/api.ts";
 import * as knowledgeAPI from "./knowledge/api.ts";
 import * as membersAPI from "./members/api.ts";
 import * as modelsAPI from "./models/api.ts";
+import * as oauthAPI from "./oauth/api.ts";
 import * as profilesAPI from "./profiles/api.ts";
 import * as promptsAPI from "./prompts/api.ts";
+import * as registryAPI from "./registry/api.ts";
 import type { CreateStubHandlerOptions, MCPClientStub } from "./stub.ts";
 import * as teamsAPI from "./teams/api.ts";
 import * as threadsAPI from "./threads/api.ts";
 import * as triggersAPI from "./triggers/api.ts";
 import * as walletAPI from "./wallet/api.ts";
 import * as whatsappAPI from "./whatsapp/api.ts";
-import * as databasesAPI from "./databases/api.ts";
-import * as registryAPI from "./registry/api.ts";
-import * as oauthAPI from "./oauth/api.ts";
 
 // Register tools for each API handler
 export const GLOBAL_TOOLS = [
@@ -168,9 +168,7 @@ export const AGENT_TOOLS = [
   agentAPI.agentListen,
 ] as const;
 
-export const AI_TOOLS = [
-  aiAPI.aiGenerate,
-] as const;
+export const AI_TOOLS = [aiAPI.aiGenerate] as const;
 
 export type GlobalTools = typeof GLOBAL_TOOLS;
 export type WorkspaceTools = typeof WORKSPACE_TOOLS;
@@ -186,20 +184,16 @@ export type ToolBinder<
   // deno-lint-ignore no-explicit-any
   TInput = any,
   TReturn extends object | null | boolean = object,
-> =
-  & Pick<
-    ToolLike<TName, TInput, TReturn>,
-    "name" | "inputSchema" | "outputSchema"
-  >
-  & { opt?: true };
+> = Pick<
+  ToolLike<TName, TInput, TReturn>,
+  "name" | "inputSchema" | "outputSchema"
+> & { opt?: true };
 
 const global = createMCPToolsStub({
   tools: GLOBAL_TOOLS,
 });
 
-export const createGlobalForContext = (
-  context?: AppContext,
-): typeof global => {
+export const createGlobalForContext = (context?: AppContext): typeof global => {
   return createMCPToolsStub({
     tools: GLOBAL_TOOLS,
     context,

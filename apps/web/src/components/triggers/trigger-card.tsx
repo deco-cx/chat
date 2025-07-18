@@ -1,15 +1,18 @@
 import type { TriggerOutput } from "@deco/sdk";
 import { Card, CardContent } from "@deco/ui/components/card.tsx";
-import { timeAgo } from "../../utils/time-ago.ts";
 import { useState } from "react";
-import { TriggerActions } from "./trigger-actions.tsx";
-import { TriggerType } from "./trigger-type.tsx";
-import { TriggerToggle } from "./trigger-toggle.tsx";
+import { timeAgo } from "../../utils/time-ago.ts";
 import { UserAvatar } from "../common/avatar/user.tsx";
+import { TriggerActions } from "./trigger-actions.tsx";
+import { TriggerToggle } from "./trigger-toggle.tsx";
+import { TriggerType } from "./trigger-type.tsx";
 
 export type Trigger = TriggerOutput;
 
-export function TriggerCard({ trigger, onClick }: {
+export function TriggerCard({
+  trigger,
+  onClick,
+}: {
   trigger: Trigger;
   onClick: (trigger: Trigger) => void;
 }) {
@@ -50,11 +53,7 @@ export function TriggerCard({ trigger, onClick }: {
         </div>
       </CardContent>
       <div className="absolute top-6 right-6">
-        <TriggerActions
-          trigger={trigger}
-          open={open}
-          onOpenChange={setOpen}
-        />
+        <TriggerActions trigger={trigger} open={open} onOpenChange={setOpen} />
       </div>
     </Card>
   );

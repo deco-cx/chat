@@ -29,7 +29,7 @@ const TABS: Record<string, Tab> = {
 };
 
 function truncate(title: string) {
-  return title.length > 20 ? title.slice(0, 20) + "..." : title;
+  return title.length > 20 ? `${title.slice(0, 20)}...` : title;
 }
 
 function Page() {
@@ -38,10 +38,7 @@ function Page() {
   const { data: { title } = {} } = useThread(id);
 
   return (
-    <ChatProvider
-      agentId={thread?.metadata?.agentId ?? id}
-      threadId={id}
-    >
+    <ChatProvider agentId={thread?.metadata?.agentId ?? id} threadId={id}>
       <PageLayout
         hideViewsButton
         tabs={TABS}

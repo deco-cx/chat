@@ -10,11 +10,7 @@ import PromptInput from "../rich-text/index.tsx";
 import { useFormContext } from "./context.ts";
 
 export function DetailForm() {
-  const {
-    onSubmit,
-    form,
-    prompt,
-  } = useFormContext();
+  const { onSubmit, form, prompt } = useFormContext();
 
   const isReadonly = prompt.readonly;
 

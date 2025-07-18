@@ -68,11 +68,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": [
-    "apps/**/*",
-    "packages/**/*",
-    "plugins/**/*"
-  ],
+  "include": ["apps/**/*", "packages/**/*", "plugins/**/*"],
   "exclude": [
     "node_modules",
     "apps/*/node_modules",

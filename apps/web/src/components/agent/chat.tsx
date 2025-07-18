@@ -16,6 +16,8 @@ import {
 } from "@deco/ui/components/tooltip.tsx";
 import { Suspense, useMemo } from "react";
 import { useParams } from "react-router";
+import { useDocumentMetadata } from "../../hooks/use-document-metadata.ts";
+import { isFilePath } from "../../utils/path.ts";
 import { useFocusChat } from "../agents/hooks.ts";
 import { ChatInput } from "../chat/chat-input.tsx";
 import { ChatMessages } from "../chat/chat-messages.tsx";
@@ -25,11 +27,9 @@ import { AgentBreadcrumbSegment } from "./breadcrumb-segment.tsx";
 import AgentPreview from "./preview.tsx";
 import ThreadView from "./thread.tsx";
 import { WhatsAppButton } from "./whatsapp-button.tsx";
-import { isFilePath } from "../../utils/path.ts";
-import { useDocumentMetadata } from "../../hooks/use-document-metadata.ts";
 
 export type WellKnownAgents =
-  typeof WELL_KNOWN_AGENT_IDS[keyof typeof WELL_KNOWN_AGENT_IDS];
+  (typeof WELL_KNOWN_AGENT_IDS)[keyof typeof WELL_KNOWN_AGENT_IDS];
 
 interface Props {
   agentId?: WellKnownAgents;
@@ -93,14 +93,13 @@ function ActionsButtons() {
               onClick={() =>
                 focusChat(agentId, crypto.randomUUID(), {
                   history: false,
-                })}
+                })
+              }
             >
               <Icon name="edit_square" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>
-            New chat
-          </TooltipContent>
+          <TooltipContent>New chat</TooltipContent>
         </Tooltip>
       )}
       {displaySettings && (
@@ -112,14 +111,13 @@ function ActionsButtons() {
               onClick={() =>
                 focusAgent(agentId, crypto.randomUUID(), {
                   history: false,
-                })}
+                })
+              }
             >
               <Icon name="tune" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>
-            Edit agent
-          </TooltipContent>
+          <TooltipContent>Edit agent</TooltipContent>
         </Tooltip>
       )}
     </div>
@@ -133,48 +131,52 @@ function Breadcrumb({ agentId }: { agentId: string }) {
 
   return (
     <DefaultBreadcrumb
-      items={[{
-        label: (
-          <>
-            <div className="hidden md:flex items-center gap-2">
-              <AgentBreadcrumbSegment agentId={agentId} />
-            </div>
-            <div className="md:hidden">
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-2">
-                  <AgentBreadcrumbSegment agentId={agentId} />
-                  <Icon name="arrow_drop_down" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem asChild>
-                    <WhatsAppButton isMobile />
-                  </DropdownMenuItem>
-                  {chat.messages.length !== 0 && (
+      items={[
+        {
+          label: (
+            <>
+              <div className="hidden md:flex items-center gap-2">
+                <AgentBreadcrumbSegment agentId={agentId} />
+              </div>
+              <div className="md:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="flex items-center gap-2">
+                    <AgentBreadcrumbSegment agentId={agentId} />
+                    <Icon name="arrow_drop_down" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem asChild>
+                      <WhatsAppButton isMobile />
+                    </DropdownMenuItem>
+                    {chat.messages.length !== 0 && (
+                      <DropdownMenuItem
+                        className="flex items-center gap-4"
+                        onClick={() =>
+                          focusChat(agentId, crypto.randomUUID(), {
+                            history: false,
+                          })
+                        }
+                      >
+                        <Icon name="edit_square" /> New chat
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       className="flex items-center gap-4"
                       onClick={() =>
-                        focusChat(agentId, crypto.randomUUID(), {
+                        focusAgent(agentId, crypto.randomUUID(), {
                           history: false,
-                        })}
+                        })
+                      }
                     >
-                      <Icon name="edit_square" /> New chat
+                      <Icon name="tune" /> Edit agent
                     </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    className="flex items-center gap-4"
-                    onClick={() =>
-                      focusAgent(agentId, crypto.randomUUID(), {
-                        history: false,
-                      })}
-                  >
-                    <Icon name="tune" /> Edit agent
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </>
-        ),
-      }]}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </>
+          ),
+        },
+      ]}
     />
   );
 }
@@ -187,7 +189,9 @@ function AgentMetadataUpdater({ agentId }: { agentId: string }) {
 
   // Compute favicon href, favouring resolved file URLs for local files.
   const faviconHref = isFilePath(agent?.avatar)
-    ? (typeof resolvedAvatar === "string" ? resolvedAvatar : undefined)
+    ? typeof resolvedAvatar === "string"
+      ? resolvedAvatar
+      : undefined
     : agent?.avatar;
 
   useDocumentMetadata({
@@ -198,25 +202,16 @@ function AgentMetadataUpdater({ agentId }: { agentId: string }) {
   return null;
 }
 
-function Page(props: Props) {
-  const params = useParams();
-  const agentId = useMemo(
-    () => props.agentId || params.id,
-    [props.agentId, params.id],
-  );
-
-  if (!agentId) {
-    return <div>Agent not found</div>;
-  }
-
-  const propThreadId = props.threadId || params.threadId;
-  const threadId = useMemo(
-    () => propThreadId || agentId,
-    [propThreadId, agentId],
-  );
-
+function AgentChatContent({
+  agentId,
+  threadId,
+  showThreadMessages,
+}: {
+  agentId: string;
+  threadId: string;
+  showThreadMessages?: boolean;
+}) {
   const chatKey = useMemo(() => `${agentId}-${threadId}`, [agentId, threadId]);
-
   return (
     <Suspense
       // This make the react render fallback when changin agent+threadid, instead of hang the whole navigation while the subtree isn't changed
@@ -232,7 +227,7 @@ function Page(props: Props) {
         threadId={threadId}
         uiOptions={{
           showThreadTools: agentId === WELL_KNOWN_AGENT_IDS.teamAgent,
-          showThreadMessages: props.showThreadMessages ?? true,
+          showThreadMessages: showThreadMessages ?? true,
         }}
       >
         <AgentMetadataUpdater agentId={agentId} />
@@ -240,12 +235,36 @@ function Page(props: Props) {
           tabs={TABS}
           key={agentId}
           actionButtons={<ActionsButtons />}
-          breadcrumb={agentId !== WELL_KNOWN_AGENT_IDS.teamAgent && (
-            <Breadcrumb agentId={agentId} />
-          )}
+          breadcrumb={
+            agentId !== WELL_KNOWN_AGENT_IDS.teamAgent && (
+              <Breadcrumb agentId={agentId} />
+            )
+          }
         />
       </ChatProvider>
     </Suspense>
+  );
+}
+
+function Page(props: Props) {
+  const params = useParams();
+  const propThreadId = props.threadId || params.threadId;
+
+  const agentId = useMemo(
+    () => props.agentId || params.id,
+    [props.agentId, params.id],
+  );
+
+  if (!agentId) {
+    return <div>Agent not found</div>;
+  }
+
+  return (
+    <AgentChatContent
+      agentId={agentId}
+      threadId={propThreadId ?? agentId}
+      showThreadMessages={props.showThreadMessages}
+    />
   );
 }
 

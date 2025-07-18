@@ -1,5 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 export * from "./src/actors.ts";
+
+import { env } from "cloudflare:workers";
 import { contextStorage } from "@deco/sdk/fetch";
 import { Hosts } from "@deco/sdk/hosts";
 import { instrument } from "@deco/sdk/observability";
@@ -7,7 +9,6 @@ import { getRuntimeKey } from "hono/adapter";
 import { default as app } from "./src/app.ts";
 import { email } from "./src/email.ts";
 import { KbFileProcessorWorkflow } from "./src/workflows/kb-file-processor-workflow.ts";
-import { env } from "cloudflare:workers";
 
 // Choose instrumented app depending on runtime
 const instrumentedApp = getRuntimeKey() === "deno" ? app : instrument(app);
@@ -16,7 +17,7 @@ const instrumentedApp = getRuntimeKey() === "deno" ? app : instrument(app);
 const SELF_DOMAINS: string[] = [
   Hosts.API,
   // @ts-expect-error env is not typed
-  ...env.VITE_USE_LOCAL_BACKEND ? [] : [Hosts.APPS],
+  ...(env.VITE_USE_LOCAL_BACKEND ? [] : [Hosts.APPS]),
   // @ts-expect-error env is not typed
   `localhost:${env.PORT || 8000}`,
 ];
@@ -57,6 +58,7 @@ globalThis.fetch = async function patchedFetch(
       throw new Error("Missing context for internal self-invocation");
     }
     // Delegate to internal handler
+    // biome-ignore lint/style/noNonNullAssertion: should always work
     return await instrumentedApp.fetch!(
       req as Request<unknown, IncomingRequestCfProperties<unknown>>,
       context.env,
@@ -70,12 +72,9 @@ globalThis.fetch = async function patchedFetch(
 // Default export that wraps app with per-request context initializer
 export default {
   email,
-  fetch(
-    request: Request,
-    env: any,
-    ctx: ExecutionContext,
-  ): Promise<Response> {
+  fetch(request: Request, env: any, ctx: ExecutionContext): Promise<Response> {
     return contextStorage.run({ env, ctx }, async () => {
+      // biome-ignore lint/style/noNonNullAssertion: should always work
       return await instrumentedApp.fetch!(
         request as Request<unknown, IncomingRequestCfProperties<unknown>>,
         env,

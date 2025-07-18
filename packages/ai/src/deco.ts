@@ -64,33 +64,21 @@ export function dereferenceSchema(
   // Handle allOf
   if (result.allOf) {
     result.allOf = result.allOf.map((subSchema: any) =>
-      dereferenceSchema(
-        subSchema as JSONSchema7,
-        definitions,
-        visited,
-      )
+      dereferenceSchema(subSchema as JSONSchema7, definitions, visited),
     ) as JSONSchema7[];
   }
 
   // Handle anyOf
   if (result.anyOf) {
     result.anyOf = result.anyOf.map((subSchema: any) =>
-      dereferenceSchema(
-        subSchema as JSONSchema7,
-        definitions,
-        visited,
-      )
+      dereferenceSchema(subSchema as JSONSchema7, definitions, visited),
     ) as JSONSchema7[];
   }
 
   // Handle oneOf
   if (result.oneOf) {
     result.oneOf = result.oneOf.map((subSchema: any) =>
-      dereferenceSchema(
-        subSchema as JSONSchema7,
-        definitions,
-        visited,
-      )
+      dereferenceSchema(subSchema as JSONSchema7, definitions, visited),
     ) as JSONSchema7[];
   }
 
@@ -122,97 +110,86 @@ export function dereferenceSchema(
   return result;
 }
 
-export const getTools = (
-  schemas?: any,
-): Tool[] => {
+export const getTools = (schemas?: any): Tool[] => {
   const toolNames = new Map<string, string>();
   if (!schemas) return [];
 
   const loaders = schemas?.root.loaders ?? { anyOf: [] };
   const actions = schemas?.root.actions ?? { anyOf: [] };
-  const availableLoaders = "anyOf" in loaders ? loaders.anyOf ?? [] : [];
-  const availableActions = "anyOf" in actions ? actions.anyOf ?? [] : [];
+  const availableLoaders = "anyOf" in loaders ? (loaders.anyOf ?? []) : [];
+  const availableActions = "anyOf" in actions ? (actions.anyOf ?? []) : [];
 
-  const tools = [...availableLoaders, ...availableActions].map(
-    (func) => {
-      func = func as RootSchema;
-      if (!func.$ref || func.$ref === RESOLVABLE_DEFINITION) return;
-      const funcDefinition = schemas.definitions[idFromDefinition(func.$ref)];
-      const resolveType =
-        (funcDefinition.properties?.__resolveType as { default: string })
-          .default;
+  const tools = [...availableLoaders, ...availableActions].map((func) => {
+    func = func as RootSchema;
+    if (!func.$ref || func.$ref === RESOLVABLE_DEFINITION) return;
+    const funcDefinition = schemas.definitions[idFromDefinition(func.$ref)];
+    const resolveType = (
+      funcDefinition.properties?.__resolveType as { default: string }
+    ).default;
 
-      const getInputSchemaId = () => {
-        if ("inputSchema" in func) {
-          return func.inputSchema as string;
-        }
-        const props = funcDefinition.allOf ?? [];
-        const propsSchema = props[0];
-        const ref = (propsSchema as JSONSchema7)?.$ref;
-        return ref;
-      };
-
-      const ref = getInputSchemaId();
-      const rawInputSchema = ref
-        ? schemas.definitions[idFromDefinition(ref)]
-        : undefined;
-
-      // Dereference the input schema
-      const inputSchema = rawInputSchema
-        ? dereferenceSchema(
-          rawInputSchema as JSONSchema7,
-          schemas.definitions,
-        )
-        : undefined;
-
-      const outputSchemaId = "outputSchema" in func
-        ? func.outputSchema as string
-        : undefined;
-
-      const rawOutputSchema = outputSchemaId
-        ? schemas.definitions[idFromDefinition(outputSchemaId)]
-        : undefined;
-
-      const selfReference = (rawOutputSchema?.anyOf ?? [])[0];
-
-      const outputSchema = selfReference
-        ? dereferenceSchema(
-          selfReference as JSONSchema7,
-          schemas.definitions,
-        )
-        : undefined;
-
-      // Handle tool name slugification and clashes
-      let toolName = (funcDefinition as { name?: string })?.name ??
-        (inputSchema as { name?: string })?.name ?? slugify(resolveType);
-      let idx = 1;
-
-      while (
-        toolNames.has(toolName) && toolNames.get(toolName) !== resolveType
-      ) {
-        toolName = `${toolName}-${idx}`;
-        idx++;
+    const getInputSchemaId = () => {
+      if ("inputSchema" in func) {
+        return func.inputSchema as string;
       }
-      toolNames.set(toolName, resolveType);
+      const props = funcDefinition.allOf ?? [];
+      const propsSchema = props[0];
+      const ref = (propsSchema as JSONSchema7)?.$ref;
+      return ref;
+    };
 
-      const normalizeSchema = (schema?: JSONSchema7): JSONSchema7 => {
-        return schema && "type" in schema && schema.type === "object"
-          ? schema
-          : {
+    const ref = getInputSchemaId();
+    const rawInputSchema = ref
+      ? schemas.definitions[idFromDefinition(ref)]
+      : undefined;
+
+    // Dereference the input schema
+    const inputSchema = rawInputSchema
+      ? dereferenceSchema(rawInputSchema as JSONSchema7, schemas.definitions)
+      : undefined;
+
+    const outputSchemaId =
+      "outputSchema" in func ? (func.outputSchema as string) : undefined;
+
+    const rawOutputSchema = outputSchemaId
+      ? schemas.definitions[idFromDefinition(outputSchemaId)]
+      : undefined;
+
+    const selfReference = (rawOutputSchema?.anyOf ?? [])[0];
+
+    const outputSchema = selfReference
+      ? dereferenceSchema(selfReference as JSONSchema7, schemas.definitions)
+      : undefined;
+
+    // Handle tool name slugification and clashes
+    let toolName =
+      (funcDefinition as { name?: string })?.name ??
+      (inputSchema as { name?: string })?.name ??
+      slugify(resolveType);
+    let idx = 1;
+
+    while (toolNames.has(toolName) && toolNames.get(toolName) !== resolveType) {
+      toolName = `${toolName}-${idx}`;
+      idx++;
+    }
+    toolNames.set(toolName, resolveType);
+
+    const normalizeSchema = (schema?: JSONSchema7): JSONSchema7 => {
+      return schema && "type" in schema && schema.type === "object"
+        ? schema
+        : {
             type: "object",
             additionalProperties: true,
           };
-      };
-      return {
-        name: toolName,
-        resolveType,
-        description: funcDefinition.description ?? inputSchema?.description ??
-          resolveType,
-        outputSchema: normalizeSchema(outputSchema),
-        inputSchema: normalizeSchema(inputSchema),
-      };
-    },
-  );
+    };
+    return {
+      name: toolName,
+      resolveType,
+      description:
+        funcDefinition.description ?? inputSchema?.description ?? resolveType,
+      outputSchema: normalizeSchema(outputSchema),
+      inputSchema: normalizeSchema(inputSchema),
+    };
+  });
 
   return tools.filter((tool) => tool !== undefined);
 };

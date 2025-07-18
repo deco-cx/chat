@@ -1,14 +1,14 @@
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deco/ui/components/tooltip.tsx";
 import { Table, type TableColumn } from "../common/table/index.tsx";
 import {
   AgentInfo,
   DateTimeCell,
   UserInfo,
 } from "../common/table/table-cells.tsx";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@deco/ui/components/tooltip.tsx";
 
 type Thread = {
   id: string;
@@ -27,21 +27,25 @@ interface AuditTableProps {
   columnsDenyList?: Set<string>;
 }
 
-function getSortKeyAndDirection(
-  sort: string,
-): { key: string; direction: "asc" | "desc" } {
+function getSortKeyAndDirection(sort: string): {
+  key: string;
+  direction: "asc" | "desc";
+} {
   if (sort.endsWith("_asc")) {
     return { key: sort.replace(/_asc$/, ""), direction: "asc" };
   }
   return { key: sort.replace(/_desc$/, ""), direction: "desc" };
 }
 
-export function AuditTable(
-  { threads, sort, onSortChange, onRowClick, columnsDenyList }: AuditTableProps,
-) {
-  const { key: sortKey, direction: sortDirection } = getSortKeyAndDirection(
-    sort,
-  );
+export function AuditTable({
+  threads,
+  sort,
+  onSortChange,
+  onRowClick,
+  columnsDenyList,
+}: AuditTableProps) {
+  const { key: sortKey, direction: sortDirection } =
+    getSortKeyAndDirection(sort);
 
   const columns: TableColumn<(typeof threads)[number]>[] = [
     {
@@ -60,9 +64,7 @@ export function AuditTable(
       id: "agent",
       header: "Agent",
       accessor: (cell: Thread) => (
-        <AgentInfo
-          agentId={cell.metadata?.agentId}
-        />
+        <AgentInfo agentId={cell.metadata?.agentId} />
       ),
     },
     {

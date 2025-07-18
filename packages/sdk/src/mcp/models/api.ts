@@ -34,7 +34,7 @@ const formatModelRow = (model: ModelRow, showApiKey = false): Model => {
     byDeco: model.by_deco,
     isEnabled: model.is_enabled,
     hasCustomKey: !!model.api_key_hash,
-    apiKeyEncrypted: showApiKey ? model.api_key_hash ?? undefined : undefined,
+    apiKeyEncrypted: showApiKey ? (model.api_key_hash ?? undefined) : undefined,
   };
 };
 
@@ -52,8 +52,7 @@ export type CreateModelInput = z.infer<typeof createModelSchema>;
 const createTool = createToolGroup("Model", {
   name: "Model Management",
   description: "Configure custom language models.",
-  icon:
-    "https://assets.decocache.com/mcp/8d655881-941f-4b5b-8c30-5cf80bd00c9e/Model-Management.png",
+  icon: "https://assets.decocache.com/mcp/8d655881-941f-4b5b-8c30-5cf80bd00c9e/Model-Management.png",
 });
 
 export const createModel = createTool({
@@ -66,11 +65,16 @@ export const createModel = createTool({
 
     await assertWorkspaceResourceAccess(c.tool.name, c);
 
-    const { name: modelName, model, apiKey, byDeco, description, isEnabled } =
-      props;
+    const {
+      name: modelName,
+      model,
+      apiKey,
+      byDeco,
+      description,
+      isEnabled,
+    } = props;
 
-    const { data, error } = await c
-      .db
+    const { data, error } = await c.db
       .from("models")
       .insert({
         workspace,
@@ -158,8 +162,8 @@ export const updateModel = createTool({
 
     // User is re-enabling a managed model, so we can just remove the db entry
     if (updateData.by_deco && updateData.is_enabled) {
-      const wellKnownModel = WELL_KNOWN_MODELS.find((knownModel) =>
-        knownModel.model === updateData.model
+      const wellKnownModel = WELL_KNOWN_MODELS.find(
+        (knownModel) => knownModel.model === updateData.model,
       );
 
       if (!wellKnownModel) {
@@ -175,8 +179,7 @@ export const updateModel = createTool({
       return wellKnownModel;
     }
 
-    const { data, error } = await c
-      .db
+    const { data, error } = await c.db
       .from("models")
       .update(updateData)
       .eq("id", id)
@@ -338,8 +341,7 @@ export const getModel = createTool({
       return defaultModel;
     }
 
-    const { data, error } = await c
-      .db
+    const { data, error } = await c.db
       .from("models")
       .select(`
         id,

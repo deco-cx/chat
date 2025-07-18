@@ -4,8 +4,9 @@ import { instrumentServiceBinding } from "./service.ts";
 
 const isJSRPC = (item?: unknown): item is Service => {
   // @ts-expect-error The point of RPC types is to block non-existent properties, but that's the goal here
-  return !!(item as Service)
-    ?.["__some_property_that_will_never_exist" + Math.random()];
+  return !!(item as Service)?.[
+    "__some_property_that_will_never_exist" + Math.random()
+  ];
 };
 
 export const isVersionMetadata = (

@@ -1,21 +1,23 @@
-// deno-lint-ignore-file no-explicit-any
-import { useState } from "react";
 import { Button } from "@deco/ui/components/button.tsx";
-import { Input } from "@deco/ui/components/input.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
+import { Input } from "@deco/ui/components/input.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
+import { useState } from "react";
 
-interface PasswordInputProps {
+interface PasswordInputProps extends React.ComponentProps<typeof Input> {
   value?: string;
-  onChange?: (e: any) => void;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   className?: string;
-  [key: string]: any;
 }
 
-function PasswordInput(
-  { value, onChange, placeholder, className, ...props }: PasswordInputProps,
-) {
+function PasswordInput({
+  value,
+  onChange,
+  placeholder,
+  className,
+  ...props
+}: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
@@ -68,10 +70,7 @@ function PasswordInput(
           disabled={!value}
           title={copySuccess ? "Copied!" : "Copy token"}
         >
-          <Icon
-            name={copySuccess ? "check" : "content_copy"}
-            size={16}
-          />
+          <Icon name={copySuccess ? "check" : "content_copy"} size={16} />
         </Button>
       </div>
     </div>

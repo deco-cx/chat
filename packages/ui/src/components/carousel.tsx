@@ -1,13 +1,12 @@
 "use client";
 
-import * as React from "react";
+import { Button } from "@deco/ui/components/button.tsx";
+import { cn } from "@deco/ui/lib/utils.ts";
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from "embla-carousel-react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-
-import { cn } from "@deco/ui/lib/utils.ts";
-import { Button } from "@deco/ui/components/button.tsx";
+import * as React from "react";
 
 type CarouselApi = UseEmblaCarouselType[1];
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
@@ -110,8 +109,8 @@ function Carousel({
         carouselRef,
         api: api,
         opts,
-        orientation: orientation ||
-          (opts?.axis === "y" ? "vertical" : "horizontal"),
+        orientation:
+          orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
         scrollPrev,
         scrollNext,
         canScrollPrev,

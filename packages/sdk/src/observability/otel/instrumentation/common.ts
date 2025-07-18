@@ -91,9 +91,10 @@ export type Overloads<T> = T extends {
   (...args: infer P2): infer R2;
   (...args: infer P3): infer R3;
   (...args: infer P4): infer R4;
-} ?
-    | ((...args: P1) => R1)
-    | ((...args: P2) => R2)
-    | ((...args: P3) => R3)
-    | ((...args: P4) => R4)
+}
+  ?
+      | ((...args: P1) => R1)
+      | ((...args: P2) => R2)
+      | ((...args: P3) => R3)
+      | ((...args: P4) => R4)
   : never;

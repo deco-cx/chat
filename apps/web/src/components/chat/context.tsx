@@ -1,5 +1,6 @@
 import type { LanguageModelV1FinishReason } from "@ai-sdk/provider";
 import { useChat } from "@ai-sdk/react";
+import type { Toolset } from "@deco/ai";
 import {
   DECO_CHAT_API,
   dispatchMessages,
@@ -19,7 +20,6 @@ import {
 import { trackEvent } from "../../hooks/analytics.ts";
 import { useUserPreferences } from "../../hooks/use-user-preferences.ts";
 import { IMAGE_REGEXP, openPreviewPanel } from "./utils/preview.ts";
-import type { Toolset } from "@deco/ai";
 
 const setAutoScroll = (e: HTMLDivElement | null, enabled: boolean) => {
   if (!e) return;
@@ -79,15 +79,14 @@ export function ChatProvider({
   children,
   toolsets,
 }: PropsWithChildren<Props>) {
-  const [finishReason, setFinishReason] = useState<
-    LanguageModelV1FinishReason | null
-  >(null);
+  const [finishReason, setFinishReason] =
+    useState<LanguageModelV1FinishReason | null>(null);
   const agentRoot = useAgentRoot(agentId);
   const scrollRef = useRef<HTMLDivElement>(null);
   const options = { ...DEFAULT_UI_OPTIONS, ...uiOptions };
-  const { data: initialMessages } = !options.showThreadMessages
-    ? { data: undefined }
-    : useThreadMessages(threadId);
+  const { data: initialMessages } = useThreadMessages(threadId, {
+    enabled: options.showThreadMessages,
+  });
 
   const { preferences } = useUserPreferences();
   const { data: agent } = useAgent(agentId);
@@ -96,7 +95,7 @@ export function ChatProvider({
 
   const chat = useChat({
     initialInput,
-    initialMessages: initialMessages || [],
+    initialMessages: initialMessages,
     credentials: "include",
     headers: {
       "x-deno-isolate-instance-id": agentRoot,
@@ -110,7 +109,7 @@ export function ChatProvider({
       /** Add annotation so we can use the file URL as a parameter to a tool call */
       if (lastMessage) {
         lastMessage.annotations =
-          lastMessage?.["experimental_attachments"]?.map((attachment) => ({
+          lastMessage?.experimental_attachments?.map((attachment) => ({
             type: "file",
             url: attachment.url,
             name: attachment.name ?? "unknown file",
@@ -124,20 +123,24 @@ export function ChatProvider({
 
       return {
         metadata: { threadId: threadId ?? agentId },
-        args: [[lastMessage], {
-          model: options.showModelSelector // use the agent model if selector is not shown on the UI
-            ? preferences.defaultModel
-            : agent?.model,
-          instructions: agent?.instructions,
-          bypassOpenRouter,
-          sendReasoning: preferences.sendReasoning ?? true,
-          tools: agent?.tools_set,
-          maxSteps: agent?.max_steps,
-          toolsets,
-          smoothStream: preferences.smoothStream !== false
-            ? { delayInMs: 25, chunk: "word" }
-            : undefined,
-        }],
+        args: [
+          [lastMessage],
+          {
+            model: options.showModelSelector // use the agent model if selector is not shown on the UI
+              ? preferences.defaultModel
+              : agent?.model,
+            instructions: agent?.instructions,
+            bypassOpenRouter,
+            sendReasoning: preferences.sendReasoning ?? true,
+            tools: agent?.tools_set,
+            maxSteps: agent?.max_steps,
+            toolsets,
+            smoothStream:
+              preferences.smoothStream !== false
+                ? { delayInMs: 25, chunk: "word" }
+                : undefined,
+          },
+        ],
       };
     },
     onFinish: (_result, { finishReason }) => {
@@ -156,11 +159,7 @@ export function ChatProvider({
         const isImageLike = content && IMAGE_REGEXP.test(content);
 
         if (!isImageLike) {
-          openPreviewPanel(
-            `preview-${toolCall.toolCallId}`,
-            content,
-            title,
-          );
+          openPreviewPanel(`preview-${toolCall.toolCallId}`, content, title);
         }
 
         return {
@@ -184,7 +183,7 @@ export function ChatProvider({
           toolInvocations: msg.toolInvocations?.filter(
             (tool) => tool.toolCallId !== toolCallId,
           ),
-        }))
+        })),
       );
 
       await chat.append({ role: "user", content: selectedValue });
@@ -192,8 +191,8 @@ export function ChatProvider({
   };
 
   const handleRetry = async (context?: string[]) => {
-    const lastUserMessage = chat.messages.findLast((msg) =>
-      msg.role === "user"
+    const lastUserMessage = chat.messages.findLast(
+      (msg) => msg.role === "user",
     );
 
     if (!lastUserMessage) return;

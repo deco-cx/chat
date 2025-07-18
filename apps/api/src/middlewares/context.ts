@@ -8,26 +8,15 @@ export const withContextMiddleware: MiddlewareHandler<AppEnv> = async (
   ctx,
   next,
 ) => {
-  const {
-    SUPABASE_URL,
-    SUPABASE_SERVER_TOKEN,
-    CF_API_TOKEN,
-  } = getEnv(honoCtxToAppCtx(ctx));
-
-  ctx.set(
-    "db",
-    getServerClient(SUPABASE_URL, SUPABASE_SERVER_TOKEN),
+  const { SUPABASE_URL, SUPABASE_SERVER_TOKEN, CF_API_TOKEN } = getEnv(
+    honoCtxToAppCtx(ctx),
   );
 
-  ctx.set(
-    "cf",
-    new Cloudflare({ apiToken: CF_API_TOKEN }),
-  );
+  ctx.set("db", getServerClient(SUPABASE_URL, SUPABASE_SERVER_TOKEN));
 
-  ctx.set(
-    "resourceAccess",
-    createResourceAccess(),
-  );
+  ctx.set("cf", new Cloudflare({ apiToken: CF_API_TOKEN }));
+
+  ctx.set("resourceAccess", createResourceAccess());
 
   await next();
 };

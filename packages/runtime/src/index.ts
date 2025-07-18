@@ -1,24 +1,26 @@
-// deno-lint-ignore-file no-explicit-any
+// biome-ignore-all lint/suspicious/noExplicitAny: fine
 import type { ExecutionContext } from "@cloudflare/workers-types";
 import { decodeJwt } from "jose";
 import type { z } from "zod";
 import { getReqToken, handleAuthCallback, StateParser } from "./auth.ts";
 import { createIntegrationBinding, workspaceClient } from "./bindings.ts";
-import { createMCPServer, type CreateMCPServerOptions } from "./mastra.ts";
+import { type CreateMCPServerOptions, createMCPServer } from "./mastra.ts";
 import { MCPClient, type QueryResult } from "./mcp.ts";
 import type { WorkflowDO } from "./workflow.ts";
 import { Workflow } from "./workflow.ts";
 import type { Binding, MCPBinding } from "./wrangler.ts";
+
 export {
-  createMCPFetchStub,
   type CreateStubAPIOptions,
+  createMCPFetchStub,
   type ToolBinder,
 } from "./mcp.ts";
 
 export interface WorkspaceDB {
-  query: (
-    params: { sql: string; params: string[] },
-  ) => Promise<{ result: QueryResult[] }>;
+  query: (params: {
+    sql: string;
+    params: string[];
+  }) => Promise<{ result: QueryResult[] }>;
 }
 
 export interface DefaultEnv<TSchema extends z.ZodTypeAny = any> {
@@ -84,15 +86,13 @@ export interface User {
   };
 }
 
-export interface RequestContext<
-  TSchema extends z.ZodTypeAny = any,
-> {
+export interface RequestContext<TSchema extends z.ZodTypeAny = any> {
   state: z.infer<TSchema>;
   token: string;
   workspace: string;
-  ensureAuthenticated: (
-    options?: { workspaceHint?: string },
-  ) => User | undefined;
+  ensureAuthenticated: (options?: {
+    workspaceHint?: string;
+  }) => User | undefined;
 }
 
 // 2. Map binding type to its creator function
@@ -130,7 +130,10 @@ const withDefaultBindings = (env: DefaultEnv, ctx: RequestContext) => {
 };
 
 export class UnauthorizedError extends Error {
-  constructor(message: string, public redirectTo: URL) {
+  constructor(
+    message: string,
+    public redirectTo: URL,
+  ) {
     super(message);
     this.name = "UnauthorizedError";
   }
@@ -147,7 +150,7 @@ export const withBindings = <TEnv>(
 ): TEnv => {
   const env = _env as DefaultEnv<any>;
 
-  let context;
+  let context: RequestContext;
   if (typeof tokenOrContext === "string") {
     const decoded = decodeJwt(tokenOrContext);
     context = {
@@ -187,10 +190,7 @@ export const withBindings = <TEnv>(
   const bindings = WorkersMCPBindings.parse(env.DECO_CHAT_BINDINGS);
 
   for (const binding of bindings) {
-    env[binding.name] = creatorByType[binding.type](
-      binding as any,
-      env,
-    );
+    env[binding.name] = creatorByType[binding.type](binding as any, env);
   }
 
   withDefaultBindings(env, env.DECO_CHAT_REQUEST_CONTEXT);
@@ -227,9 +227,7 @@ export const withRuntime = <TEnv, TSchema extends z.ZodTypeAny = never>(
       }
       const toolCallInput = await req.json();
       const result = await server.callTool({
-        env: withBindings(env, getReqToken(req)) as
-          & TEnv
-          & DefaultEnv<TSchema>,
+        env: withBindings(env, getReqToken(req)) as TEnv & DefaultEnv<TSchema>,
         ctx,
         req,
         toolCallId,
@@ -242,12 +240,10 @@ export const withRuntime = <TEnv, TSchema extends z.ZodTypeAny = never>(
         },
       });
     }
-    return userFns.fetch?.(
-      req,
-      withBindings(env, getReqToken(req)) as any,
-      ctx,
-    ) ||
-      new Response("Not found", { status: 404 });
+    return (
+      userFns.fetch?.(req, withBindings(env, getReqToken(req)) as any, ctx) ||
+      new Response("Not found", { status: 404 })
+    );
   };
   return {
     Workflow: Workflow(userFns.workflows),
@@ -275,4 +271,4 @@ export const withRuntime = <TEnv, TSchema extends z.ZodTypeAny = never>(
   };
 };
 
-export { type Migration, type WranglerConfig } from "./wrangler.ts";
+export type { Migration, WranglerConfig } from "./wrangler.ts";

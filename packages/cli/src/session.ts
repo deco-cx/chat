@@ -1,8 +1,9 @@
 // Utility functions for saving and reading session data securely
+
+import { homedir } from "node:os";
 import { join } from "@std/path";
 import type { User } from "@supabase/supabase-js";
 import { decodeJwt } from "jose";
-import { homedir } from "node:os";
 import { z } from "zod";
 import { createClient } from "./supabase.ts";
 
@@ -34,9 +35,10 @@ function getSessionPath(): string {
  * Save session data securely to the filesystem.
  * @param data The session data to save (object).
  */
-export async function saveSession(
-  data: { session: SessionData | null; user: User | null },
-) {
+export async function saveSession(data: {
+  session: SessionData | null;
+  user: User | null;
+}) {
   const { session, user } = data;
   const sessionPath = getSessionPath();
   await Deno.writeTextFile(
@@ -84,8 +86,9 @@ export async function deleteSession() {
 
   const { client } = createClient();
 
-  await Deno.remove(sessionPath)
-    .catch(() => console.warn("Session file not found"));
+  await Deno.remove(sessionPath).catch(() =>
+    console.warn("Session file not found"),
+  );
 
   await client.auth.signOut();
 }

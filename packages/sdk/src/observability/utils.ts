@@ -9,8 +9,8 @@ export const headersStringToObject = (
   if (!headersString) {
     return {};
   }
-  const splitByComma = headersString.split(",").map((keyVal) =>
-    keyVal.split("=") as [string, string]
-  );
+  const splitByComma = headersString
+    .split(",")
+    .map((keyVal) => keyVal.split("=") as [string, string]);
   return Object.fromEntries(splitByComma);
 };

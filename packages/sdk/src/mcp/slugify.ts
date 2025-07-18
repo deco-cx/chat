@@ -13,10 +13,7 @@ export function toAlphanumericId(input: string): string {
   const baseSlug = input.toLowerCase().replace(/[^a-z0-9]/g, "");
 
   // Create a hash of the original input to ensure uniqueness
-  const hash = createHash("sha256")
-    .update(input)
-    .digest("hex")
-    .slice(0, 8); // Take first 8 chars of hash
+  const hash = createHash("sha256").update(input).digest("hex").slice(0, 8); // Take first 8 chars of hash
 
   // Combine the cleaned string with the hash
   // If baseSlug is empty, just return the hash

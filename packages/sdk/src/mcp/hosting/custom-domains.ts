@@ -18,8 +18,8 @@ export const assertsDomainOwnership = async (
   const addresses = await resolvePromise.promise;
   const targetAddress = `${scriptSlug}${HOSTING_APPS_DOMAIN}`;
   if (
-    !addresses.some((addr) =>
-      addr === targetAddress || addr === `${targetAddress}.`
+    !addresses.some(
+      (addr) => addr === targetAddress || addr === `${targetAddress}.`,
     )
   ) {
     throw new UserInputError(
@@ -50,15 +50,14 @@ export const assertsDomainUniqueness = async (
     // Check if the domain belongs to the same app slug and workspace
     const hostingApp = data.deco_chat_hosting_apps;
     if (
-      hostingApp && hostingApp.slug === slug &&
+      hostingApp &&
+      hostingApp.slug === slug &&
       hostingApp.workspace === c.workspace?.value
     ) {
       // Domain is already allocated to the same script, so skip the check
       return;
     }
 
-    throw new UserInputError(
-      `The domain ${domain} is already in use`,
-    );
+    throw new UserInputError(`The domain ${domain} is already in use`);
   }
 };

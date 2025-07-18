@@ -13,19 +13,21 @@ const getUserMetadata = (user: SupaUser): User["metadata"] => {
 
   const full_name = metadata?.full_name;
   const avatar_url = metadata?.avatar_url;
-  const username = full_name ? generateUsername(full_name) : user?.email ?? "";
+  const username = full_name
+    ? generateUsername(full_name)
+    : (user?.email ?? "");
   const email = user?.email ?? "";
 
   return { full_name, avatar_url, username, email };
 };
 
 const generateUsername = (fullName: string) => {
-  const username = `${
-    fullName.toLocaleLowerCase().normalize("NFD").replace(
-      /[\u0300-\u036f]/g,
-      "",
-    ).replace(/\s+/g, "-").replace(/[^\w-]/g, "")
-  }${Date.now().toString(36)}`;
+  const username = `${fullName
+    .toLocaleLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]/g, "")}${Date.now().toString(36)}`;
 
   return username;
 };

@@ -1,3 +1,4 @@
+import { Button } from "@deco/ui/components/button.tsx";
 import {
   Dialog,
   DialogContent,
@@ -5,9 +6,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@deco/ui/components/dialog.tsx";
-import { Button } from "@deco/ui/components/button.tsx";
-import { type Country, PhoneInput } from "../settings/profile.tsx";
 import { useState } from "react";
+import { type Country, PhoneInput } from "../settings/profile.tsx";
 
 interface WhatsAppInviteDialogProps {
   isOpen: boolean;
@@ -47,10 +47,7 @@ export function WhatsAppInviteDialog({
           <DialogTitle>Invite to WhatsApp</DialogTitle>
         </DialogHeader>
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4"
-        >
+        <form onSubmit={handleSubmit} className="space-y-4">
           <PhoneInput
             dialCode={dialCode}
             country={country}
@@ -73,10 +70,7 @@ export function WhatsAppInviteDialog({
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={isLoading}
-            >
+            <Button type="submit" disabled={isLoading}>
               {isLoading ? "Sending..." : "Send Invite"}
             </Button>
           </DialogFooter>

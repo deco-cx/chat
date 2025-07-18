@@ -43,9 +43,7 @@ export interface MemberFormData {
  * Fetch invites for the current user
  * @returns List of invites
  */
-export const getMyInvites = (
-  signal?: AbortSignal,
-): Promise<Invite[]> =>
+export const getMyInvites = (signal?: AbortSignal): Promise<Invite[]> =>
   MCPClient.MY_INVITES_LIST({}, { signal }) as Promise<Invite[]>;
 
 /**
@@ -55,22 +53,25 @@ export const getMyInvites = (
  */
 export const acceptInvite = (
   inviteId: string,
-): Promise<
-  { ok: boolean; teamId: number; teamName: string; teamSlug: string }
-> => MCPClient.TEAM_INVITE_ACCEPT({ id: inviteId });
+): Promise<{
+  ok: boolean;
+  teamId: number;
+  teamName: string;
+  teamSlug: string;
+}> => MCPClient.TEAM_INVITE_ACCEPT({ id: inviteId });
 
 /**
  * Reject an invite
  * @param inviteId - The ID of the invite to reject
  * @returns Success status
  */
-export const rejectInvite = (
-  inviteId: string,
-  signal?: AbortSignal,
-) =>
-  MCPClient.TEAM_INVITE_DELETE({
-    id: inviteId,
-  }, { signal });
+export const rejectInvite = (inviteId: string, signal?: AbortSignal) =>
+  MCPClient.TEAM_INVITE_DELETE(
+    {
+      id: inviteId,
+    },
+    { signal },
+  );
 
 /**
  * Fetch team members by team ID

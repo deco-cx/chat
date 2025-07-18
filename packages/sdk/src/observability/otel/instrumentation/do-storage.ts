@@ -22,7 +22,8 @@ function isDurableObjectCommonOptions(
 ): options is DurableObjectCommonOptions {
   return (
     typeof options === "object" &&
-    ("allowConcurrency" in options || "allowUnconfirmed" in options ||
+    ("allowConcurrency" in options ||
+      "allowUnconfirmed" in options ||
       "noCache" in options)
   );
 }

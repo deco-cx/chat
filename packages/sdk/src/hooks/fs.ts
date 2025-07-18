@@ -23,9 +23,7 @@ export const useReadFile = () => {
     });
 };
 
-export const useFiles = (
-  { root }: { root: string },
-) => {
+export const useFiles = ({ root }: { root: string }) => {
   const { workspace } = useSDK();
 
   return useQuery({
@@ -39,7 +37,12 @@ export const useWriteFile = () => {
   const { workspace } = useSDK();
 
   return useMutation({
-    mutationFn: ({ path, content, contentType, metadata }: {
+    mutationFn: ({
+      path,
+      content,
+      contentType,
+      metadata,
+    }: {
       path: string;
       content: Uint8Array;
       contentType: string;
@@ -92,9 +95,7 @@ export const useDeleteFile = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (
-      { path }: DeleteFileParams,
-    ) => deleteFile({ workspace, path }),
+    mutationFn: ({ path }: DeleteFileParams) => deleteFile({ workspace, path }),
     onSuccess: (_, { root }) => {
       if (!root) return;
 

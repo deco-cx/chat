@@ -36,9 +36,7 @@ function AppCard({
           />
 
           <div className="flex flex-col gap-0 min-w-0">
-            <div className="text-sm font-semibold truncate">
-              {app.name}
-            </div>
+            <div className="text-sm font-semibold truncate">{app.name}</div>
             <div className="text-sm text-muted-foreground line-clamp-1">
               {app.description}
             </div>
@@ -54,31 +52,29 @@ function AppCard({
   );
 }
 
-function CardsView(
-  { apps, onClick }: {
-    apps: GroupedApp[];
-    onClick: (app: GroupedApp) => void;
-  },
-) {
+function CardsView({
+  apps,
+  onClick,
+}: {
+  apps: GroupedApp[];
+  onClick: (app: GroupedApp) => void;
+}) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 peer">
       {apps.map((app) => (
-        <AppCard
-          key={app.id}
-          app={app}
-          onClick={onClick}
-        />
+        <AppCard key={app.id} app={app} onClick={onClick} />
       ))}
     </div>
   );
 }
 
-function TableView(
-  { apps, onClick }: {
-    apps: GroupedApp[];
-    onClick: (app: GroupedApp) => void;
-  },
-) {
+function TableView({
+  apps,
+  onClick,
+}: {
+  apps: GroupedApp[];
+  onClick: (app: GroupedApp) => void;
+}) {
   const [sortKey, setSortKey] = useState<string>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -184,38 +180,24 @@ export function ConnectedAppsList() {
       </div>
 
       <div className="flex-1 min-h-0 px-4 overflow-x-auto">
-        {!apps
-          ? (
-            <div className="flex h-48 items-center justify-center">
-              <Spinner size="lg" />
-            </div>
-          )
-          : apps.length === 0
-          ? (
-            <EmptyState
-              icon="linked_services"
-              title="No connected integrations yet"
-              description="Connect services to expand what your agents can do."
-              buttonComponent={
-                <SelectConnectionDialog forceTab="new-connection" />
-              }
-            />
-          )
-          : (
-            viewMode === "cards"
-              ? (
-                <CardsView
-                  apps={apps}
-                  onClick={navigateToApp}
-                />
-              )
-              : (
-                <TableView
-                  apps={apps}
-                  onClick={navigateToApp}
-                />
-              )
-          )}
+        {!apps ? (
+          <div className="flex h-48 items-center justify-center">
+            <Spinner size="lg" />
+          </div>
+        ) : apps.length === 0 ? (
+          <EmptyState
+            icon="linked_services"
+            title="No connected integrations yet"
+            description="Connect services to expand what your agents can do."
+            buttonComponent={
+              <SelectConnectionDialog forceTab="new-connection" />
+            }
+          />
+        ) : viewMode === "cards" ? (
+          <CardsView apps={apps} onClick={navigateToApp} />
+        ) : (
+          <TableView apps={apps} onClick={navigateToApp} />
+        )}
       </div>
     </div>
   );

@@ -1,17 +1,16 @@
 import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
-import { useEffect } from "react";
-import { Link } from "react-router";
-import { trackEvent } from "../../hooks/analytics.ts";
-import { useChatContext } from "./context.tsx";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@deco/ui/components/tooltip.tsx";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router";
+import { trackEvent } from "../../hooks/analytics.ts";
 import { useWorkspaceLink } from "../../hooks/use-navigate-workspace.ts";
 import { ExpandableDescription } from "../toolsets/description.tsx";
+import { useChatContext } from "./context.tsx";
 
 function getErrorMessage(error: Error) {
   try {
@@ -27,7 +26,11 @@ const WELL_KNOWN_ERROR_MESSAGES = {
 
 export function ChatError() {
   const workspaceLink = useWorkspaceLink();
-  const { chat: { error }, retry, correlationIdRef } = useChatContext();
+  const {
+    chat: { error },
+    retry,
+    correlationIdRef,
+  } = useChatContext();
   const insufficientFunds = error?.message.includes(
     WELL_KNOWN_ERROR_MESSAGES.InsufficientFunds,
   );
@@ -91,9 +94,7 @@ export function ChatError() {
           )}
           {correlationIdRef?.current && (
             <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-              <span className="select-none">
-                Error Id:
-              </span>
+              <span className="select-none">Error Id:</span>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span

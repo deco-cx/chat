@@ -21,15 +21,18 @@ import {
   userBelongsToTeam,
 } from "./invites-utils.ts";
 
-export const updateActivityLog = async (c: AppContext, {
-  teamId,
-  userId,
-  action,
-}: {
-  teamId: number;
-  userId: string;
-  action: "add_member" | "remove_member";
-}) => {
+export const updateActivityLog = async (
+  c: AppContext,
+  {
+    teamId,
+    userId,
+    action,
+  }: {
+    teamId: number;
+    userId: string;
+    action: "add_member" | "remove_member";
+  },
+) => {
   const currentTimestamp = new Date().toISOString();
   const { data } = await c.db
     .from("members")
@@ -43,10 +46,13 @@ export const updateActivityLog = async (c: AppContext, {
   return await c.db
     .from("members")
     .update({
-      activity: [...activityLog, {
-        action,
-        timestamp: currentTimestamp,
-      }],
+      activity: [
+        ...activityLog,
+        {
+          action,
+          timestamp: currentTimestamp,
+        },
+      ],
     })
     .eq("team_id", teamId)
     .eq("user_id", userId);
@@ -88,10 +94,7 @@ export interface DbMember {
   }[];
 }
 
-const mapMember = (
-  { member_roles, ...member }: DbMember,
-  c: AppContext,
-) => ({
+const mapMember = ({ member_roles, ...member }: DbMember, c: AppContext) => ({
   ...member,
   user_id: member.user_id ?? "",
   created_at: member.created_at ?? "",
@@ -106,8 +109,7 @@ export const createTool = createToolGroup("Team", {
   name: "Team & User Management",
   description: "Manage workspace access and roles.",
   workspace: false,
-  icon:
-    "https://assets.decocache.com/mcp/de7e81f6-bf2b-4bf5-a96c-867682f7d2ca/Team--User-Management.png",
+  icon: "https://assets.decocache.com/mcp/de7e81f6-bf2b-4bf5-a96c-867682f7d2ca/Team--User-Management.png",
 });
 
 export const getTeamMembers = createTool({
@@ -117,7 +119,10 @@ export const getTeamMembers = createTool({
     teamId: z.number(),
     withActivity: z.boolean().optional(),
   }),
-  handler: async (props, c): Promise<{
+  handler: async (
+    props,
+    c,
+  ): Promise<{
     members: (ReturnType<typeof mapMember> & { lastActivity?: string })[];
     invites: InviteAPIData[];
   }> => {
@@ -127,8 +132,7 @@ export const getTeamMembers = createTool({
 
     // Get all members of the team
     const [{ data, error }, { data: invitesData }] = await Promise.all([
-      c
-        .db
+      c.db
         .from("members")
         .select(`
         id,
@@ -145,12 +149,11 @@ export const getTeamMembers = createTool({
       `)
         .eq("team_id", teamId)
         .is("deleted_at", null),
-      c.db.from("invites").select(
-        "id, email:invited_email, roles:invited_roles",
-      ).eq(
-        "team_id",
-        teamId,
-      ).overrideTypes<{ id: string; email: string; roles: Role[] }[]>(),
+      c.db
+        .from("invites")
+        .select("id, email:invited_email, roles:invited_roles")
+        .eq("team_id", teamId)
+        .overrideTypes<{ id: string; email: string; roles: Role[] }[]>(),
     ]);
 
     if (error) throw error;
@@ -161,20 +164,22 @@ export const getTeamMembers = createTool({
     let activityByUserId: Record<string, string> = {};
 
     if (withActivity) {
-      const { data: activityData } = await c.db.rpc(
-        "get_latest_user_activity",
-        {
+      const { data: activityData } = await c.db
+        .rpc("get_latest_user_activity", {
           p_resource: "team",
           p_key: "id",
           p_value: `${teamId}`,
-        },
-      ).select("user_id, created_at");
+        })
+        .select("user_id, created_at");
 
       if (activityData) {
-        activityByUserId = activityData.reduce((res, activity) => {
-          res[activity.user_id] = activity.created_at;
-          return res;
-        }, {} as Record<string, string>);
+        activityByUserId = activityData.reduce(
+          (res, activity) => {
+            res[activity.user_id] = activity.created_at;
+            return res;
+          },
+          {} as Record<string, string>,
+        );
       }
 
       return {
@@ -206,8 +211,7 @@ export const updateTeamMember = createTool({
     await assertTeamResourceAccess(c.tool.name, teamId, c);
 
     // Verify the member exists in the team
-    const { data: member, error: memberError } = await c
-      .db
+    const { data: member, error: memberError } = await c.db
       .from("members")
       .select("id")
       .eq("id", memberId)
@@ -221,8 +225,7 @@ export const updateTeamMember = createTool({
     }
 
     // Update the member
-    const { data: updatedMember, error: updateError } = await c
-      .db
+    const { data: updatedMember, error: updateError } = await c.db
       .from("members")
       .update(data)
       .eq("id", memberId)
@@ -250,8 +253,7 @@ export const removeTeamMember = createTool({
       .catch(() => false);
 
     // Verify the member exists in the team
-    const { data: member, error: memberError } = await c
-      .db
+    const { data: member, error: memberError } = await c.db
       .from("members")
       .select("id, admin, user_id")
       .eq("id", memberId)
@@ -273,8 +275,7 @@ export const removeTeamMember = createTool({
 
     // Don't allow removing the last admin
     if (member.admin) {
-      const { data: adminCount, error: countError } = await c
-        .db
+      const { data: adminCount, error: countError } = await c.db
         .from("members")
         .select("*", { count: "exact" })
         .eq("team_id", teamId)
@@ -297,8 +298,7 @@ export const removeTeamMember = createTool({
     }
 
     const currentTimestamp = new Date();
-    const { error } = await c
-      .db
+    const { error } = await c.db
       .from("members")
       .update({
         deleted_at: currentTimestamp.toISOString(),
@@ -408,13 +408,17 @@ export const inviteTeamMembers = createTool({
     "Invite users to join a team via email. When no specific roles are provided, use default role: { id: 1, name: 'owner' }",
   inputSchema: z.object({
     teamId: z.string(),
-    invitees: z.array(z.object({
-      email: z.string().email(),
-      roles: z.array(z.object({
-        id: z.number(),
-        name: z.string(),
-      })),
-    })),
+    invitees: z.array(
+      z.object({
+        email: z.string().email(),
+        roles: z.array(
+          z.object({
+            id: z.number(),
+            name: z.string(),
+          }),
+        ),
+      }),
+    ),
   }),
   handler: async (props, c) => {
     assertPrincipalIsUser(c);
@@ -460,8 +464,8 @@ export const inviteTeamMembers = createTool({
 
       return {
         invitee,
-        ignoreInvitee: (invites && invites.length > 0) ||
-          alreadyExistsUserInTeam,
+        ignoreInvitee:
+          (invites && invites.length > 0) || alreadyExistsUserInTeam,
       };
     });
 
@@ -517,18 +521,20 @@ export const inviteTeamMembers = createTool({
       }[];
       const rolesNames = invited_roles.map(({ name }) => name);
 
-      await sendInviteEmail({
-        ...invite,
-        inviter: user.email || "Unknown",
-        roles: rolesNames,
-      }, c);
+      await sendInviteEmail(
+        {
+          ...invite,
+          inviter: user.email || "Unknown",
+          roles: rolesNames,
+        },
+        c,
+      );
     });
 
     await Promise.all(requestPromises || []);
 
     return {
-      message:
-        `Invite sent to their home screen. Ask them to log in at https://deco.chat`,
+      message: `Invite sent to their home screen. Ask them to log in at https://deco.chat`,
     };
   },
 });
@@ -593,15 +599,14 @@ export const acceptInvite = createTool({
     }
 
     // Check if user is already in the team
-    const { data: alreadyExistsAsDeletedMember } = await db.from("members")
-      .select(
-        "id",
-      ).eq(
-        "team_id",
-        invite.team_id,
-      ).eq("user_id", user.id).limit(1);
-    const alreadyExistsUserInTeam = alreadyExistsAsDeletedMember &&
-      alreadyExistsAsDeletedMember.length > 0;
+    const { data: alreadyExistsAsDeletedMember } = await db
+      .from("members")
+      .select("id")
+      .eq("team_id", invite.team_id)
+      .eq("user_id", user.id)
+      .limit(1);
+    const alreadyExistsUserInTeam =
+      alreadyExistsAsDeletedMember && alreadyExistsAsDeletedMember.length > 0;
 
     // Add user to team if not already a member
     if (!alreadyExistsUserInTeam) {
@@ -618,14 +623,11 @@ export const acceptInvite = createTool({
         throw error;
       }
     } else {
-      const { error } = await db.from("members").update({ deleted_at: null })
-        .eq(
-          "team_id",
-          invite.team_id,
-        ).eq(
-          "user_id",
-          user.id,
-        );
+      const { error } = await db
+        .from("members")
+        .update({ deleted_at: null })
+        .eq("team_id", invite.team_id)
+        .eq("user_id", user.id);
 
       if (error) {
         throw error;
@@ -662,8 +664,8 @@ export const acceptInvite = createTool({
       ok: true,
       teamId: invite.team_id,
       teamName: invite.team_name,
-      teamSlug: team?.slug ||
-        invite.team_name.toLowerCase().replace(/\s+/g, "-"),
+      teamSlug:
+        team?.slug || invite.team_name.toLowerCase().replace(/\s+/g, "-"),
     };
   },
 });
@@ -684,29 +686,31 @@ export const deleteInvite = createTool({
     assertPrincipalIsUser(c);
 
     const [{ data: invite, error }, { data: profile }] = await Promise.all([
-      c.db.from("invites").select("team_id, invited_email").eq("id", props.id)
+      c.db
+        .from("invites")
+        .select("team_id, invited_email")
+        .eq("id", props.id)
         .single(),
 
       c.db.from("profiles").select("email").eq("user_id", c.user.id).single(),
     ]);
 
-    const canAccess = error || !invite || !profile
-      ? false
-      : invite?.invited_email && profile?.email &&
-          invite.invited_email === profile.email
-      ? true
-      : await assertTeamResourceAccess(c.tool.name, invite.team_id, c)
-        .then(() => true).catch(() => false);
+    const canAccess =
+      error || !invite || !profile
+        ? false
+        : invite?.invited_email &&
+            profile?.email &&
+            invite.invited_email === profile.email
+          ? true
+          : await assertTeamResourceAccess(c.tool.name, invite.team_id, c)
+              .then(() => true)
+              .catch(() => false);
 
     if (!canAccess) {
       throw new ForbiddenError("You are not allowed to delete this invite");
     }
 
-    const { data } = await db
-      .from("invites")
-      .delete()
-      .eq("id", id)
-      .select();
+    const { data } = await db.from("invites").delete().eq("id", id).select();
 
     if (!data || data.length === 0) {
       throw new NotFoundError("Invite not found");
@@ -747,10 +751,11 @@ export const updateMemberRole = createTool({
 
     const { teamId: teamIdFromProps, userId, roleId, action } = props;
 
-    const { data: profile } = await c.db.from("profiles").select("email").eq(
-      "user_id",
-      userId,
-    ).single();
+    const { data: profile } = await c.db
+      .from("profiles")
+      .select("email")
+      .eq("user_id", userId)
+      .single();
 
     if (!profile) throw new NotFoundError(`User with id ${userId} not found`);
 

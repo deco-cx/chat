@@ -1,9 +1,9 @@
+import reactScan from "@react-scan/vite-plugin-react-scan";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig, type PluginOption } from "vite";
-import { VitePWA } from "vite-plugin-pwa";
-import reactScan from "@react-scan/vite-plugin-react-scan";
 import inspect from "vite-plugin-inspect";
+import { VitePWA } from "vite-plugin-pwa";
 
 // https://vite.dev/config/
 export default defineConfig({

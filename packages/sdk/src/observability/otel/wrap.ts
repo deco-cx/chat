@@ -8,8 +8,9 @@ export function isWrapped<T>(item: T): item is Wrapped<T> {
 }
 
 export function isProxyable(item: any) {
-  return (item !== null && typeof item === "object") ||
-    typeof item === "function";
+  return (
+    (item !== null && typeof item === "object") || typeof item === "function"
+  );
 }
 
 export function wrap<T extends object>(

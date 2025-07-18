@@ -1,5 +1,5 @@
-import { mergeThemes } from "../src/mcp/teams/merge-theme.ts";
 import { expect, test } from "vitest";
+import { mergeThemes } from "../src/mcp/teams/merge-theme.ts";
 
 test("mergeThemes - basic merge", () => {
   const currentTheme = {

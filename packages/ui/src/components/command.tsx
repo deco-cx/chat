@@ -1,9 +1,5 @@
 "use client";
 
-import type * as React from "react";
-import { Command as CommandPrimitive } from "cmdk";
-
-import { cn } from "@deco/ui/lib/utils.ts";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +8,10 @@ import {
   DialogTitle,
 } from "@deco/ui/components/dialog.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
+
+import { cn } from "@deco/ui/lib/utils.ts";
+import { Command as CommandPrimitive } from "cmdk";
+import type * as React from "react";
 
 function Command({
   className,

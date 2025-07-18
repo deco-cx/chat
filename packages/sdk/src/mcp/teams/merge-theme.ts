@@ -1,5 +1,5 @@
-import type { Theme } from "../../theme.ts";
 import type { Json } from "../../storage/index.ts";
+import type { Theme } from "../../theme.ts";
 
 export function mergeThemes(
   currentTheme: Json | null,
@@ -8,7 +8,8 @@ export function mergeThemes(
   // Early return if no new theme and current theme is invalid
   if (!newTheme) {
     if (
-      !currentTheme || typeof currentTheme !== "object" ||
+      !currentTheme ||
+      typeof currentTheme !== "object" ||
       Array.isArray(currentTheme)
     ) {
       return null;

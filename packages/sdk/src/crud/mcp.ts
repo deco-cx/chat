@@ -9,10 +9,7 @@ import {
  * Save an MCP to the file system
  * @param integration - The MCP to save
  */
-export const saveIntegration = (
-  workspace: string,
-  integration: Integration,
-) =>
+export const saveIntegration = (workspace: string, integration: Integration) =>
   MCPClient.forWorkspace(workspace).INTEGRATIONS_UPDATE({
     id: integration.id,
     integration,
@@ -45,10 +42,7 @@ export const loadIntegration = (
   mcpId: string,
   signal?: AbortSignal,
 ): Promise<Integration> =>
-  MCPClient.forWorkspace(workspace).INTEGRATIONS_GET(
-    { id: mcpId },
-    { signal },
-  );
+  MCPClient.forWorkspace(workspace).INTEGRATIONS_GET({ id: mcpId }, { signal });
 
 export interface ListIntegrationsFilter {
   binder?: Binder;
@@ -79,10 +73,8 @@ export const deleteIntegration = (workspace: string, mcpId: string) =>
  * @param params - Registry app parameters
  * @returns The registry app
  */
-export const getRegistryApp = (
-  workspace: string,
-  params: { name: string },
-) => MCPClient.forWorkspace(workspace).REGISTRY_GET_APP(params);
+export const getRegistryApp = (workspace: string, params: { name: string }) =>
+  MCPClient.forWorkspace(workspace).REGISTRY_GET_APP(params);
 
 /**
  * Validate an MCP against the Zod schema

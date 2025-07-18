@@ -11,15 +11,13 @@ export const withActorsStubMiddleware: MiddlewareHandler<AppEnv> = async (
   next,
 ) => {
   const stub: <
-    Constructor extends
-      | ActorConstructor<Trigger>
-      | ActorConstructor<AIAgent>,
+    Constructor extends ActorConstructor<Trigger> | ActorConstructor<AIAgent>,
   >(
     c: Constructor,
   ) => StubFactory<InstanceType<Constructor>> = (c) => {
     return runtime instanceof ActorCfRuntime
-      // deno-lint-ignore no-explicit-any
-      ? runtime.stub(c, ctx.env as any)
+      ? // deno-lint-ignore no-explicit-any
+        runtime.stub(c, ctx.env as any)
       : actors.stub(c.name);
   };
 

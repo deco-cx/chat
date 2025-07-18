@@ -1,7 +1,4 @@
 export * from "./constants.ts";
-export * from "./plan.ts";
-
-export * from "./crud/teams.ts";
 export * from "./crud/agent.ts";
 export * from "./crud/fs.tsx";
 export * from "./crud/groups.ts";
@@ -9,11 +6,13 @@ export * from "./crud/knowledge.ts";
 export * from "./crud/mcp.ts";
 export * from "./crud/members.ts";
 export * from "./crud/prompts.ts";
+export * from "./crud/teams.ts";
 export * from "./crud/thread.ts";
 export * from "./crud/trigger.ts";
 export * from "./crud/user.ts";
 export * from "./crud/wallet.ts";
 export * from "./crud/workflows.ts";
+export * from "./errors.ts";
 
 export * from "./hooks/agent.ts";
 export * from "./hooks/audit.ts";
@@ -37,7 +36,6 @@ export * from "./models/mcp.ts";
 export * from "./models/prompt.ts";
 export * from "./models/tool-call.ts";
 export * from "./models/trigger.ts";
-
-export * from "./errors.ts";
+export * from "./plan.ts";
 export * from "./theme.ts";
 export * from "./utils/url.ts";

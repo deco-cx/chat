@@ -1,14 +1,13 @@
+import { createOpenAI } from "@ai-sdk/openai";
 import type { Workspace } from "@deco/sdk/path";
 import type { Client as LibSQLClient } from "@libsql/client";
-import type { StorageThreadType } from "@mastra/core";
+import type { CoreMessage, StorageThreadType } from "@mastra/core";
 import type { SharedMemoryConfig } from "@mastra/core/memory";
+import { MemoryProcessor } from "@mastra/core/memory";
 import { Memory as MastraMemory } from "@mastra/memory";
+import type { TextPart, ToolCallPart } from "ai";
 import { slugify, slugifyForDNS, toAlphanumericId } from "../mcp/slugify.ts";
 import { LibSQLFactory, type LibSQLFactoryOpts } from "./libsql.ts";
-import { createOpenAI } from "@ai-sdk/openai";
-import { MemoryProcessor } from "@mastra/core/memory";
-import type { CoreMessage } from "@mastra/core";
-import type { TextPart, ToolCallPart } from "ai";
 
 export { slugify, slugifyForDNS, toAlphanumericId };
 type CreateThreadOpts = Parameters<MastraMemory["createThread"]>[0];
@@ -18,7 +17,8 @@ interface WorkspaceMemoryConfig extends SharedMemoryConfig {
 }
 
 interface CreateWorkspaceMemoryOpts
-  extends LibSQLFactoryOpts, Omit<SharedMemoryConfig, "storage" | "vector"> {
+  extends LibSQLFactoryOpts,
+    Omit<SharedMemoryConfig, "storage" | "vector"> {
   workspace: Workspace;
   discriminator?: string;
   openAPIKey?: string;
@@ -121,9 +121,10 @@ export class WorkspaceMemory extends MastraMemory {
         title: thread.title,
         createdAt: thread.createdAt,
         updatedAt: thread.updatedAt,
-        metadata: typeof thread.metadata === "string"
-          ? JSON.parse(thread.metadata)
-          : thread.metadata,
+        metadata:
+          typeof thread.metadata === "string"
+            ? JSON.parse(thread.metadata)
+            : thread.metadata,
         // deno-lint-ignore no-explicit-any
       })) as any as StorageThreadType[];
     } catch (error) {
@@ -161,8 +162,8 @@ export class AgentMemory extends WorkspaceMemory {
   }
 
   static async buildAgentMemoryConfig(config: CreateAgentMemoryOpts) {
-    const workspaceMemoryConfig = await WorkspaceMemory
-      .buildWorkspaceMemoryOpts(config);
+    const workspaceMemoryConfig =
+      await WorkspaceMemory.buildWorkspaceMemoryOpts(config);
     return {
       ...workspaceMemoryConfig,
       agentId: config.agentId,
@@ -176,9 +177,7 @@ export class AgentMemory extends WorkspaceMemory {
 }
 
 export function buildMemoryId(workspace: Workspace, discriminator?: string) {
-  return toAlphanumericId(
-    `${workspace}/${discriminator ?? "default"}`,
-  );
+  return toAlphanumericId(`${workspace}/${discriminator ?? "default"}`);
 }
 
 export class PatchToolCallProcessor extends MemoryProcessor {
@@ -186,16 +185,15 @@ export class PatchToolCallProcessor extends MemoryProcessor {
     super({ name: "PatchToolCallProcessor" });
   }
 
-  override process(
-    messages: CoreMessage[],
-  ): CoreMessage[] {
+  override process(messages: CoreMessage[]): CoreMessage[] {
     return patchToolCallProcessor(messages);
   }
 }
 
 const isToolCallMessage = (message: CoreMessage): boolean => {
   if (
-    typeof message !== "object" || !("role" in message) ||
+    typeof message !== "object" ||
+    !("role" in message) ||
     message.role !== "assistant"
   ) {
     return false;
@@ -205,14 +203,15 @@ const isToolCallMessage = (message: CoreMessage): boolean => {
     return false;
   }
 
-  return message.content.some((part) =>
-    typeof part === "object" && part.type === "tool-call"
+  return message.content.some(
+    (part) => typeof part === "object" && part.type === "tool-call",
   );
 };
 
 const isToolResultMessage = (message: CoreMessage): boolean => {
-  return typeof message === "object" && "role" in message &&
-    message.role === "tool";
+  return (
+    typeof message === "object" && "role" in message && message.role === "tool"
+  );
 };
 
 const patchToolCallProcessor = (
@@ -231,12 +230,12 @@ const patchToolCallProcessor = (
       const toolCallMessage = processedMessages[i];
 
       // Find the tool call part in the content
-      const toolCallPart =
-        (toolCallMessage.content as (TextPart | ToolCallPart)[]).find((
-          part,
-        ): part is ToolCallPart =>
-          typeof part === "object" && part.type === "tool-call"
-        );
+      const toolCallPart = (
+        toolCallMessage.content as (TextPart | ToolCallPart)[]
+      ).find(
+        (part): part is ToolCallPart =>
+          typeof part === "object" && part.type === "tool-call",
+      );
 
       if (!toolCallPart) {
         // If no tool call part found, keep message as is

@@ -2,9 +2,7 @@ import type { WebhookTrigger } from "@deco/sdk";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { CodeBlock } from "./code-block.tsx";
 
-export function WebhookDetails(
-  { trigger }: { trigger: WebhookTrigger },
-) {
+export function WebhookDetails({ trigger }: { trigger: WebhookTrigger }) {
   return (
     <div className="space-y-4 border p-4 rounded-md bg-muted">
       <div className="flex items-center gap-2">
@@ -14,9 +12,7 @@ export function WebhookDetails(
 
       <div>
         <div className="text-sm font-medium mb-1">Webhook URL</div>
-        <CodeBlock className="break-all">
-          {trigger.url}
-        </CodeBlock>
+        <CodeBlock className="break-all">{trigger.url}</CodeBlock>
       </div>
 
       {trigger.passphrase && (

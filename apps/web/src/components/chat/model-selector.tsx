@@ -1,9 +1,10 @@
-import { Icon } from "@deco/ui/components/icon.tsx";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@deco/ui/components/tooltip.tsx";
+  DEFAULT_MODEL,
+  type Model,
+  useModels,
+  WELL_KNOWN_MODELS,
+} from "@deco/sdk";
+import { Icon } from "@deco/ui/components/icon.tsx";
 import {
   ResponsiveSelect,
   ResponsiveSelectContent,
@@ -11,13 +12,12 @@ import {
   ResponsiveSelectTrigger,
   ResponsiveSelectValue,
 } from "@deco/ui/components/responsive-select.tsx";
-import { cn } from "@deco/ui/lib/utils.ts";
 import {
-  DEFAULT_MODEL,
-  type Model,
-  useModels,
-  WELL_KNOWN_MODELS,
-} from "@deco/sdk";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deco/ui/components/tooltip.tsx";
+import { cn } from "@deco/ui/lib/utils.ts";
 import { useState } from "react";
 
 const mapLegacyModelId = (modelId: string): string => {
@@ -26,7 +26,7 @@ const mapLegacyModelId = (modelId: string): string => {
 };
 
 const CAPABILITY_CONFIGS = {
-  "reasoning": {
+  reasoning: {
     icon: "neurology",
     bg: "bg-purple-100",
     text: "text-purple-700",
@@ -52,9 +52,11 @@ const CAPABILITY_CONFIGS = {
   },
 } as const;
 
-function CapabilityBadge(
-  { capability }: { capability: keyof typeof CAPABILITY_CONFIGS },
-) {
+function CapabilityBadge({
+  capability,
+}: {
+  capability: keyof typeof CAPABILITY_CONFIGS;
+}) {
   const config = CAPABILITY_CONFIGS[capability] || {
     icon: "check",
     bg: "bg-slate-200",
@@ -94,9 +96,11 @@ function ModelItemContent({ model }: { model: Model }) {
   );
 }
 
-function SelectedModelDisplay(
-  { model }: { model: typeof WELL_KNOWN_MODELS[0] },
-) {
+function SelectedModelDisplay({
+  model,
+}: {
+  model: (typeof WELL_KNOWN_MODELS)[0];
+}) {
   return (
     <div className="flex items-center gap-1.5">
       {model.logo && <img src={model.logo} className="w-4 h-4" />}

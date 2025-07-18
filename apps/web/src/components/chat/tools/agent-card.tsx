@@ -1,4 +1,3 @@
-import { AgentAvatar } from "../../common/avatar/agent.tsx";
 import { Button } from "@deco/ui/components/button.tsx";
 import {
   Card,
@@ -8,6 +7,7 @@ import {
 } from "@deco/ui/components/card.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { useFocusChat } from "../../agents/hooks.ts";
+import { AgentAvatar } from "../../common/avatar/agent.tsx";
 
 interface AgentCardProps {
   id: string;
@@ -18,9 +18,14 @@ interface AgentCardProps {
   displayLink?: boolean;
 }
 
-export function AgentCard(
-  { id, name, description, avatar, onEdit, displayLink = true }: AgentCardProps,
-) {
+export function AgentCard({
+  id,
+  name,
+  description,
+  avatar,
+  onEdit,
+  displayLink = true,
+}: AgentCardProps) {
   const focusChat = useFocusChat();
 
   if (!avatar || !name || !description) {

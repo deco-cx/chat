@@ -26,9 +26,11 @@ import { toast } from "@deco/ui/components/sonner.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createContext, Suspense, useContext, useEffect, useMemo } from "react";
-import { useForm, type UseFormReturn } from "react-hook-form";
+import { type UseFormReturn, useForm } from "react-hook-form";
 import { useBlocker, useParams } from "react-router";
 import { useCreateAgent } from "../../hooks/use-create-agent.ts";
+import { useDocumentMetadata } from "../../hooks/use-document-metadata.ts";
+import { isFilePath } from "../../utils/path.ts";
 import { useFocusChat } from "../agents/hooks.ts";
 import { ChatInput } from "../chat/chat-input.tsx";
 import { ChatMessages } from "../chat/chat-messages.tsx";
@@ -45,8 +47,6 @@ import AgentPreview, { useTabsForAgent } from "./preview.tsx";
 import ThreadView from "./thread.tsx";
 import Threads from "./threads.tsx";
 import { WhatsAppButton } from "./whatsapp-button.tsx";
-import { isFilePath } from "../../utils/path.ts";
-import { useDocumentMetadata } from "../../hooks/use-document-metadata.ts";
 
 interface Props {
   agentId?: string;
@@ -56,7 +56,9 @@ interface Props {
 const Chat = () => {
   const { agentId, chat } = useChatContext();
   const { data: agent } = useAgent(agentId);
-  const { chat: { messages } } = useChatContext();
+  const {
+    chat: { messages },
+  } = useChatContext();
   const { hasChanges } = useAgentSettingsForm();
   const focusChat = useFocusChat();
 
@@ -77,15 +79,18 @@ const Chat = () => {
                 </h1>
               </div>
               <Button
-                className={messages.length > 0 && !hasChanges
-                  ? "inline-flex text-xs"
-                  : "hidden"}
+                className={
+                  messages.length > 0 && !hasChanges
+                    ? "inline-flex text-xs"
+                    : "hidden"
+                }
                 variant="outline"
                 size="sm"
                 onClick={() =>
                   focusChat(agentId, crypto.randomUUID(), {
                     history: false,
-                  })}
+                  })
+                }
               >
                 New Thread
               </Button>
@@ -204,25 +209,22 @@ function ActionButtons({
         className={hasChanges ? "inline-flex" : "hidden"}
         variant="special"
         onClick={handleSubmit}
-        disabled={!numberOfChanges ||
-          form.formState.isSubmitting}
+        disabled={!numberOfChanges || form.formState.isSubmitting}
       >
-        {form.formState.isSubmitting
-          ? (
-            <>
-              <Spinner size="xs" />
-              <span>Saving...</span>
-            </>
-          )
-          : (
-            <span>
-              {isWellKnownAgent
-                ? "Save Agent"
-                : `Save ${numberOfChanges} change${
+        {form.formState.isSubmitting ? (
+          <>
+            <Spinner size="xs" />
+            <span>Saving...</span>
+          </>
+        ) : (
+          <span>
+            {isWellKnownAgent
+              ? "Save Agent"
+              : `Save ${numberOfChanges} change${
                   numberOfChanges > 1 ? "s" : ""
                 }`}
-            </span>
-          )}
+          </span>
+        )}
       </Button>
       <WhatsAppButton />
     </div>
@@ -257,7 +259,9 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
       ? (agent.description ?? agent.instructions ?? "")
       : undefined,
     favicon: isFilePath(agent?.avatar)
-      ? (typeof resolvedAvatar === "string" ? resolvedAvatar : undefined)
+      ? typeof resolvedAvatar === "string"
+        ? resolvedAvatar
+        : undefined
       : agent?.avatar,
     socialImage: agent?.avatar,
   });
@@ -275,29 +279,27 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
 
   const blocked = useBlocker(hasChanges && !isWellKnownAgent);
 
-  const handleSubmit = form.handleSubmit(
-    async (data: Agent) => {
-      try {
-        if (isWellKnownAgent) {
-          const id = crypto.randomUUID();
-          const agent = { ...data, id };
-          await createAgent(agent, {});
-          const wellKnownAgent =
-            WELL_KNOWN_AGENTS[agentId as keyof typeof WELL_KNOWN_AGENTS];
-          form.reset(wellKnownAgent);
-          updateAgentCache(wellKnownAgent);
-          return;
-        }
-
-        await updateAgent.mutateAsync(data);
-        form.reset(data);
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to update agent",
-        );
+  const handleSubmit = form.handleSubmit(async (data: Agent) => {
+    try {
+      if (isWellKnownAgent) {
+        const id = crypto.randomUUID();
+        const agent = { ...data, id };
+        await createAgent(agent, {});
+        const wellKnownAgent =
+          WELL_KNOWN_AGENTS[agentId as keyof typeof WELL_KNOWN_AGENTS];
+        form.reset(wellKnownAgent);
+        updateAgentCache(wellKnownAgent);
+        return;
       }
-    },
-  );
+
+      await updateAgent.mutateAsync(data);
+      form.reset(data);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update agent",
+      );
+    }
+  });
 
   function handleCancel() {
     blocked.reset?.();
@@ -397,13 +399,10 @@ export default function Page(props: Props) {
     [props.threadId, params.threadId, agentId],
   );
 
-  const chatKey = useMemo(
-    () => `${agentId}-${threadId}`,
-    [agentId, threadId],
-  );
+  const chatKey = useMemo(() => `${agentId}-${threadId}`, [agentId, threadId]);
 
-  if (!agentId) {
-    throw new NotFoundError("Agent not found");
+  if (!agentId || !threadId) {
+    throw new NotFoundError("Agent or thread not found");
   }
 
   return (
@@ -417,7 +416,7 @@ export default function Page(props: Props) {
       <FormProvider
         {...props}
         agentId={agentId}
-        threadId={threadId!}
+        threadId={threadId}
         key={chatKey}
       />
     </Suspense>

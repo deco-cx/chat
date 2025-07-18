@@ -3,29 +3,33 @@ import { ForbiddenError, NotFoundError, UnauthorizedError } from "../errors.ts";
 import type { Workspace } from "../path.ts";
 import type { AppContext, UserPrincipal } from "./context.ts";
 
-type WithUser<TAppContext extends AppContext = AppContext> =
-  & Omit<TAppContext, "user">
-  & {
-    user: UserPrincipal;
-  };
+type WithUser<TAppContext extends AppContext = AppContext> = Omit<
+  TAppContext,
+  "user"
+> & {
+  user: UserPrincipal;
+};
 
-type WithWorkspace<TAppContext extends AppContext = AppContext> =
-  & Omit<TAppContext, "workspace">
-  & {
-    workspace: { root: string; slug: string; value: Workspace };
-  };
+type WithWorkspace<TAppContext extends AppContext = AppContext> = Omit<
+  TAppContext,
+  "workspace"
+> & {
+  workspace: { root: string; slug: string; value: Workspace };
+};
 
-type WithKbFileProcessor<TAppContext extends AppContext = AppContext> =
-  & Omit<TAppContext, "kbFileProcessor">
-  & {
-    kbFileProcessor: Workflow;
-  };
+type WithKbFileProcessor<TAppContext extends AppContext = AppContext> = Omit<
+  TAppContext,
+  "kbFileProcessor"
+> & {
+  kbFileProcessor: Workflow;
+};
 
-export type WithTool<TAppContext extends AppContext = AppContext> =
-  & Omit<TAppContext, "tool">
-  & {
-    tool: { name: string };
-  };
+export type WithTool<TAppContext extends AppContext = AppContext> = Omit<
+  TAppContext,
+  "tool"
+> & {
+  tool: { name: string };
+};
 
 export function assertHasWorkspace<TContext extends AppContext = AppContext>(
   c: Pick<TContext, "workspace"> | Pick<WithWorkspace<TContext>, "workspace">,
@@ -44,7 +48,8 @@ export function assertPrincipalIsUser<TContext extends AppContext = AppContext>(
 }
 
 export const assertHasUser = (c: AppContext) => {
-  if (c.isLocal) { // local calls
+  if (c.isLocal) {
+    // local calls
     return;
   }
   const user = c.user;
@@ -57,10 +62,12 @@ export const assertHasUser = (c: AppContext) => {
 const assertPoliciesIsStatementArray = (
   policies: unknown,
 ): policies is Statement[] => {
-  return Array.isArray(policies) &&
-    policies.every((p) =>
-      typeof p === "object" && "effect" in p && "resource" in p
-    );
+  return (
+    Array.isArray(policies) &&
+    policies.every(
+      (p) => typeof p === "object" && "effect" in p && "resource" in p,
+    )
+  );
 };
 
 export function assertsNotNull<T>(
@@ -90,7 +97,9 @@ export const assertWorkspaceResourceAccess = async (
     // API keys
     const [sub, id] = user.sub?.split(":") ?? [];
     if (sub === "api-key") {
-      const { data, error } = await c.db.from("deco_chat_api_keys").select("*")
+      const { data, error } = await c.db
+        .from("deco_chat_api_keys")
+        .select("*")
         .eq("id", id)
         .eq("enabled", true)
         .maybeSingle();
@@ -164,9 +173,7 @@ export const assertTeamResourceAccess = async (
     }
   }
 
-  throw new ForbiddenError(
-    `Cannot access ${resource} in team ${teamIdOrSlug}`,
-  );
+  throw new ForbiddenError(`Cannot access ${resource} in team ${teamIdOrSlug}`);
 };
 
 export function assertKbFileProcessor(

@@ -1,12 +1,4 @@
 import { context } from "@opentelemetry/api";
-import {
-  type ExporterConfig,
-  isSpanProcessorConfig,
-  type ParentRatioSamplingConfig,
-  type ResolvedTraceConfig,
-  type TraceConfig,
-  type Trigger,
-} from "./types.ts";
 import { W3CTraceContextPropagator } from "@opentelemetry/core";
 import {
   AlwaysOnSampler,
@@ -14,7 +6,6 @@ import {
   type Sampler,
   type SpanExporter,
 } from "@opentelemetry/sdk-trace-base";
-
 import { OTLPExporter } from "./exporter.ts";
 import {
   createSampler,
@@ -23,6 +14,14 @@ import {
   multiTailSampler,
 } from "./sampling.ts";
 import { BatchTraceSpanProcessor } from "./spanprocessor.ts";
+import {
+  type ExporterConfig,
+  isSpanProcessorConfig,
+  type ParentRatioSamplingConfig,
+  type ResolvedTraceConfig,
+  type TraceConfig,
+  type Trigger,
+} from "./types.ts";
 
 const configSymbol = Symbol("Otel Workers Tracing Configuration");
 
@@ -74,15 +73,16 @@ export function parseConfig(supplied: TraceConfig): ResolvedTraceConfig {
       },
       handlers: {
         fetch: {
-          acceptTraceContext: supplied.handlers?.fetch?.acceptTraceContext ??
-            true,
+          acceptTraceContext:
+            supplied.handlers?.fetch?.acceptTraceContext ?? true,
         },
       },
-      postProcessor: supplied.postProcessor ||
-        ((spans: ReadableSpan[]) => spans),
+      postProcessor:
+        supplied.postProcessor || ((spans: ReadableSpan[]) => spans),
       sampling: {
         headSampler,
-        tailSampler: supplied.sampling?.tailSampler ||
+        tailSampler:
+          supplied.sampling?.tailSampler ||
           multiTailSampler([isHeadSampled, isRootErrorSpan]),
       },
       service: supplied.service,

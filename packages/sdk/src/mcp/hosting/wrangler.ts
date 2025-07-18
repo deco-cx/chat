@@ -1,1 +1,1 @@
-export { type Migration, type WranglerConfig } from "@deco/workers-runtime";
+export type { Migration, WranglerConfig } from "@deco/workers-runtime";

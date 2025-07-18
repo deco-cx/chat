@@ -6,25 +6,25 @@ import type {
   User as SupaUser,
 } from "@supabase/supabase-js";
 import { Hono } from "hono";
+import { AUTH_URL_CLI } from "../../../../packages/sdk/src/constants.ts";
 import { honoCtxToAppCtx } from "../api.ts";
 import {
+  type HonoAppContext as AppContext,
   AUTH_URL,
   getEnv,
-  type HonoAppContext as AppContext,
   type Principal,
 } from "../utils/context.ts";
 import { getCookies, setHeaders } from "../utils/cookie.ts";
 import { authSetCookie, getServerClientOptions } from "../utils/db.ts";
 import { assertPrincipalIsUser } from "./assertions.ts";
-import { AUTH_URL_CLI } from "../../../../packages/sdk/src/constants.ts";
 
 const AUTH_CALLBACK_OAUTH = "/auth/callback/oauth";
 
 const appAuth = new Hono();
 const appLogin = new Hono();
 export const ROUTES = {
-  ["/auth"]: appAuth,
-  ["/login"]: appLogin,
+  "/auth": appAuth,
+  "/login": appLogin,
 } as const;
 
 const createDbAndHeadersForRequest = (ctx: AppContext) => {
@@ -71,9 +71,9 @@ export const getUser = async (
     supabase,
     DECO_CHAT_API_JWT_PRIVATE_KEY && DECO_CHAT_API_JWT_PUBLIC_KEY
       ? {
-        public: DECO_CHAT_API_JWT_PUBLIC_KEY,
-        private: DECO_CHAT_API_JWT_PRIVATE_KEY,
-      }
+          public: DECO_CHAT_API_JWT_PUBLIC_KEY,
+          private: DECO_CHAT_API_JWT_PRIVATE_KEY,
+        }
       : undefined,
   );
 
@@ -113,7 +113,7 @@ export const createMagicLinkEmail = async (ctx: AppContext) => {
 };
 
 appLogin.all("/oauth", async (ctx: AppContext) => {
-  let user;
+  let user: Principal | undefined;
   try {
     assertPrincipalIsUser(ctx.var);
     user = ctx.var.user;
@@ -123,7 +123,8 @@ appLogin.all("/oauth", async (ctx: AppContext) => {
 
   // user already logged in, set by userMiddleware
   if (user && !user.is_anonymous) {
-    const origin = ctx.req.header("referer") ||
+    const origin =
+      ctx.req.header("referer") ||
       ctx.req.header("origin") ||
       "https://deco.chat";
     return ctx.redirect(origin);
@@ -177,8 +178,8 @@ appLogin.all("/magiclink", async (ctx: AppContext) => {
     const redirectTo = cli
       ? AUTH_URL_CLI
       : url.host.includes("localhost")
-      ? "http://localhost:3001/"
-      : "https://api.deco.chat/";
+        ? "http://localhost:3001/"
+        : "https://api.deco.chat/";
 
     await db.auth.signInWithOtp({
       email,
@@ -229,7 +230,8 @@ appAuth.all("/callback/magiclink", async (ctx: AppContext) => {
     const request = ctx.req.raw;
     const { db, headers } = createDbAndHeadersForRequest(ctx);
     const url = new URL(request.url);
-    const next = url.searchParams.get("next") ||
+    const next =
+      url.searchParams.get("next") ||
       (url.host.includes("localhost")
         ? "http://localhost:3000"
         : "https://deco.chat");

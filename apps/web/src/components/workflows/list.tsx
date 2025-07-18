@@ -26,12 +26,13 @@ import {
   transformToUniqueWorkflows,
 } from "./utils.ts";
 
-function WorkflowsCardView(
-  { workflows, onClick }: {
-    workflows: UniqueWorkflow[];
-    onClick: (workflow: UniqueWorkflow) => void;
-  },
-) {
+function WorkflowsCardView({
+  workflows,
+  onClick,
+}: {
+  workflows: UniqueWorkflow[];
+  onClick: (workflow: UniqueWorkflow) => void;
+}) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 peer">
       {workflows.map((workflow) => (
@@ -65,10 +66,7 @@ function WorkflowsCardView(
               <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <div className="text-success">
-                    <Icon
-                      name="check_circle"
-                      size={12}
-                    />
+                    <Icon name="check_circle" size={12} />
                   </div>
                   <span>{workflow.successCount}</span>
                 </div>
@@ -92,12 +90,13 @@ function WorkflowsCardView(
   );
 }
 
-function WorkflowsTableView(
-  { workflows, onClick }: {
-    workflows: UniqueWorkflow[];
-    onClick: (workflow: UniqueWorkflow) => void;
-  },
-) {
+function WorkflowsTableView({
+  workflows,
+  onClick,
+}: {
+  workflows: UniqueWorkflow[];
+  onClick: (workflow: UniqueWorkflow) => void;
+}) {
   const [sortKey, setSortKey] = useState<string>("lastRun");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
@@ -143,9 +142,10 @@ function WorkflowsTableView(
       id: "successRate",
       header: "Success Rate",
       render: (workflow) => {
-        const rate = workflow.totalRuns > 0
-          ? (workflow.successCount / workflow.totalRuns) * 100
-          : 0;
+        const rate =
+          workflow.totalRuns > 0
+            ? (workflow.successCount / workflow.totalRuns) * 100
+            : 0;
         return (
           <div className="flex items-center gap-2">
             <span className="text-sm">{rate.toFixed(1)}%</span>
@@ -177,9 +177,9 @@ function WorkflowsTableView(
 
   function handleSort(key: string) {
     if (sortKey === key) {
-      setSortDirection((
-        prev: "asc" | "desc",
-      ) => (prev === "asc" ? "desc" : "asc"));
+      setSortDirection((prev: "asc" | "desc") =>
+        prev === "asc" ? "desc" : "asc",
+      );
     } else {
       setSortKey(key);
       setSortDirection("asc");
@@ -216,7 +216,7 @@ function WorkflowsTab() {
   const filteredWorkflows = useMemo(() => {
     if (!filter) return uniqueWorkflows;
     return uniqueWorkflows.filter((w: UniqueWorkflow) =>
-      w.name.toLowerCase().includes(filter.toLowerCase())
+      w.name.toLowerCase().includes(filter.toLowerCase()),
     );
   }, [uniqueWorkflows, filter]);
 
@@ -259,40 +259,34 @@ function WorkflowsTab() {
                   />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
-                Refresh
-              </TooltipContent>
+              <TooltipContent>Refresh</TooltipContent>
             </Tooltip>
           </div>
         </div>
         <div className="flex-1 min-h-0 px-4 overflow-x-auto">
-          {sortedAndFilteredWorkflows.length === 0
-            ? (
-              <div className="flex flex-1 min-h-[700px] items-center justify-center">
-                <EmptyState
-                  icon="work"
-                  title="No workflows found"
-                  description={filter
+          {sortedAndFilteredWorkflows.length === 0 ? (
+            <div className="flex flex-1 min-h-[700px] items-center justify-center">
+              <EmptyState
+                icon="work"
+                title="No workflows found"
+                description={
+                  filter
                     ? "No workflows match your search criteria."
-                    : "No workflows have been created yet."}
-                />
-              </div>
-            )
-            : (
-              viewMode === "cards"
-                ? (
-                  <WorkflowsCardView
-                    workflows={sortedAndFilteredWorkflows}
-                    onClick={handleWorkflowClick}
-                  />
-                )
-                : (
-                  <WorkflowsTableView
-                    workflows={sortedAndFilteredWorkflows}
-                    onClick={handleWorkflowClick}
-                  />
-                )
-            )}
+                    : "No workflows have been created yet."
+                }
+              />
+            </div>
+          ) : viewMode === "cards" ? (
+            <WorkflowsCardView
+              workflows={sortedAndFilteredWorkflows}
+              onClick={handleWorkflowClick}
+            />
+          ) : (
+            <WorkflowsTableView
+              workflows={sortedAndFilteredWorkflows}
+              onClick={handleWorkflowClick}
+            />
+          )}
         </div>
       </div>
     </ScrollArea>

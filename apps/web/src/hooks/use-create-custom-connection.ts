@@ -1,11 +1,11 @@
 import { useCreateIntegration } from "@deco/sdk";
 import { toast } from "@deco/ui/components/sonner.tsx";
 import { useCallback } from "react";
-import { useNavigateWorkspace } from "./use-navigate-workspace.ts";
 import {
   AppKeys,
   getConnectionAppKey,
 } from "../components/integrations/apps.ts";
+import { useNavigateWorkspace } from "./use-navigate-workspace.ts";
 
 /**
  * Creates an empty connection and redirects to the connection detail page.

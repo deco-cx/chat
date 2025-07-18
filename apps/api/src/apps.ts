@@ -29,11 +29,15 @@ export const fetchScript = async (
   }
   const scriptFetcher = dispatcher.get<{
     DECO_CHAT_APP_ORIGIN: string;
-  }>(script, {}, {
-    outbound: {
-      DECO_CHAT_APP_ORIGIN: script,
+  }>(
+    script,
+    {},
+    {
+      outbound: {
+        DECO_CHAT_APP_ORIGIN: script,
+      },
     },
-  });
+  );
   const response = await scriptFetcher.fetch(req).catch((err) => {
     if ("message" in err && err.message.startsWith("Worker not found")) {
       // we tried to get a worker that doesn't exist in our dispatch namespace
@@ -48,32 +52,33 @@ export const fetchScript = async (
 app.use(withContextMiddleware);
 app.all("/*", async (c: Context<AppEnv>) => {
   const url = new URL(c.req.url);
-  let host = appsDomainOf(c.req.raw) ?? c.req.header("host") ??
-    url.host;
+  let host = appsDomainOf(c.req.raw) ?? c.req.header("host") ?? url.host;
   if (!host) {
     return new Response("No host", { status: 400 });
   }
   let script = Entrypoint.script(host);
   if (!script) {
-    script = await domainSWRCache.cache(
-      async () => {
-        const { data, error } = await c.var.db.from("deco_chat_hosting_routes")
-          .select("*, deco_chat_hosting_apps(slug)").eq(
-            "route_pattern",
-            host,
-          ).maybeSingle();
-        if (error) {
-          throw error;
-        }
-        const slug = data?.deco_chat_hosting_apps?.slug;
-        if (!slug) {
-          throw new Error("No slug found");
-        }
-        return slug;
-      },
-      host,
-      false,
-    ).catch(() => null);
+    script = await domainSWRCache
+      .cache(
+        async () => {
+          const { data, error } = await c.var.db
+            .from("deco_chat_hosting_routes")
+            .select("*, deco_chat_hosting_apps(slug)")
+            .eq("route_pattern", host)
+            .maybeSingle();
+          if (error) {
+            throw error;
+          }
+          const slug = data?.deco_chat_hosting_apps?.slug;
+          if (!slug) {
+            throw new Error("No slug found");
+          }
+          return slug;
+        },
+        host,
+        false,
+      )
+      .catch(() => null);
     host = `${script}${HOSTING_APPS_DOMAIN}`;
   }
   if (!script) {

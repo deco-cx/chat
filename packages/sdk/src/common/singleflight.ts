@@ -34,7 +34,7 @@ export const waitKeys = async <T>(p: Promisified<T>): Promise<T> => {
 
   const keyResults = await Promise.all(
     entries.map(([k, v]) =>
-      isAwaitable(v) ? v.then((r) => [k, r] as [keyof T, T[keyof T]]) : [k, v]
+      isAwaitable(v) ? v.then((r) => [k, r] as [keyof T, T[keyof T]]) : [k, v],
     ),
   );
 
@@ -71,7 +71,9 @@ export const singleFlight = <T>(): SingleFlight<T> => {
     if (promise !== undefined) {
       return promise;
     }
-    return active[key] = f().finally(() => delete active[key]);
+    const fnPromise = f().finally(() => delete active[key]);
+    active[key] = fnPromise;
+    return fnPromise;
   };
   return {
     do: sfDo,

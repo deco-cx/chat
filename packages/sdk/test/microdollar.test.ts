@@ -75,9 +75,8 @@ describe("MicroDollar - negative values", () => {
   });
 
   test("should handle large negative values", () => {
-    const largeNegativeValue = MicroDollar.fromMicrodollarString(
-      "-123456789_123456",
-    );
+    const largeNegativeValue =
+      MicroDollar.fromMicrodollarString("-123456789_123456");
     expect(largeNegativeValue.toMicrodollarString()).toBe("-123456789_123456");
     expect(largeNegativeValue.toDollars()).toBe(-123456789.123456);
     expect(largeNegativeValue.isNegative()).toBe(true);
@@ -259,7 +258,7 @@ describe("MicroDollar - max() method with negative values", () => {
 
 describe("MicroDollar - display() method with negative values", () => {
   test("should display negative values correctly", () => {
-    const negative = MicroDollar.fromDollars(-1.50);
+    const negative = MicroDollar.fromDollars(-1.5);
     const display = negative.display();
     expect(display).toBe("-$1.50");
   });
@@ -288,6 +287,7 @@ describe("MicroDollar - edge cases and error handling", () => {
     const largeNegative = MicroDollar.fromMicrodollarString(
       "-999999999999_999999",
     );
+    // biome-ignore lint/correctness/noPrecisionLoss: test passes
     expect(largeNegative.toDollars()).toBe(-999999999999.999999);
     expect(largeNegative.isNegative()).toBe(true);
     expect(largeNegative.toMicrodollarString()).toBe("-999999999999_999999");

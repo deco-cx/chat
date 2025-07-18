@@ -1,5 +1,5 @@
+import { WebCache } from "@deco/sdk/cache";
 import type { ClientOf } from "@deco/sdk/http";
-import type { Workspace } from "@deco/sdk/path";
 import {
   MicroDollar,
   type Transaction,
@@ -7,8 +7,8 @@ import {
   WellKnownTransactions,
   WellKnownWallets,
 } from "@deco/sdk/mcp/wallet";
+import type { Workspace } from "@deco/sdk/path";
 import type { LanguageModelUsage } from "ai";
-import { WebCache } from "@deco/sdk/cache";
 
 export interface AgentWalletConfig {
   wallet: ClientOf<WalletAPI>;
@@ -157,9 +157,12 @@ export class AgentWallet {
       workspace: this.config.workspace,
     });
 
-    const response = await this.client["POST /transactions"]({}, {
-      body: operation,
-    });
+    const response = await this.client["POST /transactions"](
+      {},
+      {
+        body: operation,
+      },
+    );
 
     if (!response.ok) {
       // TODO(@mcandeia): add error tracking with posthog
@@ -212,9 +215,9 @@ export class AgentWallet {
             }
 
             throw new Error(
-              `Failed to ensure pending operations are done: ${
-                JSON.stringify(operation)
-              }`,
+              `Failed to ensure pending operations are done: ${JSON.stringify(
+                operation,
+              )}`,
             );
           }
         }),

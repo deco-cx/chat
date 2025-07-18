@@ -40,21 +40,21 @@ export const hooks: TriggerHooks<TriggerData & { type: "cron" }> = {
         id: crypto.randomUUID(),
       }));
 
-      const agent = trigger.state.stub(AIAgent).new(trigger.agentId)
+      const agent = trigger.state
+        .stub(AIAgent)
+        .new(trigger.agentId)
         .withMetadata({
           threadId,
           resourceId: data.id,
         });
-      return await agent.generate(
-        messages,
-      );
+      return await agent.generate(messages);
     };
     let response: unknown;
-    if (("prompt" in data)) {
+    if ("prompt" in data) {
       response = await sendPromptToAgent(data.prompt);
     }
 
-    if (("callTool" in data)) {
+    if ("callTool" in data) {
       response = await trigger._callTool(data.callTool);
     }
 
