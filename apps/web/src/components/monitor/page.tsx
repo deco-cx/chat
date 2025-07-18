@@ -1,18 +1,24 @@
 import type { Tab } from "../dock/index.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
 import UsageSettings from "../settings/usage.tsx";
-import AuditList from "../audit/list.tsx";
+import ActivitySettings from "../settings/activity.tsx";
+import BillingSettings from "../settings/billing.tsx";
 
 const TABS: Record<string, Tab> = {
+  activity: {
+    title: "Activity",
+    Component: ActivitySettings,
+    initialOpen: true,
+    active: true,
+  },
   usage: {
     title: "Usage",
     Component: UsageSettings,
     initialOpen: true,
-    active: true,
   },
-  activity: {
-    title: "Activity",
-    Component: AuditList,
+  billing: {
+    title: "Billing",
+    Component: BillingSettings,
     initialOpen: true,
   },
 };

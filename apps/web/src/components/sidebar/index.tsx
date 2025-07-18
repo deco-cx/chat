@@ -81,12 +81,7 @@ const STATIC_ITEMS = [
     icon: "local_library",
   },
   {
-    url: "/audits",
-    title: "Activity",
-    icon: "forum",
-  },
-  {
-    url: "/settings",
+    url: "/monitor",
     title: "Monitor",
     icon: "monitoring",
   },
