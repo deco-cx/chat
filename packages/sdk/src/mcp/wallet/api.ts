@@ -82,6 +82,35 @@ const ThreadsUsage = {
   },
 };
 
+const ToolsUsage = {
+  fetch: async (
+    wallet: ClientOf<WalletAPI>,
+    workspace: string,
+    range: "day" | "week" | "month",
+  ) => {
+    const usageResponse = await wallet["GET /usage/tools"]({
+      workspace,
+      range,
+    });
+
+    if (!usageResponse.ok) {
+      throw new Error("Failed to fetch usage");
+    }
+
+    return usageResponse.json();
+  },
+  format: (usage: WalletAPI["GET /usage/tools"]["response"]) => {
+    return {
+      total: MicroDollar.fromMicrodollarString(usage.total).display(),
+      items: usage.items.map((item) => ({
+        id: item.id,
+        toolId: item.toolId,
+        total: MicroDollar.fromMicrodollarString(item.total).toDollars(),
+      })),
+    };
+  },
+};
+
 const AgentsUsage = {
   fetch: async (
     wallet: ClientOf<WalletAPI>,
@@ -188,6 +217,28 @@ export const getAgentsUsage = createTool({
       range,
     );
     return AgentsUsage.format(usage);
+  },
+});
+
+export const getToolsUsage = createTool({
+  name: "GET_TOOLS_USAGE",
+  description: "Get the tools usage for the current tenant's wallet",
+  inputSchema: z.object({
+    range: z.enum(["day", "week", "month"]),
+  }),
+  handler: async ({ range }, c) => {
+    assertHasWorkspace(c);
+
+    await assertWorkspaceResourceAccess(c.tool.name, c);
+
+    const wallet = getWalletClient(c);
+
+    const usage = await ToolsUsage.fetch(
+      wallet,
+      c.workspace.value,
+      range,
+    );
+    return ToolsUsage.format(usage);
   },
 });
 

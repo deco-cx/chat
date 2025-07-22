@@ -13,6 +13,15 @@ export const getThreadsUsage = (
       range,
     });
 
+export const getToolsUsage = (
+  workspace: string,
+  range: "day" | "week" | "month",
+) =>
+  MCPClient.forWorkspace(workspace)
+    .GET_TOOLS_USAGE({
+      range,
+    });
+    
 export const getAgentsUsage = (
   workspace: string,
   range: "day" | "week" | "month",

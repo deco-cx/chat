@@ -3,6 +3,7 @@ import type { MCPConnection } from "../models/mcp.ts";
 import { MCPClient } from "../fetcher.ts";
 export interface MCPTool {
   name: string;
+  cost?: number;
   description?: string;
   inputSchema: Record<string, unknown>;
   outputSchema?: Record<string, unknown>;
@@ -68,6 +69,8 @@ export function useTools(connection: MCPConnection) {
 
 export function useToolCall(connection: MCPConnection) {
   return useMutation({
-    mutationFn: (toolCall: MCPToolCall) => callTool(connection, toolCall),
+    mutationFn: (toolCall: MCPToolCall) => callTool(connection, {
+      ...toolCall,
+    }),
   });
 }

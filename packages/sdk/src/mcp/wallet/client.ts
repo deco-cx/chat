@@ -142,6 +142,16 @@ export interface LLMGeneration extends BaseGeneration {
   type: "LLMGeneration";
   usage: LLMUsageEvent;
 }
+export interface ToolCall extends TransactionOperation {
+  type: "ToolCall";
+  toolId: string;
+  mcpId: string;
+  amount: number | string;
+  payer?: Payer;
+  vendor?: Vendor;
+  workspace: string;
+  metadata?: Record<string, unknown>;
+}
 
 export interface PreAuthorization extends TransactionOperation {
   type: "PreAuthorization";
@@ -163,9 +173,10 @@ export interface CommitPreAuthorized extends TransactionOperation {
 }
 
 export type Transaction =
-  | Generation
+  | Generation  
   | AgentGeneration
   | LLMGeneration
+  | ToolCall
   | CashIn
   | WorkspaceCashIn
   | CashOut
@@ -313,6 +324,20 @@ export interface WalletAPI {
       }[];
     };
   };
+  "GET /usage/tools": {
+    searchParams: {
+      workspace: string;
+      range: "day" | "week" | "month";
+    };
+    response: {
+      total: string;
+      items: {
+        id: string;
+        toolId: string;
+        total: string;
+      }[];
+    };
+  };
   "GET /usage/threads": {
     searchParams: {
       workspace: string;
@@ -336,8 +361,8 @@ export interface WalletAPI {
 }
 
 // for local dev
-// const WALLET_API_URL = "http://localhost:8001";
-const WALLET_API_URL = "https://wallet.webdraw.com";
+const WALLET_API_URL = "http://localhost:8001";
+// const WALLET_API_URL = "https://wallet.webdraw.com";
 
 export function createWalletClient(
   apiKey: string,
