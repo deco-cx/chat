@@ -69,6 +69,19 @@ export const parseToValidIndexName = (uuid: string) =>
 export const extractAgentUuidFromKnowledgeBaseId = (
   integrationId: string,
 ): string | null => {
+  const indexPart = extractKnowledgeBaseIndexNameFromIntegrationId(
+    integrationId,
+  );
+
+  if (!indexPart) return null;
+
+  // Remove the leading underscore and convert underscores back to dashes
+  return indexPart.slice(1).replaceAll("_", "-");
+};
+
+export const extractKnowledgeBaseIndexNameFromIntegrationId = (
+  integrationId: string,
+) => {
   if (
     !integrationId.startsWith(
       WELL_KNOWN_KNOWLEDGE_BASE_CONNECTION_ID_STARTSWITH,
@@ -83,10 +96,5 @@ export const extractAgentUuidFromKnowledgeBaseId = (
     "",
   );
 
-  // Remove the leading underscore and convert underscores back to dashes
-  if (indexPart.startsWith("_")) {
-    return indexPart.slice(1).replaceAll("_", "-");
-  }
-
-  return null;
+  return indexPart;
 };
