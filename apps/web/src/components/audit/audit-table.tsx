@@ -25,6 +25,7 @@ interface AuditTableProps {
   onSortChange: (sort: string) => void;
   onRowClick?: (threadId: string) => void;
   columnsDenyList?: Set<string>;
+  costByThreadId?: Record<string, string>;
 }
 
 function getSortKeyAndDirection(
@@ -37,7 +38,7 @@ function getSortKeyAndDirection(
 }
 
 export function AuditTable(
-  { threads, sort, onSortChange, onRowClick, columnsDenyList }: AuditTableProps,
+  { threads, sort, onSortChange, onRowClick, columnsDenyList, costByThreadId }: AuditTableProps,
 ) {
   const { key: sortKey, direction: sortDirection } = getSortKeyAndDirection(
     sort,
@@ -64,6 +65,11 @@ export function AuditTable(
           agentId={cell.metadata?.agentId}
         />
       ),
+    },
+    {
+      id: "cost",
+      header: "Cost",
+      accessor: (cell: Thread) => costByThreadId?.[cell.id] ?? "-",
     },
     {
       id: "user",
