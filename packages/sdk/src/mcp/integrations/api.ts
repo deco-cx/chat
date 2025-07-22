@@ -160,8 +160,15 @@ export const listTools = createIntegrationManagementTool({
   inputSchema: IntegrationSchema.pick({
     connection: true,
   }),
-  handler: async ({ connection }, c) => {
+  handler: async ({ connection: _connection }, c) => {
     c.resourceAccess.grant();
+
+    const connection = isApiDecoChatMCPConnection(_connection)
+      ? patchApiDecoChatTokenHTTPConnection(
+        _connection,
+        c.cookie,
+      )
+      : _connection;
 
     const result = await listToolsByConnectionType(
       connection,

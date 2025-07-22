@@ -1,16 +1,9 @@
 import { HttpServerTransport } from "@deco/mcp/http";
-import {
-  DECO_CHAT_WEB,
-  IntegrationSchema,
-  WELL_KNOWN_KNOWLEDGE_BASE_CONNECTION_ID_STARTSWITH,
-  WellKnownMcpGroups,
-} from "@deco/sdk";
+import { createServerClient } from "@deco/ai/mcp";
+import { DECO_CHAT_WEB, Integration, WellKnownMcpGroups } from "@deco/sdk";
 import { DECO_CHAT_KEY_ID, getKeyPair } from "@deco/sdk/auth";
 import {
   AGENT_TOOLS,
-  assertHasWorkspace,
-  assertPrincipalIsUser,
-  assertWorkspaceResourceAccess,
   AuthorizationClient,
   createMCPToolsStub,
   EMAIL_TOOLS,
@@ -18,6 +11,7 @@ import {
   getPresignedReadUrl_WITHOUT_CHECKING_AUTHORIZATION,
   getWorkspaceBucketName,
   GLOBAL_TOOLS,
+  MCPClient,
   PolicyClient,
   type ToolLike,
   withMCPErrorHandling,
@@ -42,15 +36,6 @@ import { type AppContext, type AppEnv, State } from "./utils/context.ts";
 import { handleStripeWebhook } from "./webhooks/stripe.ts";
 import { handleTrigger } from "./webhooks/trigger.ts";
 import { handleCodeExchange } from "./oauth/code.ts";
-import { parseId } from "packages/sdk/src/mcp/integrations/api.ts";
-import { getGroups } from "packages/sdk/src/mcp/groups.ts";
-import { createServerClient } from "packages/sdk/src/mcp/utils.ts";
-import { extractKnowledgeBaseIndexNameFromIntegrationId } from "packages/sdk/src/utils/knowledge.ts";
-
-const workspaceAsserts = (appCtx: AppContext) => {
-  assertPrincipalIsUser(appCtx);
-  assertHasWorkspace(appCtx);
-};
 
 export const app = new Hono<AppEnv>();
 export const honoCtxToAppCtx = (c: Context<AppEnv>): AppContext => {
@@ -196,134 +181,6 @@ const createToolCallHandlerFor = <
   };
 };
 
-const getIntegrationCallTool = async (
-  c: Context,
-  appCtx: AppContext,
-  integrationId: string,
-  tool: string,
-  toolsMap: Map<string, ToolLike>,
-) => {
-  const { uuid, type } = parseId(integrationId);
-  const groups = getGroups();
-
-  let isKnowledgeBase = false;
-  // handle knowledge_base tools
-  if (
-    type === "i" &&
-    (groups[uuid] || "user-management" === uuid || "team-management" === uuid ||
-      (isKnowledgeBase = integrationId.startsWith(
-        WELL_KNOWN_KNOWLEDGE_BASE_CONNECTION_ID_STARTSWITH,
-      )))
-  ) {
-    const t = toolsMap.get(tool);
-    if (!t) {
-      throw new HTTPException(404, { message: "Tool not found" });
-    }
-
-    startTime(c, tool);
-    const client = createMCPToolsStub({ tools: [t] });
-    const toolFn = client[tool as keyof typeof client];
-
-    const callTool = async (args: z.ZodType<typeof t.inputSchema>) => {
-      const { data, error } = t.inputSchema.safeParse(args);
-      if (error || !data) {
-        throw new HTTPException(400, {
-          message: error?.message ?? "Invalid arguments",
-        });
-      }
-
-      if (isKnowledgeBase) {
-        const indexName = extractKnowledgeBaseIndexNameFromIntegrationId(
-          integrationId,
-        );
-        if (indexName) {
-          appCtx.params.name = indexName;
-        }
-      }
-
-      const result = await State.run(
-        appCtx,
-        (args) => toolFn(args),
-        data,
-      ).catch(mapMCPErrorToHTTPExceptionOrThrow);
-      endTime(c, tool);
-
-      return result;
-    };
-    return callTool;
-  }
-
-  // TODO (@igorbrasileiro): add a webcache here
-  const { data: connection } = await appCtx.db.from("deco_chat_integrations")
-    .select("connection, name").eq("id", uuid).single();
-  const { data: integration, error: integrationError } = IntegrationSchema.pick(
-    { connection: true, name: true },
-  ).safeParse(connection);
-
-  if (!connection) {
-    throw new HTTPException(400, { message: "Integration not found" });
-  }
-  if (integrationError) {
-    throw new HTTPException(400, { message: "Invalid integration" });
-  }
-
-  const client = await createServerClient(integration);
-  const callTool = async (
-    args: Parameters<typeof client.callTool>[0]["arguments"] = {},
-  ) => {
-    try {
-      const result = await client.callTool({
-        name: tool,
-        arguments: args || {},
-      });
-
-      return result.structuredContent;
-    } catch (error) {
-      return {
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    } finally {
-      await client.close();
-    }
-  };
-
-  return callTool;
-};
-
-const crateCallIntegrationTool = (
-  tools: typeof WORKSPACE_TOOLS | typeof GLOBAL_TOOLS,
-  asserts?: (c: AppContext) => void,
-) => {
-  const toolMap = new Map(tools.map((t) => [t.name, t]));
-  return async (c: Context) => {
-    const integrationId = c.req.param("integrationId");
-    const tool = c.req.param("tool");
-
-    if (!integrationId) {
-      throw new HTTPException(400, { message: "Invalid request" });
-    }
-
-    // auth
-    const appCtx = honoCtxToAppCtx(c);
-    asserts?.(appCtx);
-
-    // TODO: add match integration on assert
-    await assertWorkspaceResourceAccess(tool, appCtx);
-
-    // get integration
-    const callTool = await getIntegrationCallTool(
-      c,
-      appCtx,
-      integrationId,
-      tool,
-      toolMap,
-    );
-    const args = await c.req.json();
-
-    return c.json({ data: await callTool(args) });
-  };
-};
-
 // Add logger middleware
 app.use(logger());
 
@@ -384,19 +241,67 @@ app.post(
   "/tools/call/:tool",
   createToolCallHandlerFor(GLOBAL_TOOLS),
 );
-app.post(
-  "/:integrationId/tools/call/:tool",
-  crateCallIntegrationTool(GLOBAL_TOOLS, assertPrincipalIsUser),
-);
 
 app.post(
   "/:root/:slug/tools/call/:tool",
   createToolCallHandlerFor(WORKSPACE_TOOLS),
 );
 
+const proxy = (
+  integration: Integration,
+): { fetch: (req: Request) => Promise<Response> } => {
+  const fetch = async (req: Request) => {
+    const client = await createServerClient(integration);
+    const tools = await client.listTools();
+
+    const server = new McpServer(
+      { name: "deco-chat-server", version: "1.0.0" },
+      { capabilities: { tools: {} } },
+    );
+
+    for (const tool of tools.tools) {
+      server.registerTool(
+        tool.name,
+        {
+          description: tool.description,
+          inputSchema: tool.inputSchema?.shape as z.ZodRawShape | undefined ??
+            z.object({}).shape,
+          outputSchema: tool.outputSchema?.shape as z.ZodRawShape | undefined ??
+            z.object({}).shape,
+        },
+        // @ts-expect-error: zod shape is not typed
+        withMCPErrorHandling(tool.handler),
+      );
+    }
+
+    const transport = integration.connection.type === "HTTP"
+      ? new HttpServerTransport()
+      : undefined;
+
+    if (transport === undefined) throw new Error("Invalid transport");
+
+    await server.connect(transport);
+
+    return await transport.handleMessage(req);
+  };
+
+  return { fetch };
+};
+
 app.post(
-  "/:root/:slug/:integrationId/tools/call/:tool",
-  crateCallIntegrationTool(WORKSPACE_TOOLS, workspaceAsserts),
+  "/:root/:slug/:integrationId/mcp",
+  async (c) => {
+    const ctx = honoCtxToAppCtx(c);
+
+    const integrationId = c.req.param("integrationId");
+
+    const mcpClient = MCPClient.forContext(ctx);
+
+    const integration = await mcpClient.INTEGRATIONS_GET({ id: integrationId });
+
+    const server = proxy(integration);
+    return server.fetch(c.req.raw);
+  },
 );
 
 app.post(
