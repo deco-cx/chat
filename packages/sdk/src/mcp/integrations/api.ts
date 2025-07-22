@@ -162,10 +162,21 @@ export const listTools = createIntegrationManagementTool({
       .optional()
       .describe("Whether to ignore the cache when listing tools"),
   }),
-  handler: async ({ connection, ignoreCache }, c) => {
+  handler: async ({ connection: _connection, ignoreCache }, c) => {
     c.resourceAccess.grant();
 
-    const result = await listToolsByConnectionType(connection, c, ignoreCache);
+    const connection = isApiDecoChatMCPConnection(_connection)
+      ? patchApiDecoChatTokenHTTPConnection(
+        _connection,
+        c.cookie,
+      )
+      : _connection;
+
+    const result = await listToolsByConnectionType(
+      connection,
+      c,
+      ignoreCache,
+    );
 
     // Sort tools by name for consistent UI
     if (Array.isArray(result?.tools)) {
