@@ -21,7 +21,7 @@ const getClientFor = (
 
 interface KnowledgeAddFileParams extends FromWorkspace, ForConnection {
   fileUrl: string;
-  path: string;
+  path?: string;
   filename?: string;
   metadata?: Record<string, string>;
 }

@@ -28,7 +28,7 @@ export const useCreateKnowledge = () => {
 
 interface AddFileToKnowledgeParams extends ForConnection {
   fileUrl: string;
-  path: string;
+  path?: string;
   filename?: string;
   metadata?: Record<string, string>;
 }

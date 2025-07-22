@@ -233,5 +233,23 @@ export const useUploadAgentKnowledgeFiles = (
 
   return {
     uploadKnowledgeFiles,
+    uploadKnowledgeUrls: async (urls: string[]) => {
+      if (!knowledgeIntegration?.connection) {
+        await createAgentKnowledge();
+        knowledeIntegrationPromise.current = Promise.withResolvers();
+        await knowledeIntegrationPromise.current.promise;
+      }
+      const kbIntegration = knowledgeIntegration ??
+        (await knowledeIntegrationPromise.current?.promise);
+      if (!kbIntegration) throw new Error("Not found knowledge for this agent");
+      await Promise.all(urls.map(async (url) => {
+        await addFileToKnowledgeBase.mutateAsync({
+          connection: kbIntegration.connection,
+          fileUrl: url,
+          filename: url,
+          metadata: { agentId: agent.id },
+        });
+      }));
+    },
   };
 };

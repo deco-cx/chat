@@ -90,7 +90,7 @@ export function KnowledgeBaseFileList(
       {files.map((file) => (
         <div
           key={file.name ?? file.fileUrl}
-          className="flex items-center gap-3 justify-between p-2 h-14"
+          className="flex items-center gap-3 justify-between p-2 h-14 w-full  "
         >
           {/* icon */}
           <div className="w-10 h-10 p-2 rounded-xl bg-primary/10 flex-shrink-0">
@@ -99,7 +99,7 @@ export function KnowledgeBaseFileList(
 
           {/* name */}
           <div className="flex-1 min-w-0">
-            <span className="text-sm font-medium truncate">
+            <span className="text-sm font-medium truncate overflow-hidden whitespace-nowrap block">
               {(file.status === "processing" || file.status === "failed" ||
                 file.uploading) && (
                 <TooltipProvider>
@@ -193,12 +193,17 @@ export function KnowledgeBaseFileList(
 interface AddFileToKnowledgeProps {
   disabled?: boolean;
   uploadKnowledgeFiles: (files: File[]) => Promise<void>;
+  uploadKnowledgeUrls?: (urls: string[]) => Promise<void>; // New prop for URLs
 }
 
 export function AddFileToKnowledgeButton(
-  { uploadKnowledgeFiles, disabled = false }: AddFileToKnowledgeProps,
+  { uploadKnowledgeFiles, uploadKnowledgeUrls, disabled = false }:
+    AddFileToKnowledgeProps,
 ) {
   const [isUploading, setIsUploading] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [urlValue, setUrlValue] = useState("");
+  const [isUrlUploading, setIsUrlUploading] = useState(false);
   const knowledgeFileInputRef = useRef<HTMLInputElement>(null);
 
   const triggerFileInput = () => {
@@ -223,8 +228,18 @@ export function AddFileToKnowledgeButton(
     const files = Array.from(e.target.files || []);
     handleFiles(files);
   };
+
+  const handleUrlSubmit = async () => {
+    if (!uploadKnowledgeUrls || !urlValue.trim()) return;
+    setIsUrlUploading(true);
+    await uploadKnowledgeUrls([urlValue.trim()]);
+    setIsUrlUploading(false);
+    setUrlValue("");
+    setShowUrlInput(false);
+  };
+
   return (
-    <div>
+    <div className="flex gap-2 items-center">
       <input
         type="file"
         ref={knowledgeFileInputRef}
@@ -246,6 +261,56 @@ export function AddFileToKnowledgeButton(
         />
         Add file
       </Button>
+
+      {uploadKnowledgeUrls && (
+        <>
+          {showUrlInput
+            ? (
+              <div className="flex gap-2 items-center">
+                <input
+                  type="url"
+                  value={urlValue}
+                  onChange={(e) => setUrlValue(e.target.value)}
+                  placeholder="Paste URL..."
+                  className="border rounded px-2 py-1 text-sm w-48"
+                  disabled={isUrlUploading || disabled}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleUrlSubmit}
+                  disabled={isUrlUploading || !urlValue.trim() || disabled}
+                >
+                  {isUrlUploading ? "Adding..." : "Confirm"}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setShowUrlInput(false);
+                    setUrlValue("");
+                  }}
+                  disabled={isUrlUploading}
+                >
+                  Cancel
+                </Button>
+              </div>
+            )
+            : (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowUrlInput(true)}
+                disabled={isUrlUploading || disabled}
+              >
+                <Icon name="link" size={16} />
+                Add URL
+              </Button>
+            )}
+        </>
+      )}
     </div>
   );
 }

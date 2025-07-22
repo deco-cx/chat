@@ -185,11 +185,12 @@ function Knowledge() {
   const { data: files, isLoading } = useKnowledgeListFiles({
     connection: integration?.connection,
   });
-  const { uploadKnowledgeFiles } = useUploadAgentKnowledgeFiles({
-    agent,
-    onAddFile: setUploadedFiles,
-    setIntegrationTools,
-  });
+  const { uploadKnowledgeFiles, uploadKnowledgeUrls } =
+    useUploadAgentKnowledgeFiles({
+      agent,
+      onAddFile: setUploadedFiles,
+      setIntegrationTools,
+    });
 
   const formatedFiles = useMemo<KnowledgeFile[]>(
     () =>
@@ -251,6 +252,7 @@ function Knowledge() {
           </span>
           <AddFileToKnowledgeButton
             uploadKnowledgeFiles={uploadKnowledgeFiles}
+            uploadKnowledgeUrls={uploadKnowledgeUrls}
             disabled={shouldDisableAddButton}
           />
         </div>
@@ -267,6 +269,7 @@ function Knowledge() {
 
         <AddFileToKnowledgeButton
           uploadKnowledgeFiles={uploadKnowledgeFiles}
+          uploadKnowledgeUrls={uploadKnowledgeUrls}
           disabled={shouldDisableAddButton}
         />
       </div>
