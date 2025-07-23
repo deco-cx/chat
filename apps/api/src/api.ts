@@ -14,6 +14,7 @@ import {
   MCPClient,
   PolicyClient,
   type ToolLike,
+  withMCPAuthorization,
   withMCPErrorHandling,
   WORKSPACE_TOOLS,
 } from "@deco/sdk/mcp";
@@ -36,6 +37,11 @@ import { type AppContext, type AppEnv, State } from "./utils/context.ts";
 import { handleStripeWebhook } from "./webhooks/stripe.ts";
 import { handleTrigger } from "./webhooks/trigger.ts";
 import { handleCodeExchange } from "./oauth/code.ts";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  ListToolsResult,
+} from "@modelcontextprotocol/sdk/types.js";
 
 export const app = new Hono<AppEnv>();
 export const honoCtxToAppCtx = (c: Context<AppEnv>): AppContext => {
@@ -181,6 +187,48 @@ const createToolCallHandlerFor = <
   };
 };
 
+const proxy = (
+  integration: Integration,
+  ctx: AppContext,
+) => {
+  const fetch = async (req: Request) => {
+    const client = await createServerClient(integration);
+
+    const mcpServer = new McpServer(
+      { name: "deco-chat-server", version: "1.0.0" },
+      { capabilities: { tools: {} } },
+    );
+    mcpServer.server.setRequestHandler(
+      ListToolsRequestSchema,
+      (): Promise<ListToolsResult> => {
+        return client.listTools();
+      },
+    );
+    mcpServer.server.setRequestHandler(CallToolRequestSchema, (req) => {
+      return withMCPAuthorization(
+        (req) => client.callTool(req.params),
+        {
+          integrationId: integration.id,
+          toolName: req.params.name,
+        },
+        ctx,
+      )(req);
+    });
+
+    const transport = integration.connection.type === "HTTP"
+      ? new HttpServerTransport()
+      : undefined;
+
+    if (transport === undefined) throw new Error("Invalid transport");
+
+    await mcpServer.connect(transport);
+
+    return await transport.handleMessage(req);
+  };
+
+  return { fetch };
+};
+
 // Add logger middleware
 app.use(logger());
 
@@ -247,47 +295,6 @@ app.post(
   createToolCallHandlerFor(WORKSPACE_TOOLS),
 );
 
-const proxy = (
-  integration: Integration,
-): { fetch: (req: Request) => Promise<Response> } => {
-  const fetch = async (req: Request) => {
-    const client = await createServerClient(integration);
-    const tools = await client.listTools();
-
-    const server = new McpServer(
-      { name: "deco-chat-server", version: "1.0.0" },
-      { capabilities: { tools: {} } },
-    );
-
-    for (const tool of tools.tools) {
-      server.registerTool(
-        tool.name,
-        {
-          description: tool.description,
-          inputSchema: tool.inputSchema?.shape as z.ZodRawShape | undefined ??
-            z.object({}).shape,
-          outputSchema: tool.outputSchema?.shape as z.ZodRawShape | undefined ??
-            z.object({}).shape,
-        },
-        // @ts-expect-error: zod shape is not typed
-        withMCPErrorHandling(tool.handler),
-      );
-    }
-
-    const transport = integration.connection.type === "HTTP"
-      ? new HttpServerTransport()
-      : undefined;
-
-    if (transport === undefined) throw new Error("Invalid transport");
-
-    await server.connect(transport);
-
-    return await transport.handleMessage(req);
-  };
-
-  return { fetch };
-};
-
 app.post(
   "/:root/:slug/:integrationId/mcp",
   async (c) => {
@@ -299,8 +306,9 @@ app.post(
 
     const integration = await mcpClient.INTEGRATIONS_GET({ id: integrationId });
 
-    const server = proxy(integration);
-    return server.fetch(c.req.raw);
+    const mcpServerProxy = proxy(integration, ctx);
+
+    return mcpServerProxy.fetch(c.req.raw);
   },
 );
 
