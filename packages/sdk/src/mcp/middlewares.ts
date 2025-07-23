@@ -1,6 +1,53 @@
 // deno-lint-ignore-file no-explicit-any
+import {
+  CallToolRequestSchema,
+  CallToolResultSchema,
+  ListToolsRequestSchema,
+  ListToolsResult,
+} from "@modelcontextprotocol/sdk/types.js";
 import { assertWorkspaceResourceAccess } from "./assertions.ts";
 import { type AppContext, serializeError } from "./context.ts";
+import z from "zod";
+
+export interface RequestMiddlewareContext<T = any> {
+  next?(): Promise<T>;
+}
+export type RequestMiddleware<
+  TRequest = any,
+  TResponse = any,
+> = (request: TRequest, next?: () => Promise<TResponse>) => Promise<TResponse>;
+
+export const compose = <
+  TRequest,
+  TResponse,
+>(
+  ...middlewares: RequestMiddleware<TRequest, TResponse>[]
+): RequestMiddleware<TRequest, TResponse> => {
+  const last = middlewares[middlewares.length - 1];
+  return function composedResolver(request: TRequest) {
+    const dispatch = (
+      i: number,
+    ): Promise<TResponse> => {
+      const middleware = middlewares[i];
+      if (!middleware) {
+        return last(request);
+      }
+      const next = () => dispatch(i + 1);
+      return middleware(request, next);
+    };
+
+    return dispatch(0);
+  };
+};
+
+export type ListToolsMiddleware = RequestMiddleware<
+  z.infer<typeof ListToolsRequestSchema>,
+  ListToolsResult
+>;
+export type CallToolMiddleware = RequestMiddleware<
+  z.infer<typeof CallToolRequestSchema>,
+  z.infer<typeof CallToolResultSchema>
+>;
 
 export const withMCPErrorHandling = <
   TInput = any,
@@ -22,34 +69,30 @@ async (props: TInput) => {
   }
 };
 
-interface MCPAuthorizationContext {
+interface AuthContext {
   integrationId: string;
-  toolName: string;
 }
 
-export const withMCPAuthorization = <
-  TInput = any,
-  TReturn extends object | null | boolean = object,
->(
-  f: (props: TInput) => Promise<TReturn>,
-  { toolName }: MCPAuthorizationContext,
-  ctx: AppContext,
-) =>
-async (props: TInput) => {
-  ctx.resourceAccess.reset();
-  try {
-    await assertWorkspaceResourceAccess(
-      toolName,
-      ctx,
-      // TODO: add auth context on auth.canAccess
-      // { integrationId }
-    );
-  } catch (error) {
-    return {
-      isError: true,
-      content: [{ type: "text", text: serializeError(error) }],
-    };
-  }
+export const withMCPAuthorization =
+  (ctx: AppContext, _: AuthContext): CallToolMiddleware =>
+  async (
+    req,
+    next,
+  ) => {
+    ctx.resourceAccess.reset();
+    try {
+      await assertWorkspaceResourceAccess(
+        req.params.name,
+        ctx,
+        // TODO: add auth context on auth.canAccess
+        // { integrationId }
+      );
+    } catch (error) {
+      return {
+        isError: true,
+        content: [{ type: "text", text: serializeError(error) }],
+      };
+    }
 
-  return f(props);
-};
+    return await next!();
+  };

@@ -1,15 +1,18 @@
 import { HttpServerTransport } from "@deco/mcp/http";
 import { createServerClient } from "@deco/ai/mcp";
-import { DECO_CHAT_WEB, Integration, WellKnownMcpGroups } from "@deco/sdk";
+import { DECO_CHAT_WEB, MCPConnection, WellKnownMcpGroups } from "@deco/sdk";
 import { DECO_CHAT_KEY_ID, getKeyPair } from "@deco/sdk/auth";
 import {
   AGENT_TOOLS,
   AuthorizationClient,
+  CallToolMiddleware,
+  compose,
   createMCPToolsStub,
   EMAIL_TOOLS,
   getPresignedReadUrl_WITHOUT_CHECKING_AUTHORIZATION,
   getWorkspaceBucketName,
   GLOBAL_TOOLS,
+  ListToolsMiddleware,
   MCPClient,
   PolicyClient,
   type ToolLike,
@@ -38,7 +41,6 @@ import { handleTrigger } from "./webhooks/trigger.ts";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
-  ListToolsResult,
 } from "@modelcontextprotocol/sdk/types.js";
 
 export const app = new Hono<AppEnv>();
@@ -189,39 +191,46 @@ const createToolCallHandlerFor = <
   };
 };
 
+interface ProxyOptions {
+  middlewares?: Partial<{
+    listTools: ListToolsMiddleware[];
+    callTool: CallToolMiddleware[];
+  }>;
+}
+
 const proxy = (
-  integration: Integration,
-  ctx: AppContext,
+  mcpConnection: MCPConnection,
+  { middlewares }: ProxyOptions = {},
 ) => {
   const fetch = async (req: Request) => {
-    const client = await createServerClient(integration);
+    const client = await createServerClient({
+      connection: mcpConnection,
+      name: "proxy",
+    });
 
     const mcpServer = new McpServer(
       { name: "deco-chat-server", version: "1.0.0" },
       { capabilities: { tools: {} } },
     );
+    const transport = new HttpServerTransport();
+
+    const listTools = compose(
+      ...(middlewares?.listTools ?? []),
+      () => (client.listTools() as ReturnType<ListToolsMiddleware>),
+    );
     mcpServer.server.setRequestHandler(
       ListToolsRequestSchema,
-      (): Promise<ListToolsResult> => {
-        return client.listTools();
-      },
+      (req) => listTools(req),
     );
-    mcpServer.server.setRequestHandler(CallToolRequestSchema, (req) => {
-      return withMCPAuthorization(
-        (req) => client.callTool(req.params),
-        {
-          integrationId: integration.id,
-          toolName: req.params.name,
-        },
-        ctx,
-      )(req);
-    });
 
-    const transport = integration.connection.type === "HTTP"
-      ? new HttpServerTransport()
-      : undefined;
-
-    if (transport === undefined) throw new Error("Invalid transport");
+    const callTool = compose(
+      ...(middlewares?.callTool ?? []),
+      (req) => (client.callTool(req.params) as ReturnType<CallToolMiddleware>),
+    );
+    mcpServer.server.setRequestHandler(
+      CallToolRequestSchema,
+      (req) => callTool(req),
+    );
 
     await mcpServer.connect(transport);
 
@@ -299,7 +308,13 @@ app.post(
 
     const integration = await mcpClient.INTEGRATIONS_GET({ id: integrationId });
 
-    const mcpServerProxy = proxy(integration, ctx);
+    const mcpServerProxy = proxy(integration.connection, {
+      middlewares: {
+        callTool: [
+          withMCPAuthorization(ctx, { integrationId }),
+        ],
+      },
+    });
 
     return mcpServerProxy.fetch(c.req.raw);
   },
