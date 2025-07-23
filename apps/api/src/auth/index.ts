@@ -8,7 +8,7 @@ import type {
 import { Hono } from "hono";
 import { honoCtxToAppCtx } from "../api.ts";
 import {
-  AUTH_URL,
+  DECO_CHAT_API,
   getEnv,
   type HonoAppContext as AppContext,
   type Principal,
@@ -136,7 +136,7 @@ appLogin.all("/oauth", async (ctx: AppContext) => {
   const provider = (url.searchParams.get("provider") ?? "google") as Provider;
   const redirectTo = new URL(
     AUTH_CALLBACK_OAUTH,
-    AUTH_URL(honoCtxToAppCtx(ctx)),
+    DECO_CHAT_API(honoCtxToAppCtx(ctx)),
   );
 
   const next = url.searchParams.get("next");

@@ -13,7 +13,6 @@ import {
   getWorkspaceBucketName,
   GLOBAL_TOOLS,
   ListToolsMiddleware,
-  MCPClient,
   PolicyClient,
   type ToolLike,
   withMCPAuthorization,
@@ -42,6 +41,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import { createIntegrationsGet } from "packages/sdk/src/mcp/integrations/api.ts";
 
 export const app = new Hono<AppEnv>();
 export const honoCtxToAppCtx = (c: Context<AppEnv>): AppContext => {
@@ -303,10 +303,13 @@ app.post(
     const ctx = honoCtxToAppCtx(c);
 
     const integrationId = c.req.param("integrationId");
-
-    const mcpClient = MCPClient.forContext(ctx);
-
-    const integration = await mcpClient.INTEGRATIONS_GET({ id: integrationId });
+    const integrationsGet = createIntegrationsGet({
+      mapConnectionForContext: (connection) => connection,
+    });
+    const integration = await State.run(
+      ctx,
+      () => integrationsGet({ id: integrationId }, ctx),
+    );
 
     const mcpServerProxy = proxy(integration.connection, {
       middlewares: {
