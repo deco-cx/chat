@@ -3,6 +3,7 @@ export * from "./assertions.ts";
 export { createResourceAccess } from "./auth/index.ts";
 export * from "./bindings/binder.ts";
 export * from "./context.ts";
+export * from "./middlewares.ts";
 export {
   getPresignedReadUrl_WITHOUT_CHECKING_AUTHORIZATION,
   getWorkspaceBucketName,

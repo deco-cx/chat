@@ -223,26 +223,6 @@ export function createToolGroup(
   );
 }
 
-export const withMCPErrorHandling =
-  <TInput = any, TReturn extends object | null | boolean = object>(
-    f: (props: TInput) => Promise<TReturn>,
-  ) =>
-  async (props: TInput) => {
-    try {
-      const result = await f(props);
-
-      return {
-        isError: false,
-        structuredContent: result,
-      };
-    } catch (error) {
-      return {
-        isError: true,
-        content: [{ type: "text", text: serializeError(error) }],
-      };
-    }
-  };
-
 type ToolName = string;
 type GroupName = string;
 export const resourceGroupMap = new Map<ToolName, GroupName | undefined>();
