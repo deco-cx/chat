@@ -53,27 +53,31 @@ export const withMCPErrorHandling = <
   TInput = any,
   TReturn extends object | null | boolean = object,
 >(f: (props: TInput) => Promise<TReturn>) =>
-  async (props: TInput) => {
-    try {
-      const result = await f(props);
+async (props: TInput) => {
+  try {
+    const result = await f(props);
 
-      return {
-        isError: false,
-        structuredContent: result,
-      };
-    } catch (error) {
-      return {
-        isError: true,
-        content: [{ type: "text", text: serializeError(error) }],
-      };
-    }
-  };
+    return {
+      isError: false,
+      structuredContent: result,
+    };
+  } catch (error) {
+    return {
+      isError: true,
+      content: [{ type: "text", text: serializeError(error) }],
+    };
+  }
+};
 
 interface AuthContext {
   integrationId: string;
 }
 export const withMCPAuthorization =
-  (ctx: AppContext, _: AuthContext): CallToolMiddleware => async (req, next) => {
+  (ctx: AppContext, _: AuthContext): CallToolMiddleware =>
+  async (
+    req,
+    next,
+  ) => {
     ctx.resourceAccess.reset();
     try {
       await assertWorkspaceResourceAccess(
