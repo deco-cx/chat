@@ -15,6 +15,7 @@ const WELL_KNOWN_VIEW_ICONS = {
   "profile": "robot_2",
   "prompt": "assignment",
   "integrations": "linked_services",
+  "canvas": "edit",
   "triggers": "cable",
   "general": "settings",
   "members": "group",
