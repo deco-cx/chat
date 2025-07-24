@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)";
-  };
   public: {
     Tables: {
       admin_ai_usage: {
@@ -504,6 +499,50 @@ export type Database = {
             columns: ["scope_id"];
             isOneToOne: false;
             referencedRelation: "deco_chat_registry_scopes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      deco_chat_apps_registry_tools: {
+        Row: {
+          app_id: string;
+          created_at: string;
+          description: string | null;
+          id: string;
+          input_schema: Json | null;
+          metadata: Json | null;
+          name: string;
+          output_schema: Json | null;
+          updated_at: string;
+        };
+        Insert: {
+          app_id: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          input_schema?: Json | null;
+          metadata?: Json | null;
+          name: string;
+          output_schema?: Json | null;
+          updated_at?: string;
+        };
+        Update: {
+          app_id?: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          input_schema?: Json | null;
+          metadata?: Json | null;
+          name?: string;
+          output_schema?: Json | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "deco_chat_apps_registry_tools_app_id_fkey";
+            columns: ["app_id"];
+            isOneToOne: false;
+            referencedRelation: "deco_chat_apps_registry";
             referencedColumns: ["id"];
           },
         ];
