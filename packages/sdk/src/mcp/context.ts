@@ -15,7 +15,7 @@ import type {
 } from "../auth/policy.ts";
 import { type WellKnownMcpGroup, WellKnownMcpGroups } from "../crud/groups.ts";
 import { ForbiddenError, type HttpError } from "../errors.ts";
-import type { WithTool } from "./assertions.ts";
+import { type WithTool } from "./assertions.ts";
 import type { ResourceAccess } from "./auth/index.ts";
 import { addGroup, type GroupIntegration } from "./groups.ts";
 export type UserPrincipal = Pick<SupaUser, "id" | "email" | "is_anonymous">;
@@ -121,7 +121,7 @@ const envSchema = z.object({
 export const getEnv = (ctx: AppContext): EnvVars =>
   envSchema.parse(ctx.envVars);
 
-export const AUTH_URL = (ctx: AppContext) =>
+export const DECO_CHAT_API = (ctx: AppContext) =>
   getEnv(ctx).VITE_USE_LOCAL_BACKEND === "true"
     ? "http://localhost:3001"
     : "https://api.deco.chat";
@@ -182,26 +182,6 @@ export const createToolGroup = (
     WellKnownMcpGroups[group],
     integration,
   );
-
-export const withMCPErrorHandling = <
-  TInput = any,
-  TReturn extends object | null | boolean = object,
->(f: (props: TInput) => Promise<TReturn>) =>
-async (props: TInput) => {
-  try {
-    const result = await f(props);
-
-    return {
-      isError: false,
-      structuredContent: result,
-    };
-  } catch (error) {
-    return {
-      isError: true,
-      content: [{ type: "text", text: serializeError(error) }],
-    };
-  }
-};
 
 export const createToolFactory = <
   TAppContext extends AppContext = AppContext,
