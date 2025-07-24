@@ -69,12 +69,14 @@ async (props: TInput) => {
   }
 };
 
+const DRY_RUN_AUTH = true;
+
 interface AuthContext {
   integrationId: string;
 }
 
 export const withMCPAuthorization =
-  (ctx: AppContext, _: AuthContext): CallToolMiddleware =>
+  (ctx: AppContext, { integrationId }: AuthContext): CallToolMiddleware =>
   async (
     req,
     next,
@@ -88,10 +90,15 @@ export const withMCPAuthorization =
         // { integrationId }
       );
     } catch (error) {
-      return {
-        isError: true,
-        content: [{ type: "text", text: serializeError(error) }],
-      };
+      console.error(
+        `withMCPAuthorization error: user id ${ctx.user?.id} failed to access ${integrationId} resource ${req.params.name} at workspace ${ctx.workspace?.value}`,
+      );
+      if (!DRY_RUN_AUTH) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: serializeError(error) }],
+        };
+      }
     }
 
     return await next!();
