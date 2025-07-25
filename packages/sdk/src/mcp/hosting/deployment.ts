@@ -4,7 +4,6 @@ import type {
   ScriptUpdateParams,
   ScriptUpdateResponse,
 } from "cloudflare/resources/workers/scripts/scripts.mjs";
-import crypto from "node:crypto";
 import { assertHasWorkspace } from "../assertions.ts";
 import { type AppContext, getEnv } from "../context.ts";
 import { getMimeType, HOSTING_APPS_DOMAIN } from "./api.ts";
