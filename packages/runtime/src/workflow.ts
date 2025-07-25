@@ -107,7 +107,9 @@ export const Workflow = (
         },
         telemetry: {
           enabled: true,
-          serviceName: `app-${this.env.DECO_CHAT_SCRIPT_SLUG}`,
+          serviceName: `app-${
+            this.env.DECO_CHAT_SCRIPT_SLUG ?? this.env.DECO_CHAT_APP_SLUG
+          }`,
         },
       });
       // since mastra workflows are thenables, so we need to wrap then into an object

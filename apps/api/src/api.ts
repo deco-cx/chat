@@ -6,7 +6,6 @@ import {
   AuthorizationClient,
   createMCPToolsStub,
   EMAIL_TOOLS,
-  Entrypoint,
   getPresignedReadUrl_WITHOUT_CHECKING_AUTHORIZATION,
   getWorkspaceBucketName,
   GLOBAL_TOOLS,
@@ -24,16 +23,15 @@ import { logger } from "hono/logger";
 import { endTime, startTime } from "hono/timing";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
-import { fetchScript } from "./apps.ts";
 import { ROUTES as loginRoutes } from "./auth/index.ts";
 import { withActorsStubMiddleware } from "./middlewares/actors-stub.ts";
 import { withActorsMiddleware } from "./middlewares/actors.ts";
 import { withContextMiddleware } from "./middlewares/context.ts";
 import { setUserMiddleware } from "./middlewares/user.ts";
+import { handleCodeExchange } from "./oauth/code.ts";
 import { type AppContext, type AppEnv, State } from "./utils/context.ts";
 import { handleStripeWebhook } from "./webhooks/stripe.ts";
 import { handleTrigger } from "./webhooks/trigger.ts";
-import { handleCodeExchange } from "./oauth/code.ts";
 
 export const app = new Hono<AppEnv>();
 export const honoCtxToAppCtx = (c: Context<AppEnv>): AppContext => {
@@ -331,51 +329,6 @@ app.get("/apps/oauth", (c) => {
 
 // Health check endpoint
 app.get("/health", (c: Context) => c.json({ status: "ok" }));
-
-const DECO_WORKSPACE_HEADER = "x-deco-workspace";
-const SENSITIVE_HEADERS = ["Cookie", "Authorization"];
-app.on([
-  "GET",
-  "POST",
-  "PUT",
-  "DELETE",
-  "PATCH",
-  "OPTIONS",
-], [
-  "/:root/:slug/views/:script/:path{.+}?",
-  "/views/:script/:path{.+}?",
-], (c: Context) => {
-  const script = c.req.param("script");
-  const path = c.req.param("path");
-  const root = c.req.param("root");
-  const slug = c.req.param("slug");
-  const workspace = root && slug
-    ? `/${root}/${slug}`
-    : c.req.header(DECO_WORKSPACE_HEADER);
-
-  const url = new URL(c.req.raw.url);
-  url.protocol = "https:";
-  url.port = "443";
-  url.host = Entrypoint.host(script);
-  url.pathname = `/${path || ""}`;
-
-  const headers = new Headers(c.req.header());
-  SENSITIVE_HEADERS.forEach((header) => {
-    headers.delete(header);
-  });
-
-  workspace && headers.set(DECO_WORKSPACE_HEADER, workspace);
-  return fetchScript(
-    c,
-    script,
-    new Request(url, {
-      redirect: c.req.raw.redirect,
-      body: c.req.raw.body,
-      method: c.req.raw.method,
-      headers,
-    }),
-  );
-});
 
 app.onError((err, c) => {
   console.error(err);

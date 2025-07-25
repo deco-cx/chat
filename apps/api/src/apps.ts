@@ -6,7 +6,10 @@ import { withContextMiddleware } from "./middlewares/context.ts";
 import type { AppEnv } from "./utils/context.ts";
 
 const ONE_HOUR_SECONDS = 60 * 60;
-const domainSWRCache = new SWRCache<string>("domain-swr", ONE_HOUR_SECONDS);
+const domainSWRCache = new SWRCache<string | null>(
+  "domain-swr",
+  ONE_HOUR_SECONDS,
+);
 export type DispatcherFetch = typeof fetch;
 export const app = new Hono<AppEnv>();
 
@@ -56,29 +59,38 @@ app.all("/*", async (c: Context<AppEnv>) => {
   let script = Entrypoint.script(host);
   if (!script) {
     script = await domainSWRCache.cache(
-      async () => {
+      async (): Promise<string | null> => {
         const { data, error } = await c.var.db.from("deco_chat_hosting_routes")
-          .select("*, deco_chat_hosting_apps(slug)").eq(
+          .select(`
+              *,
+              deco_chat_hosting_apps_deployments!deployment_id(
+                id,
+                deco_chat_hosting_apps!hosting_app_id(slug)
+              )
+            `).eq(
             "route_pattern",
             host,
           ).maybeSingle();
         if (error) {
           throw error;
         }
-        const slug = data?.deco_chat_hosting_apps?.slug;
-        if (!slug) {
-          throw new Error("No slug found");
+        const deployment = data?.deco_chat_hosting_apps_deployments;
+        const slug = deployment?.deco_chat_hosting_apps?.slug;
+        const deploymentId = deployment?.id;
+        if (!slug || !deploymentId) {
+          throw new Error("No slug or deployment ID found");
         }
-        return slug;
+        return `${slug}--${deploymentId}`;
       },
       host,
       false,
     ).catch(() => null);
-    host = `${script}${HOSTING_APPS_DOMAIN}`;
   }
+
   if (!script) {
     return new Response("Not found", { status: 404 });
   }
+  host = `${script}${HOSTING_APPS_DOMAIN}`;
   if (url.host !== host) {
     url.host = host;
     url.protocol = "https";

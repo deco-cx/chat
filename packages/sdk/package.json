@@ -44,7 +44,8 @@
     "@opentelemetry/semantic-conventions": "^1.21.0",
     "@opentelemetry/exporter-trace-otlp-proto": "^0.53.0",
     "@opentelemetry/otlp-exporter-base": "^0.53.0",
-    "@opentelemetry/otlp-transformer": "^0.53.0"
+    "@opentelemetry/otlp-transformer": "^0.53.0",
+    "short-unique-id": "^5.3.2"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250510.0",

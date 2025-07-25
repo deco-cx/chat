@@ -30,7 +30,7 @@ export interface WorkspaceDB {
 export interface DefaultEnv<TSchema extends z.ZodTypeAny = any> {
   DECO_CHAT_REQUEST_CONTEXT: RequestContext<TSchema>;
   DECO_CHAT_APP_NAME: string;
-  DECO_CHAT_SCRIPT_SLUG: string;
+  DECO_CHAT_APP_SLUG: string;
   DECO_CHAT_APP_ENTRYPOINT: string;
   DECO_CHAT_API_URL?: string;
   DECO_CHAT_WORKSPACE: string;
