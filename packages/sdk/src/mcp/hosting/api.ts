@@ -16,18 +16,26 @@ import { bundler } from "./bundler.ts";
 import { assertsDomainUniqueness } from "./custom-domains.ts";
 import { type DeployResult, deployToCloudflare } from "./deployment.ts";
 import type { WranglerConfig } from "./wrangler.ts";
+import { default as ShortUniqueId } from "short-unique-id";
+const uid = new ShortUniqueId({
+  dictionary: "alphanum_lower",
+  length: 10,
+});
 
 const SCRIPT_FILE_NAME = "script.mjs";
 export const HOSTING_APPS_DOMAIN = ".deco.page";
+const DOUBLE_DASH = "--";
 export const Entrypoint = {
-  host: (appSlug: string) => {
-    return `${appSlug}${HOSTING_APPS_DOMAIN}`;
+  host: (appSlug: string, deploymentId?: string) => {
+    return `${appSlug}${
+      deploymentId ? `${DOUBLE_DASH}${deploymentId}` : ""
+    }${HOSTING_APPS_DOMAIN}`;
   },
-  build: (appSlug: string) => {
-    return `https://${Entrypoint.host(appSlug)}`;
+  build: (appSlug: string, deploymentId?: string) => {
+    return `https://${Entrypoint.host(appSlug, deploymentId)}`;
   },
   script: (domain: string) => {
-    if (domain.endsWith(HOSTING_APPS_DOMAIN)) {
+    if (domain.endsWith(HOSTING_APPS_DOMAIN) && domain.includes(DOUBLE_DASH)) {
       return domain.split(HOSTING_APPS_DOMAIN)[0];
     }
     return null;
@@ -111,22 +119,25 @@ function routeKey(route: { route_pattern: string; custom_domain?: boolean }) {
   return `${route.route_pattern}|${!!route.custom_domain}`;
 }
 
+interface UpdateDatabaseArgs {
+  c: AppContext;
+  workspace: string;
+  scriptSlug: string;
+  deploymentId: string;
+  result: DeployResult;
+  wranglerConfig: WranglerConfig;
+  files?: Record<string, string>;
+}
+
 async function updateDatabase(
-  c: AppContext,
-  workspace: string,
-  scriptSlug: string,
-  result: DeployResult,
-  wranglerConfig: WranglerConfig,
-  files?: Record<string, string>,
+  { c, workspace, scriptSlug, deploymentId, result, wranglerConfig }:
+    UpdateDatabaseArgs,
 ) {
-  // Try to update first
+  // First, ensure the app exists (without deployment-specific data)
   let { data: app, error: updateError } = await c.db
     .from(DECO_CHAT_HOSTING_APPS_TABLE)
     .update({
       updated_at: new Date().toISOString(),
-      cloudflare_script_hash: result.etag,
-      cloudflare_worker_id: result.id,
-      files,
     })
     .eq("slug", scriptSlug)
     .eq("workspace", workspace)
@@ -145,9 +156,6 @@ async function updateDatabase(
         workspace,
         slug: scriptSlug,
         updated_at: new Date().toISOString(),
-        cloudflare_script_hash: result.etag,
-        cloudflare_worker_id: result.id,
-        files,
       })
       .select("*")
       .single();
@@ -158,6 +166,25 @@ async function updateDatabase(
   if (!app) {
     throw new Error("Failed to create or update app.");
   }
+
+  // Create new deployment record with manual deployment ID
+  const { data: deployment, error: deploymentError } = await c.db
+    .from("deco_chat_hosting_apps_deployments")
+    .insert({
+      id: deploymentId,
+      hosting_app_id: app.id,
+      cloudflare_deployment_id: result.id, // Store Cloudflare worker ID separately
+      // TODO (@mcandeia) files should be stored in R2 instead.
+      // files,
+      updated_at: new Date().toISOString(),
+    })
+    .select("*")
+    .single();
+
+  if (deploymentError) throw deploymentError;
+  if (!deployment) {
+    throw new Error("Failed to create deployment.");
+  }
   // calculate route diff
   const routes = wranglerConfig.routes ?? [];
   const mappedRoutes = routes.map((r) => ({
@@ -165,11 +192,11 @@ async function updateDatabase(
     custom_domain: r.custom_domain,
   }));
 
-  // 1. Fetch current routes for this app
+  // 1. Fetch current routes for this deployment
   const { data: currentRoutes, error: fetchRoutesError } = await c.db
     .from(DECO_CHAT_HOSTING_ROUTES_TABLE)
     .select("id, route_pattern, custom_domain")
-    .eq("hosting_app_id", app.id);
+    .eq("deployment_id", deployment.id);
   if (fetchRoutesError) throw fetchRoutesError;
 
   // 2. Build sets for diffing
@@ -217,12 +244,12 @@ async function updateDatabase(
         .from(DECO_CHAT_HOSTING_ROUTES_TABLE)
         .upsert(
           toInsert.map((route) => ({
-            hosting_app_id: app.id,
+            deployment_id: deployment.id,
             route_pattern: route.route_pattern,
             custom_domain: route.custom_domain ?? false,
           })),
           {
-            onConflict: "hosting_app_id,route_pattern,custom_domain",
+            onConflict: "deployment_id,route_pattern,custom_domain",
           },
         )
       : Promise.resolve(),
@@ -517,7 +544,7 @@ value = "INTEGRATION_ID"
 
 Important Notes:
 - You can access the app workspace by accessing env.DECO_CHAT_WORKSPACE
-- You can access the app script slug by accessing env.DECO_CHAT_SCRIPT_SLUG
+- You can access the app script slug by accessing env.DECO_CHAT_APP_SLUG
 - Token and workspace can be used to make authenticated requests to the Deco API under https://api.deco.chat
 - Always use Cloudflare Workers syntax with export default and proper fetch handler signature
 - When using template literals inside content strings, escape backticks with a backslash (\\) or use string concatenation (+)
@@ -541,6 +568,12 @@ Important Notes:
       "Whether the app should be unlisted in the registry. Default: true (unlisted)",
     ),
   }),
+  outputSchema: z.object({
+    entrypoint: z.string().describe("The entrypoint of the app"),
+    id: z.string().describe("The id of the app"),
+    workspace: z.string().describe("The workspace of the app"),
+    deploymentId: z.string().describe("The deployment id of the app"),
+  }),
   handler: async (
     { appSlug: _appSlug, files, envVars, bundle = true, unlisted = true },
     c,
@@ -559,6 +592,7 @@ Important Notes:
       ? parseToml(filesRecord[wranglerFile]?.content) as any as WranglerConfig
       : { name: _appSlug } as WranglerConfig;
 
+    addDefaultCustomDomain(wranglerConfig);
     // check if the entrypoint is in the files
     const entrypoints = [
       ...ENTRYPOINTS,
@@ -587,6 +621,12 @@ Important Notes:
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
     const scriptSlug = appSlug;
+
+    if (scriptSlug.includes(DOUBLE_DASH)) {
+      throw new UserInputError(
+        `App slug cannot contain double dashes (reserved for preview deployments)`,
+      );
+    }
 
     const { code: codeFiles, assets: assetFiles } = splitFiles(filesRecord);
     let bundledCode: Record<string, File>;
@@ -630,14 +670,17 @@ Important Notes:
       sub: `app:${appName}`,
       aud: workspace,
     });
+    // using a shorter version than uuid to get friendlier urls
+    const deploymentId = uid.rnd();
 
     const appEnvVars = {
       DECO_CHAT_WORKSPACE: workspace,
-      DECO_CHAT_SCRIPT_SLUG: scriptSlug,
       DECO_CHAT_API_TOKEN: token,
       DECO_CHAT_API_JWT_PUBLIC_KEY: keyPair?.public,
+      DECO_CHAT_APP_SLUG: scriptSlug,
       DECO_CHAT_APP_NAME: appName,
-      DECO_CHAT_APP_ENTRYPOINT: Entrypoint.build(scriptSlug),
+      DECO_CHAT_APP_DEPLOYMENT_ID: deploymentId,
+      DECO_CHAT_APP_ENTRYPOINT: Entrypoint.build(scriptSlug, deploymentId),
     };
 
     await Promise.all(
@@ -655,13 +698,17 @@ Important Notes:
       assets: assetFiles,
       _envVars: { ...envVars, ...appEnvVars },
     });
+
     const data = await updateDatabase(
-      c,
-      workspace,
-      scriptSlug,
-      result,
-      wranglerConfig,
-      codeFiles,
+      {
+        c,
+        workspace,
+        scriptSlug,
+        result,
+        deploymentId,
+        wranglerConfig,
+        files: codeFiles,
+      },
     );
 
     const client = MCPClient.forContext(c);
@@ -685,6 +732,7 @@ Important Notes:
       entrypoint: data.entrypoint,
       id: data.id,
       workspace: data.workspace,
+      deploymentId,
     };
   },
 });
@@ -1110,3 +1158,15 @@ export const getWorkflowStatus = createTool({
     return workflow;
   },
 });
+
+function addDefaultCustomDomain(wranglerConfig: WranglerConfig) {
+  const latest = Entrypoint.host(wranglerConfig.name);
+  const routes = wranglerConfig.routes ?? [];
+  wranglerConfig.routes = [
+    {
+      pattern: latest,
+      custom_domain: true,
+    },
+    ...routes.filter((r) => r.pattern !== latest),
+  ];
+}

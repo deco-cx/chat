@@ -81,7 +81,7 @@ export function email(
     msg.setSender(message.to);
     msg.setRecipient(message.from);
     const cc = message.headers.get("Cc");
-    // @ts-expect-error - this exists
+    // @ts-ignore: cc is not a valid property of the EmailMessage class
     cc && msg.setCc(message.cc);
     msg.setSubject(replySubject); // Use the threaded subject instead of generic text
 

@@ -5644,7 +5644,7 @@ export interface Env {
      * ]
      * Important Notes:
      * - You can access the app workspace by accessing env.DECO_CHAT_WORKSPACE
-     * - You can access the app script slug by accessing env.DECO_CHAT_SCRIPT_SLUG
+     * - You can access the app script slug by accessing env.DECO_CHAT_APP_SLUG
      * - Token and workspace can be used to make authenticated requests to the Deco API under https://api.deco.chat
      * - Always use Cloudflare Workers syntax with export default and proper fetch handler signature
      * - When using template literals inside content strings, escape backticks with a backslash (\) or use string concatenation (+)

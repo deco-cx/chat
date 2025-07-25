@@ -1,12 +1,12 @@
 import { WorkersMCPBindings } from "@deco/workers-runtime";
+import crypto from "node:crypto";
 import type {
   ScriptUpdateParams,
   ScriptUpdateResponse,
 } from "cloudflare/resources/workers/scripts/scripts.mjs";
-import crypto from "node:crypto";
 import { assertHasWorkspace } from "../assertions.ts";
 import { type AppContext, getEnv } from "../context.ts";
-import { getMimeType } from "./api.ts";
+import { getMimeType, HOSTING_APPS_DOMAIN } from "./api.ts";
 import { assertsDomainOwnership } from "./custom-domains.ts";
 import { polyfill } from "./fs-polyfill.ts";
 import { isDoBinding, migrationDiff } from "./migrations.ts";
@@ -261,7 +261,7 @@ export async function deployToCloudflare({
 
   await Promise.all(
     (routes ?? []).map((route) =>
-      route.custom_domain &&
+      route.custom_domain && !route.pattern.endsWith(HOSTING_APPS_DOMAIN) &&
       assertsDomainOwnership(route.pattern, scriptSlug).then(() => {
         if (!env.CF_ZONE_ID) {
           return;

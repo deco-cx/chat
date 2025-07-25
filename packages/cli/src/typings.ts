@@ -166,6 +166,7 @@ export const genEnv = async (
   const apiClient = await createWorkspaceClient({ local });
 
   const types = new Map<string, number>();
+  types.set("Env", 1); // set the default env type
   let tsTypes = "";
   const props = await Promise.all(
     [
