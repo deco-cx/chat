@@ -1,1 +1,0 @@
-ALTER TABLE roles ADD COLUMN statements JSONB[] NULL;

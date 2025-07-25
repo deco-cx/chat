@@ -1,7 +1,5 @@
-import type { Client, Json } from "@deco/sdk/storage";
+import type { Client } from "@deco/sdk/storage";
 import { WebCache } from "../cache/index.ts";
-import type { UserPrincipal } from "../mcp/index.ts";
-import { z } from "zod";
 
 // Cache duration in seconds (WebCache expects seconds)
 const TWO_MIN_TTL = 60 * 2;
@@ -12,27 +10,14 @@ export const BASE_ROLES_ID = {
   PUBLISHER: 2,
   COLLABORATOR: 3,
   ADMIN: 4,
-  PUBLIC: 115,
-  PRIVATE: 116,
 };
 
-// Roles that should not be displayed in the UI
-const BLOCKED_ROLES = new Set([
-  BASE_ROLES_ID.PUBLISHER,
-  BASE_ROLES_ID.PUBLIC,
-  BASE_ROLES_ID.PRIVATE,
-]);
-
-type MatchFunctionsManifest = typeof MatcherFunctions;
-type MatchCondition<
-  FnR extends keyof MatchFunctionsManifest = keyof MatchFunctionsManifest,
-> = { resource: FnR } & z.infer<MatchFunctionsManifest[FnR]["schema"]>;
+const BLOCKED_ROLES = new Set([BASE_ROLES_ID.PUBLISHER]);
 
 // Typed interfaces
 export interface Statement {
   effect: "allow" | "deny";
   resource: string;
-  matchCondition?: MatchCondition;
 }
 
 export interface Policy {
@@ -47,7 +32,6 @@ export interface Role {
   name: string;
   description?: string | null;
   team_id: number | null;
-  statements?: Statement[] | null;
 }
 
 export interface RoleWithPolicies extends Role {
@@ -61,11 +45,9 @@ export interface MemberRole {
   role?: Role;
 }
 
-export const RoleUpdateAction = z.enum(["grant", "revoke"]);
-
 export interface RoleUpdateParams {
   roleId: number;
-  action: z.infer<typeof RoleUpdateAction>;
+  action: "grant" | "revoke";
 }
 
 /**
@@ -74,14 +56,14 @@ export interface RoleUpdateParams {
 export class PolicyClient {
   private static instance: PolicyClient | null = null;
   private db: Client | null = null;
-  private userPolicyCache: WebCache<Statement[]>;
+  private userPolicyCache: WebCache<Pick<Policy, "statements">[]>;
   private userRolesCache: WebCache<MemberRole[]>;
   private teamRolesCache: WebCache<Role[]>;
   private teamSlugCache: WebCache<number>;
 
   private constructor() {
     // Initialize caches
-    this.userPolicyCache = new WebCache<Statement[]>(
+    this.userPolicyCache = new WebCache<Pick<Policy, "statements">[]>(
       "user-policies",
       TWO_MIN_TTL,
     );
@@ -127,8 +109,7 @@ export class PolicyClient {
           role_id,
           roles(
             id,
-            name,
-            statements
+            name
           )
         )
       `)
@@ -160,13 +141,14 @@ export class PolicyClient {
 
   /**
    * Get all policies for a user in a specific team
-   * Only gets policies from member_roles -> roles -> policies chain
    */
-  public async getUserStatements(
+  public async getUserPolicies(
     userId: string,
     teamIdOrSlug: number | string,
-  ): Promise<Statement[]> {
-    this.assertDb(this.db);
+  ): Promise<Pick<Policy, "statements">[]> {
+    if (!this.db) {
+      throw new Error("PolicyClient not initialized with database client");
+    }
 
     const teamId = typeof teamIdOrSlug === "number"
       ? teamIdOrSlug
@@ -179,20 +161,12 @@ export class PolicyClient {
     const cacheKey = this.getUserPoliceCacheKey(userId, teamId);
 
     // Try to get from cache first
-    const [cachedPolicies, userRoles] = await Promise.all([
-      this.userPolicyCache.get(cacheKey),
-      this.getUserRoles(userId, teamId),
-    ]);
-    const userRolesStatements = userRoles.map((r) => r.role?.statements).filter(
-      (s): s is Statement[] => !!s,
-    ).flat();
-
+    const cachedPolicies = await this.userPolicyCache.get(cacheKey);
     if (cachedPolicies) {
-      return [...cachedPolicies, ...userRolesStatements];
+      return cachedPolicies;
     }
 
-    // Fetch roles for the user and get inline statements from roles
-    const { data, error } = await this.db
+    const { data, error: policiesError } = await this.db
       .from("member_roles")
       .select(`
             members!inner(team_id, user_id),
@@ -207,22 +181,25 @@ export class PolicyClient {
       .eq("members.team_id", teamId)
       .eq("members.user_id", userId);
 
-    if (error || !data) {
+    const policies = data?.map((memberRole) => ({
+      statements: memberRole.roles.role_policies
+        .map((rolePolicies) =>
+          rolePolicies.policies.statements as unknown as Statement[] ?? []
+        )
+        .flat(),
+    }));
+
+    if (policiesError || !policies) {
       return [];
     }
 
-    const policiesStatements = this.filterValidStatements(
-      data.map((mr) =>
-        mr.roles.role_policies.map((p) => p.policies.statements).flat()
-      ).flat() as unknown as Statement[],
-    );
     // Cache the result
     await this.userPolicyCache.set(
       cacheKey,
-      policiesStatements,
+      this.filterValidPolicies(policies),
     );
 
-    return [...policiesStatements, ...userRolesStatements];
+    return policies;
   }
 
   public async removeAllMemberPoliciesAtTeam(
@@ -264,7 +241,9 @@ export class PolicyClient {
    * Get all roles for a team
    */
   public async getTeamRoles(teamId: number): Promise<Role[]> {
-    this.assertDb(this.db);
+    if (!this.db) {
+      throw new Error("PolicyClient not initialized with database client");
+    }
 
     // Try to get from cache first
     const cachedRoles = await this.teamRolesCache.get(
@@ -305,7 +284,9 @@ export class PolicyClient {
     email: string,
     params: RoleUpdateParams,
   ): Promise<Role | null> {
-    this.assertDb(this.db);
+    if (!this.db) {
+      throw new Error("PolicyClient not initialized with database client");
+    }
 
     const [{ data: memberWithProfile }, roles] = await Promise.all([
       this.db.from("members").select("id, profiles!inner(email, user_id)")
@@ -354,7 +335,14 @@ export class PolicyClient {
     }
 
     // Invalidate all caches for this user
-    await this.deleteUserRolesCache(teamId, [profile.user_id]);
+    await Promise.all([
+      this.userPolicyCache.delete(
+        this.getUserPoliceCacheKey(profile.user_id, teamId),
+      ),
+      this.userRolesCache.delete(
+        this.getUserRolesCacheKey(profile.user_id, teamId),
+      ),
+    ]);
 
     // Update the role assignment
     if (params.action === "grant") {
@@ -377,179 +365,6 @@ export class PolicyClient {
     return role;
   }
 
-  async createRole(
-    teamIdOrSlug: string | number,
-    role: Partial<Role> & Pick<Role, "name">,
-    statements?: Statement[],
-  ) {
-    this.assertDb(this.db);
-    const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
-
-    const { data } = await this.db
-      .from("roles")
-      .insert({
-        ...role,
-        team_id: teamId,
-        statements: statements?.length === 0
-          ? null
-          : statements as unknown as Json[],
-      })
-      .select()
-      .single();
-    if (!data) {
-      throw new Error("Failed to create role");
-    }
-    await this.teamRolesCache.delete(this.getTeamRolesCacheKey(teamId));
-
-    return data;
-  }
-
-  async updateRole(
-    teamIdOrSlug: string | number,
-    role: Partial<Role> & Pick<Role, "id">,
-    statements?: Statement[],
-  ) {
-    this.assertDb(this.db);
-    const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
-
-    // check if role.team_id
-    const { data, error } = await this.db
-      .from("roles")
-      .update({
-        ...role,
-        team_id: teamId,
-        statements: statements?.length === 0
-          ? null
-          : statements as unknown as Json[],
-      })
-      .eq("id", role.id)
-      .eq("team_id", teamId)
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    await this.teamRolesCache.delete(this.getTeamRolesCacheKey(teamId));
-
-    return data;
-  }
-
-  async deleteRole(teamIdOrSlug: string | number, roleId: number) {
-    this.assertDb(this.db);
-    const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
-
-    // Only allow deletion of team-specific roles (not system roles)
-    const { data: role } = await this.db
-      .from("roles")
-      .select("id, team_id")
-      .eq("id", roleId)
-      .eq("team_id", teamId)
-      .single();
-
-    if (!role || role.team_id === null || role.team_id !== teamId) {
-      throw new Error("Role not found");
-    }
-
-    // delete all member_roles
-    const { data: memberIds } = await this.db.from("member_roles").delete().eq(
-      "role_id",
-      role.id,
-    ).select("member_id");
-    // remove cache for all users
-    if (memberIds) {
-      const { data: _members } = await this.db.from("members").select("user_id")
-        .in("id", memberIds.map((m) => m.member_id));
-      const members = _members?.filter((m): m is { user_id: string } =>
-        m.user_id !== null
-      ) ?? [];
-      await this.deleteUserRolesCache(teamId, members.map((m) => m.user_id));
-    }
-
-    // Delete the role
-    const { data, error } = await this.db
-      .from("roles")
-      .delete()
-      .eq("id", role.id)
-      .eq("team_id", teamId)
-      .select();
-
-    if (error) {
-      throw error;
-    }
-
-    await this.teamRolesCache.delete(this.getTeamRolesCacheKey(teamId));
-    return data;
-  }
-
-  async getRoleWithPolicies(
-    teamIdOrSlug: string | number,
-    roleId: number,
-  ): Promise<RoleWithPolicies | null> {
-    this.assertDb(this.db);
-    const teamId = await this.getTeamIdByIdOrSlug(teamIdOrSlug);
-
-    const { data } = await this.db
-      .from("roles")
-      .select(`
-        id,
-        name,
-        description,
-        team_id,
-        statements,
-        role_policies (
-          policies (
-            id,
-            name,
-            team_id,
-            statements
-          )
-        )
-      `)
-      .eq("id", roleId)
-      .or(`team_id.eq.${teamId},team_id.is.null`)
-      .single();
-
-    if (!data) {
-      return null;
-    }
-
-    const policies: Policy[] = data.role_policies.map((rp) => ({
-      ...rp.policies,
-      statements: this.filterValidStatements(
-        rp.policies.statements as unknown as Statement[],
-      ),
-    }));
-
-    const roleStatementsAsPolicies: Policy | null = data.statements
-      ? {
-        id: data.id,
-        name: data.name,
-        team_id: data.team_id,
-        statements: this.filterValidStatements(
-          data.statements as unknown as Statement[],
-        ),
-      }
-      : null;
-
-    return {
-      id: data.id,
-      name: data.name,
-      description: data.description,
-      team_id: data.team_id,
-      policies: roleStatementsAsPolicies
-        ? [...policies, roleStatementsAsPolicies]
-        : policies,
-    };
-  }
-
-  private async getTeamIdByIdOrSlug(teamIdOrSlug: string | number) {
-    return typeof teamIdOrSlug === "number"
-      ? teamIdOrSlug
-      : await this.getTeamIdBySlug(teamIdOrSlug);
-  }
-
   private async getTeamIdBySlug(teamSlug: string): Promise<number> {
     const cachedTeamId = await this.teamSlugCache.get(teamSlug);
     if (cachedTeamId) return cachedTeamId;
@@ -564,23 +379,14 @@ export class PolicyClient {
     return teamId;
   }
 
-  private filterValidStatements<T extends Statement>(
-    statements: T[],
+  private filterValidPolicies<T extends Pick<Policy, "statements">>(
+    policies: T[],
   ): T[] {
-    return statements.filter((r) => !r.resource.endsWith(".ts"));
-  }
-
-  private async deleteUserRolesCache(teamId: number, userIds: string[]) {
-    await Promise.all(
-      userIds.map((u) =>
-        this.userPolicyCache.delete(this.getUserPoliceCacheKey(u, teamId))
-      ),
-    );
-    await Promise.all(
-      userIds.map((u) =>
-        this.userRolesCache.delete(this.getUserRolesCacheKey(u, teamId))
-      ),
-    );
+    return policies.map((policy) => ({
+      ...policy,
+      // filter admin policies
+      statements: policy.statements.filter((r) => !r.resource.endsWith(".ts")),
+    }));
   }
 
   public filterTeamRoles<R extends Pick<Role, "id">>(roles: R[]): R[] {
@@ -598,12 +404,6 @@ export class PolicyClient {
   private getTeamRolesCacheKey(teamId: number) {
     return teamId.toString();
   }
-
-  private assertDb(db: unknown = this.db): asserts db is Client {
-    if (!db) {
-      throw new Error("PolicyClient not initialized with database client");
-    }
-  }
 }
 
 /**
@@ -620,33 +420,38 @@ export class AuthorizationClient {
    * Check if a user has access to a specific resource
    */
   public async canAccess(
-    userOrPolicies: string | Statement[],
+    userOrPolicies: string | Pick<Policy, "statements">[],
     teamIdOrSlug: number | string,
     resource: string,
-    ctx: Partial<AuthContext> = {},
   ): Promise<boolean> {
-    const statements = typeof userOrPolicies === "string"
-      ? await this.policyClient.getUserStatements(
+    const policies = typeof userOrPolicies === "string"
+      ? await this.policyClient.getUserPolicies(
         userOrPolicies,
         teamIdOrSlug,
       )
       : userOrPolicies;
 
+    if (!policies.length) {
+      return false;
+    }
+
     let hasAllowMatch = false;
 
     // Evaluation algorithm: deny overrides allow
-    for (const statement of statements) {
-      // Check if statement applies to this resource
-      const resourceMatch = this.matchResource(statement, resource, ctx);
+    for (const policy of policies) {
+      for (const statement of policy.statements) {
+        // Check if statement applies to this resource
+        const resourceMatch = this.matchResource(statement.resource, resource);
 
-      if (resourceMatch) {
-        // Explicit deny always overrides any allows
-        if (statement.effect === "deny") {
-          return false;
-        }
+        if (resourceMatch) {
+          // Explicit deny always overrides any allows
+          if (statement.effect === "deny") {
+            return false;
+          }
 
-        if (statement.effect === "allow") {
-          hasAllowMatch = true;
+          if (statement.effect === "allow") {
+            hasAllowMatch = true;
+          }
         }
       }
     }
@@ -657,48 +462,7 @@ export class AuthorizationClient {
   /**
    * Check if a resource pattern matches the requested resource
    */
-  private matchResource(
-    statement: Statement,
-    resource: string,
-    ctx: Partial<AuthContext> = {},
-  ): boolean {
-    const matchFn = statement.matchCondition
-      ? MatcherFunctions[statement.matchCondition.resource]
-      : undefined;
-
-    const matched = matchFn?.handler?.(
-      // deno-lint-ignore no-explicit-any
-      matchFn?.schema.parse(statement.matchCondition!) as unknown as any,
-      ctx,
-    ) ?? true;
-
-    return matched && statement.resource === resource;
+  private matchResource(pattern: string, resource: string): boolean {
+    return pattern === resource;
   }
 }
-
-interface AuthContext {
-  user?: UserPrincipal;
-  integrationId?: string;
-}
-
-interface MatchFunction<TSchema extends z.ZodTypeAny = z.ZodTypeAny> {
-  schema: TSchema;
-  handler: (
-    props: z.infer<TSchema>,
-    context: Partial<AuthContext>,
-  ) => boolean | Promise<boolean>;
-}
-
-// fn to type
-const createMatchFn = <TSchema extends z.ZodTypeAny>(
-  def: MatchFunction<TSchema>,
-): MatchFunction<TSchema> => def;
-
-const MatcherFunctions = {
-  is_integration: createMatchFn({
-    schema: z.object({ integrationId: z.string() }),
-    handler: ({ integrationId }, c) => {
-      return c.integrationId === integrationId;
-    },
-  }),
-};

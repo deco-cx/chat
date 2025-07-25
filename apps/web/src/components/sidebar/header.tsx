@@ -1,3 +1,4 @@
+import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import {
   SidebarHeader,
@@ -17,16 +18,20 @@ export function Header() {
         <SidebarMenuItem className="flex items-center justify-between">
           <TeamSelector />
 
-          <SidebarMenuButton
-            data-open={open}
-            onClick={toggleSidebar}
-            className="size-8"
-          >
-            <Icon
-              name={isMobile ? "menu" : "dock_to_right"}
-              size={16}
-              className="text-muted-foreground"
-            />
+          <SidebarMenuButton asChild>
+            <Button
+              data-open={open}
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="size-8"
+            >
+              <Icon
+                name={isMobile ? "menu" : "dock_to_right"}
+                size={16}
+                className="text-muted-foreground"
+              />
+            </Button>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>

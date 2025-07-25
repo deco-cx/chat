@@ -101,7 +101,7 @@ export function Table<T>({
           {data.map((row, i) => (
             <TableRow
               key={i}
-              className={onRowClick ? "cursor-pointer" : ""}
+              className={onRowClick ? "cursor-pointer hover:bg-muted/30" : ""}
               onClick={onRowClick
                 ? () => onRowClick(row)
                 : undefined}

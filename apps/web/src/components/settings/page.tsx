@@ -3,7 +3,7 @@ import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
 import { useMemo } from "react";
 import { useParams } from "react-router";
 import GeneralSettings from "./general.tsx";
-import MembersSettings from "./members/index.tsx";
+import MembersSettings from "./members.tsx";
 import ModelsSettings from "./models.tsx";
 
 const BASE_TABS: Record<string, Tab> = {

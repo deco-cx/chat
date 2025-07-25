@@ -15,7 +15,6 @@ import {
 import { createCheckoutSession as createStripeCheckoutSession } from "./stripe/checkout.ts";
 import { getPlan } from "./plans.ts";
 import { Markup } from "../../plan.ts";
-import { isRequired } from "../../utils/fns.ts";
 
 export const getWalletClient = (c: AppContext) => {
   if (!c.envVars.WALLET_API_KEY) {
@@ -49,6 +48,8 @@ const Account = {
     };
   },
 };
+
+const isNotNull = <T>(value: T | null): value is T => Boolean(value);
 
 const ThreadsUsage = {
   fetch: async (
@@ -84,7 +85,7 @@ const ThreadsUsage = {
           agentId: transaction.agentId,
           generatedBy: transaction.generatedBy,
         })),
-      })).filter(isRequired),
+      })).filter(isNotNull),
     };
   },
 };
