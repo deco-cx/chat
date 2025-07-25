@@ -10,7 +10,6 @@
     "strictPropertyInitialization": true,
     "strictNullChecks": true,
     "useUnknownInCatchVariables": true,
-
     // Module system
     "target": "ES2022",
     "module": "ESNext",
@@ -19,21 +18,17 @@
     "esModuleInterop": true,
     "allowImportingTsExtensions": true,
     "moduleDetection": "force",
-
     // Output configuration
     "noEmit": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-
     // JavaScript support
     "allowJs": true,
     "checkJs": false,
-
     // JSX configuration (React-like as in Deno)
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-
     // Additional type checking
     "noFallthroughCasesInSwitch": false,
     "noImplicitReturns": false,
@@ -47,20 +42,22 @@
     "suppressExcessPropertyErrors": false,
     "suppressImplicitAnyIndexErrors": false,
     "keyofStringsOnly": false,
-
     // Library files (adapted for Node.js instead of Deno)
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-
+    "lib": [
+      "es2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     // Path resolution
     "baseUrl": ".",
     "paths": {
-      "@deco/*": ["packages/*/src"]
+      "@deco/*": [
+        "packages/*/src"
+      ]
     },
-
     // Experimental decorators for compatibility
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-
     // Misc
     "forceConsistentCasingInFileNames": true,
     "verbatimModuleSyntax": false,

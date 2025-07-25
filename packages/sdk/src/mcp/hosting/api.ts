@@ -187,17 +187,10 @@ async function updateDatabase(
   }
   // calculate route diff
   const routes = wranglerConfig.routes ?? [];
-  const latestRoute = Entrypoint.host(scriptSlug);
-  const mappedRoutes = [
-    {
-      route_pattern: latestRoute, // should always be the latest route
-      custom_domain: true,
-    },
-    ...routes.map((r) => ({
-      route_pattern: r.pattern,
-      custom_domain: r.custom_domain,
-    })).filter((r) => r.route_pattern !== latestRoute),
-  ];
+  const mappedRoutes = routes.map((r) => ({
+    route_pattern: r.pattern,
+    custom_domain: r.custom_domain,
+  }));
 
   // 1. Fetch current routes for this deployment
   const { data: currentRoutes, error: fetchRoutesError } = await c.db
@@ -596,6 +589,7 @@ Important Notes:
       ? parseToml(filesRecord[wranglerFile]?.content) as any as WranglerConfig
       : { name: _appSlug } as WranglerConfig;
 
+    addDefaultCustomDomain(wranglerConfig);
     // check if the entrypoint is in the files
     const entrypoints = [
       ...ENTRYPOINTS,
@@ -940,3 +934,15 @@ export const getWorkflowStatus = createTool({
     return workflow;
   },
 });
+
+function addDefaultCustomDomain(wranglerConfig: WranglerConfig) {
+  const latest = Entrypoint.host(wranglerConfig.name);
+  const routes = wranglerConfig.routes ?? [];
+  wranglerConfig.routes = [
+    {
+      pattern: latest,
+      custom_domain: true,
+    },
+    ...routes.filter((r) => r.pattern !== latest),
+  ];
+}
