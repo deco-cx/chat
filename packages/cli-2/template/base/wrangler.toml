@@ -1,0 +1,24 @@
+#:schema node_modules/@deco/workers-runtime/config-schema.json
+
+main = "main.ts"
+compatibility_date = "2025-06-17"
+compatibility_flags = ["nodejs_compat"]
+name = ""
+
+[deco]
+workspace = ""
+enable_workflows = true
+
+[[deco.bindings]]
+type = "mcp"
+name = "SLACK"
+integration_name = "@deco/slack"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["Workflow"]
+
+[durable_objects]
+[[durable_objects.bindings]]
+name = "DECO_CHAT_WORKFLOW_DO"
+class_name = "Workflow"
