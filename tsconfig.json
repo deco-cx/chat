@@ -44,7 +44,7 @@
     "keyofStringsOnly": false,
     // Library files (adapted for Node.js instead of Deno)
     "lib": [
-      "es2022",
+      "ES2022",
       "DOM",
       "DOM.Iterable"
     ],
