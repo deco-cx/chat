@@ -166,6 +166,7 @@ export const genEnv = async (
   const apiClient = await createWorkspaceClient({ local });
 
   const types = new Map<string, number>();
+  types.set("Env", 1); // set the default env type
   let tsTypes = "";
   const props = await Promise.all(
     [
@@ -251,7 +252,6 @@ export const genEnv = async (
                 additionalProperties: false,
                 customName,
                 format: false,
-                declareExternallyReferenced: false,
               }),
               t.outputSchema
                 ? await compile(
@@ -261,7 +261,6 @@ export const genEnv = async (
                     customName,
                     additionalProperties: false,
                     format: false,
-                    declareExternallyReferenced: false,
                   },
                 )
                 : undefined,
@@ -285,10 +284,10 @@ export const genEnv = async (
         stateKey,
         // propName, toolName, inputType, outputType, description
       ] as [
-        string,
-        [string, string, string | undefined, string | undefined][],
-        KeyInfo | undefined,
-      ];
+          string,
+          [string, string, string | undefined, string | undefined][],
+          KeyInfo | undefined,
+        ];
     }),
   );
 
@@ -311,45 +310,41 @@ ${tsTypes}
   }
 
   export const StateSchema = z.object({
-    ${
-    props.filter((p) => p !== null && p[2] !== undefined).map((prop) => {
-      const [_, __, stateKey] = prop as [
-        string,
-        [string, string, string | undefined, string | undefined][],
-        KeyInfo | undefined,
-      ];
-      return `${stateKey!.key}: z.object({
+    ${props.filter((p) => p !== null && p[2] !== undefined).map((prop) => {
+    const [_, __, stateKey] = prop as [
+      string,
+      [string, string, string | undefined, string | undefined][],
+      KeyInfo | undefined,
+    ];
+    return `${stateKey!.key}: z.object({
         value: z.string(),
         __type: z.literal("${stateKey!.type}").default("${stateKey!.type}"),
       })`;
-    }).join(",\n")
-  }
+  }).join(",\n")
+    }
   })
 
   export interface Env {
     DECO_CHAT_WORKSPACE: string;
     DECO_CHAT_API_JWT_PUBLIC_KEY: string;
-    ${
-    props.filter((p) => p !== null).map(([propName, tools]) => {
+    ${props.filter((p) => p !== null).map(([propName, tools]) => {
       return `${propName}: Mcp<{
-        ${
-        tools.map(([toolName, inputName, outputName, description]) => {
-          const docComment = description
-            ? `/**\n${formatDescription(description)}\n */`
-            : "";
+        ${tools.map(([toolName, inputName, outputName, description]) => {
+        const docComment = description
+          ? `/**\n${formatDescription(description)}\n */`
+          : "";
 
-          return `${docComment}
-          ${
-            isValidJavaScriptPropertyName(toolName)
-              ? toolName
-              : [`"${toolName}"`]
+        return `${docComment}
+          ${isValidJavaScriptPropertyName(toolName)
+            ? toolName
+            : [`"${toolName}"`]
           }: (input: ${inputName}) => Promise<${outputName ?? "any"}>;
           `;
-        }).join("")
-      }
+      }).join("")
+        }
       }>;`;
     }).join("")
-  }
+    }
   }
   `);
 };

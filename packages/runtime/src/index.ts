@@ -35,6 +35,7 @@ export interface DefaultEnv<TSchema extends z.ZodTypeAny = any> {
   DECO_CHAT_API_URL?: string;
   DECO_CHAT_WORKSPACE: string;
   DECO_CHAT_API_JWT_PUBLIC_KEY: string;
+  DECO_CHAT_APP_DEPLOYMENT_ID: string;
   DECO_CHAT_BINDINGS: string;
   DECO_CHAT_API_TOKEN: string;
   DECO_CHAT_WORKFLOW_DO: DurableObjectNamespace<WorkflowDO>;
