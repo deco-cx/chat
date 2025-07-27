@@ -45,6 +45,7 @@ import AgentPreview, { useTabsForAgent } from "./preview.tsx";
 import ThreadView from "./thread.tsx";
 import Threads from "./threads.tsx";
 import { WhatsAppButton } from "./whatsapp-button.tsx";
+import { CanvasView } from "../canvas/canvas-view.tsx";
 import { isFilePath } from "../../utils/path.ts";
 import { useDocumentMetadata } from "../../hooks/use-document-metadata.ts";
 
@@ -138,6 +139,11 @@ const TABS: Record<string, Tab> = {
   integrations: {
     Component: ToolsAndKnowledgeTab,
     title: "Tools",
+    initialOpen: "within",
+  },
+  canvas: {
+    Component: CanvasView,
+    title: "Canvas",
     initialOpen: "within",
   },
   triggers: {

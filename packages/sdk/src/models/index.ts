@@ -1,3 +1,4 @@
+export * from "./canvas.ts";
 export * from "./channels.ts";
 export * from "./trigger.ts";
 export * from "./agent.ts";

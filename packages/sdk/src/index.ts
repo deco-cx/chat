@@ -35,6 +35,7 @@ export * from "./hooks/workflows.ts";
 export * from "./hooks/roles.ts";
 
 export * from "./models/agent.ts";
+export * from "./models/canvas.ts";
 export * from "./models/mcp.ts";
 export * from "./models/prompt.ts";
 export * from "./models/tool-call.ts";
