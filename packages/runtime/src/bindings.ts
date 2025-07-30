@@ -1,7 +1,25 @@
 import type { MCPConnection } from "./connection.ts";
+import { DECO_CHAT_API_URL } from "./constants.ts";
 import type { DefaultEnv, RequestContext } from "./index.ts";
 import { MCPClient } from "./mcp.ts";
 import type { MCPBinding } from "./wrangler.ts";
+
+interface IntegrationContext {
+  integrationId: string;
+  workspace: string;
+}
+
+/**
+ * Url: /:workspace.root/:workspace.slug/:integrationId/mcp
+ */
+const createIntegrationsUrl = (
+  { integrationId, workspace }: IntegrationContext,
+  { decoChatApiUrl }: { decoChatApiUrl?: string } = {},
+) =>
+  new URL(
+    `${workspace}/${integrationId}/mcp`,
+    decoChatApiUrl ?? DECO_CHAT_API_URL,
+  ).href;
 
 type WorkspaceClientContext = Omit<
   RequestContext,
@@ -17,14 +35,13 @@ const mcpClientForIntegrationId = (
   integrationId: string,
   ctx: WorkspaceClientContext,
 ) => {
-  const client = workspaceClient(ctx);
-  let integration: Promise<{ connection: MCPConnection }> | null = null;
-  return MCPClient.forConnection(async () => {
-    integration ??= client.INTEGRATIONS_GET({
-      id: integrationId,
-    }) as Promise<{ connection: MCPConnection }>;
-    return (await integration).connection;
-  });
+  const mcpConnection: MCPConnection = {
+    type: "HTTP",
+    url: createIntegrationsUrl({ integrationId, workspace: ctx.workspace }),
+  };
+
+  // TODO(@igorbrasileiro): Switch this proxy to be a proxy that call MCP Client.toolCall from @modelcontextprotocol
+  return MCPClient.forConnection(mcpConnection);
 };
 
 export const createIntegrationBinding = (
