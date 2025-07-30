@@ -23,17 +23,23 @@ const BLOCKED_ROLES = new Set([
   BASE_ROLES_ID.PRIVATE,
 ]);
 
-type MatchFunctionsManifest = typeof MatcherFunctions;
-type MatchCondition<
-  FnR extends keyof MatchFunctionsManifest = keyof MatchFunctionsManifest,
-> = { resource: FnR } & z.infer<MatchFunctionsManifest[FnR]["schema"]>;
+const IsIntegrationSchema = z.object({
+  resource: z.literal("is_integration"),
+  integrationId: z.string(),
+});
+
+export const MatchConditionsSchema = z.discriminatedUnion("resource", [
+  IsIntegrationSchema,
+]);
+
+export const StatementSchema = z.object({
+  effect: z.enum(["allow", "deny"]),
+  resource: z.string(),
+  matchCondition: MatchConditionsSchema.optional(),
+});
 
 // Typed interfaces
-export interface Statement {
-  effect: "allow" | "deny";
-  resource: string;
-  matchCondition?: MatchCondition;
-}
+export type Statement = z.infer<typeof StatementSchema>;
 
 export interface Policy {
   id: number;
@@ -713,7 +719,7 @@ const createMatchFn = <TSchema extends z.ZodTypeAny>(
 
 const MatcherFunctions = {
   is_integration: createMatchFn({
-    schema: z.object({ integrationId: z.string() }),
+    schema: IsIntegrationSchema.omit({ resource: true }),
     handler: ({ integrationId }, c) => {
       return c.integrationId === integrationId;
     },

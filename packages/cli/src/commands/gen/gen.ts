@@ -4,6 +4,7 @@ import { generateName } from "json-schema-to-typescript/dist/src/utils.js";
 import type { DecoBinding } from "../../lib/config.js";
 import { createWorkspaceClient } from "../../lib/mcp.js";
 import { spawn } from "child_process";
+import { parser as scopeParser } from "@deco/shared/parse-binding-tool";
 
 interface Options {
   workspace: string;
@@ -185,6 +186,7 @@ export const genEnv = async ({
     const types = new Map<string, number>();
     types.set("Env", 1); // set the default env type
     let tsTypes = "";
+    const mapBindingTools: Record<string, string[]> = {};
     const props = await Promise.all(
       [
         ...bindings,
@@ -251,6 +253,11 @@ export const genEnv = async ({
             `⚠️ No tools found for integration ${binding.name}. Skipping...`,
           );
           return null;
+        }
+
+        if ("integration_name" in binding) {
+          mapBindingTools[binding.integration_name] = tools.structuredContent
+            .tools.map((t) => t.name);
         }
 
         const compiledTools = await Promise.all(
@@ -371,6 +378,23 @@ ${tsTypes}
       }>;`;
       })
       .join("")}
+  }
+
+  export const PolicyResource = {
+    ${
+      Object.entries(mapBindingTools).map(([bindingName, tools]) =>
+        `${bindingName}: {
+      ${
+          tools.map((toolName) =>
+            `${toolName}: "${
+              scopeParser.fromBindingToolToScope({ bindingName, toolName })
+            }"`
+          )
+            .join(",\n")
+        }
+    }`
+      ).join(",\n")
+    }
   }
   `);
   } finally {

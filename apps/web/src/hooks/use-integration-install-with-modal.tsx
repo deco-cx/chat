@@ -6,9 +6,14 @@ import {
   useInstallFromMarketplace,
   usePermissionDescriptions,
 } from "@deco/sdk/hooks";
+import type { Statement } from "@deco/sdk/auth";
 import type { Integration } from "@deco/sdk/models";
 import type { JSONSchema7 } from "json-schema";
 import { useWorkspaceLink } from "./use-navigate-workspace.ts";
+import {
+  type BindingToolScope,
+  parser as scopeParser,
+} from "@deco/shared/parse-binding-tool";
 
 // Default policies required for all integrations
 const DEFAULT_INTEGRATION_POLICIES = [
@@ -89,9 +94,15 @@ export function useIntegrationInstallWithModal() {
         name: keyName,
         policies: [
           ...DEFAULT_INTEGRATION_POLICIES,
-          ...(installState.scopes?.map((scope: string) => ({
+          ...(installState.scopes?.map((scope: string): Statement => ({
             effect: "allow" as const,
-            resource: scope,
+            resource:
+              scopeParser.fromScopeToBindingTool(scope as BindingToolScope)
+                .toolName,
+            matchCondition: {
+              resource: "is_integration",
+              integrationId: installId,
+            },
           })) ?? []),
         ],
       });

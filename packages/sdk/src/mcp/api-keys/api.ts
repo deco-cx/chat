@@ -8,6 +8,7 @@ import {
   assertWorkspaceResourceAccess,
 } from "../assertions.ts";
 import { createToolGroup } from "../context.ts";
+import { StatementSchema } from "../../auth/policy.ts";
 
 const SELECT_API_KEY_QUERY = `
   id,
@@ -72,15 +73,9 @@ export const listApiKeys = createTool({
   },
 });
 
-const StatementSchema = z.object({
-  effect: z.enum(["allow", "deny"]),
-  resource: z.string(),
-});
-
-const policiesSchema = z
-  .array(StatementSchema)
-  .optional()
-  .describe("Policies for the API key");
+const policiesSchema = z.array(StatementSchema).optional().describe(
+  "Policies for the API key",
+);
 
 export const createApiKey = createTool({
   name: "API_KEYS_CREATE",
