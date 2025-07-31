@@ -16,7 +16,7 @@
   "type": "module",
   "main": "./dist/cli.js",
   "bin": {
-    "deco": "./dist/cli.js"
+    "deco": "dist/cli.js"
   },
   "files": [
     "dist/**/*",
