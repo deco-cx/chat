@@ -210,7 +210,7 @@ const uploadWranglerAssets = async ({
 const DEFAULT_HEADERS_FILE = () =>
   `# Default headers for static assets
 /*
-  Content-Security-Policy: frame-ancestors 'self' https://deco.chat/
+  Content-Security-Policy: frame-ancestors 'self' https://deco.chat/ http://localhost:3000
   X-Deco-Worker-Cdn: 1
 `;
 

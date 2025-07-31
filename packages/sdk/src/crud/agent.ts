@@ -1,6 +1,8 @@
 import { MCPClient } from "../fetcher.ts";
 import { type Agent, AgentSchema } from "../models/agent.ts";
 import { stub } from "../stub.ts";
+import type { MCPConnection } from "../models/mcp.ts";
+import { WellKnownBindings } from "../mcp/bindings/index.ts";
 
 /**
  * Update an agent
@@ -80,5 +82,20 @@ export const validateAgent = (
     return [validatedAgent, null];
   } catch (error) {
     return [null, error instanceof Error ? error : new Error("Invalid agent")];
+  }
+};
+
+export const listAvailableAgentsForConnection = async (
+  connection: MCPConnection,
+) => {
+  try {
+    const client = MCPClient.forConnection<typeof WellKnownBindings["Agent"]>(
+      connection,
+    );
+    const result = await client.DECO_CHAT_AGENTS_LIST({});
+    return result;
+  } catch (error) {
+    console.error("Error listing available agents for connection:", error);
+    return { agents: [] };
   }
 };

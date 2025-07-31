@@ -12,6 +12,10 @@ export const KEYS = {
     workspace: Workspace,
     agentId?: string,
   ) => ["agent", workspace, agentId],
+  AGENTS: (
+    workspace: Workspace,
+    integrationId?: string,
+  ) => ["agents", workspace, integrationId],
   INTEGRATION: (
     workspace: Workspace,
     integrationId?: string,

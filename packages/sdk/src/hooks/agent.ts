@@ -4,6 +4,7 @@
 
 import {
   useMutation,
+  useQuery,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
@@ -12,6 +13,7 @@ import {
   createAgent,
   deleteAgent,
   listAgents,
+  listAvailableAgentsForConnection,
   loadAgent,
   updateAgent,
 } from "../crud/agent.ts";
@@ -19,6 +21,7 @@ import { InternalServerError } from "../errors.ts";
 import type { Agent } from "../models/agent.ts";
 import { KEYS } from "./api.ts";
 import { useSDK } from "./store.tsx";
+import { MCPConnection } from "../models/index.ts";
 
 export const useCreateAgent = () => {
   const client = useQueryClient();
@@ -155,3 +158,26 @@ export const useAgentRoot = (agentId: string) => {
 
   return root;
 };
+
+export function useConnectionAgents(
+  integration: { id: string; connection: MCPConnection } | null,
+) {
+  const { workspace } = useSDK();
+
+  const data = useQuery({
+    queryKey: KEYS.AGENTS(workspace, integration?.id ?? "null"),
+    queryFn: async () => {
+      if (!integration) return { agents: [] };
+      const result = await listAvailableAgentsForConnection(
+        integration.connection,
+      ).catch((error) => {
+        console.error(error);
+        return { agents: [] };
+      });
+
+      return result;
+    },
+  });
+
+  return data;
+}

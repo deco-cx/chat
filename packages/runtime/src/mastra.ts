@@ -20,6 +20,7 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { DefaultEnv } from "./index.ts";
 import { State } from "./state.ts";
+import { AgentSchema } from "@deco/sdk";
 export { createWorkflow };
 
 export { cloneStep, cloneWorkflow } from "@mastra/core/workflows";
@@ -213,6 +214,8 @@ interface ViewExport {
   url: string;
 }
 
+type AgentExport = z.infer<typeof AgentSchema>;
+
 export interface CreateMCPServerOptions<
   Env = any,
   TSchema extends z.ZodTypeAny = never,
@@ -221,6 +224,9 @@ export interface CreateMCPServerOptions<
   views?: (
     env: Env & DefaultEnv<TSchema>,
   ) => Promise<ViewExport[]> | ViewExport[];
+  agents?: (
+    env: Env & DefaultEnv<TSchema>,
+  ) => Promise<AgentExport[]> | AgentExport[];
   tools?: Array<
     (
       env: Env & DefaultEnv<TSchema>,
@@ -421,6 +427,16 @@ export const createMCPServer = <
         })),
       }),
       execute: async () => ({ views: await options.views?.(bindings) ?? [] }),
+    }));
+
+    tools.push(createTool({
+      id: "DECO_CHAT_AGENTS_LIST",
+      description: "List agents exposed by this MCP",
+      inputSchema: z.any(),
+      outputSchema: z.object({
+        agents: z.array(AgentSchema),
+      }),
+      execute: async () => ({ agents: await options.agents?.(bindings) ?? [] }),
     }));
 
     for (const tool of tools) {

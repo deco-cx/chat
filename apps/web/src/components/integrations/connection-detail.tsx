@@ -26,7 +26,11 @@ import {
   type MCPConnection,
   type MCPTool,
   useAddView,
+  useAgents,
+  useConnectionAgents,
   useConnectionViews,
+  useCreateAgent,
+  useRemoveAgent,
   useRemoveView,
   useToolCall,
   useTools,
@@ -1039,31 +1043,32 @@ function ToolsInspector({ data, selectedConnectionId }: {
   );
 }
 
-function ViewBindingDetector({ integration }: {
+function BindingDetector({ integration, binding }: {
   integration: Integration;
+  binding: keyof typeof BINDINGS;
 }) {
-  const [isViewBinding, setIsViewBinding] = useState<boolean | null>(null);
+  const [isBinding, setIsBinding] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(false);
 
-  const checkViewBinding = async () => {
+  const checkBinding = async () => {
     if (!integration) return;
 
     setIsChecking(true);
     try {
       const toolsData = await listTools(integration.connection);
-      const isViewBindingResult = Binding(WellKnownBindings.View)
+      const isBindingResult = Binding(WellKnownBindings[binding])
         .isImplementedBy(toolsData.tools);
-      setIsViewBinding(isViewBindingResult);
+      setIsBinding(isBindingResult);
     } catch (error) {
-      console.error("Error checking view binding:", error);
-      setIsViewBinding(false);
+      console.error(`Error checking ${binding} binding:`, error);
+      setIsBinding(false);
     } finally {
       setIsChecking(false);
     }
   };
 
   useEffect(() => {
-    checkViewBinding();
+    checkBinding();
   }, [integration?.id]);
 
   if (!integration || isChecking) {
@@ -1076,11 +1081,13 @@ function ViewBindingDetector({ integration }: {
     );
   }
 
-  if (isViewBinding === null || isViewBinding === false) {
+  if (isBinding === null || isBinding === false) {
     return null;
   }
 
-  return <ViewsList integration={integration} />;
+  const Component = BINDINGS[binding].Component;
+
+  return <Component integration={integration} />;
 }
 
 function ViewsList({ integration }: {
@@ -1269,9 +1276,179 @@ function ViewsList({ integration }: {
   );
 }
 
-function ViewBindingSection({ data, selectedConnectionId }: {
+function AgentsList({ integration }: {
+  integration: Integration;
+}) {
+  const currentAgents = useAgents();
+  const createAgent = useCreateAgent();
+  const removeAgent = useRemoveAgent();
+
+  const { data: agentsData, isLoading: isLoadingAgents } = useConnectionAgents(
+    integration,
+  );
+  const agents = agentsData?.agents || [];
+
+  // Check which views are already added to the team
+  const agentsWithStatus = useMemo(() => {
+    if (!agents || agents.length === 0) return [];
+
+    return agents.map((agent) => {
+      const existingAgent = currentAgents.data?.find((currentAgent) => {
+        return currentAgent.id === agent.id;
+      });
+
+      return {
+        ...agent,
+        isAdded: !!existingAgent,
+        teamAgentId: existingAgent?.id,
+      };
+    });
+  }, [agents, currentAgents.data]);
+
+  const handleAddAgent = async (agent: typeof agents[0]) => {
+    await createAgent.mutateAsync(agent);
+  };
+
+  const handleRemoveAgent = async (
+    agentWithStatus: typeof agentsWithStatus[0],
+  ) => {
+    await removeAgent.mutateAsync(agentWithStatus.id);
+  };
+
+  if (isLoadingAgents) {
+    return (
+      <div className="w-full p-4 flex flex-col items-center gap-4">
+        <div className="w-full flex items-center justify-center p-4">
+          <Skeleton className="h-4 w-32" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full p-4 flex flex-col items-center gap-4">
+      <h6 className="text-sm text-muted-foreground font-medium w-full">
+        Agents available from this integration
+      </h6>
+      <div className="w-full p-4 border border-border rounded-xl bg-muted/30">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center">
+            <Icon name="layers" size={20} className="text-success" />
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-foreground">
+              {integration.name}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              This integration provides custom agents that can be added to your
+              workspace.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Icon name="info" size={16} className="text-muted-foreground" />
+            <span className="text-muted-foreground">
+              Available agents: {agents.length}
+            </span>
+          </div>
+
+          {agentsWithStatus.length === 0
+            ? (
+              <div className="text-sm text-muted-foreground text-center py-4">
+                No agents available from this integration
+              </div>
+            )
+            : (
+              <div className="space-y-2">
+                {agentsWithStatus.map((agent) => (
+                  <div
+                    key={agent.id}
+                    className="flex items-center justify-between p-3 border border-border rounded-lg bg-background"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {agent.avatar && (
+                        <AgentAvatar
+                          url={agent.avatar}
+                          fallback={agent.name}
+                          size="sm"
+                        />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-sm font-medium truncate">
+                          {agent.name}
+                        </h4>
+                        {agent.description && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {agent.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {agent.isAdded && (
+                        <div className="flex items-center gap-1 text-xs text-success">
+                          <Icon name="check_circle" size={14} />
+                          <span>Added</span>
+                        </div>
+                      )}
+
+                      {agent.isAdded
+                        ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleRemoveAgent(agent)}
+                            disabled={removeAgent.isPending}
+                          >
+                            {removeAgent.isPending
+                              ? <Icon name="hourglass_empty" size={14} />
+                              : <Icon name="remove" size={14} />}
+                          </Button>
+                        )
+                        : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleAddAgent(agent)}
+                            disabled={createAgent.isPending}
+                          >
+                            {createAgent.isPending
+                              ? <Icon name="hourglass_empty" size={14} />
+                              : <Icon name="add" size={14} />}
+                          </Button>
+                        )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const BINDINGS = {
+  View: {
+    Component: ViewsList,
+  },
+  Agent: {
+    Component: AgentsList,
+  },
+} as const;
+
+function BindingSection({
+  data,
+  selectedConnectionId,
+  binding,
+}: {
   data: ReturnType<typeof useGroupedApp>;
   selectedConnectionId?: string;
+  binding: keyof typeof BINDINGS;
 }) {
   const selectedIntegration = useMemo(() => {
     return data.instances.find((i) => i.id === selectedConnectionId) ??
@@ -1282,7 +1459,12 @@ function ViewBindingSection({ data, selectedConnectionId }: {
     return null;
   }
 
-  return <ViewBindingDetector integration={selectedIntegration} />;
+  return (
+    <BindingDetector
+      integration={selectedIntegration}
+      binding={binding}
+    />
+  );
 }
 
 function AppDetail({ appKey }: {
@@ -1310,7 +1492,13 @@ function AppDetail({ appKey }: {
           onTestTools={(connectionId) =>
             setSelectedToolInspectorConnectionId(connectionId)}
         />
-        <ViewBindingSection
+        <BindingSection
+          binding="View"
+          data={app}
+          selectedConnectionId={selectedToolInspectorConnectionId}
+        />
+        <BindingSection
+          binding="Agent"
           data={app}
           selectedConnectionId={selectedToolInspectorConnectionId}
         />
