@@ -14,7 +14,6 @@
     "@ai-sdk/react": "^1.2.5",
     "@deco/actors": "npm:@jsr/deco__actors@0.33.1",
     "@deco/sdk": "^0.1.1",
-    "@deco/shared": "^1.0.0",
     "@deco/ui": "^1.0.0",
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.2.0",

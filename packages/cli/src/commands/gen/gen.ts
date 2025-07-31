@@ -4,7 +4,7 @@ import { generateName } from "json-schema-to-typescript/dist/src/utils.js";
 import type { DecoBinding } from "../../lib/config.js";
 import { createWorkspaceClient } from "../../lib/mcp.js";
 import { spawn } from "child_process";
-import { parser as scopeParser } from "@deco/shared/parse-binding-tool";
+import { parser as scopeParser } from "../../lib/parse-binding-tool.js";
 
 interface Options {
   workspace: string;

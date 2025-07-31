@@ -13,7 +13,7 @@ import { useWorkspaceLink } from "./use-navigate-workspace.ts";
 import {
   type BindingToolScope,
   parser as scopeParser,
-} from "@deco/shared/parse-binding-tool";
+} from "../../../../packages/cli/src/lib/parse-binding-tool.ts";
 
 // Default policies required for all integrations
 const DEFAULT_INTEGRATION_POLICIES = [
