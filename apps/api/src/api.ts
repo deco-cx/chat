@@ -202,40 +202,84 @@ const proxy = (
   mcpConnection: MCPConnection,
   { middlewares }: ProxyOptions = {},
 ) => {
-  const fetch = async (req: Request) => {
+  const createMcpClient = async () => {
     const client = await createServerClient({
       connection: mcpConnection,
       name: "proxy",
     });
 
-    const mcpServer = new McpServer(
-      { name: "deco-chat-server", version: "1.0.0" },
-      { capabilities: { tools: {} } },
-    );
-    const transport = new HttpServerTransport();
-
     const listTools = compose(
       ...(middlewares?.listTools ?? []),
       () => client.listTools() as ReturnType<ListToolsMiddleware>,
-    );
-    mcpServer.server.setRequestHandler(ListToolsRequestSchema, (req) =>
-      listTools(req),
     );
 
     const callTool = compose(
       ...(middlewares?.callTool ?? []),
       (req) => client.callTool(req.params) as ReturnType<CallToolMiddleware>,
     );
+
+    return { listTools, callTool };
+  };
+
+  const fetch = async (req: Request) => {
+    const { callTool, listTools } = await createMcpClient();
+    const mcpServer = new McpServer(
+      { name: "deco-chat-server", version: "1.0.0" },
+      { capabilities: { tools: {} } },
+    );
+    const transport = new HttpServerTransport();
+
+    await mcpServer.connect(transport);
+
     mcpServer.server.setRequestHandler(CallToolRequestSchema, (req) =>
       callTool(req),
     );
-
-    await mcpServer.connect(transport);
+    mcpServer.server.setRequestHandler(ListToolsRequestSchema, (req) =>
+      listTools(req),
+    );
 
     return await transport.handleMessage(req);
   };
 
-  return { fetch };
+  return {
+    fetch,
+    callTool: async (
+      ...args: Parameters<
+        Awaited<ReturnType<typeof createMcpClient>>["callTool"]
+      >
+    ) => {
+      const { callTool } = await createMcpClient();
+      return callTool(...args);
+    },
+    listTools: async (
+      ...args: Parameters<
+        Awaited<ReturnType<typeof createMcpClient>>["listTools"]
+      >
+    ) => {
+      const { listTools } = await createMcpClient();
+      return listTools(...args);
+    },
+  };
+};
+
+const createMcpServerProxy = async (c: Context) => {
+  const ctx = honoCtxToAppCtx(c);
+
+  const integrationId = c.req.param("integrationId");
+  const integrationsGet = createIntegrationsGet({
+    mapConnectionForContext: (connection) => connection,
+  });
+  const integration = await State.run(ctx, () =>
+    integrationsGet({ id: integrationId }, ctx),
+  );
+
+  const mcpServerProxy = proxy(integration.connection, {
+    middlewares: {
+      callTool: [withMCPAuthorization(ctx, { integrationId })],
+    },
+  });
+
+  return mcpServerProxy;
 };
 
 // Add logger middleware
@@ -296,23 +340,20 @@ app.post(
 );
 
 app.post("/:root/:slug/:integrationId/mcp", async (c) => {
-  const ctx = honoCtxToAppCtx(c);
-
-  const integrationId = c.req.param("integrationId");
-  const integrationsGet = createIntegrationsGet({
-    mapConnectionForContext: (connection) => connection,
-  });
-  const integration = await State.run(ctx, () =>
-    integrationsGet({ id: integrationId }, ctx),
-  );
-
-  const mcpServerProxy = proxy(integration.connection, {
-    middlewares: {
-      callTool: [withMCPAuthorization(ctx, { integrationId })],
-    },
-  });
+  const mcpServerProxy = await createMcpServerProxy(c);
 
   return mcpServerProxy.fetch(c.req.raw);
+});
+
+app.post("/:root/:slug/:integrationId/tools/call/:tool", async (c) => {
+  const mcpServerProxy = await createMcpServerProxy(c);
+
+  const callToolParam = {
+    method: "tools/call" as const,
+    params: await c.req.json(),
+  };
+
+  return c.json(await mcpServerProxy.callTool(callToolParam));
 });
 
 app.post(
