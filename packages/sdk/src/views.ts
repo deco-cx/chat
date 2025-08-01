@@ -2,21 +2,21 @@ import { z } from "zod";
 
 export const DEFAULT_VIEWS: View[] = [
   {
+    id: "connections",
+    title: "MCPs",
+    icon: "linked_services",
+    type: "default",
+    metadata: {
+      path: "/connections",
+    },
+  },
+  {
     id: "agents",
     title: "Agents",
     icon: "robot_2",
     type: "default",
     metadata: {
       path: "/agents",
-    },
-  },
-  {
-    id: "connections",
-    title: "Integrations",
-    icon: "linked_services",
-    type: "default",
-    metadata: {
-      path: "/connections",
     },
   },
   {

@@ -26,7 +26,7 @@ export function IntegrationPageLayout({ tabs }: { tabs: Record<string, Tab> }) {
         hideViewsButton
         breadcrumb={
           <DefaultBreadcrumb
-            items={[{ label: "Integrations", link: "/connections" }]}
+            items={[{ label: "MCPs", link: "/connections" }]}
           />
         }
         actionButtons={<SelectConnectionDialog forceTab="new-connection" />}
