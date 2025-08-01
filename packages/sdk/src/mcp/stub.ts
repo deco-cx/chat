@@ -3,7 +3,10 @@ import { getErrorByStatusCode } from "../errors.ts";
 import type { MCPConnection } from "../models/mcp.ts";
 import type { AppContext } from "./context.ts";
 import type { ToolBinder } from "./index.ts";
-import { createMCPClientProxy } from "@deco/workers-runtime/proxy";
+import {
+  createMCPClientProxy,
+  createMCPFetchStubForIntegrationProxy,
+} from "@deco/workers-runtime/proxy";
 
 export type MCPClientStub<TDefinition extends readonly ToolBinder[]> = {
   [K in TDefinition[number] as K["name"]]: K extends ToolBinder<
@@ -51,6 +54,18 @@ export function createMCPFetchStub<TDefinition extends readonly ToolBinder[]>(
   options?: CreateStubAPIOptions,
 ): MCPClientFetchStub<TDefinition> {
   return createMCPClientProxy<MCPClientFetchStub<TDefinition>>({
+    ...options,
+    decoChatApiUrl: DECO_CHAT_API,
+    debugId: getTraceDebugId,
+    getErrorByStatusCode,
+  });
+}
+
+export function createMCPFetchStubForIntegration(options?: {
+  integrationId: string;
+  workspace?: string;
+}) {
+  return createMCPFetchStubForIntegrationProxy({
     ...options,
     decoChatApiUrl: DECO_CHAT_API,
     debugId: getTraceDebugId,
