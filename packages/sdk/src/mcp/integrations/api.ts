@@ -54,6 +54,23 @@ const SELECT_INTEGRATION_QUERY = `
           )
         ` as const;
 
+const isProxyUrl = (
+  {
+    workspace,
+    integrationId,
+    connection,
+  }: { workspace: string; integrationId: string; connection: MCPConnection },
+  ctx: AppContext,
+) => {
+  const url = new URL(
+    `${workspace}/${integrationId}/mcp`,
+    DECO_CHAT_API_BACKEND(ctx),
+  );
+  const connectionUrl =
+    "url" in connection ? new URL(connection.url) : undefined;
+  return "url" in connection && url.pathname === connectionUrl?.pathname;
+};
+
 const mapConnection = (
   connection: MCPConnection,
   integrationId: string,
@@ -565,19 +582,29 @@ export const updateIntegration = createIntegrationManagementTool({
     }
 
     const { name, description, icon, connection, access, appId } = integration;
+    const isProxiedUrl = isProxyUrl(
+      {
+        workspace: c.workspace.value,
+        integrationId: id,
+        connection,
+      },
+      c,
+    );
+
+    const integrationUpdate = {
+      name,
+      description,
+      icon,
+      ...(isProxiedUrl ? {} : { connection }),
+      access,
+      app_id: appId,
+      id: uuid,
+      workspace: c.workspace.value,
+    };
 
     const { data, error } = await c.db
       .from("deco_chat_integrations")
-      .update({
-        name,
-        description,
-        icon,
-        connection,
-        access,
-        app_id: appId,
-        id: uuid,
-        workspace: c.workspace.value,
-      })
+      .update(integrationUpdate)
       .eq("id", uuid)
       .eq("workspace", c.workspace.value)
       .select()
@@ -999,6 +1026,7 @@ export const DECO_INTEGRATION_INSTALL = createIntegrationManagementTool({
         client.close();
       }
     }
+
     const created = await createIntegration.handler(integration);
 
     if (!created?.id) {
