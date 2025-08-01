@@ -216,20 +216,18 @@ const proxy = (
 
     const listTools = compose(
       ...(middlewares?.listTools ?? []),
-      () => (client.listTools() as ReturnType<ListToolsMiddleware>),
+      () => client.listTools() as ReturnType<ListToolsMiddleware>,
     );
-    mcpServer.server.setRequestHandler(
-      ListToolsRequestSchema,
-      (req) => listTools(req),
+    mcpServer.server.setRequestHandler(ListToolsRequestSchema, (req) =>
+      listTools(req),
     );
 
     const callTool = compose(
       ...(middlewares?.callTool ?? []),
-      (req) => (client.callTool(req.params) as ReturnType<CallToolMiddleware>),
+      (req) => client.callTool(req.params) as ReturnType<CallToolMiddleware>,
     );
-    mcpServer.server.setRequestHandler(
-      CallToolRequestSchema,
-      (req) => callTool(req),
+    mcpServer.server.setRequestHandler(CallToolRequestSchema, (req) =>
+      callTool(req),
     );
 
     await mcpServer.connect(transport);
@@ -297,31 +295,25 @@ app.post(
   createToolCallHandlerFor(WORKSPACE_TOOLS),
 );
 
-app.post(
-  "/:root/:slug/:integrationId/mcp",
-  async (c) => {
-    const ctx = honoCtxToAppCtx(c);
+app.post("/:root/:slug/:integrationId/mcp", async (c) => {
+  const ctx = honoCtxToAppCtx(c);
 
-    const integrationId = c.req.param("integrationId");
-    const integrationsGet = createIntegrationsGet({
-      mapConnectionForContext: (connection) => connection,
-    });
-    const integration = await State.run(
-      ctx,
-      () => integrationsGet({ id: integrationId }, ctx),
-    );
+  const integrationId = c.req.param("integrationId");
+  const integrationsGet = createIntegrationsGet({
+    mapConnectionForContext: (connection) => connection,
+  });
+  const integration = await State.run(ctx, () =>
+    integrationsGet({ id: integrationId }, ctx),
+  );
 
-    const mcpServerProxy = proxy(integration.connection, {
-      middlewares: {
-        callTool: [
-          withMCPAuthorization(ctx, { integrationId }),
-        ],
-      },
-    });
+  const mcpServerProxy = proxy(integration.connection, {
+    middlewares: {
+      callTool: [withMCPAuthorization(ctx, { integrationId })],
+    },
+  });
 
-    return mcpServerProxy.fetch(c.req.raw);
-  },
-);
+  return mcpServerProxy.fetch(c.req.raw);
+});
 
 app.post(
   "/:root/:slug/tools/call/agents/:agentId/:tool",

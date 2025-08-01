@@ -73,9 +73,10 @@ export const listApiKeys = createTool({
   },
 });
 
-const policiesSchema = z.array(StatementSchema).optional().describe(
-  "Policies for the API key",
-);
+const policiesSchema = z
+  .array(StatementSchema)
+  .optional()
+  .describe("Policies for the API key");
 
 export const createApiKey = createTool({
   name: "API_KEYS_CREATE",

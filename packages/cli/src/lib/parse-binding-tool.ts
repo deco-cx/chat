@@ -7,9 +7,10 @@ export interface BindingTool {
 
 const SEPARATOR = "::";
 export const parser = {
-  fromBindingToolToScope: (
-    { bindingName, toolName }: BindingTool,
-  ): BindingToolScope => {
+  fromBindingToolToScope: ({
+    bindingName,
+    toolName,
+  }: BindingTool): BindingToolScope => {
     const parts = [bindingName, toolName];
     if (parts.some((part) => part.includes(SEPARATOR))) {
       throw new Error(

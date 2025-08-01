@@ -14,10 +14,8 @@ interface Options {
 }
 
 const toValidProperty = (property: string) => {
-  return isValidJavaScriptPropertyName(property)
-    ? property
-    : `["${property}"]`;
-}
+  return isValidJavaScriptPropertyName(property) ? property : `["${property}"]`;
+};
 
 // Sanitize description for safe use in JSDoc block comments
 const formatDescription = (desc: string | undefined) => {
@@ -262,8 +260,9 @@ export const genEnv = async ({
         }
 
         if ("integration_name" in binding) {
-          mapBindingTools[binding.name] = tools.structuredContent
-            .tools.map((t) => t.name);
+          mapBindingTools[binding.name] = tools.structuredContent.tools.map(
+            (t) => t.name,
+          );
         }
 
         const compiledTools = await Promise.all(
@@ -373,9 +372,9 @@ ${tsTypes}
               : "";
 
             return `${docComment}
-          ${
-              toValidProperty(toolName)
-            }: (input: ${inputName}) => Promise<${outputName ?? "any"}>;
+          ${toValidProperty(
+            toolName,
+          )}: (input: ${inputName}) => Promise<${outputName ?? "any"}>;
           `;
           })
           .join("")}
@@ -385,20 +384,21 @@ ${tsTypes}
   }
 
   export const Policies = {
-    ${
-      Object.entries(mapBindingTools).map(([bindingName, tools]) =>
-        `${toValidProperty(bindingName)}: {
-      ${
-          tools.map((toolName) =>
-            `${toValidProperty(toolName)}: "${
-              scopeParser.fromBindingToolToScope({ bindingName, toolName })
-            }"`
-          )
-            .join(",\n")
-        }
-    }`
-      ).join(",\n")
-    }
+    ${Object.entries(mapBindingTools)
+      .map(
+        ([bindingName, tools]) =>
+          `${toValidProperty(bindingName)}: {
+      ${tools
+        .map(
+          (toolName) =>
+            `${toValidProperty(toolName)}: "${scopeParser.fromBindingToolToScope(
+              { bindingName, toolName },
+            )}"`,
+        )
+        .join(",\n")}
+    }`,
+      )
+      .join(",\n")}
   }
   `);
   } finally {

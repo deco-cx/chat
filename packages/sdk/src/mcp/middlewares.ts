@@ -12,22 +12,17 @@ import z from "zod";
 export interface RequestMiddlewareContext<T = any> {
   next?(): Promise<T>;
 }
-export type RequestMiddleware<
-  TRequest = any,
-  TResponse = any,
-> = (request: TRequest, next?: () => Promise<TResponse>) => Promise<TResponse>;
+export type RequestMiddleware<TRequest = any, TResponse = any> = (
+  request: TRequest,
+  next?: () => Promise<TResponse>,
+) => Promise<TResponse>;
 
-export const compose = <
-  TRequest,
-  TResponse,
->(
+export const compose = <TRequest, TResponse>(
   ...middlewares: RequestMiddleware<TRequest, TResponse>[]
 ): RequestMiddleware<TRequest, TResponse> => {
   const last = middlewares[middlewares.length - 1];
   return function composedResolver(request: TRequest) {
-    const dispatch = (
-      i: number,
-    ): Promise<TResponse> => {
+    const dispatch = (i: number): Promise<TResponse> => {
       const middleware = middlewares[i];
       if (!middleware) {
         return last(request);
@@ -49,25 +44,25 @@ export type CallToolMiddleware = RequestMiddleware<
   z.infer<typeof CallToolResultSchema>
 >;
 
-export const withMCPErrorHandling = <
-  TInput = any,
-  TReturn extends object | null | boolean = object,
->(f: (props: TInput) => Promise<TReturn>) =>
-async (props: TInput) => {
-  try {
-    const result = await f(props);
+export const withMCPErrorHandling =
+  <TInput = any, TReturn extends object | null | boolean = object>(
+    f: (props: TInput) => Promise<TReturn>,
+  ) =>
+  async (props: TInput) => {
+    try {
+      const result = await f(props);
 
-    return {
-      isError: false,
-      structuredContent: result,
-    };
-  } catch (error) {
-    return {
-      isError: true,
-      content: [{ type: "text", text: serializeError(error) }],
-    };
-  }
-};
+      return {
+        isError: false,
+        structuredContent: result,
+      };
+    } catch (error) {
+      return {
+        isError: true,
+        content: [{ type: "text", text: serializeError(error) }],
+      };
+    }
+  };
 
 const DRY_RUN_AUTH = true;
 
@@ -77,10 +72,7 @@ interface AuthContext {
 
 export const withMCPAuthorization =
   (ctx: AppContext, { integrationId }: AuthContext): CallToolMiddleware =>
-  async (
-    req,
-    next,
-  ) => {
+  async (req, next) => {
     ctx.resourceAccess.reset();
     try {
       await assertWorkspaceResourceAccess(
