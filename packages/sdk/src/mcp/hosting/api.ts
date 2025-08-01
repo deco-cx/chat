@@ -119,7 +119,7 @@ export const listApps = createTool({
   description: "List all apps for the current tenant",
   inputSchema: z.object({}),
   handler: async (_, c) => {
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
@@ -330,7 +330,7 @@ export const promoteApp = createTool({
     promotedRoute: z.string().describe("The route pattern that was promoted"),
   }),
   handler: async ({ deploymentId, routePattern }, c) => {
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     await promoteDeployment(c, { deploymentId, routePattern });
 
@@ -692,7 +692,7 @@ Important Notes:
     },
     c,
   ) => {
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     // Convert array to record for bundler or direct upload
     const filesRecord = files.reduce(
@@ -853,7 +853,7 @@ export const deleteApp = createTool({
   description: "Delete an app and its worker",
   inputSchema: AppInputSchema,
   handler: async ({ appSlug }, c) => {
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
     const scriptSlug = appSlug;
@@ -895,7 +895,7 @@ export const getAppInfo = createTool({
   description: "Get info/metadata for an app (including endpoint)",
   inputSchema: AppInputSchema,
   handler: async ({ appSlug }, c) => {
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
     const scriptSlug = appSlug;
@@ -941,7 +941,7 @@ export const listAppDeployments = createTool({
     }),
   }),
   handler: async ({ appSlug }, c) => {
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
     const scriptSlug = appSlug;
@@ -1074,7 +1074,7 @@ export const listWorkflowRuns = createTool({
     { page = 1, per_page = 25, workflowName, fromDate, toDate },
     c,
   ) => {
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
     const db = await workspaceDB(c);
 
     // Build dynamic SQL query with optional filters
@@ -1309,7 +1309,7 @@ export const listWorkflowNames = createTool({
       .describe("List of unique workflow names"),
   }),
   handler: async (_, c) => {
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
     const db = await workspaceDB(c);
 
     const sql = `
@@ -1376,7 +1376,7 @@ export const getWorkflowStatus = createTool({
   }),
   outputSchema: z.any(),
   handler: async ({ instanceId, workflowName }, c) => {
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
     const store = await getStore(c);
 
     const workflow = await store.getWorkflowRunById({

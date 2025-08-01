@@ -149,7 +149,7 @@ export const listRegistryScopes = createTool({
   }),
   outputSchema: z.object({ scopes: z.array(RegistryScopeSchema) }),
   handler: async ({ search }, c) => {
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     let query = c.db
       .from(DECO_CHAT_REGISTRY_SCOPES_TABLE)
@@ -279,7 +279,7 @@ export const listRegistryApps = createTool({
   }),
   outputSchema: z.object({ apps: z.array(RegistryAppSchema) }),
   handler: async ({ search, scopeName }, c) => {
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
@@ -377,7 +377,7 @@ export const publishApp = createTool({
     },
     c,
   ) => {
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     assertHasWorkspace(c);
     const workspace = c.workspace.value;

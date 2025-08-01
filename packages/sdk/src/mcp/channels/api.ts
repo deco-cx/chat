@@ -56,7 +56,7 @@ export const listChannels = createTool({
   inputSchema: z.object({}),
   handler: async (_, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -92,7 +92,7 @@ export const createChannel = createTool({
   }),
   handler: async ({ discriminator, integrationId, agentId, name }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
     const workspace = c.workspace.value;
 
     const integrationIdWithoutPrefix = integrationId.replace("i:", "");
@@ -200,7 +200,7 @@ export const channelJoin = createTool({
   }),
   handler: async ({ id, agentId }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -262,7 +262,7 @@ export const channelLeave = createTool({
   }),
   handler: async ({ id, agentId }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -309,7 +309,7 @@ export const getChannel = createTool({
   inputSchema: z.object({ id: z.string() }),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -364,7 +364,7 @@ export const deleteChannel = createTool({
   inputSchema: z.object({ id: z.string() }),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;

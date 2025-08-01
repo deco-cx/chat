@@ -699,7 +699,7 @@ export class AuthorizationClient {
   }
 }
 
-interface AuthContext {
+export interface AuthContext {
   user?: UserPrincipal;
   integrationId?: string;
 }

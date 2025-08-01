@@ -76,10 +76,8 @@ export const withMCPAuthorization =
     ctx.resourceAccess.reset();
     try {
       await assertWorkspaceResourceAccess(
-        req.params.name,
+        { integrationId, resource: req.params.name },
         ctx,
-        // TODO: add auth context on auth.canAccess
-        // { integrationId }
       );
     } catch (error) {
       console.error(

@@ -25,7 +25,7 @@ export const oauthCodeCreate = createTool({
   }),
   handler: async ({ integrationId }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
     const mcpClient = MCPClient.forContext(c);
     const integration = await mcpClient.INTEGRATIONS_GET({
       id: integrationId,

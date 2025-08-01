@@ -49,7 +49,7 @@ export const listApiKeys = createTool({
   inputSchema: z.object({}),
   handler: async (_, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -88,7 +88,7 @@ export const createApiKey = createTool({
   }),
   handler: async ({ name, policies, claims }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
     const workspace = c.workspace.value;
 
     const db = c.db;
@@ -141,7 +141,7 @@ export const reissueApiKey = createTool({
   }),
   handler: async ({ id, claims }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -193,7 +193,7 @@ export const getApiKey = createTool({
   }),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -229,7 +229,7 @@ export const updateApiKey = createTool({
   }),
   handler: async ({ id, name, enabled, policies }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -266,7 +266,7 @@ export const deleteApiKey = createTool({
   }),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -300,7 +300,7 @@ export const enableApiKey = createTool({
   }),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -330,7 +330,7 @@ export const disableApiKey = createTool({
   }),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -389,7 +389,7 @@ export const checkAccess = createTool({
       tools.map(async (tool) => {
         return [
           tool,
-          await assertWorkspaceResourceAccess(tool, c)
+          await assertWorkspaceResourceAccess({ resource: tool }, c)
             .then(() => true)
             .catch(() => false),
         ];
@@ -409,7 +409,7 @@ export const validateApiKey = createTool({
   }),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
