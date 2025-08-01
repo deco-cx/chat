@@ -32,15 +32,17 @@ export interface JsonSchemaFormProps<
   optionsLoader?: (type: string) => Promise<OptionItem[]> | OptionItem[];
 }
 
-export default function Form<T extends FieldValues = Record<string, unknown>>({
-  schema,
-  form,
-  disabled = false,
-  onSubmit,
-  error,
-  submitButton,
-  optionsLoader,
-}: JsonSchemaFormProps<T>) {
+export default function Form<T extends FieldValues = Record<string, unknown>>(
+  {
+    schema,
+    form,
+    disabled = false,
+    onSubmit,
+    error,
+    submitButton,
+    optionsLoader,
+  }: JsonSchemaFormProps<T>,
+) {
   if (!schema || typeof schema !== "object") {
     return <div className="text-sm text-destructive">Invalid schema</div>;
   }

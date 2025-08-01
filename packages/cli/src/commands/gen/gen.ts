@@ -13,6 +13,12 @@ interface Options {
   selfUrl?: string;
 }
 
+const toValidProperty = (property: string) => {
+  return isValidJavaScriptPropertyName(property)
+    ? property
+    : `["${property}"]`;
+}
+
 // Sanitize description for safe use in JSDoc block comments
 const formatDescription = (desc: string | undefined) => {
   if (!desc) return "";
@@ -256,7 +262,7 @@ export const genEnv = async ({
         }
 
         if ("integration_name" in binding) {
-          mapBindingTools[binding.integration_name] = tools.structuredContent
+          mapBindingTools[binding.name] = tools.structuredContent
             .tools.map((t) => t.name);
         }
 
@@ -368,10 +374,8 @@ ${tsTypes}
 
             return `${docComment}
           ${
-            isValidJavaScriptPropertyName(toolName)
-              ? toolName
-              : [`"${toolName}"`]
-          }: (input: ${inputName}) => Promise<${outputName ?? "any"}>;
+              toValidProperty(toolName)
+            }: (input: ${inputName}) => Promise<${outputName ?? "any"}>;
           `;
           })
           .join("")}
@@ -380,13 +384,13 @@ ${tsTypes}
       .join("")}
   }
 
-  export const PolicyResource = {
+  export const Policies = {
     ${
       Object.entries(mapBindingTools).map(([bindingName, tools]) =>
-        `${bindingName}: {
+        `${toValidProperty(bindingName)}: {
       ${
           tools.map((toolName) =>
-            `${toolName}: "${
+            `${toValidProperty(toolName)}: "${
               scopeParser.fromBindingToolToScope({ bindingName, toolName })
             }"`
           )

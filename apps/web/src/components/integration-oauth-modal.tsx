@@ -69,11 +69,12 @@ export function IntegrationOAuthModal({
       // Try to get registry app information for the type to understand what we're looking for
       const registryApp = await getRegistryApp(workspace, { name: type });
 
+      const registryAppName = `@${registryApp.scopeName}/${registryApp.name}`
       // Filter integrations based on the type
       const matchingIntegrations = installedIntegrations.filter(
         (integration: Integration) => {
           // Match by name (case-insensitive)
-          return (
+          return (registryAppName === integration.appName ||
             integration.connection.type === "HTTP" &&
             registryApp.connection.type === "HTTP" &&
             integration.connection.url === registryApp.connection.url

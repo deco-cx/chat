@@ -94,16 +94,26 @@ export function useIntegrationInstallWithModal() {
         name: keyName,
         policies: [
           ...DEFAULT_INTEGRATION_POLICIES,
-          ...(installState.scopes?.map((scope: string): Statement => ({
-            effect: "allow" as const,
-            resource:
-              scopeParser.fromScopeToBindingTool(scope as BindingToolScope)
-                .toolName,
-            matchCondition: {
-              resource: "is_integration",
-              integrationId: installId,
-            },
-          })) ?? []),
+          ...(installState.scopes?.map((scope: string): Statement => {
+            const { bindingName, toolName } = scopeParser.fromScopeToBindingTool(scope as BindingToolScope)
+            const maybeIntegrationId = formData?.[bindingName] && typeof formData[bindingName] === 'object' && 'value' in formData[bindingName] ? formData[bindingName].value : undefined;
+            let integrationId;
+            if (maybeIntegrationId && typeof maybeIntegrationId === 'string') {
+              const [_type, uuid] = maybeIntegrationId.includes(":") ? maybeIntegrationId.split(":") : ["i", maybeIntegrationId];
+              integrationId = uuid;
+            }
+
+            return {
+              effect: "allow" as const,
+              resource: toolName,
+              ... (integrationId ? {
+                matchCondition: {
+                  resource: "is_integration",
+                  integrationId: integrationId,
+                }
+              } : {}),
+            }
+          }) ?? []),
         ],
       });
 
