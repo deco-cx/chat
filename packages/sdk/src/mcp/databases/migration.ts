@@ -47,7 +47,7 @@ export const migrate = createDatabaseTool({
     c,
   ) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess("DATABASES_RUN_SQL", c);
+    await assertWorkspaceResourceAccess({ resource: "DATABASES_RUN_SQL" }, c);
 
     const startTime = Date.now();
     const legacyDb = await workspaceDB(c, true);

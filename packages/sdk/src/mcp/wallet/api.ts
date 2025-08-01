@@ -172,7 +172,7 @@ export const getWalletAccount = createTool({
   handler: async (_, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const wallet = getWalletClient(c);
 
@@ -203,7 +203,7 @@ export const getThreadsUsage = createTool({
   handler: async ({ range }, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const wallet = getWalletClient(c);
 
@@ -240,7 +240,7 @@ export const getAgentsUsage = createTool({
   handler: async ({ range }, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const wallet = getWalletClient(c);
 
@@ -269,7 +269,7 @@ export const getBillingHistory = createTool({
     c.resourceAccess.grant();
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const wallet = getWalletClient(c);
 
@@ -296,7 +296,7 @@ export const createCheckoutSession = createTool({
   handler: async ({ amountUSDCents, successUrl, cancelUrl }, ctx) => {
     assertHasWorkspace(ctx);
 
-    await assertWorkspaceResourceAccess(ctx.tool.name, ctx);
+    await assertWorkspaceResourceAccess({ resource: ctx.tool.name }, ctx);
     const plan = await getPlan(ctx);
     const amount = Markup.add({
       usdCents: amountUSDCents,
@@ -339,7 +339,7 @@ export const createWalletVoucher = createTool({
   handler: async ({ amount }, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const wallet = getWalletClient(c);
     const id = crypto.randomUUID();
@@ -386,7 +386,7 @@ export const redeemWalletVoucher = createTool({
   handler: async ({ voucher }, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const wallet = getWalletClient(c);
 
@@ -436,7 +436,7 @@ export const getWorkspacePlan = createTool({
   inputSchema: z.object({}),
   handler: async (_, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     return await getPlan(c);
   },

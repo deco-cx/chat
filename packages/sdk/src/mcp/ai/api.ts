@@ -305,7 +305,7 @@ export const aiGenerate = createTool({
   outputSchema: AIGenerateOutputSchema,
   handler: async (input, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { wallet } = await validateWalletBalance(c);
     const modelId = input.model ?? DEFAULT_MODEL.id;
@@ -352,7 +352,7 @@ export const aiGenerateObject = createTool({
   outputSchema: AIGenerateObjectOutputSchema,
   handler: async (input, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { wallet } = await validateWalletBalance(c);
     const modelId = input.model ?? DEFAULT_MODEL.id;

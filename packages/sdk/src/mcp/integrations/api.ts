@@ -8,6 +8,10 @@ import { CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { KNOWLEDGE_BASE_GROUP } from "../../constants.ts";
 import {
+  AppContext,
+  DECO_CHAT_API as DECO_CHAT_API_BACKEND,
+} from "../context.ts";
+import {
   type Agent,
   AgentSchema,
   BindingsSchema,
@@ -49,26 +53,69 @@ const SELECT_INTEGRATION_QUERY = `
             deco_chat_registry_scopes(scope_name)
           )
         ` as const;
-// Tool factories for each group
-const mapIntegration = (
-  integration: QueryResult<
-    "deco_chat_integrations",
-    typeof SELECT_INTEGRATION_QUERY
-  >,
+
+const isProxyUrl = (
+  {
+    workspace,
+    integrationId,
+    connection,
+  }: { workspace: string; integrationId: string; connection: MCPConnection },
+  ctx: AppContext,
 ) => {
-  let appName: undefined | string;
-  const registryName = integration.deco_chat_apps_registry?.name;
-  const appScope =
-    integration.deco_chat_apps_registry?.deco_chat_registry_scopes?.scope_name;
-  if (registryName && appScope) {
-    appName = `@${appScope}/${registryName}`;
-  }
-  return {
-    ...integration,
-    appName,
-    id: formatId("i", integration.id),
-  };
+  const url = new URL(
+    `${workspace}/${integrationId}/mcp`,
+    DECO_CHAT_API_BACKEND(ctx),
+  );
+  const connectionUrl =
+    "url" in connection ? new URL(connection.url) : undefined;
+  return "url" in connection && url.pathname === connectionUrl?.pathname;
 };
+
+const mapConnection = (
+  connection: MCPConnection,
+  integrationId: string,
+  ctx: AppContext,
+) => ({
+  ...(connection as MCPConnection),
+  token: undefined,
+  url: new URL(
+    `${ctx.workspace!.value}/${integrationId}/mcp`,
+    DECO_CHAT_API_BACKEND(ctx),
+  ).href,
+});
+
+type MapConnection = (
+  connection: MCPConnection,
+  integrationId: string,
+) => MCPConnection;
+// Tool factories for each group
+export const mapIntegration =
+  (mapConnection: MapConnection) =>
+  (
+    integration: QueryResult<
+      "deco_chat_integrations",
+      typeof SELECT_INTEGRATION_QUERY
+    >,
+  ) => {
+    let appName: undefined | string;
+    const registryName = integration.deco_chat_apps_registry?.name;
+    const appScope =
+      integration.deco_chat_apps_registry?.deco_chat_registry_scopes
+        ?.scope_name;
+    if (registryName && appScope) {
+      appName = `@${appScope}/${registryName}`;
+    }
+    const parsedIntegrationId = formatId("i", integration.id);
+    return {
+      ...integration,
+      connection: mapConnection(
+        integration.connection as MCPConnection,
+        parsedIntegrationId,
+      ),
+      appName,
+      id: parsedIntegrationId,
+    };
+  };
 export const parseId = (id: string) => {
   const [type, uuid] = id.includes(":") ? id.split(":") : ["i", id];
   return {
@@ -162,8 +209,12 @@ export const listTools = createIntegrationManagementTool({
       .optional()
       .describe("Whether to ignore the cache when listing tools"),
   }),
-  handler: async ({ connection, ignoreCache }, c) => {
+  handler: async ({ connection: _connection, ignoreCache }, c) => {
     c.resourceAccess.grant();
+
+    const connection = isApiDecoChatMCPConnection(_connection)
+      ? patchApiDecoChatTokenHTTPConnection(_connection, c.cookie)
+      : _connection;
 
     const result = await listToolsByConnectionType(connection, c, ignoreCache);
 
@@ -269,7 +320,7 @@ export const listIntegrations = createIntegrationManagementTool({
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const [integrations, agents, knowledgeBases] = await Promise.all([
       c.db
@@ -308,9 +359,13 @@ export const listIntegrations = createIntegrationManagementTool({
         userRoles?.some((role) => IMPORTANT_ROLES.includes(role)),
     );
 
+    const mapIntegrationForContext = mapIntegration(
+      (connection, integrationId) =>
+        mapConnection(connection, integrationId, c),
+    );
     const result = [
       ...virtualIntegrationsFor(workspace, knowledgeBases.names ?? [], c.token),
-      ...filteredIntegrations.map(mapIntegration),
+      ...filteredIntegrations.map(mapIntegrationForContext),
       ...filteredAgents
         .map((item) => AgentSchema.safeParse(item)?.data)
         .filter((a) => !!a)
@@ -354,20 +409,24 @@ export const convertFromDatabase = (
   });
 };
 
-export const getIntegration = createIntegrationManagementTool({
-  name: "INTEGRATIONS_GET",
-  description: "Get an integration by id",
-  inputSchema: z.object({
-    id: z.string(),
-  }),
-  handler: async ({ id }, c) => {
+const integrationsGetSchema = z.object({
+  id: z.string(),
+});
+
+export const createIntegrationsGet =
+  ({
+    mapConnectionForContext,
+  }: {
+    mapConnectionForContext?: MapConnection;
+  } = {}) =>
+  async ({ id }: z.infer<typeof integrationsGetSchema>, c: AppContext) => {
     // preserve the logic of the old canAccess
     const isInnate =
       INNATE_INTEGRATIONS[id as keyof typeof INNATE_INTEGRATIONS];
 
     const canAccess =
       isInnate ||
-      (await assertWorkspaceResourceAccess(c.tool.name, c)
+      (await assertWorkspaceResourceAccess({ resource: c.tool?.name ?? "" }, c)
         .then(() => true)
         .catch(() => false));
 
@@ -439,8 +498,13 @@ export const getIntegration = createIntegrationManagementTool({
       });
     }
 
+    const mapIntegrationForContext = mapIntegration(
+      mapConnectionForContext ??
+        ((connection: MCPConnection, integrationId: string) =>
+          mapConnection(connection, integrationId, c)),
+    );
     return IntegrationSchema.parse({
-      ...mapIntegration(
+      ...mapIntegrationForContext(
         data as unknown as QueryResult<
           "deco_chat_integrations",
           typeof SELECT_INTEGRATION_QUERY
@@ -448,7 +512,13 @@ export const getIntegration = createIntegrationManagementTool({
       ),
       id: formatId(type, data.id),
     });
-  },
+  };
+
+export const getIntegration = createIntegrationManagementTool({
+  name: "INTEGRATIONS_GET",
+  description: "Get an integration by id",
+  inputSchema: integrationsGetSchema,
+  handler: createIntegrationsGet(),
 });
 
 export const createIntegration = createIntegrationManagementTool({
@@ -457,7 +527,7 @@ export const createIntegration = createIntegrationManagementTool({
   inputSchema: IntegrationSchema.partial().omit({ appName: true }),
   handler: async (_integration, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { appId, ...integration } = _integration;
 
@@ -503,7 +573,7 @@ export const updateIntegration = createIntegrationManagementTool({
   }),
   handler: async ({ id, integration }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { uuid, type } = parseId(id);
 
@@ -512,19 +582,29 @@ export const updateIntegration = createIntegrationManagementTool({
     }
 
     const { name, description, icon, connection, access, appId } = integration;
+    const isProxiedUrl = isProxyUrl(
+      {
+        workspace: c.workspace.value,
+        integrationId: id,
+        connection,
+      },
+      c,
+    );
+
+    const integrationUpdate = {
+      name,
+      description,
+      icon,
+      ...(isProxiedUrl ? {} : { connection }),
+      access,
+      app_id: appId,
+      id: uuid,
+      workspace: c.workspace.value,
+    };
 
     const { data, error } = await c.db
       .from("deco_chat_integrations")
-      .update({
-        name,
-        description,
-        icon,
-        connection,
-        access,
-        app_id: appId,
-        id: uuid,
-        workspace: c.workspace.value,
-      })
+      .update(integrationUpdate)
       .eq("id", uuid)
       .eq("workspace", c.workspace.value)
       .select()
@@ -553,7 +633,7 @@ export const deleteIntegration = createIntegrationManagementTool({
   }),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { uuid, type } = parseId(id);
 
@@ -647,7 +727,7 @@ It's always handy to search for installed integrations with no query, since all 
   }),
   handler: async ({ query }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const [marketplace, registry] = await Promise.all([
       searchMarketplaceIntegations(query),
@@ -723,7 +803,7 @@ export const DECO_INTEGRATION_OAUTH_START = createIntegrationManagementTool({
   ]),
   handler: async ({ appName, returnUrl, installId, provider }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
     let connection: MCPConnection;
     if (provider === "marketplace") {
       const app = await getRegistryApp.handler({ name: appName });
@@ -790,7 +870,7 @@ export const COMPOSIO_INTEGRATION_OAUTH_START = createIntegrationManagementTool(
     }),
     handler: async ({ url }, c) => {
       assertHasWorkspace(c);
-      await assertWorkspaceResourceAccess(c.tool.name, c);
+      await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
       const client = await createServerClient({
         name: "composio-authenticator",
@@ -882,7 +962,7 @@ export const DECO_INTEGRATION_INSTALL = createIntegrationManagementTool({
   }),
   handler: async (args, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     let integration: Integration;
     const virtual = virtualInstallableIntegrations().find(
@@ -946,6 +1026,7 @@ export const DECO_INTEGRATION_INSTALL = createIntegrationManagementTool({
         client.close();
       }
     }
+
     const created = await createIntegration.handler(integration);
 
     if (!created?.id) {

@@ -117,7 +117,7 @@ export const listTriggers = createTool({
   handler: async ({ agentId }, c): Promise<ListTriggersOutput> => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -153,7 +153,7 @@ export const upsertTrigger = createTool({
   handler: async ({ id, data }, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -220,7 +220,7 @@ export const createTrigger = createTool({
   handler: async (trigger, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const result = await upsertTrigger.handler({ data: trigger });
 
@@ -238,7 +238,7 @@ export const updateTrigger = createTool({
   handler: async ({ id, data }, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const result = await upsertTrigger.handler({ id, data });
 
@@ -253,7 +253,7 @@ export const createCronTrigger = createTool({
   handler: async (data, c): Promise<CreateTriggerOutput> => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const result = await upsertTrigger.handler({ data });
 
@@ -269,7 +269,7 @@ export const createWebhookTrigger = createTool({
   handler: async (data, c): Promise<CreateTriggerOutput> => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const result = await upsertTrigger.handler({ data });
 
@@ -285,7 +285,7 @@ export const deleteTrigger = createTool({
   handler: async ({ id }, c): Promise<DeleteTriggerOutput> => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -315,7 +315,7 @@ export const getWebhookTriggerUrl = createTool({
   handler: async ({ id }, c): Promise<GetWebhookTriggerUrlOutput> => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -355,7 +355,7 @@ export const getTrigger = createTool({
   > => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -386,7 +386,7 @@ export const activateTrigger = createTool({
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;
@@ -456,7 +456,7 @@ export const deactivateTrigger = createTool({
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const db = c.db;
     const workspace = c.workspace.value;

@@ -6,9 +6,14 @@ import {
   useInstallFromMarketplace,
   usePermissionDescriptions,
 } from "@deco/sdk/hooks";
+import type { Statement } from "@deco/sdk/auth";
 import type { Integration } from "@deco/sdk/models";
 import type { JSONSchema7 } from "json-schema";
 import { useWorkspaceLink } from "./use-navigate-workspace.ts";
+import {
+  type BindingToolScope,
+  parser as scopeParser,
+} from "../../../../packages/cli/src/lib/parse-binding-tool.ts";
 
 // Default policies required for all integrations
 const DEFAULT_INTEGRATION_POLICIES = [
@@ -89,10 +94,36 @@ export function useIntegrationInstallWithModal() {
         name: keyName,
         policies: [
           ...DEFAULT_INTEGRATION_POLICIES,
-          ...(installState.scopes?.map((scope: string) => ({
-            effect: "allow" as const,
-            resource: scope,
-          })) ?? []),
+          ...(installState.scopes?.map((scope: string): Statement => {
+            const { bindingName, toolName } =
+              scopeParser.fromScopeToBindingTool(scope as BindingToolScope);
+            const maybeIntegrationId =
+              formData?.[bindingName] &&
+              typeof formData[bindingName] === "object" &&
+              "value" in formData[bindingName]
+                ? formData[bindingName].value
+                : undefined;
+            let integrationId;
+            if (maybeIntegrationId && typeof maybeIntegrationId === "string") {
+              const [_type, uuid] = maybeIntegrationId.includes(":")
+                ? maybeIntegrationId.split(":")
+                : ["i", maybeIntegrationId];
+              integrationId = uuid;
+            }
+
+            return {
+              effect: "allow" as const,
+              resource: toolName,
+              ...(integrationId
+                ? {
+                    matchCondition: {
+                      resource: "is_integration",
+                      integrationId: integrationId,
+                    },
+                  }
+                : {}),
+            };
+          }) ?? []),
         ],
       });
 

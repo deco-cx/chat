@@ -33,7 +33,7 @@ export const agentGenerateText = createAgentTool({
   }),
   handler: async ({ message }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const agentStub = stub<AIAgent>("AIAgent").new(
       `${c.workspace.value}/Agents/${c.agent}`,
@@ -79,7 +79,7 @@ export const agentGenerateObject = createAgentTool({
   }),
   handler: async ({ message, schema }, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const agentStub = stub<AIAgent>("AIAgent").new(
       `${c.workspace.value}/Agents/${c.agent}`,
@@ -128,7 +128,7 @@ export const agentListen = createAgentTool({
   handler: async ({ audioUrl }, c) => {
     try {
       assertHasWorkspace(c);
-      await assertWorkspaceResourceAccess(c.tool.name, c);
+      await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
       if (!audioUrl) {
         return {

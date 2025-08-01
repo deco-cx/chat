@@ -14,7 +14,7 @@ export const EMAIL_TOOLS = impl(WellKnownBindings.Channel, [
     description: "Sets an email for the current agent",
     handler: async ({ discriminator }, c) => {
       assertHasWorkspace(c);
-      await assertWorkspaceResourceAccess("CHANNELS_JOIN", c);
+      await assertWorkspaceResourceAccess({ resource: "CHANNELS_JOIN" }, c);
       // assert uniqueness
 
       if (!discriminator.endsWith(DECO_BOTS_DOMAIN)) {
@@ -41,7 +41,7 @@ export const EMAIL_TOOLS = impl(WellKnownBindings.Channel, [
     description: "Removes an email for the current agent",
     handler: async (_, c) => {
       assertHasWorkspace(c);
-      await assertWorkspaceResourceAccess("CHANNELS_LEAVE", c);
+      await assertWorkspaceResourceAccess({ resource: "CHANNELS_LEAVE" }, c);
     },
   },
   {
@@ -49,7 +49,7 @@ export const EMAIL_TOOLS = impl(WellKnownBindings.Channel, [
     description: "List available emails",
     handler: async (_, c) => {
       assertHasWorkspace(c);
-      await assertWorkspaceResourceAccess("CHANNELS_LIST", c);
+      await assertWorkspaceResourceAccess({ resource: "CHANNELS_LIST" }, c);
       throw new Error("Not implemented");
     },
   },

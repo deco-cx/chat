@@ -4,6 +4,7 @@ import { generateName } from "json-schema-to-typescript/dist/src/utils.js";
 import type { DecoBinding } from "../../lib/config.js";
 import { createWorkspaceClient } from "../../lib/mcp.js";
 import { spawn } from "child_process";
+import { parser as scopeParser } from "../../lib/parse-binding-tool.js";
 
 interface Options {
   workspace: string;
@@ -11,6 +12,10 @@ interface Options {
   bindings: DecoBinding[];
   selfUrl?: string;
 }
+
+const toValidProperty = (property: string) => {
+  return isValidJavaScriptPropertyName(property) ? property : `["${property}"]`;
+};
 
 // Sanitize description for safe use in JSDoc block comments
 const formatDescription = (desc: string | undefined) => {
@@ -185,6 +190,7 @@ export const genEnv = async ({
     const types = new Map<string, number>();
     types.set("Env", 1); // set the default env type
     let tsTypes = "";
+    const mapBindingTools: Record<string, string[]> = {};
     const props = await Promise.all(
       [
         ...bindings,
@@ -251,6 +257,12 @@ export const genEnv = async ({
             `⚠️ No tools found for integration ${binding.name}. Skipping...`,
           );
           return null;
+        }
+
+        if ("integration_name" in binding) {
+          mapBindingTools[binding.name] = tools.structuredContent.tools.map(
+            (t) => t.name,
+          );
         }
 
         const compiledTools = await Promise.all(
@@ -360,17 +372,33 @@ ${tsTypes}
               : "";
 
             return `${docComment}
-          ${
-            isValidJavaScriptPropertyName(toolName)
-              ? toolName
-              : [`"${toolName}"`]
-          }: (input: ${inputName}) => Promise<${outputName ?? "any"}>;
+          ${toValidProperty(
+            toolName,
+          )}: (input: ${inputName}) => Promise<${outputName ?? "any"}>;
           `;
           })
           .join("")}
       }>;`;
       })
       .join("")}
+  }
+
+  export const Policies = {
+    ${Object.entries(mapBindingTools)
+      .map(
+        ([bindingName, tools]) =>
+          `${toValidProperty(bindingName)}: {
+      ${tools
+        .map(
+          (toolName) =>
+            `${toValidProperty(toolName)}: "${scopeParser.fromBindingToolToScope(
+              { bindingName, toolName },
+            )}"`,
+        )
+        .join(",\n")}
+    }`,
+      )
+      .join(",\n")}
   }
   `);
   } finally {

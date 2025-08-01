@@ -26,7 +26,7 @@ export const createPrompt = createTool({
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { name, description, content } = props;
 
@@ -75,7 +75,7 @@ export const updatePrompt = createTool({
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { id, data, versionName } = props;
 
@@ -118,7 +118,7 @@ export const deletePrompt = createTool({
     const workspace = c.workspace.value;
     const { id } = props;
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { error } = await c.db
       .from("deco_chat_prompts")
@@ -192,7 +192,7 @@ export const listPrompts = createTool({
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { ids = [], resolveMentions = false, excludeIds = [] } = props;
 
@@ -273,7 +273,7 @@ export const getPrompt = createTool({
   }),
   handler: async (props, c) => {
     assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const workspace = c.workspace.value;
     const { id } = props;
@@ -306,7 +306,7 @@ export const searchPrompts = createTool({
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { query, limit = 10, offset = 0 } = props;
 
@@ -335,7 +335,7 @@ export const getPromptVersions = createTool({
     assertHasWorkspace(c);
     const { id, limit = 50, offset = 0 } = props;
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { data, error } = await c.db
       .from("deco_chat_prompts_versions")
@@ -361,7 +361,7 @@ export const renamePromptVersion = createTool({
     assertHasWorkspace(c);
     const { id, versionName } = props;
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { data, error } = await c.db
       .from("deco_chat_prompts_versions")

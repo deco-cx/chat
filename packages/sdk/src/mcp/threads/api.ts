@@ -106,7 +106,7 @@ export const listThreads = createTool({
   handler: async ({ limit, agentId, orderBy, cursor, resourceId }, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { TURSO_GROUP_DATABASE_TOKEN, TURSO_ORGANIZATION } = c.envVars;
     const workspace = c.workspace.value;
@@ -237,7 +237,7 @@ export const getThreadMessages = createTool({
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { TURSO_GROUP_DATABASE_TOKEN, TURSO_ORGANIZATION } = c.envVars;
     const workspace = c.workspace.value;
@@ -277,7 +277,7 @@ export const getThread = createTool({
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { TURSO_GROUP_DATABASE_TOKEN, TURSO_ORGANIZATION } = c.envVars;
     const workspace = c.workspace.value;
@@ -310,7 +310,7 @@ export const getThreadTools = createTool({
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const { TURSO_GROUP_DATABASE_TOKEN, TURSO_ORGANIZATION } = c.envVars;
     const workspace = c.workspace.value;
@@ -342,7 +342,7 @@ export const updateThreadTitle = createTool({
   handler: async ({ threadId, title }, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const memory = await getWorkspaceMemory(c);
 
@@ -384,7 +384,7 @@ export const updateThreadMetadata = createTool({
   handler: async ({ threadId, metadata }, c) => {
     assertHasWorkspace(c);
 
-    await assertWorkspaceResourceAccess(c.tool.name, c);
+    await assertWorkspaceResourceAccess({ resource: c.tool.name }, c);
 
     const memory = await getWorkspaceMemory(c);
 

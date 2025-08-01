@@ -1,4 +1,4 @@
-import type { Statement } from "../auth/policy.ts";
+import type { AuthContext, Statement } from "../auth/policy.ts";
 import { ForbiddenError, NotFoundError, UnauthorizedError } from "../errors.ts";
 import type { Workspace } from "../path.ts";
 import type { AppContext, UserPrincipal } from "./context.ts";
@@ -78,8 +78,12 @@ export function assertsNotNull<T>(
   }
 }
 
+interface ResourceAccessContext extends Partial<Omit<AuthContext, "user">> {
+  resource: string;
+}
+
 export const assertWorkspaceResourceAccess = async (
-  resource: string,
+  { resource, ...authContext }: ResourceAccessContext,
   c: AppContext,
 ): Promise<void> => {
   if (c.isLocal || c.resourceAccess.granted()) {
@@ -116,7 +120,12 @@ export const assertWorkspaceResourceAccess = async (
       // scopes should be a space-separated list of resourcesAdd commentMore actions
       if (
         assertPoliciesIsStatementArray(data.policies) &&
-        !(await c.authorization.canAccess(data.policies ?? [], slug, resource))
+        !(await c.authorization.canAccess(
+          data.policies ?? [],
+          slug,
+          resource,
+          authContext,
+        ))
       ) {
         throw new ForbiddenError(
           `Cannot access ${resource} in workspace ${c.workspace.value}`,

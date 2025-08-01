@@ -41,7 +41,7 @@ async function makeApiCall(
   const workspace = getWorkspace(options?.workspace);
 
   const urlPath = config.includeWorkspaceInPath
-    ? `${workspace}/tools/call/${config.toolName}`
+    ? `${[workspace, options?.integrationId].filter(Boolean).join("/")}/tools/call/${config.toolName}`
     : `/tools/call/${config.toolName}`;
 
   const abortController = new AbortController();
@@ -226,4 +226,19 @@ export function createMCPClientProxy<T extends Record<string, unknown>>(
       return callToolFn;
     },
   });
+}
+
+export function createMCPFetchStubForIntegrationProxy(
+  options?: CreateStubAPIOptions,
+) {
+  return (args: unknown, init?: RequestInit) =>
+    makeApiCall(
+      {
+        toolName: "",
+        payload: args,
+        includeWorkspaceInPath: true,
+        init,
+      },
+      options,
+    );
 }
