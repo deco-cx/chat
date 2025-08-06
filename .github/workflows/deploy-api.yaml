@@ -58,6 +58,7 @@ jobs:
             LLMS_ENCRYPTION_KEY
             DECO_CHAT_API_JWT_PUBLIC_KEY
             DECO_CHAT_API_JWT_PRIVATE_KEY
+            SENTRY_AUTH_TOKEN
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVER_TOKEN: ${{ secrets.SUPABASE_SERVER_TOKEN }}
@@ -89,3 +90,4 @@ jobs:
           DECO_CHAT_API_JWT_PUBLIC_KEY: ${{ secrets.DECO_CHAT_API_JWT_PUBLIC_KEY }}
           DECO_CHAT_API_JWT_PRIVATE_KEY: ${{ secrets.DECO_CHAT_API_JWT_PRIVATE_KEY }}
           LLMS_ENCRYPTION_KEY: ${{ secrets.LLMS_ENCRYPTION_KEY }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}

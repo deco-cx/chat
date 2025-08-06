@@ -8,25 +8,27 @@
     "stripe:test": "stripe fixtures testing/stripe/fixtures/workspace-wallet-deposit.json"
   },
   "dependencies": {
+    "@ai-sdk/ui-utils": "^1.2.11",
     "@deco/actors": "npm:@jsr/deco__actors@0.33.1",
+    "@deco/ai": "^1.0.0",
     "@deco/mcp": "npm:@jsr/deco__mcp@0.5.5",
     "@deco/sdk": "^0.1.1",
-    "@deco/ai": "^1.0.0",
     "@libsql/client": "^0.15.4",
     "@modelcontextprotocol/sdk": "1.11.4",
+    "@sentry/cloudflare": "^10.1.0",
     "@supabase/ssr": "0.6.1",
     "@supabase/supabase-js": "2.49.4",
     "ai": "^4.3.13",
     "cloudflare": "^4.2.0",
     "hono": "^4.7.7",
     "mimetext": "^3.0.27",
+    "postal-mime": "^2.4.3",
     "unpdf": "^1.0.5",
-    "zod": "^3.24.3",
-    "@ai-sdk/ui-utils": "^1.2.11",
-    "postal-mime": "^2.4.3"
+    "zod": "^3.24.3"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250620.0",
+    "@sentry/cli": "^2.50.2",
     "supabase": "^2.22.12",
     "wrangler": "^4.23.0"
   },
