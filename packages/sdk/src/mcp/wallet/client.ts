@@ -162,6 +162,21 @@ export interface CommitPreAuthorized extends TransactionOperation {
   metadata?: Record<string, unknown>;
 }
 
+interface ToolExecution extends TransactionOperation {
+  type: "ToolExecution";
+  toolId: string; // MCP tool identifier
+  ownerId: string; // Tool owner's user ID
+  callerId: string; // Caller's user ID
+  workspace: string; // Caller's workspace
+  amount: string | number;
+  metadata: {
+    toolName: string;
+    mcpServer: string;
+    executionId: string;
+    pricingMetadata?: Record<string, unknown>;
+  };
+}
+
 export type Transaction =
   | Generation
   | AgentGeneration
@@ -175,7 +190,8 @@ export type Transaction =
   | WorkspaceCreateVoucher
   | WorkspaceRedeemVoucher
   | PreAuthorization
-  | CommitPreAuthorized;
+  | CommitPreAuthorized
+  | ToolExecution;
 
 export type TransactionType = Transaction["type"];
 

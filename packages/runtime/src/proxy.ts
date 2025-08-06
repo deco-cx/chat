@@ -54,7 +54,7 @@ async function makeApiCall(
   );
 
   const response = await fetch(
-    new URL(urlPath, options?.decoChatApiUrl ?? `https://api.deco.chat`),
+    new URL(urlPath, options?.decoChatApiUrl ?? `http://localhost:3001`),
     {
       signal: abortController.signal,
       body: JSON.stringify(config.payload),
@@ -158,7 +158,7 @@ export function createMCPClientProxy<T extends Record<string, unknown>>(
             ? await options.connection()
             : {
                 type: "HTTP",
-                url: `${options?.decoChatApiUrl ?? `https://api.deco.chat`}${getWorkspace(
+                url: `${options?.decoChatApiUrl ?? `http://localhost:3001`}${getWorkspace(
                   options?.workspace,
                 )}/mcp`,
               };

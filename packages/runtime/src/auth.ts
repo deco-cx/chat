@@ -1,5 +1,7 @@
 export interface State {
   next?: string;
+  toolId?: string;
+  authType?: string;
 }
 
 export const StateParser = {

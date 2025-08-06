@@ -2,6 +2,7 @@ import { HttpServerTransport } from "@deco/mcp/http";
 import { createServerClient } from "@deco/ai/mcp";
 import { DECO_CHAT_WEB, MCPConnection, WellKnownMcpGroups } from "@deco/sdk";
 import { DECO_CHAT_KEY_ID, getKeyPair } from "@deco/sdk/auth";
+import { SignJWT, jwtVerify } from "jose";
 import {
   AGENT_TOOLS,
   AuthorizationClient,
@@ -19,6 +20,7 @@ import {
   withMCPErrorHandling,
   WORKSPACE_TOOLS,
 } from "@deco/sdk/mcp";
+import { getWalletClient, type PreAuthorization, type CommitPreAuthorized } from "@deco/sdk/mcp/wallet";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { type Context, Hono } from "hono";
 import { env, getRuntimeKey } from "hono/adapter";
@@ -34,6 +36,8 @@ import { withActorsMiddleware } from "./middlewares/actors.ts";
 import { withContextMiddleware } from "./middlewares/context.ts";
 import { setUserMiddleware } from "./middlewares/user.ts";
 import { handleCodeExchange } from "./oauth/code.ts";
+import { handleToolAuthCodeCreate } from "./oauth/tool-auth.ts";
+import { handleListOAuthCodes, handleClearOAuthCodes } from "./oauth/debug.ts";
 import { type AppContext, type AppEnv, State } from "./utils/context.ts";
 import { handleStripeWebhook } from "./webhooks/stripe.ts";
 import { handleTrigger } from "./webhooks/trigger.ts";
@@ -79,6 +83,64 @@ const mapMCPErrorToHTTPExceptionOrThrow = (err: Error) => {
   throw err;
 };
 /**
+ * Creates a pricing-aware tool handler wrapper for MCP servers
+ */
+const createPricingAwareHandler = (tool: ToolLike, appContext: ReturnType<typeof honoCtxToAppCtx>) => {
+  return async (args: any) => {
+    const toolWithPricing = tool as any;
+    let pricingCallback = null;
+
+    // Check if tool has pricing contract
+    if (toolWithPricing.pricing?.contract) {
+      const executionId = crypto.randomUUID();
+      
+      try {
+        // Create pre-authorization
+        const wallet = getWalletClient(appContext);
+        const maxCost = toolWithPricing.pricing.estimatedCost?.max || 10.00;
+        
+        const preAuth: Omit<PreAuthorization, "timestamp"> = {
+          type: "PreAuthorization",
+          amount: maxCost,
+          userId: appContext.workspace?.value || "unknown",
+          identifier: executionId,
+          metadata: {
+            toolName: tool.name,
+            mcpServer: "mcp-protocol",
+          }
+        };
+        
+        const preAuthResponse = await wallet["POST /transactions"]({}, { body: preAuth });
+        if (!preAuthResponse.ok) {
+          throw new Error("Pre-authorization failed");
+        }
+        
+        // Generate callback token
+        const callbackToken = await generateCallbackToken(executionId, appContext);
+        
+        pricingCallback = {
+          executionId,
+          token: callbackToken,
+          apiUrl: "https://api.deco.chat" // Use default API URL
+        };
+        
+        console.log(`Pre-authorized ${maxCost} for tool ${tool.name}, execution ${executionId}`);
+      } catch (error) {
+        console.error(`Pre-authorization failed for tool ${tool.name}:`, error);
+        throw new Error("Failed to authorize payment for this tool");
+      }
+    }
+
+    // Add pricing callback to args if exists
+    const enrichedArgs = pricingCallback ? { ...args, _deco_pricing_callback: pricingCallback } : args;
+    
+    // Call the original tool handler  
+    const handler = tool.handler as (props: any) => Promise<object>;
+    return await withMCPErrorHandling(handler)(enrichedArgs);
+  };
+};
+
+/**
  * Creates and sets up an MCP server for the given tools
  */
 const createMCPHandlerFor = (
@@ -90,6 +152,7 @@ const createMCPHandlerFor = (
 ) => {
   return async (c: Context) => {
     const group = c.req.query("group");
+    const appContext = honoCtxToAppCtx(c);
 
     const server = new McpServer(
       { name: "@deco/api", version: "1.0.0" },
@@ -118,7 +181,7 @@ const createMCPHandlerFor = (
               : z.object({}).shape,
         },
         // @ts-expect-error: zod shape is not typed
-        withMCPErrorHandling(tool.handler),
+        createPricingAwareHandler(tool, appContext),
       );
     }
 
@@ -130,7 +193,7 @@ const createMCPHandlerFor = (
 
     startTime(c, "mcp-handle-message");
     const res = await State.run(
-      honoCtxToAppCtx(c),
+      appContext,
       transport.handleMessage.bind(transport),
       c.req.raw,
     );
@@ -138,6 +201,23 @@ const createMCPHandlerFor = (
 
     return res;
   };
+};
+
+/**
+ * Generate a temporary callback token for pricing operations
+ */
+const generateCallbackToken = async (executionId: string, appContext: AppContext): Promise<string> => {
+  const [privateKey] = await getKeyPair();
+  const jwt = new SignJWT({ 
+    executionId,
+    workspaceId: appContext.workspace 
+  })
+    .setProtectedHeader({ alg: "ES256", kid: DECO_CHAT_KEY_ID })
+    .setIssuedAt()
+    .setExpirationTime("5m") // 5 minute expiration
+    .setAudience("pricing:callback");
+  
+  return await jwt.sign(privateKey);
 };
 
 /**
@@ -169,15 +249,55 @@ const createToolCallHandlerFor = <
       });
     }
 
+    // Pre-authorization for priced tools
+    let pricingCallback = null;
+    const toolWithPricing = t as any; // Type assertion to access pricing
+    if (toolWithPricing.pricing?.contract) {
+      const appContext = honoCtxToAppCtx(c);
+      const executionId = crypto.randomUUID();
+      
+      // Create pre-authorization
+      const wallet = getWalletClient(appContext);
+      const maxCost = toolWithPricing.pricing.estimatedCost?.max || 10.00; // Default max cost $10
+      
+      const preAuth: Omit<PreAuthorization, "timestamp"> = {
+        type: "PreAuthorization",
+        amount: maxCost,
+        userId: appContext.workspace?.value || "unknown", // Using workspace as the user
+        identifier: executionId,
+        metadata: {
+          toolName: tool,
+          mcpServer: "api", // This is API direct call, not MCP server
+        }
+      };
+      
+      const preAuthResponse = await wallet["POST /transactions"]({}, { body: preAuth });
+      if (!preAuthResponse.ok) {
+        throw new HTTPException(402, { message: "Pre-authorization failed" });
+      }
+      
+      // Generate callback token (simple JWT with executionId)
+      const callbackToken = await generateCallbackToken(executionId, appContext);
+      
+      pricingCallback = {
+        executionId,
+        token: callbackToken,
+        apiUrl: "https://api.deco.chat" // Default API URL
+      };
+    }
+
     startTime(c, tool);
     const toolFn = client[tool as TDefinition[number]["name"]] as (
       args: z.ZodType<TDefinition[number]["inputSchema"]>,
     ) => Promise<z.ZodType<TDefinition[number]["outputSchema"]>>;
 
+    // Add pricing callback to args if exists
+    const enrichedData = pricingCallback ? { ...data, _deco_pricing_callback: undefined } : data;
+
     const result = await State.run(
       honoCtxToAppCtx(c),
       (args) => toolFn(args),
-      data,
+      enrichedData,
     ).catch(mapMCPErrorToHTTPExceptionOrThrow);
     endTime(c, tool);
 
@@ -385,6 +505,11 @@ app.post(
 );
 
 app.post("/apps/code-exchange", handleCodeExchange);
+app.post("/apps/tool-auth-code", handleToolAuthCodeCreate);
+
+// Debug endpoints for OAuth management (development only)
+app.get("/apps/debug/oauth-codes", handleListOAuthCodes);
+app.post("/apps/debug/clear-oauth-codes", handleClearOAuthCodes);
 
 app.post("/:root/:slug/triggers/:id", handleTrigger);
 
@@ -447,6 +572,10 @@ app.get("/.well-known/jwks.json", async () => {
     keys: [{ ...(await getPublicKey()), kid: DECO_CHAT_KEY_ID }],
   });
 });
+// Pricing callback endpoint
+import { pricingCommitHandler } from "./pricing/commit.ts";
+app.post("/pricing/commit", pricingCommitHandler);
+
 // External webhooks
 app.post("/webhooks/stripe", handleStripeWebhook);
 

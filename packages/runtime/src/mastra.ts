@@ -20,7 +20,52 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { DefaultEnv } from "./index.ts";
 import { State } from "./state.ts";
+import { type PricingContext, type PricingContract, type CallbackAPI } from "packages/sdk/src/mcp/context.ts";
 export { createWorkflow };
+export type { PricingContract };
+
+// Pricing callback interface for type safety
+export interface PricingCallback {
+  executionId: string;
+  token: string;
+  apiUrl: string;
+}
+
+// Extended context interface that includes pricing callback
+export interface ToolExecutionContextWithPricing extends ToolExecutionContext {
+  _deco_pricing_callback?: PricingCallback;
+}
+
+/**
+ * Creates a CallbackAPI implementation for pricing contracts
+ */
+const createCallbackAPI = (pricingCallback: PricingCallback): CallbackAPI => ({
+  commitCharge: async (amount: number | string) => {
+    try {
+      const response = await fetch(`${pricingCallback.apiUrl}/pricing/commit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${pricingCallback.token}`,
+        },
+        body: JSON.stringify({
+          executionId: pricingCallback.executionId,
+          amount: amount,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Pricing callback failed: ${response.status} - ${errorText}`);
+      }
+
+      console.log(`Successfully committed charge: ${amount} for execution ${pricingCallback.executionId}`);
+    } catch (error) {
+      console.error('Failed to commit charge:', error);
+      throw error;
+    }
+  },
+});
 
 export { cloneStep, cloneWorkflow } from "@mastra/core/workflows";
 
@@ -56,6 +101,7 @@ export function createPrivateTool<
 >(
   opts: ToolAction<TSchemaIn, TSchemaOut, TContext> & {
     execute?: TExecute;
+    pricing?: PricingContract;
   },
 ): [TSchemaIn, TSchemaOut, TExecute] extends [
   z.ZodSchema,
@@ -93,6 +139,7 @@ export function createTool<
 >(
   opts: ToolAction<TSchemaIn, TSchemaOut, TContext> & {
     execute?: TExecute;
+    pricing?: PricingContract;
   },
 ): [TSchemaIn, TSchemaOut, TExecute] extends [
   z.ZodSchema,
@@ -109,14 +156,54 @@ export function createTool<
     ...opts,
     execute:
       typeof opts?.execute === "function"
-        ? (((input) => {
-            return opts.execute!({
-              ...input,
-              runtimeContext: createRuntimeContext(input.runtimeContext),
-            });
+        ? ((async (input) => {
+           const pricing = opts.pricing;
+           const callback = input.context as ToolExecutionContextWithPricing;
+           const pricingCallback = callback._deco_pricing_callback;
+
+           console.log({pricingCallback})
+           
+           const startTime = Date.now();
+
+          //  if (pricing && !pricingCallback) {
+          //   throw new Error("Pricing contract requires a pricing callback token");
+          //  }
+
+           // Execute the tool first
+           const result = await opts.execute!({
+             ...input,
+             runtimeContext: createRuntimeContext(input.runtimeContext),
+           });
+
+           // Execute pricing contract if defined and callback is available
+           if (pricing && pricingCallback) {
+             const pricingContext: PricingContext = {
+               execution: {
+                 startTime: new Date(startTime),
+                 endTime: new Date(),
+                 duration: Date.now() - startTime,
+                 success: true, // Tool executed successfully if we reach here
+               },
+               input: input.context,
+               callbackApi: createCallbackAPI(pricingCallback),
+               output: result,
+             };
+
+             try {
+               await pricing(pricingContext);
+             } catch (error) {
+               console.error('Pricing contract execution failed:', error);
+               return {
+                structuredContent: 'Pricing contract execution failed',
+              }
+               // Don't fail the tool execution due to pricing issues
+             }
+           }
+
+           return result;
           }) as TExecute)
         : opts.execute,
-  });
+  })
 }
 
 export type ExecWithContext<TF extends (...args: any[]) => any> = (
@@ -232,7 +319,7 @@ export interface CreateMCPServerOptions<
   tools?: Array<
     (
       env: Env & DefaultEnv<TSchema>,
-    ) => Promise<ReturnType<typeof createTool>> | ReturnType<typeof createTool>
+    ) => Promise<ToolWithPricing> | ToolWithPricing
   >;
   workflows?: Array<
     (
@@ -377,9 +464,21 @@ export type MCPServer<TEnv = any, TSchema extends z.ZodTypeAny = never> = {
 export const isWorkflow = (value: any): value is Workflow => {
   return value && !(value instanceof Promise);
 };
-const isTool = (value: any): value is Tool => {
-  return value && value instanceof Tool;
+const isTool = (value: any): value is ToolWithPricing => {
+  return value && value instanceof Tool && "pricing" in value;
 };
+
+export interface ToolWithPricing extends Tool<any, any, any> {
+  pricing?: {
+    contract: PricingContext;
+    estimatedCost?: {
+      min: number;
+      max: number;
+      typical: number;
+      unit: string;
+    };
+  }
+}
 
 export const createMCPServer = <
   TEnv = any,
@@ -456,12 +555,57 @@ export const createMCPServer = <
               ? (tool.outputSchema.shape as z.ZodRawShape)
               : z.object({}).shape,
         },
-        async (args) => {
+        async (args: any) => {
+          const startTime = Date.now();
+          // Extract pricing callback from args to avoid passing it to the tool
+          const { _deco_pricing_callback, ...toolArgs } = args;
+
+          
           const result = await tool.execute!({
-            context: args,
+            context: toolArgs,
             runId: crypto.randomUUID(),
             runtimeContext: createRuntimeContext(),
           });
+
+          console.log({result})
+
+          // Debug logging
+          console.log('🔍 Tool Debug Info:', {
+            toolId: tool.id,
+            hasPricing: !!tool.pricing,
+            hasContract: !!tool.pricing?.contract,
+            hasCallback: !!args._deco_pricing_callback,
+            callbackToken: args._deco_pricing_callback?.token ? 'present' : 'missing'
+          });
+
+          if (tool.pricing?.contract && args._deco_pricing_callback) {
+            console.log('💰 Executing pricing contract for tool:', tool.id);
+            const pricingContext = {
+              input: toolArgs,
+              output: result,
+              execution: {
+                startTime: new Date(startTime),
+                endTime: new Date(),
+                duration: Date.now() - startTime,
+                success: true,
+              },
+              callbackApi: createCallbackAPI(args._deco_pricing_callback, args._deco_pricing_callback.apiUrl || "https://api.deco.chat")
+            }
+
+            try {
+              await tool.pricing.contract.callbackApi.commitCharge(100);
+              console.log('✅ Pricing contract executed successfully');
+            } catch (error) {
+              console.error('❌ Pricing contract failed:', error);
+              pricingContext.execution.success = false;
+              throw error;
+            }
+          } else if (tool.pricing?.contract && !args._deco_pricing_callback) {
+            console.log('⚠️ Tool has pricing but no callback token - this should return 402');
+          } else if (!tool.pricing?.contract) {
+            console.log('ℹ️ Tool has no pricing contract');
+          }
+
           return {
             structuredContent: result,
           };
@@ -471,6 +615,27 @@ export const createMCPServer = <
 
     return { server, tools };
   };
+
+  const createCallbackAPI = (callbackInfo: any, apiUrl: string) => ({
+    commitCharge: async (amount: number | string) => {
+      // Direct HTTP call to deco.chat API with callback token
+      const response = await globalThis.fetch(`${apiUrl}/pricing/commit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${callbackInfo.token}`
+        },
+        body: JSON.stringify({
+          executionId: callbackInfo.executionId,
+          amount: amount
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Pricing callback failed: ${response.status}`);
+      }
+    }
+  });
 
   const fetch = async (
     req: Request,
@@ -493,6 +658,7 @@ export const createMCPServer = <
     const env = currentState?.env;
     const { tools } = await createServer(env);
     const tool = tools.find((t) => t.id === toolCallId);
+    // tool?.pricing?.callbackApi.commitCharge(100);
     const execute = tool?.execute;
     if (!execute) {
       throw new Error(

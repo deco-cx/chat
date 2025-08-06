@@ -28,6 +28,8 @@ const OAuthSearchParamsSchema = z.object({
   redirect_uri: z.string(),
   state: z.string().optional(),
   workspace_hint: z.string().optional(),
+  tool_id: z.string().optional(),
+  auth_type: z.string().optional(),
 });
 
 const preSelectTeam = (
@@ -212,6 +214,8 @@ function AppsOAuth({
   redirect_uri,
   state,
   workspace_hint,
+  tool_id,
+  auth_type,
 }: z.infer<typeof OAuthSearchParamsSchema>) {
   const teams = useUserTeams();
   const user = useUser();
@@ -223,6 +227,9 @@ function AppsOAuth({
     useState<Integration | null>(null);
 
   const createOAuthCode = useCreateOAuthCodeForIntegration();
+  
+  // For tool authorization, we don't need integration selection
+  const isToolAuthorization = auth_type === "tool_execution";
 
   const selectedWorkspace = useMemo(() => {
     if (!team) {
@@ -290,9 +297,14 @@ function AppsOAuth({
   return (
     <div className="flex flex-col items-center justify-center h-screen">
       <div className="text-center space-y-6 max-w-md">
-        <h1 className="text-2xl font-bold">Authorize app for team</h1>
+        <h1 className="text-2xl font-bold">
+          {isToolAuthorization ? `Authorize ${tool_id || 'tool'} for team` : 'Authorize app for team'}
+        </h1>
         <p className="text-muted-foreground">
-          This app will be authorized for the selected team
+          {isToolAuthorization 
+            ? `This will allow ${tool_id || 'the tool'} to access your selected team's workspace`
+            : 'This app will be authorized for the selected team'
+          }
         </p>
 
         <div className="flex flex-col items-center space-y-4">
@@ -354,19 +366,64 @@ function AppsOAuth({
           </div>
         )}
 
-        <SDKProvider workspace={selectedWorkspace as Workspace}>
-          <ShowInstalls
-            appName={client_id}
-            setSelectedIntegration={setSelectedIntegration}
-            selectedIntegration={selectedIntegration}
-          />
-        </SDKProvider>
+        {!isToolAuthorization && (
+          <SDKProvider workspace={selectedWorkspace as Workspace}>
+            <ShowInstalls
+              appName={client_id}
+              setSelectedIntegration={setSelectedIntegration}
+              selectedIntegration={selectedIntegration}
+            />
+          </SDKProvider>
+        )}
+
+        {isToolAuthorization && (
+          <div className="p-4 border rounded-xl bg-muted/50 text-center">
+            <p className="text-sm text-muted-foreground">
+              This tool will be authorized to run in your workspace
+            </p>
+          </div>
+        )}
 
         <div className="pt-4">
           <Button
             className="w-full"
-            disabled={!selectedIntegration || createOAuthCode.isPending}
+            disabled={(!isToolAuthorization && !selectedIntegration) || createOAuthCode.isPending}
             onClick={async () => {
+              if (isToolAuthorization) {
+                // For tool authorization, create a real OAuth code for tool execution
+                try {
+                  const response = await fetch('http://localhost:3001/apps/tool-auth-code', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                      toolId: tool_id,
+                      workspace: selectedWorkspace,
+                    }),
+                  });
+
+                  if (!response.ok) {
+                    throw new Error('Failed to create tool authorization code');
+                  }
+
+                  const { code } = await response.json() as { code: string };
+                  
+                  const oauthUrl = new URL(redirect_uri);
+                  oauthUrl.searchParams.set('code', code);
+                  if (state) {
+                    oauthUrl.searchParams.set('state', state);
+                  }
+                  globalThis.location.href = oauthUrl.href;
+                } catch (error) {
+                  console.error('Tool authorization failed:', error);
+                  // Fallback to show error to user
+                  alert('Failed to authorize tool. Please try again.');
+                }
+                return;
+              }
+
               if (!selectedIntegration) {
                 return;
               }

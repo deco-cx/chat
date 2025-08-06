@@ -18,7 +18,7 @@ import * as agentsAPI from "./agents/api.ts";
 import * as aiAPI from "./ai/api.ts";
 import * as apiKeysAPI from "./api-keys/api.ts";
 import * as channelsAPI from "./channels/api.ts";
-import { type AppContext, State, type Tool } from "./context.ts";
+import { type AppContext, State, type Tool, type PricingContract, type CallbackAPI } from "./context.ts";
 import * as databasesAPI from "./databases/api.ts";
 import * as fsAPI from "./fs/api.ts";
 import * as hostingAPI from "./hosting/api.ts";
@@ -277,3 +277,4 @@ export function createMCPToolsStub<TDefinition extends readonly ToolLike[]>(
 export { AuthorizationClient, PolicyClient } from "../auth/policy.ts";
 export { FileProcessor } from "../mcp/file-processor.ts";
 export type { DatatabasesRunSqlInput } from "./databases/api.ts";
+export type { PricingContract, CallbackAPI };

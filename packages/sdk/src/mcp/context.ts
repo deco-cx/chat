@@ -228,6 +228,33 @@ export const isToolCallResultError = <T>(
   result: ToolCallResult<T>,
 ): result is ToolCallResultError => result.isError;
 
+export interface CallbackAPI {
+  // Commit the actual charge amount via secure callback
+  commitCharge(amount: number | string): Promise<void>;
+}
+
+export interface PricingContext {
+  // Execution metadata
+  execution: {
+    startTime: Date;
+    endTime: Date;
+    duration: number; // milliseconds
+    success: boolean;
+    error?: Error;
+  };
+  
+  // Secure callback API for charging
+  callbackApi: CallbackAPI;
+
+  // Input data
+  input: any;
+  output: any;
+}
+
+// The pricing contract uses callback API instead of direct wallet access
+export type PricingContract = (
+  context: PricingContext
+) => Promise<void>;
 export interface ToolDefinition<
   TAppContext extends AppContext = AppContext,
   TName extends string = string,
@@ -241,6 +268,16 @@ export interface ToolDefinition<
   inputSchema: z.ZodType<TInput>;
   outputSchema?: z.ZodType<TReturn>;
   handler: (props: TInput, c: TAppContext) => Promise<TReturn> | TReturn;
+
+  pricing?: {
+    contract: PricingContract;
+    estimatedCost?: {
+      min: number;
+      max: number;
+      typical: number;
+      unit: string;
+    };
+  };
 }
 
 export interface Tool<

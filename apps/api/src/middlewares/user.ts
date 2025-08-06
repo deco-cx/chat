@@ -9,10 +9,15 @@ export const setUserMiddleware: MiddlewareHandler<AppEnv> = async (
 ) => {
   startTime(ctx, "get-user");
 
-  const user = await getUser(ctx);
-
-  if (user) {
-    ctx.set("user", user);
+  try {
+    const user = await getUser(ctx);
+    if (user) {
+      ctx.set("user", user);
+    }
+  } catch (error) {
+    // Log the auth error but don't fail the request
+    console.warn("User authentication failed:", error);
+    // Continue without setting user - routes can check if user exists
   }
 
   endTime(ctx, "get-user");
