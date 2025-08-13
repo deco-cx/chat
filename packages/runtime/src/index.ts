@@ -8,7 +8,6 @@ import {
   handleLogout,
   StateParser,
 } from "./auth.ts";
-import { createIntegrationBinding, workspaceClient } from "./bindings.ts";
 import { DECO_MCP_CLIENT_HEADER } from "./client.ts";
 import {
   createMCPServer,
@@ -16,14 +15,14 @@ import {
   MCPServer,
 } from "./mastra.ts";
 import { MCPClient, type QueryResult } from "./mcp.ts";
+import { State } from "./state.ts";
 import type { WorkflowDO } from "./workflow.ts";
 import { Workflow } from "./workflow.ts";
-import type { Binding, MCPBinding } from "./wrangler.ts";
-import { State } from "./state.ts";
+import type { Binding, ContractBinding, MCPBinding } from "./wrangler.ts";
 export {
   createMCPFetchStub,
   type CreateStubAPIOptions,
-  type ToolBinder,
+  type ToolBinder
 } from "./mcp.ts";
 
 export interface WorkspaceDB {
@@ -85,6 +84,7 @@ export interface UserDefaultExport<
 // 1. Map binding type to its interface
 interface BindingTypeMap {
   mcp: MCPBinding;
+  contract: ContractBinding;
 }
 
 export interface User {
@@ -119,6 +119,7 @@ type CreatorByType = {
 // 3. Strongly type creatorByType
 const creatorByType: CreatorByType = {
   mcp: createIntegrationBinding,
+  contract: createContractBinding,
 };
 
 const withDefaultBindings = ({

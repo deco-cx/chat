@@ -1,7 +1,7 @@
 import type { MCPConnection } from "./connection.ts";
 import type { DefaultEnv, RequestContext } from "./index.ts";
 import { MCPClient } from "./mcp.ts";
-import type { MCPBinding } from "./wrangler.ts";
+import type { ContractBinding, MCPBinding } from "./wrangler.ts";
 
 interface IntegrationContext {
   integrationId: string;
@@ -60,6 +60,11 @@ const mcpClientForIntegrationId = (
   return MCPClient.forConnection(mcpConnection);
 };
 
+export const createContractBinding = (
+  binding: ContractBinding,
+  env: DefaultEnv,
+) => { }
+
 export const createIntegrationBinding = (
   binding: MCPBinding,
   env: DefaultEnv,
@@ -71,8 +76,8 @@ export const createIntegrationBinding = (
     const bindingFromState = ctx?.state?.[binding.name];
     const integrationId =
       bindingFromState &&
-      typeof bindingFromState === "object" &&
-      "value" in bindingFromState
+        typeof bindingFromState === "object" &&
+        "value" in bindingFromState
         ? bindingFromState.value
         : undefined;
     if (typeof integrationId !== "string") {
