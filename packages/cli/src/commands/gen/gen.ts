@@ -1,10 +1,11 @@
 // deno-lint-ignore-file no-explicit-any
 import { compile } from "json-schema-to-typescript";
 import { generateName } from "json-schema-to-typescript/dist/src/utils.js";
-import type { DecoBinding } from "../../lib/config.js";
-import { createWorkspaceClient } from "../../lib/mcp.js";
-import { parser as scopeParser } from "../../lib/parse-binding-tool.js";
+import { MD5 } from "object-hash";
 import prettier from "prettier";
+import { readWranglerConfig, type DecoBinding } from "../../lib/config.js";
+import { createWorkspaceClient, workspaceClientParams } from "../../lib/mcp.js";
+import { parser as scopeParser } from "../../lib/parse-binding-tool.js";
 
 interface Options {
   workspace: string;
@@ -174,14 +175,28 @@ const unwrapMcpResult = <T extends object>(
   return result as T;
 };
 
+const workspaceSlug = (workspace: string) => {
+  if (workspace.startsWith("/")) {
+    // /shared/$slug or /users/$slug
+    return workspace.slice(1).split("/")[1];
+  }
+  return workspace;
+};
+
 export const genEnv = async ({
   workspace,
   local,
   bindings,
   selfUrl,
 }: Options) => {
+  const wrangler = await readWranglerConfig();
+  const appName = `@${wrangler.scope ?? workspaceSlug(workspace)}/${wrangler.name}`;
   const client = await createWorkspaceClient({ workspace, local });
   const apiClient = await createWorkspaceClient({ local });
+  const {
+    headers: { Authorization },
+    url,
+  } = await workspaceClientParams({ workspace, local });
 
   try {
     const types = new Map<string, number>();
@@ -234,6 +249,26 @@ export const genEnv = async ({
           connection = {
             type: "HTTP",
             url: binding.integration_url,
+          };
+        } else if (binding.type === "contract") {
+          if (!appName) {
+            console.warn(
+              `⚠️ No scope found on wrangler.toml. Skipping contract binding... ${binding.name}`,
+            );
+            return null;
+          }
+          const contract = btoa(JSON.stringify(binding.contract));
+          const hash = MD5(binding.contract);
+          const type = `${appName}-${hash}`;
+          stateKey = { type, key: binding.name };
+          const contractsMcp = new URL(`/contracts/mcp`, url);
+          contractsMcp.searchParams.set("contract", contract);
+          contractsMcp.searchParams.set("assignor", type);
+          connection = {
+            // it should point to contract service with clauses base64-like
+            type: "HTTP",
+            url: contractsMcp.href,
+            token: Authorization,
           };
         } else {
           throw new Error(`Unknown binding type: ${binding}`);

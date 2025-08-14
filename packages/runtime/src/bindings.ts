@@ -1,7 +1,7 @@
 import type { MCPConnection } from "./connection.ts";
 import type { DefaultEnv, RequestContext } from "./index.ts";
 import { MCPClient } from "./mcp.ts";
-import type { ContractBinding, MCPBinding } from "./wrangler.ts";
+import type { BindingBase, ContractBinding, MCPBinding } from "./wrangler.ts";
 
 interface IntegrationContext {
   integrationId: string;
@@ -60,10 +60,27 @@ const mcpClientForIntegrationId = (
   return MCPClient.forConnection(mcpConnection);
 };
 
+function mcpClientFromState(binding: BindingBase, env: DefaultEnv) {
+  const ctx = env.DECO_CHAT_REQUEST_CONTEXT;
+  const bindingFromState = ctx?.state?.[binding.name];
+  const integrationId =
+    bindingFromState &&
+    typeof bindingFromState === "object" &&
+    "value" in bindingFromState
+      ? bindingFromState.value
+      : undefined;
+  if (typeof integrationId !== "string") {
+    return null;
+  }
+  return mcpClientForIntegrationId(integrationId, ctx, env.DECO_CHAT_API_URL);
+}
+
 export const createContractBinding = (
   binding: ContractBinding,
   env: DefaultEnv,
-) => { }
+) => {
+  return mcpClientFromState(binding, env);
+};
 
 export const createIntegrationBinding = (
   binding: MCPBinding,
@@ -72,18 +89,7 @@ export const createIntegrationBinding = (
   const integrationId =
     "integration_id" in binding ? binding.integration_id : undefined;
   if (!integrationId) {
-    const ctx = env.DECO_CHAT_REQUEST_CONTEXT;
-    const bindingFromState = ctx?.state?.[binding.name];
-    const integrationId =
-      bindingFromState &&
-        typeof bindingFromState === "object" &&
-        "value" in bindingFromState
-        ? bindingFromState.value
-        : undefined;
-    if (typeof integrationId !== "string") {
-      return null;
-    }
-    return mcpClientForIntegrationId(integrationId, ctx, env.DECO_CHAT_API_URL);
+    return mcpClientFromState(binding, env);
   }
   // bindings pointed to an specific integration id are binded using the app deployment workspace
   return mcpClientForIntegrationId(

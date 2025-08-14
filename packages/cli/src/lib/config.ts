@@ -38,6 +38,21 @@ const DecoBindingSchema = z.union([
     type: z.string().min(1),
     integration_name: z.string().min(1),
   }),
+  z.object({
+    name: z.string().min(1),
+    type: z.literal("contract"),
+    contract: z.object({
+      body: z.string().min(1),
+      clauses: z
+        .array(
+          z.object({
+            id: z.string().min(1),
+            price: z.union([z.string(), z.number()]),
+          }),
+        )
+        .min(1),
+    }),
+  }),
 ]);
 
 export type DecoBinding = z.infer<typeof DecoBindingSchema>;

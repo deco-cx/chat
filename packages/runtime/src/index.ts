@@ -22,7 +22,7 @@ import type { Binding, ContractBinding, MCPBinding } from "./wrangler.ts";
 export {
   createMCPFetchStub,
   type CreateStubAPIOptions,
-  type ToolBinder
+  type ToolBinder,
 } from "./mcp.ts";
 
 export interface WorkspaceDB {

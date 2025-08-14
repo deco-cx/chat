@@ -45,11 +45,13 @@
     "@opentelemetry/exporter-trace-otlp-proto": "^0.53.0",
     "@opentelemetry/otlp-exporter-base": "^0.53.0",
     "@opentelemetry/otlp-transformer": "^0.53.0",
-    "short-unique-id": "^5.3.2"
+    "short-unique-id": "^5.3.2",
+    "object-hash": "^3.0.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250510.0",
-    "@types/react": "^19.1.0"
+    "@types/react": "^19.1.0",
+    "@types/object-hash": "^3.0.6"
   },
   "exports": {
     ".": "./src/index.ts",

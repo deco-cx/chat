@@ -1,20 +1,46 @@
+import { MD5 } from "object-hash";
 import z from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
 import { WellKnownMcpGroups } from "../../crud/groups.ts";
-import { AppContext, createToolFactory, State } from "../context.ts";
-import { ForbiddenError, fromWorkspaceString, WithTool } from "../index.ts";
+import {
+  AppContext,
+  createToolFactory,
+  DECO_CHAT_API,
+  State,
+} from "../context.ts";
+import {
+  ForbiddenError,
+  fromWorkspaceString,
+  UserInputError,
+  WithTool,
+} from "../index.ts";
+import { publishApp } from "../registry/api.ts";
 import {
   commitPreAuthorizedAmount,
   preAuthorizeAmount,
 } from "../wallet/api.ts";
 
-const createContractTool = createToolFactory<WithTool<AppContext>>(
+type ContractContext = WithTool<AppContext> & {
+  state: ContractState;
+};
+
+const parseContract = (contract?: string | null): ContractState => {
+  if (!contract) {
+    return {
+      clauses: [],
+    };
+  }
+  const decoded = atob(contract);
+  return JSON.parse(decoded) as ContractState;
+};
+const createContractTool = createToolFactory<ContractContext>(
   (c) => {
     if (!("aud" in c.user) || typeof c.user.aud !== "string") {
       throw new ForbiddenError("User not found");
     }
+    const state = parseContract(c.params["contract"]);
     return {
-      ...(c as unknown as WithTool<AppContext>),
+      ...(c as unknown as ContractContext),
+      state,
       workspace: fromWorkspaceString(c.user.aud!),
     };
   },
@@ -36,6 +62,7 @@ const ClauseSchema = z.object({
 
 // Contract state schema extending the default StateSchema
 const ContractStateSchema = z.object({
+  body: z.string().optional(),
   // Contract terms set during installation
   clauses: z.array(ClauseSchema).default([]),
 });
@@ -57,10 +84,16 @@ const totalAmount = (
     prices[clause.id] = clause.price;
   }
 
-  return exercises.reduce(
-    (acc, clause) => acc + prices[clause.clauseId] * clause.amount,
-    0,
-  );
+  let total = 0;
+  for (const exercise of exercises) {
+    if (exercise.clauseId in prices) {
+      total += prices[exercise.clauseId] * exercise.amount;
+    } else {
+      throw new UserInputError(`Clause ${exercise.clauseId} not found`);
+    }
+  }
+
+  return total;
 };
 
 export const oauthStart = createContractTool({
@@ -76,8 +109,50 @@ export const oauthStart = createContractTool({
   handler: (_, c) => {
     c.resourceAccess.grant();
     return {
-      stateSchema: zodToJsonSchema(ContractStateSchema),
+      stateSchema: { type: "object", properties: {} },
       scopes: ["PRE_AUTHORIZE_AMOUNT", "COMMIT_PRE_AUTHORIZED_AMOUNT"],
+    };
+  },
+});
+
+export const registerContract = createContractTool({
+  name: "CONTRACT_REGISTER",
+  description: "Register a contract with the registry.",
+  inputSchema: z.object({
+    contract: ContractStateSchema,
+    author: z.object({
+      scope: z.string(),
+      name: z.string(),
+    }),
+  }),
+  outputSchema: z.object({
+    appName: z.string(),
+  }),
+  handler: async (context, c) => {
+    const hash = MD5(context.contract);
+    const assignorName = `${context.author.name}-${hash}`;
+    const assignor = `@${context.author.scope}/${assignorName}`;
+    const url = new URL(`/contracts/mcp`, DECO_CHAT_API(c));
+    url.searchParams.set(
+      "clauses",
+      btoa(JSON.stringify(context.contract.clauses)),
+    );
+    url.searchParams.set("assignor", assignor);
+
+    const app = await publishApp.handler({
+      name: assignorName,
+      scopeName: context.author.scope,
+      description: context.contract.body,
+      friendlyName: `A Contract for ${assignorName}`,
+      unlisted: true,
+      connection: {
+        type: "HTTP",
+        url: url.href,
+      },
+    });
+
+    return {
+      appName: app.appName,
     };
   },
 });
@@ -100,9 +175,6 @@ export const contractAuthorize = createContractTool({
     timestamp: z.number(),
   }),
   handler: async (context, c) => {
-    if (!("state" in c.user) || typeof c.user.state !== "object") {
-      throw new ForbiddenError("User state not found");
-    }
     if (
       !("integrationId" in c.user) ||
       typeof c.user.integrationId !== "string"
@@ -110,7 +182,7 @@ export const contractAuthorize = createContractTool({
       throw new ForbiddenError("Integration ID not found");
     }
 
-    const state = c.user.state as ContractState;
+    const state = c.state;
     const contractId = c.user.integrationId;
 
     const clauseAmount = totalAmount(state.clauses, context.clauses);
@@ -147,9 +219,6 @@ export const contractSettle = createContractTool({
     transactionId: z.string(),
   }),
   handler: async (context, c) => {
-    if (!("state" in c.user) || typeof c.user.state !== "object") {
-      throw new ForbiddenError("User state not found");
-    }
     if (
       !("integrationId" in c.user) ||
       typeof c.user.integrationId !== "string"
@@ -157,7 +226,7 @@ export const contractSettle = createContractTool({
       throw new ForbiddenError("Integration ID not found");
     }
 
-    const state = c.user.state as ContractState;
+    const state = c.state;
     const contractId = c.user.integrationId;
 
     let amount = 0;
