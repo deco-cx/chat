@@ -8,7 +8,11 @@ import {
   handleLogout,
   StateParser,
 } from "./auth.ts";
-import { createIntegrationBinding, workspaceClient } from "./bindings.ts";
+import {
+  createContractBinding,
+  createIntegrationBinding,
+  workspaceClient,
+} from "./bindings.ts";
 import { DECO_MCP_CLIENT_HEADER } from "./client.ts";
 import {
   createMCPServer,
@@ -16,10 +20,10 @@ import {
   MCPServer,
 } from "./mastra.ts";
 import { MCPClient, type QueryResult } from "./mcp.ts";
+import { State } from "./state.ts";
 import type { WorkflowDO } from "./workflow.ts";
 import { Workflow } from "./workflow.ts";
-import type { Binding, MCPBinding } from "./wrangler.ts";
-import { State } from "./state.ts";
+import type { Binding, ContractBinding, MCPBinding } from "./wrangler.ts";
 export {
   createMCPFetchStub,
   type CreateStubAPIOptions,
@@ -85,6 +89,7 @@ export interface UserDefaultExport<
 // 1. Map binding type to its interface
 interface BindingTypeMap {
   mcp: MCPBinding;
+  contract: ContractBinding;
 }
 
 export interface User {
@@ -119,6 +124,7 @@ type CreatorByType = {
 // 3. Strongly type creatorByType
 const creatorByType: CreatorByType = {
   mcp: createIntegrationBinding,
+  contract: createContractBinding,
 };
 
 const withDefaultBindings = ({
@@ -363,4 +369,8 @@ export const withRuntime = <TEnv, TSchema extends z.ZodTypeAny = never>(
   };
 };
 
-export { type Migration, type WranglerConfig } from "./wrangler.ts";
+export {
+  type Contract,
+  type Migration,
+  type WranglerConfig,
+} from "./wrangler.ts";

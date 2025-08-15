@@ -1,10 +1,11 @@
 // deno-lint-ignore-file no-explicit-any
 import { compile } from "json-schema-to-typescript";
 import { generateName } from "json-schema-to-typescript/dist/src/utils.js";
-import type { DecoBinding } from "../../lib/config.js";
+import { MD5 } from "object-hash";
+import prettier from "prettier";
+import { readWranglerConfig, type DecoBinding } from "../../lib/config.js";
 import { createWorkspaceClient } from "../../lib/mcp.js";
 import { parser as scopeParser } from "../../lib/parse-binding-tool.js";
-import prettier from "prettier";
 
 interface Options {
   workspace: string;
@@ -136,6 +137,7 @@ function isValidJavaScriptPropertyName(name: string): boolean {
 
 type KeyInfo = { type: string; key: string };
 
+const CONTRACTS_BINDING = "@deco/contracts";
 const DEFAULT_BINDINGS: DecoBinding[] = [
   {
     name: "DECO_CHAT_WORKSPACE_API",
@@ -174,12 +176,22 @@ const unwrapMcpResult = <T extends object>(
   return result as T;
 };
 
+const workspaceSlug = (workspace: string) => {
+  if (workspace.startsWith("/")) {
+    // /shared/$slug or /users/$slug
+    return workspace.slice(1).split("/")[1];
+  }
+  return workspace;
+};
+
 export const genEnv = async ({
   workspace,
   local,
   bindings,
   selfUrl,
 }: Options) => {
+  const wrangler = await readWranglerConfig();
+  const appName = `@${wrangler.scope ?? workspaceSlug(workspace)}/${wrangler.name}`;
   const client = await createWorkspaceClient({ workspace, local });
   const apiClient = await createWorkspaceClient({ local });
 
@@ -217,17 +229,24 @@ export const genEnv = async ({
               `Error getting integration ${binding.integration_id}: ${error}`,
           });
           connection = integration.structuredContent.connection;
-        } else if ("integration_name" in binding) {
-          stateKey = { type: binding.integration_name, key: binding.name };
+        } else if (
+          "integration_name" in binding ||
+          binding.type === "contract"
+        ) {
+          const [integrationName, type] =
+            "integration_name" in binding
+              ? [binding.integration_name, binding.integration_name]
+              : [CONTRACTS_BINDING, `${appName}-${MD5(binding.contract)}`];
+          stateKey = { type, key: binding.name };
           const appResult = (await client.callTool({
             name: "REGISTRY_GET_APP",
             arguments: {
-              name: binding.integration_name,
+              name: integrationName,
             },
           })) as MCPResult<{ structuredContent: { connection: unknown } }>;
           const app = unwrapMcpResult(appResult, {
             errorMessage: (error) =>
-              `Error getting app ${binding.integration_name}: ${error}`,
+              `Error getting app ${integrationName}: ${error}`,
           });
           connection = app.structuredContent.connection;
         } else if ("integration_url" in binding) {
@@ -264,7 +283,7 @@ export const genEnv = async ({
           return null;
         }
 
-        if ("integration_name" in binding) {
+        if ("integration_name" in binding || binding.type === "contract") {
           mapBindingTools[binding.name] = tools.structuredContent.tools.map(
             (t) => t.name,
           );

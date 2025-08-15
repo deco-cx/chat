@@ -783,9 +783,8 @@ Important Notes:
           : undefined;
 
       const issuer = await JwtIssuer.forKeyPair(keyPair);
-      const appName = `@${
-        wranglerConfig?.scope ?? c.workspace.slug
-      }/${scriptSlug}`;
+      const scope = wranglerConfig?.scope ?? c.workspace.slug;
+      const appName = `@${scope}/${scriptSlug}`;
 
       const token = await issuer.issue({
         sub: `app:${appName}`,
@@ -821,6 +820,19 @@ Important Notes:
         assets: assetFiles,
         _envVars: { ...envVars, ...appEnvVars },
       });
+      const client = MCPClient.forContext(c);
+
+      await Promise.all(
+        (result.contracts ?? []).map((contract) => {
+          return client.CONTRACT_REGISTER({
+            contract,
+            author: {
+              scope,
+              name: scriptSlug,
+            },
+          });
+        }),
+      );
 
       const data = await updateDatabase({
         c,
@@ -833,7 +845,6 @@ Important Notes:
         files: codeFiles,
       });
 
-      const client = MCPClient.forContext(c);
       await client
         .REGISTRY_PUBLISH_APP({
           name: scriptSlug,

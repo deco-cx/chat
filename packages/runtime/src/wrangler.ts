@@ -17,10 +17,28 @@ export interface MCPIntegrationNameBinding extends BindingBase {
    */
   integration_name: string;
 }
+export interface ContractClause {
+  id: string;
+  price: string | number; // can be microdollar or dollars
+  description?: string;
+}
+
+export interface Contract {
+  body: string;
+  clauses: ContractClause[];
+}
+
+export interface ContractBinding extends BindingBase {
+  type: "contract";
+  /**
+   * The clauses of this contract
+   */
+  contract: Contract;
+}
 
 export type MCPBinding = MCPIntegrationIdBinding | MCPIntegrationNameBinding;
 
-export type Binding = MCPBinding;
+export type Binding = MCPBinding | ContractBinding;
 
 export interface MigrationBase {
   tag: string;

@@ -3,27 +3,29 @@ export * from "./assertions.ts";
 export { createResourceAccess } from "./auth/index.ts";
 export * from "./bindings/binder.ts";
 export * from "./context.ts";
-export * from "./middlewares.ts";
 export {
   getPresignedReadUrl_WITHOUT_CHECKING_AUTHORIZATION,
   getWorkspaceBucketName,
 } from "./fs/api.ts";
 export { HOSTING_APPS_DOMAIN } from "./hosting/api.ts";
+export * from "./middlewares.ts";
 export * from "./models/llm-vault.ts";
 export * from "./wallet/stripe/webhook.ts";
 
 export { EMAIL_TOOLS } from "./email/api.ts";
-import {
-  contractAuthorize,
-  contractSettle,
-  oauthStart,
-} from "./contracts/api.ts";
 import * as agentAPI from "./agent/api.ts";
 import * as agentsAPI from "./agents/api.ts";
 import * as aiAPI from "./ai/api.ts";
 import * as apiKeysAPI from "./api-keys/api.ts";
 import * as channelsAPI from "./channels/api.ts";
 import { type AppContext, State, type Tool } from "./context.ts";
+import {
+  contractGet,
+  contractAuthorize,
+  contractRegister,
+  contractSettle,
+  oauthStart,
+} from "./contracts/api.ts";
 import * as databasesAPI from "./databases/api.ts";
 import * as fsAPI from "./fs/api.ts";
 import * as hostingAPI from "./hosting/api.ts";
@@ -42,6 +44,7 @@ import * as triggersAPI from "./triggers/api.ts";
 import * as walletAPI from "./wallet/api.ts";
 
 export const CONTRACTS_TOOLS = [
+  contractGet,
   contractAuthorize,
   contractSettle,
   oauthStart,
@@ -182,6 +185,7 @@ export const WORKSPACE_TOOLS = [
   aiAPI.aiGenerate,
   aiAPI.aiGenerateObject,
   oauthAPI.oauthCodeCreate,
+  contractRegister,
 ] as const;
 
 export const AGENT_TOOLS = [

@@ -7,11 +7,8 @@ interface Options {
   workspace?: string;
   local?: boolean;
 }
-
-export const createWorkspaceClient = async ({ workspace, local }: Options) => {
+export const workspaceClientParams = async ({ workspace, local }: Options) => {
   const headers = await getRequestAuthHeaders();
-
-  const client = new Client({ name: "deco-chat-cli", version: "1.0.0" });
   const api = local ? DECO_CHAT_API_LOCAL : DECO_CHAT_API_PROD;
 
   const url = new URL(
@@ -20,6 +17,12 @@ export const createWorkspaceClient = async ({ workspace, local }: Options) => {
       : `/shared/${workspace}/mcp`,
     api,
   );
+  return { headers, url };
+};
+
+export const createWorkspaceClient = async ({ workspace, local }: Options) => {
+  const client = new Client({ name: "deco-chat-cli", version: "1.0.0" });
+  const { headers, url } = await workspaceClientParams({ workspace, local });
 
   await client.connect(
     new StreamableHTTPClientTransport(url, { requestInit: { headers } }),

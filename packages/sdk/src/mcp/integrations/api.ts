@@ -766,12 +766,6 @@ export const DECO_INTEGRATION_OAUTH_START = createIntegrationManagementTool({
   },
 });
 
-interface ToolCallResult {
-  content?: {
-    text?: string;
-  }[];
-}
-
 const CONFIGURE_INTEGRATION_OUTPUT_SCHEMA = z.object({
   success: z.boolean().describe("Whether the configuration was successful"),
   message: z

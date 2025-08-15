@@ -448,9 +448,9 @@ export const preAuthorizeAmount = createTool({
     "Pre-authorize an amount of money for the current tenant's wallet",
   inputSchema: z.object({
     amount: z
-      .number()
+      .union([z.string(), z.number()])
       .describe(
-        "The amount of money to pre-authorize. Specified in USD dollars.",
+        "The amount (in microdollars) of money to pre-authorize. Specified in USD dollars.",
       ),
     metadata: z.record(z.string(), z.unknown()).optional(),
   }),
@@ -464,7 +464,7 @@ export const preAuthorizeAmount = createTool({
 
     const wallet = getWalletClient(c);
     const id = crypto.randomUUID();
-    const amountMicroDollars = MicroDollar.fromDollars(amount);
+    const amountMicroDollars = MicroDollar.from(amount);
 
     if (amountMicroDollars.isZero() || amountMicroDollars.isNegative()) {
       throw new UserInputError("Amount must be positive");
@@ -512,8 +512,10 @@ export const commitPreAuthorizedAmount = createTool({
     contractId: z.string(),
     vendorId: z.string(),
     amount: z
-      .number()
-      .describe("The amount of money to commit. Specified in USD dollars."),
+      .union([z.string(), z.number()])
+      .describe(
+        "The amount (in microdollars) of money to commit. Specified in USD dollars.",
+      ),
     metadata: z.record(z.string(), z.unknown()).optional(),
   }),
   outputSchema: z.object({
@@ -528,7 +530,7 @@ export const commitPreAuthorizedAmount = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const wallet = getWalletClient(c);
-    const amountMicroDollars = MicroDollar.fromDollars(amount);
+    const amountMicroDollars = MicroDollar.from(amount);
 
     if (amountMicroDollars.isZero() || amountMicroDollars.isNegative()) {
       throw new UserInputError("Amount must be positive");
