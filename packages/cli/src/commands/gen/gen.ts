@@ -1,8 +1,9 @@
 // deno-lint-ignore-file no-explicit-any
 import { compile } from "json-schema-to-typescript";
 import { generateName } from "json-schema-to-typescript/dist/src/utils.js";
+import { MD5 } from "object-hash";
 import prettier from "prettier";
-import { type DecoBinding } from "../../lib/config.js";
+import { readWranglerConfig, type DecoBinding } from "../../lib/config.js";
 import { createWorkspaceClient } from "../../lib/mcp.js";
 import { parser as scopeParser } from "../../lib/parse-binding-tool.js";
 
@@ -175,12 +176,22 @@ const unwrapMcpResult = <T extends object>(
   return result as T;
 };
 
+const workspaceSlug = (workspace: string) => {
+  if (workspace.startsWith("/")) {
+    // /shared/$slug or /users/$slug
+    return workspace.slice(1).split("/")[1];
+  }
+  return workspace;
+};
+
 export const genEnv = async ({
   workspace,
   local,
   bindings,
   selfUrl,
 }: Options) => {
+  const wrangler = await readWranglerConfig();
+  const appName = `@${wrangler.scope ?? workspaceSlug(workspace)}/${wrangler.name}`;
   const client = await createWorkspaceClient({ workspace, local });
   const apiClient = await createWorkspaceClient({ local });
 
@@ -222,11 +233,11 @@ export const genEnv = async ({
           "integration_name" in binding ||
           binding.type === "contract"
         ) {
-          const integrationName =
+          const [integrationName, type] =
             "integration_name" in binding
-              ? binding.integration_name
-              : CONTRACTS_BINDING;
-          stateKey = { type: integrationName, key: binding.name };
+              ? [binding.integration_name, binding.integration_name]
+              : [CONTRACTS_BINDING, `${appName}-${MD5(binding.contract)}`];
+          stateKey = { type, key: binding.name };
           const appResult = (await client.callTool({
             name: "REGISTRY_GET_APP",
             arguments: {
