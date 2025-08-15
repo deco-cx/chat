@@ -1,22 +1,23 @@
 import { WorkersMCPBindings } from "@deco/workers-runtime";
-import crypto from "node:crypto";
 import type {
   ScriptUpdateParams,
   ScriptUpdateResponse,
 } from "cloudflare/resources/workers/scripts/scripts.mjs";
+import crypto from "node:crypto";
 import { assertHasWorkspace } from "../assertions.ts";
 import { type AppContext, getEnv } from "../context.ts";
 import { Entrypoint, getMimeType, HOSTING_APPS_DOMAIN } from "./api.ts";
 import { assertsDomainOwnership } from "./custom-domains.ts";
 import { polyfill } from "./fs-polyfill.ts";
 import { isDoBinding, migrationDiff } from "./migrations.ts";
-import type { WranglerConfig } from "./wrangler.ts";
+import type { Contract, WranglerConfig } from "./wrangler.ts";
 
 const METADATA_FILE_NAME = "metadata.json";
 // Common types and utilities
 export type DeployResult = {
   etag?: string;
   id?: string;
+  contracts?: Contract[];
 };
 const CUSTOM_HOSTNAME_POST_BODY = {
   ssl: {
@@ -438,5 +439,8 @@ export async function deployToCloudflare({
   return {
     etag: result.etag,
     id: result.id,
+    contracts: decoBindings
+      ?.filter((b) => b.type === "contract")
+      .map((b) => b.contract),
   };
 }

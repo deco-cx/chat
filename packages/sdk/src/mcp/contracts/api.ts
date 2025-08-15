@@ -18,6 +18,7 @@ import {
   commitPreAuthorizedAmount,
   preAuthorizeAmount,
 } from "../wallet/api.ts";
+import { MicroDollar } from "../wallet/microdollar.ts";
 
 type ContractContext = WithTool<AppContext> & {
   state: ContractState;
@@ -55,8 +56,8 @@ const createContractTool = createToolFactory<ContractContext>(
 // Contract clause schema
 const ClauseSchema = z.object({
   id: z.string(),
-  price: z.number().min(0), // Price in cents/smallest currency unit
-  description: z.string(),
+  price: z.union([z.string(), z.number()]), // Price in cents/smallest currency unit
+  description: z.string().optional(),
   usedByTools: z.array(z.string()).optional(), // Array of tool names that use this clause
 });
 
@@ -78,16 +79,16 @@ const totalAmount = (
   clauses: ContractState["clauses"],
   exercises: ContractClauseExercise[],
 ) => {
-  const prices: Record<string, number> = {};
+  const prices: Record<string, MicroDollar> = {};
 
   for (const clause of clauses) {
-    prices[clause.id] = clause.price;
+    prices[clause.id] = MicroDollar.from(clause.price);
   }
 
-  let total = 0;
+  let total = MicroDollar.ZERO;
   for (const exercise of exercises) {
     if (exercise.clauseId in prices) {
-      total += prices[exercise.clauseId] * exercise.amount;
+      total = total.add(prices[exercise.clauseId].multiply(exercise.amount));
     } else {
       throw new UserInputError(`Clause ${exercise.clauseId} not found`);
     }
@@ -115,7 +116,7 @@ export const oauthStart = createContractTool({
   },
 });
 
-export const registerContract = createContractTool({
+export const contractRegister = createContractTool({
   name: "CONTRACT_REGISTER",
   description: "Register a contract with the registry.",
   inputSchema: z.object({
@@ -171,7 +172,7 @@ export const contractAuthorize = createContractTool({
   }),
   outputSchema: z.object({
     transactionId: z.string(),
-    totalAmount: z.number(),
+    totalAmount: z.string(),
     timestamp: z.number(),
   }),
   handler: async (context, c) => {
@@ -185,7 +186,10 @@ export const contractAuthorize = createContractTool({
     const state = c.state;
     const contractId = c.user.integrationId;
 
-    const clauseAmount = totalAmount(state.clauses, context.clauses);
+    const clauseAmount = totalAmount(
+      state.clauses,
+      context.clauses,
+    ).toMicrodollarString();
 
     const { id: transactionId } = await State.run(c, () =>
       preAuthorizeAmount.handler({
@@ -229,9 +233,9 @@ export const contractSettle = createContractTool({
     const state = c.state;
     const contractId = c.user.integrationId;
 
-    let amount = 0;
+    let amount = MicroDollar.ZERO;
     if ("amount" in context && context.amount !== undefined) {
-      amount = context.amount;
+      amount = MicroDollar.from(context.amount);
     } else if ("clauses" in context && context.clauses !== undefined) {
       amount = totalAmount(state.clauses, context.clauses);
     }
@@ -240,7 +244,7 @@ export const contractSettle = createContractTool({
       commitPreAuthorizedAmount.handler({
         contractId,
         identifier: context.transactionId,
-        amount,
+        amount: amount.toMicrodollarString(),
         vendorId: context.vendorId,
       }),
     );
