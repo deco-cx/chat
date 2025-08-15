@@ -820,6 +820,7 @@ Important Notes:
         assets: assetFiles,
         _envVars: { ...envVars, ...appEnvVars },
       });
+      console.log({ result });
       const client = MCPClient.forContext(c);
 
       await Promise.all(

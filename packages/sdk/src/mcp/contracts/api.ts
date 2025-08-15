@@ -4,6 +4,7 @@ import { WellKnownMcpGroups } from "../../crud/groups.ts";
 import {
   AppContext,
   createToolFactory,
+  createTool,
   DECO_CHAT_API,
   State,
 } from "../context.ts";
@@ -35,6 +36,7 @@ const parseContract = (contract?: string | null): ContractState => {
 };
 const createContractTool = createToolFactory<ContractContext>(
   (c) => {
+    console.log(c.user, c.tool);
     if (!("aud" in c.user) || typeof c.user.aud !== "string") {
       throw new ForbiddenError("User not found");
     }
@@ -124,7 +126,7 @@ export const oauthStart = createContractTool({
   },
 });
 
-export const contractRegister = createContractTool({
+export const contractRegister = createTool({
   name: "CONTRACT_REGISTER",
   description: "Register a contract with the registry.",
   inputSchema: z.object({
