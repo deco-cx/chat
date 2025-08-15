@@ -36,7 +36,6 @@ const parseContract = (contract?: string | null): ContractState => {
 };
 const createContractTool = createToolFactory<ContractContext>(
   (c) => {
-    console.log(c.user, c.tool);
     if (!("aud" in c.user) || typeof c.user.aud !== "string") {
       throw new ForbiddenError("User not found");
     }
@@ -107,7 +106,7 @@ const totalAmount = (
   return total;
 };
 
-export const oauthStart = createContractTool({
+export const oauthStart = createTool({
   name: "DECO_CHAT_OAUTH_START",
   description: "Start the OAuth flow for the contract app.",
   inputSchema: z.object({
@@ -144,10 +143,7 @@ export const contractRegister = createTool({
     const assignorName = `${context.author.name}-${hash}`;
     const assignor = `@${context.author.scope}/${assignorName}`;
     const url = new URL(`/contracts/mcp`, DECO_CHAT_API(c));
-    url.searchParams.set(
-      "clauses",
-      btoa(JSON.stringify(context.contract.clauses)),
-    );
+    url.searchParams.set("contract", btoa(JSON.stringify(context.contract)));
     url.searchParams.set("assignor", assignor);
 
     const app = await publishApp.handler({
