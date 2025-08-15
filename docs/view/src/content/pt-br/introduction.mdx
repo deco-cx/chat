@@ -1,51 +1,77 @@
 ---
 title: Introdução
-description: Aprenda sobre deco.chat - a fundação open-source para construir software nativo de IA
+description: Aprenda sobre deco.chat - a base open-source para construir software nativo de IA
 icon: Rocket
 ---
 
-**deco.chat é uma fundação open-source para construir software nativo de IA.**
+![deco.chat](https://assets.decocache.com/decochatweb/d547b59f-c80b-4a76-8fa8-524d829baed1/capyreadme.png)
 
-Fornecemos os componentes principais para criar ferramentas, fluxos de trabalho, visualizações personalizadas e sistemas completos alimentados por IA.
+**deco.chat é uma base open-source para construir software nativo de IA.**
 
-Este repositório é para qualquer pessoa que esteja construindo software com foco em IA, desde vibecoders prototipando ideias até engenheiros agentivos enviando sistemas de produção.
+Crie servidores MCP que expõem ferramentas e workflows para agentes de IA, com interfaces web customizadas opcionais, tudo deployado na rede global edge da Cloudflare.
 
-Nosso objetivo é ajudar equipes a adotar GenAI dando aos construtores as ferramentas para criar aplicações nativas de IA sustentáveis e governadas que escalam além da demonstração inicial e para milhares de usuários, de forma segura e econômica.
+## Para quem é?
 
-## Capacidades Principais
+- **Vibecoders** prototipando ideias
+- **Agentic Engineers** fazendo deploy de sistemas de produção escaláveis e
+  seguros
 
-- **Runtime open-source** que permite compor ferramentas, fluxos de trabalho e visualizações dentro de uma única base de código.
-- **MCP Mesh (Model Context Protocol)**: Conecte modelos, armazenamentos de dados e APIs com segurança, observabilidade e controle de custos.
-- **Stack TypeScript unificado** — lógica de backend e UIs React/Tailwind personalizadas no mesmo repositório, com vinculações RPC tipadas.
-- **Infraestrutura modular** implantada na Cloudflare para execução global de baixa latência. Auto-hospede apenas com sua Cloudflare API Key e escale infinitamente.
-- **Espaço de trabalho visual** onde qualquer pessoa pode construir agentes, conectar ferramentas, gerenciar permissões e aproveitar tudo construído em código.
+## Por que deco.chat?
 
-## Conceitos Principais
+Nosso objetivo é simples: empoderar times com IA Generativa dando aos builders
+as ferramentas para criar aplicações de IA que escalam além da demo inicial e
+chegam a milhares de usuários, de forma segura e custo-efetiva.
 
-Antes de mergulhar, vamos definir rapidamente algumas ideias principais no deco.chat:
+## Capacidades principais
 
-### Ferramentas
+- **Runtime Open-source** – Componha facilmente ferramentas, workflows e views dentro de
+  um único codebase
+- **MCP Mesh (Model Context Protocol)** – Integre com segurança modelos, fontes de
+  dados e APIs, com observabilidade e controle de custos
+- **Stack TypeScript Unificado** – Combine lógica backend e frontends React/Tailwind
+  customizados de forma fluida usando RPC tipado
+- **Infraestrutura Global e Modular** – Construído na Cloudflare para deployments
+  de baixa latência e infinitamente escaláveis. Self-host com sua Cloudflare API Key
+- **Workspace Visual** – Construa agentes, conecte ferramentas, gerencie permissões e
+  orquestre tudo construído em código
 
-Funções discretas que executam tarefas específicas (ex: chamar uma API, consultar um banco de dados, enviar um email). As ferramentas são definidas por desenvolvedores com esquemas de entrada/saída e executadas via runtime da plataforma.
+## Conceitos Fundamentais
 
-### Fluxos de Trabalho
+Antes de aprofundar, vamos definir rapidamente alguns conceitos fundamentais:
 
-Sequências de múltiplas etapas que orquestram Ferramentas e lógica. Os fluxos de trabalho permitem encadear chamadas de ferramentas, aplicar condições, loops e paralelismo para implementar comportamentos complexos. Eles são definidos usando o motor de fluxo de trabalho do Mastra.
+### Tools
+Funções que agentes podem chamar para realizar ações como chamadas de API, consultas de banco de dados ou computações.
+
+```typescript
+const createCepSearchTool = (env: Env) =>
+  createTool({
+    id: "CEP_SEARCH",
+    description: "Search Brazilian postal codes",
+    inputSchema: z.object({ cep: z.string() }),
+    outputSchema: z.object({ city: z.string(), state: z.string() }),
+    execute: async ({ inputData }) => {
+      // Tool implementation
+    },
+  });
+```
+
+### Workflows
+Sequências determinísticas que orquestram múltiplas ferramentas para automação.
+
+```typescript
+const createCustomerWorkflow = (env: Env) =>
+  createWorkflow({ id: "REGISTER_CUSTOMER" })
+    .then(validateInput)
+    .then(saveToDatabase) 
+    .then(sendWelcomeEmail)
+    .commit();
+```
 
 ### MCP (Model Context Protocol)
-
-O protocolo que sustenta o deco.chat que conecta modelos de IA (como Claude ou GPT) com suas Ferramentas/Fluxos de Trabalho. Um "servidor" MCP é essencialmente seu Cloudflare Worker que expõe Ferramentas e Fluxos de Trabalho para o agente. Isso permite que um agente invoque funções de forma estruturada.
+O padrão que conecta modelos de IA às suas ferramentas. Seu Cloudflare Worker serve como um servidor MCP que agentes podem descobrir e usar.
 
 ### Agentes
+Assistentes de IA configurados com acesso às suas ferramentas. Eles entendem linguagem natural e decidem quando chamar ferramentas específicas para ajudar usuários.
 
-Atores de IA autônomos (apoiados por LLMs) que você configura com um nome, descrição e prompt de comportamento. Os agentes podem conversar em linguagem natural e decidir quando chamar Ferramentas para executar ações.
-
-### Integrações
-
-Conexões pré-construídas ou personalizadas com serviços externos e fontes de dados. As integrações podem incluir APIs de terceiros (como Gmail, Slack), bancos de dados, ou uma **Base de Conhecimento** de documentos. Elas fornecem os blocos de construção (como Ferramentas) que seus agentes e fluxos de trabalho podem aproveitar sem começar do zero.
-
-## Criando um Novo Projeto Deco
-
-Um **projeto Deco** estende um Cloudflare Worker padrão com nossos blocos de construção e padrões projetados para servidores MCP. Ele executa um servidor MCP com uma API type-safe por padrão e também pode servir visualizações — aplicações front-end implantadas junto com o servidor.
-
-Por enquanto, as visualizações podem ser qualquer aplicação Vite que produza uma build estática. Em breve, suportaremos componentes de visualização declarados como ferramentas, tornando-os chamáveis pela lógica do seu aplicativo ou LLMs. As visualizações podem chamar ferramentas do lado do servidor através de RPC type-safe.
+### Views
+Frontends React opcionais que fornecem interfaces customizadas para suas ferramentas e workflows.

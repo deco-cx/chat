@@ -445,7 +445,7 @@ pre .astro-code > *:first-child {
   --secondary: oklch(26.8% 0.007 34.298);
   --secondary-foreground: oklch(98.5% 0.001 106.423);
   --muted: oklch(37.4% 0.01 67.558);
-  --muted-foreground: oklch(70.9% 0.01 56.259);
+  --muted-foreground: oklch(75.9% 0.01 56.259);
   --accent: oklch(37.4% 0.01 67.558);
   --accent-foreground: oklch(98.5% 0.001 106.423);
   --destructive: oklch(0.704 0.191 22.216);

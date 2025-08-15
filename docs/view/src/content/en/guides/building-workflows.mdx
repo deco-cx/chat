@@ -1,91 +1,177 @@
 ---
 title: Building Workflows
-description: Learn how to create workflows in deco.chat using Mastra
+description: Orchestrate multiple tools into automated processes
 icon: GitBranch
 ---
 
-While a single tool can do a simple task, **Workflows** let you combine multiple tools and logic to accomplish more complex objectives. Workflows in deco.chat use the Mastra framework under the hood, giving you a set of composable patterns for control flow.
+import Callout from "../../../components/ui/Callout.astro";
+
+Workflows orchestrate multiple tools in sequence to automate complex processes. Unlike AI agents that decide which tools to call, workflows follow deterministic steps. Workflows in deco.chat use the Mastra framework under the hood, giving you a set of composable patterns for control flow.
 
 ## Workflow Basics
 
-A workflow is like a function that runs a series of steps. Each step can be a tool or even another workflow. You define a workflow using `createWorkflow({...})` specifying an id, input schema, and output schema, and then chain steps and operations before finalizing with `.commit()`.
+A workflow chains tools and other workflows into a deterministic sequence. Define one with `createWorkflow()`, specify schemas, chain steps with `.then()`, and finalize with `.commit()`.
 
-For example, a simple workflow might:
+```typescript
+import { createWorkflow, createStepFromTool } from "@deco/workers-runtime";
 
-1. Take some input (e.g., a user query).
-2. Use one tool to get data (step 1).
-3. Transform that data (e.g., format it) in step 2.
-4. Use another tool to act on the transformed data (step 3).
-5. Return a result.
+const createCustomerRegistrationWorkflow = (env: Env) => {
+  const captureInput = createStepFromTool(createCaptureCustomerInputTool(env));
+  const searchCep = createStepFromTool(createCepSearchTool(env));
+  const insertCustomer = createStepFromTool(createCustomerInsertTool(env));
+  const sendEmail = createStepFromTool(createSendWelcomeEmailTool(env));
 
-Using pseudo-code:
-
-```ts
-const createMyWorkflow = (env: Env) => {
-  const step1 = createStepFromTool(createToolA(env));
-  const step2 = createStepFromTool(createToolB(env));
-  return createWorkflow({ id: "MY_WORKFLOW", inputSchema: ..., outputSchema: ... })
-    .then(step1)           // step1: call ToolA
-    .map(({ step1Output }) => ({ newInput: transform(step1Output) }))  // transform data
-    .then(step2)           // step2: call ToolB with transformed data
+  return createWorkflow({
+    id: "CUSTOMER_REGISTRATION",
+    inputSchema: z.object({
+      name: z.string(),
+      cpf: z.string(),
+      cep: z.string(),
+    }),
+    outputSchema: z.object({
+      customerId: z.number(),
+      emailSent: z.boolean(),
+    }),
+  })
+    .then(captureInput)
+    .then(searchCep)
+    .map(({ captureInputOutput, searchCepOutput }) => ({
+      name: captureInputOutput.name,
+      cpf: captureInputOutput.cpf,
+      city: searchCepOutput.localidade,
+      state: searchCepOutput.uf,
+    }))
+    .then(insertCustomer)
+    .then(sendEmail)
     .commit();
 };
 ```
 
-In this pattern, `.then()` is used to chain steps sequentially, and `.map()` injects a data processing function in between.
+## Control Flow Patterns
 
-## Mastra Control Flow Patterns
+### Sequential Steps (`.then()`)
+Chain tools one after another:
 
-Workflows support various control structures through a fluent API. The key patterns are:
+```typescript
+return createWorkflow({...})
+  .then(step1)
+  .then(step2)
+  .then(step3)
+  .commit();
+```
 
-### Sequential (`.then()`)
+### Data Transformation (`.map()`)
+Transform data between steps:
 
-Add a step that runs after the previous one. Each `.then(step)` passes the output of the previous step as input to the next (assuming schemas line up or are mapped).
+```typescript
+.then(cepSearch)
+.map(({ cepSearchOutput }) => ({
+  address: `${cepSearchOutput.logradouro}, ${cepSearchOutput.localidade}`,
+  state: cepSearchOutput.uf,
+}))
+.then(saveCustomer)
+```
 
-### Parallel (`.parallel()`)
+### Parallel Execution (`.parallel()`)
+Run multiple tools simultaneously:
 
-Run multiple steps at the same time, and wait for all to finish before continuing. This is great for concurrent API calls. The outputs can be combined or processed in a subsequent step.
+```typescript
+.parallel([
+  createStepFromTool(checkInventory(env)),
+  createStepFromTool(validatePayment(env)),
+  createStepFromTool(calculateShipping(env)),
+])
+.then(processOrder)
+```
 
-### Conditional Branch (`.branch()`)
+### Conditional Logic (`.branch()`)
+Execute different paths based on conditions:
 
-Provide if/else logic. You can specify conditions and corresponding steps to execute based on the condition. Only the branch whose condition returns true will execute, and you can handle multiple exclusive branches. (Under the hood, branches that match run in parallel if more than one condition is true, but typically you use it like an if/else if.)
+```typescript
+.branch([
+  {
+    condition: ({ previousOutput }) => previousOutput.type === "premium",
+    step: createStepFromTool(premiumProcessing(env)),
+  },
+  {
+    condition: ({ previousOutput }) => previousOutput.type === "standard",
+    step: createStepFromTool(standardProcessing(env)),
+  },
+])
+```
 
 ### Looping (`.dowhile()` / `.dountil()` / `.foreach()`)
+Repeat steps based on conditions or iterate over arrays:
 
-Repeat steps. Mastra supports looping patterns:
+```typescript
+// Poll an API until a task is complete
+.dountil(
+  createStepFromTool(checkTaskStatus(env)),
+  ({ checkTaskStatusOutput }) => checkTaskStatusOutput.status === "completed"
+)
 
-- `.dowhile(step, condition)`: Repeat a step while the condition is true (check after each iteration).
-- `.dountil(step, condition)`: Repeat a step until the condition becomes true.
-- `.foreach(step)`: Iterate over an array, running the given step for each element (optionally with concurrency limits).
+// Process a list of items
+.foreach(
+  createStepFromTool(processItem(env)),
+  { 
+    concurrency: 3 // Process 3 items at a time
+  }
+)
 
-These loops allow you to handle scenarios like polling an API until a result is ready, or processing a list of items sequentially or in parallel.
+// Retry on failure
+.dowhile(
+  createStepFromTool(attemptOperation(env)),
+  ({ attemptOperationOutput }) => 
+    attemptOperationOutput.failed && attemptOperationOutput.retryCount < 3
+)
+```
 
-### Data Mapping (`.map()`)
+## Testing Workflows
 
-Insert a transformation function between steps. This is useful when one step's output isn't directly compatible with the next step's input schema. You can manipulate the context or shape of data as it flows through.
+Workflows appear as tools with three actions:
 
-### Error Handling and Branching
+1. **Start**: Begin workflow execution
+2. **Resume**: Continue a paused workflow
+3. **Cancel**: Stop workflow execution
 
-You can use `.branch()` or additional logic to handle errors (for example, branch based on a step's output indicating an error, or use try/catch inside a tool to produce an error flag that the workflow can branch on). Mastra workflows also allow catching exceptions globally, but the typical pattern is to design tools to output error states rather than throw.
+<Callout type="info">
+  Workflows run asynchronously. They return a run ID immediately and execute in the background.
+</Callout>
 
-## Golden Rule
+### Monitor Workflow Runs
 
-When constructing workflows, **each step should ideally call exactly one tool** – this is the golden rule. Keep business logic (data processing, decisions) in the workflow using `.map`, `.branch`, etc., rather than inside the tool functions. This separation makes it clearer what the workflow is doing, and allows the platform to visualize or monitor the workflow's progress step by step.
+1. Go to your workspace in deco.chat
+2. Click **Workflows** in the sidebar
+3. View execution details, including:
+   - Step-by-step progress
+   - Input/output for each step
+   - Execution time
+   - Success/failure status
 
-## Step Composition and Orchestration
+## Hybrid Approach: LLMs in Workflows
 
-You define steps usually by wrapping your tools: e.g. `const stepA = createStepFromTool(createToolA(env))`. This helps with typing and reusability (the same tool can be used in multiple workflows). You can also create sub-workflows and use them as steps in a larger workflow – just pass the sub-workflow into `.then()` like it was a step. Workflows can call other workflows!
+Use AI for specific steps within deterministic workflows:
 
-## Common Examples
+```typescript
+const createDataProcessingWorkflow = (env: Env) => {
+  const extractStructuredData = createStepFromTool(createExtractDataTool(env));
+  const validateData = createStepFromTool(createValidateDataTool(env));
+  const saveData = createStepFromTool(createSaveDataTool(env));
 
-Some patterns you might implement:
+  return createWorkflow({
+    id: "PROCESS_CUSTOMER_MESSAGE",
+    inputSchema: z.object({
+      message: z.string(), // Unstructured user message
+    }),
+    outputSchema: z.object({
+      processed: z.boolean(),
+    }),
+  })
+    .then(extractStructuredData) // AI extracts structured data
+    .then(validateData)          // Deterministic validation
+    .then(saveData)             // Deterministic save
+    .commit();
+};
+```
 
-- **Parallel API calls**: e.g. query multiple APIs at once for data, then merge the results (using `.parallel([...]).then(nextStep)`).
-
-- **Conditional logic**: e.g. if a user query requires a database lookup vs an API call, branch accordingly with `.branch()`.
-
-- **Loops**: e.g. poll an external task status every 5 seconds until complete (`.dountil()` with a delay inside the step), or process an array of records (`.foreach()`).
-
-- **Error retry**: e.g. use a loop or branch to retry a step if it fails, or route to an error handling tool if a step's output indicates failure.
-
-Workflows allow complex decision-making, but try to keep each workflow focused. If it's becoming too complex, consider breaking it into multiple workflows or tools.
+This pattern handles unstructured input (user messages) but processes it deterministically.

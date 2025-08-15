@@ -4,21 +4,26 @@ description: Learn how to create tools in deco.chat
 icon: Wrench
 ---
 
-Tools are the basic actions that an agent can perform. In deco.chat, you'll create tools to interface with outside services or perform computations. Each tool is essentially a function with a defined input and output.
+import Callout from "../../../components/ui/Callout.astro";
 
-## Defining a Tool
+Tools are discrete functions that agents can call to perform specific actions like API calls, database queries, or computations. Each tool is essentially a function with a defined input and output.
 
-You typically use the `createTool` helper to define a tool. You provide:
+## Basic Tool Structure
 
-- An `id` (unique name for the tool).
-- A `description` (what the tool does, useful for documentation and for the AI to decide when to use it).
-- An `inputSchema` and `outputSchema` defined with Zod – these schemas ensure that the data coming in and out is validated and typed.
-- An `execute` function which contains the actual logic (runs when the tool is called by an agent or workflow). This function can use the `context` which provides access to the environment and other step data, or more simply use `inputData` (the parsed input).
+Every tool needs:
 
-For example, the "Hello" tool we showed earlier is very simple. A more realistic tool might call an external API. Suppose we want a tool that sends an email via a Gmail integration – it might look like:
+- **`ID`**: Unique identifier
+- **`Description`**: What the tool does (helps AI decide when to use it)
+- **`inputSchema` and `outputSchema`**: Zod schemas to ensure that the data coming in and out is validated and typed
+- **`execute`**: The actual logic. Can use `context` provides access to environment and step data, while `inputData` offers a simpler parsed input method.
 
-```ts
-const createSendEmailTool = (env: Env) =>
+
+## Example
+
+This example shows a tool that sends an email via Gmail.
+
+```typescript
+ const createSendEmailTool = (env: Env) =>
   createTool({
     id: "SEND_EMAIL",
     description: "Send an email via Gmail",
@@ -36,33 +41,134 @@ const createSendEmailTool = (env: Env) =>
       });
       return { success: response.sent }; // assume the integration returns a 'sent' flag
     },
+  }); 
+```
+
+## Tool Patterns
+
+### External API Calls
+
+```typescript
+const createWeatherTool = (env: Env) =>
+  createTool({
+    id: "GET_WEATHER",
+    description: "Get current weather for a city",
+    inputSchema: z.object({
+      city: z.string(),
+    }),
+    outputSchema: z.object({
+      temperature: z.number(),
+      condition: z.string(),
+    }),
+    execute: async ({ inputData }) => {
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${inputData.city}&appid=${env.API_KEY}`
+      );
+      const data = await response.json();
+      return {
+        temperature: data.main.temp,
+        condition: data.weather[0].description,
+      };
+    },
   });
 ```
 
-Here `env.GMAIL.sendEmail` is an example of using an integration tool provided by the GMAIL integration namespace (we assume you connected Gmail in the platform, so it appeared in `Env`). Notice we validate inputs (email format, etc.) using Zod.
+### Using Integrations
 
-## Tool Best Practices
+For external services, use the integrations available in your `env`:
 
-Keep these guidelines in mind:
+```typescript
+const createEmailTool = (env: Env) =>
+  createTool({
+    id: "SEND_EMAIL",
+    description: "Send an email",
+    inputSchema: z.object({
+      to: z.string().email(),
+      subject: z.string(),
+      body: z.string(),
+    }),
+    outputSchema: z.object({ success: z.boolean() }),
+    execute: async ({ inputData }) => {
+      await env.gmail.sendEmail(inputData);
+      return { success: true };
+    },
+  });
+```
 
-### Single Responsibility
+See the [Integrations guide](/guides/integrations) for details on adding external services.
 
+## Database Operations
+
+Every workspace includes a built-in SQLite database:
+
+```typescript
+const createCustomerInsertTool = (env: Env) =>
+  createTool({
+    id: "CUSTOMER_INSERT",
+    description: "Save a new customer to the database",
+    inputSchema: z.object({
+      name: z.string(),
+      cpf: z.string(),
+      city: z.string(),
+      state: z.string(),
+    }),
+    outputSchema: z.object({ id: z.number() }),
+    execute: async ({ inputData, context }) => {
+      const result = await context.runtime.workspace.db.run(
+        "INSERT INTO customers (name, cpf, city, state) VALUES (?, ?, ?, ?) RETURNING id",
+        [inputData.name, inputData.cpf, inputData.city, inputData.state]
+      );
+      return { id: result.meta.last_row_id };
+    },
+  });
+```
+
+<Callout type="info">
+  Each workspace gets an isolated SQLite database. No need to manage database URLs or credentials.
+</Callout>
+
+## Register Your Tools
+
+Add tools to your MCP server in `server/main.ts`:
+
+```typescript
+import { withRuntime } from "@deco/workers-runtime";
+
+const { Workflow, ...runtime } = withRuntime<Env>({
+  tools: [
+    createCepSearchTool,
+    createSendEmailTool,
+    createCustomerInsertTool,
+  ],
+  workflows: [/* your workflows */],
+  fetch: fallbackToView("/"),
+});
+
+export { Workflow };
+export default runtime;
+```
+
+## Test Your Tools
+
+1. Start your dev server: `npm run dev`
+2. Copy the preview URL
+3. Add as custom integration in deco.chat (URL + `/mcp`)
+4. Test tools in the interface
+
+<Callout type="success">
+  Tools appear automatically when you add the integration. No manual registration needed!
+</Callout>
+
+## Best Practices
+
+### Keep It Simple
 Each tool should do one thing and do it well (one API call, one database query, one computation). This makes tools easy to reuse and test.
 
-### Validation
+### Use Type Safety
+The generated types in `deco.gen.ts` provide autocompletion for integrations. Utilize type definitions to catch potential API integration errors, ensuring compile-time validation of tool parameters.
 
-Always validate inputs with Zod schemas. This prevents bad data from causing runtime errors and provides clear error messages. Similarly, ensure your output schema accurately reflects what you return.
+## Testing
+Testing tools individually is effective. Call `await createMyTool(env).execute({ inputData: {...}, context })` in a dev script to verify tool behavior, using a dummy environment if needed.
 
-### Error Handling
-
-Don't let exceptions escape the tool – handle errors inside `execute`. For example, catch fetch errors or API errors and perhaps return a structured error output (or use Zod's `.catch` on schema). This way, the agent can handle tool failures gracefully. (You can even define your outputSchema to include an error union.)
-
-### Type Safety
-
-Leverage TypeScript. The `deco.gen.ts` types mean you have autocompletion for `env` integration calls. Use those types so that if, say, you change an integration's API, your code will show type errors until you update it. This avoids calling tools with wrong parameters.
-
-### Testing
-
-It can be helpful to test tools in isolation. Since tools are just functions, you can call `await createMyTool(env).execute({ inputData: {...}, context })` in a dev script to see if it behaves as expected (supplying a dummy env if necessary).
-
-We will provide more examples of tool implementations in the detailed docs (e.g., writing to a database, calling a third-party API, performing calculations). For now, remember that tools are the bridge between your agent and the external world.
+### Validate Everything
+Validate inputs and outputs with Zod schemas to prevent runtime errors and provide clear error messages.

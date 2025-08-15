@@ -1,0 +1,114 @@
+---
+title: FAQ
+description: Perguntas frequentes sobre deco.chat
+icon: HelpCircle
+---
+
+import { AccordionGroup } from "../../../components/ui/AccordionGroup";
+import { Accordion } from "../../../components/ui/Accordion";
+
+<AccordionGroup>
+  <Accordion title="Posso usar OpenAI, Anthropic ou meu próprio modelo?" icon="Bot" client:load>
+    Sim. Adicione a integração no dashboard, regenere os tipos e chame-a de uma tool.
+  </Accordion>
+
+  <Accordion title="Preciso de um front-end?" icon="Monitor" client:load>
+    Não. Você pode fazer deploy de projetos apenas servidor para casos de uso API-first.
+  </Accordion>
+
+  <Accordion title="Como armazenar segredos?" icon="Lock" client:load>
+    Variáveis de ambiente Cloudflare → elas aparecem em `env.INTEGRATION_NAME`.
+  </Accordion>
+
+  <Accordion title="Onde estão os logs?" icon="FileText" client:load>
+    `deco logs` localmente, ou Cloudflare Dash → Workers → Logs.
+  </Accordion>
+</AccordionGroup>
+
+## Questões de Desenvolvimento
+
+<AccordionGroup>
+  <Accordion title="Como adicionar uma nova tool?" icon="Wrench" client:load>
+    1. Defina a tool em `server/tools.ts` usando `createTool`
+    2. Adicione-a ao array `tools`
+    3. Execute `npm run gen:self` para atualizar tipos
+    4. Teste via UI do deco ou cliente RPC
+  </Accordion>
+
+  <Accordion title="Como conectar a uma API externa?" icon="Globe" client:load>
+    1. Adicione a integração via dashboard do deco.chat
+    2. Execute `npm run gen` para obter interfaces tipadas
+    3. Use `env.INTEGRATION_NAME.method()` nas suas tools
+  </Accordion>
+
+  <Accordion title="Como fazer deploy da minha app?" icon="Rocket" client:load>
+    Execute `npm run deploy` para buildar e fazer deploy no Cloudflare Workers.
+  </Accordion>
+
+  <Accordion title="Como debugar meus workflows?" icon="Bug" client:load>
+    Use `console.log` nas suas tools e steps de workflow. Verifique a saída do terminal durante desenvolvimento ou use `wrangler tail` para logs de produção.
+  </Accordion>
+</AccordionGroup>
+
+## Questões Técnicas
+
+<AccordionGroup>
+  <Accordion title="Qual a diferença entre tools e workflows?" icon="Settings" client:load>
+    Tools são funções únicas que executam tarefas específicas. Workflows orquestram múltiplas tools com lógica, condições e loops.
+  </Accordion>
+
+  <Accordion title="Posso usar meu próprio banco de dados?" icon="Database" client:load>
+    Sim. Você pode usar Cloudflare D1, Workers KV ou conectar a bancos externos via APIs HTTP.
+  </Accordion>
+
+  <Accordion title="Como lidar com autenticação?" icon="Shield" client:load>
+    Armazene chaves de API como variáveis de ambiente Cloudflare. Elas ficarão disponíveis no seu objeto `env`.
+  </Accordion>
+
+  <Accordion title="Quais são os limites do Cloudflare Workers?" icon="Gauge" client:load >
+    Nível gratuito: 50ms de tempo de CPU por request. Níveis pagos: até 30s com Workers Unbound. Verifique a [documentação do Cloudflare Workers](https://developers.cloudflare.com/workers/) para limites atuais.
+  </Accordion>
+</AccordionGroup>
+
+## Questões de Integração
+
+<AccordionGroup>
+  <Accordion title="Quais integrações estão disponíveis?" icon="Link" client:load>
+    Muitos serviços comuns como Slack, Gmail, Notion, Stripe e mais. Verifique o dashboard do deco.chat para a lista completa.
+  </Accordion>
+
+  <Accordion title="Posso criar integrações customizadas?" icon="Code" client:load>
+    Sim, você pode escrever tools customizadas que chamam qualquer API HTTP usando `fetch`.
+  </Accordion>
+
+  <Accordion title="Como usar a Knowledge Base?" icon="BookOpen" client:load>
+    Faça upload de documentos via UI do deco.chat. A plataforma irá indexá-los e torná-los disponíveis para seus agentes automaticamente.
+  </Accordion>
+</AccordionGroup>
+
+## Solução de Problemas
+
+<AccordionGroup>
+  <Accordion title="Minha tool não está funcionando" icon="AlertCircle" client:load>
+    1. Verifique se ela está no array `tools`
+    2. Verifique seus schemas Zod
+    3. Verifique os logs para erros
+    4. Certifique-se de que executou `npm run gen:self` após as mudanças
+  </Accordion>
+
+  <Accordion title="Meu workflow não está executando" icon="AlertTriangle" client:load>
+    1. Certifique-se de que chamou `.commit()` no final
+    2. Verifique se todos os steps estão adequadamente encadeados
+    3. Verifique se seus schemas de entrada/saída coincidem
+  </Accordion>
+
+  <Accordion title="O cliente RPC não tem minha nova tool" icon="RefreshCw" client:load>
+    Execute `DECO_SELF_URL=<your-dev-url> npm run gen:self` para gerar tipos para suas próprias tools.
+  </Accordion>
+
+  <Accordion title="Deploy falhou" icon="XCircle" client:load>
+    1. Verifique suas credenciais Cloudflare
+    2. Certifique-se de que o frontend builda sem erros
+    3. Verifique sua configuração `wrangler.toml`
+  </Accordion>
+</AccordionGroup>
