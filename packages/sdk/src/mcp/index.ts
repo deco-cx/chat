@@ -20,6 +20,7 @@ import * as apiKeysAPI from "./api-keys/api.ts";
 import * as channelsAPI from "./channels/api.ts";
 import { type AppContext, State, type Tool } from "./context.ts";
 import {
+  contractGet,
   contractAuthorize,
   contractRegister,
   contractSettle,
@@ -43,6 +44,7 @@ import * as triggersAPI from "./triggers/api.ts";
 import * as walletAPI from "./wallet/api.ts";
 
 export const CONTRACTS_TOOLS = [
+  contractGet,
   contractAuthorize,
   contractSettle,
   oauthStart,

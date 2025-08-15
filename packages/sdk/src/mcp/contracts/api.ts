@@ -38,7 +38,15 @@ const createContractTool = createToolFactory<ContractContext>(
     if (!("aud" in c.user) || typeof c.user.aud !== "string") {
       throw new ForbiddenError("User not found");
     }
+    if (!("appName" in c.user) || typeof c.user.appName !== "string") {
+      throw new ForbiddenError("App name not found in user");
+    }
+    const appName = c.user.appName;
     const state = parseContract(c.params["contract"]);
+    const assignor = c.params["assignor"];
+    if (!assignor || assignor !== appName) {
+      throw new ForbiddenError("Assignor not found in contract");
+    }
     return {
       ...(c as unknown as ContractContext),
       state,
@@ -205,6 +213,21 @@ export const contractAuthorize = createContractTool({
       transactionId,
       totalAmount: clauseAmount,
       timestamp: Date.now(),
+    };
+  },
+});
+
+export const contractGet = createContractTool({
+  name: "CONTRACT_GET",
+  description: "Get the current contract state.",
+  inputSchema: z.object({}),
+  outputSchema: z.object({
+    contract: ContractStateSchema,
+  }),
+  handler: (_, c) => {
+    c.resourceAccess.grant();
+    return {
+      contract: c.state,
     };
   },
 });
