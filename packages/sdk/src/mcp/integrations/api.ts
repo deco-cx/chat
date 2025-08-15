@@ -88,17 +88,17 @@ const formatId = (type: "i" | "a", uuid: string) => `${type}:${uuid}`;
 
 const agentAsIntegrationFor =
   (workspace: string, token?: string) =>
-    (agent: Agent): Integration => ({
-      id: formatId("a", agent.id),
-      icon: agent.avatar,
-      name: agent.name,
-      description: agent.description,
-      connection: {
-        type: "HTTP",
-        url: new URL(`${workspace}/agents/${agent.id}/mcp`, DECO_CHAT_API).href,
-        token,
-      },
-    });
+  (agent: Agent): Integration => ({
+    id: formatId("a", agent.id),
+    icon: agent.avatar,
+    name: agent.name,
+    description: agent.description,
+    connection: {
+      type: "HTTP",
+      url: new URL(`${workspace}/agents/${agent.id}/mcp`, DECO_CHAT_API).href,
+      token,
+    },
+  });
 
 const createIntegrationManagementTool = createToolGroup("Integration", {
   name: "Integration Management",
@@ -428,19 +428,19 @@ export const getIntegration = createIntegrationManagementTool({
     const selectPromise =
       type === "i"
         ? c.db
-          .from("deco_chat_integrations")
-          .select(SELECT_INTEGRATION_QUERY)
-          .eq("id", uuid)
-          .eq("workspace", c.workspace.value)
-          .single()
-          .then((r) => r)
+            .from("deco_chat_integrations")
+            .select(SELECT_INTEGRATION_QUERY)
+            .eq("id", uuid)
+            .eq("workspace", c.workspace.value)
+            .single()
+            .then((r) => r)
         : c.db
-          .from("deco_chat_agents")
-          .select("*")
-          .eq("id", uuid)
-          .eq("workspace", c.workspace.value)
-          .single()
-          .then((r) => r);
+            .from("deco_chat_agents")
+            .select("*")
+            .eq("id", uuid)
+            .eq("workspace", c.workspace.value)
+            .single()
+            .then((r) => r);
 
     const knowledgeBases = await listKnowledgeBases.handler({});
 
@@ -516,16 +516,16 @@ export const createIntegration = createIntegrationManagementTool({
     const { data, error } =
       "id" in payload && payload.id
         ? await c.db
-          .from("deco_chat_integrations")
-          .upsert(payload)
-          .eq("workspace", c.workspace.value)
-          .select()
-          .single()
+            .from("deco_chat_integrations")
+            .upsert(payload)
+            .eq("workspace", c.workspace.value)
+            .select()
+            .single()
         : await c.db
-          .from("deco_chat_integrations")
-          .insert(payload)
-          .select()
-          .single();
+            .from("deco_chat_integrations")
+            .insert(payload)
+            .select()
+            .single();
 
     if (error) {
       throw new InternalServerError(error.message);
@@ -755,22 +755,16 @@ export const DECO_INTEGRATION_OAUTH_START = createIntegrationManagementTool({
       },
     })) as {
       structuredContent:
-      | { redirectUrl: string }
-      | {
-        stateSchema: unknown;
-        scopes?: string[];
-      };
+        | { redirectUrl: string }
+        | {
+            stateSchema: unknown;
+            scopes?: string[];
+          };
     };
 
     return oauth.structuredContent;
   },
 });
-
-interface ToolCallResult {
-  content?: {
-    text?: string;
-  }[];
-}
 
 const CONFIGURE_INTEGRATION_OUTPUT_SCHEMA = z.object({
   success: z.boolean().describe("Whether the configuration was successful"),
