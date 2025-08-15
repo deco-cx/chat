@@ -8,6 +8,11 @@ import {
   handleLogout,
   StateParser,
 } from "./auth.ts";
+import {
+  createContractBinding,
+  createIntegrationBinding,
+  workspaceClient,
+} from "./bindings.ts";
 import { DECO_MCP_CLIENT_HEADER } from "./client.ts";
 import {
   createMCPServer,
