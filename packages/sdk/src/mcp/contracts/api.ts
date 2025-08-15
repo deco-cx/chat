@@ -59,7 +59,7 @@ const createContractTool = createToolFactory<ContractContext>(
   {
     name: "Contracts",
     description: "Manage smart contracts",
-    icon: "https://assets.decocache.com/mcp/5e6930c3-86f6-4913-8de3-0c1fefdf02e3/API-key.png",
+    icon: "https://assets.decocache.com/mcp/10b5e8b4-a4e2-4868-8a7d-8cf9b46f0d79/contract.png",
   },
 );
 
@@ -153,6 +153,7 @@ export const contractRegister = createTool({
     const app = await publishApp.handler({
       name: assignorName,
       scopeName: context.author.scope,
+      icon: "https://assets.decocache.com/mcp/10b5e8b4-a4e2-4868-8a7d-8cf9b46f0d79/contract.png",
       description: context.contract.body,
       friendlyName: `A Contract for ${assignorName}`,
       unlisted: true,
