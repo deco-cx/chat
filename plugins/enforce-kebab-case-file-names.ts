@@ -1,3 +1,5 @@
+const SEPARATOR = Deno.build.os === "windows" ? "\\" : "/";
+
 const plugin: Deno.lint.Plugin = {
   // The name of your plugin. Will be shown in error output
   name: "enforce-kebab-case-file-names",
@@ -13,7 +15,10 @@ const plugin: Deno.lint.Plugin = {
           Program(node) {
             if (context.filename) {
               // Get the filename without extension
-              let filename = context.filename.split("/").pop()?.split(".")[0];
+              let filename = context.filename
+                .split(SEPARATOR)
+                .pop()
+                ?.split(".")[0];
 
               // allow test files to be named with _test suffix
               if (filename?.endsWith("_test")) {
