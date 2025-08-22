@@ -7,7 +7,7 @@ import {
   MCPServer,
 } from "./mastra.ts";
 
-import { D1Store } from "./d1-store.ts";
+import { D1Store } from "./d1.ts";
 import { Mastra, type Workflow as MastraWorkflow } from "@mastra/core";
 import { RuntimeContext } from "@mastra/core/di";
 import { DurableObject } from "./cf-imports.ts";

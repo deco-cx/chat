@@ -1,8 +1,17 @@
 {
   "name": "@deco/workers-runtime",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
-  "scripts": {},
+  "files": [
+    "dist",
+    "package.json",
+    "config-schema.json"
+  ],
+  "scripts": {
+    "build": "bun run esbuild.config.ts",
+    "dev": "bun run esbuild.config.ts --watch",
+    "clean": "rm -rf dist"
+  },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20250617.0",
     "zod": "^3.25.67",
@@ -16,18 +25,43 @@
     "drizzle-orm": "^0.44.3"
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./proxy": "./src/proxy.ts",
-    "./client": "./src/client.ts",
-    "./mastra": "./src/mastra.ts",
-    "./drizzle": "./src/drizzle.ts",
-    "./d1": "./src/d1-store.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./d1": {
+      "types": "./dist/d1.d.ts",
+      "import": "./dist/d1.js",
+      "default": "./dist/d1.js"
+    },
+    "./proxy": {
+      "types": "./dist/proxy.d.ts",
+      "import": "./dist/proxy.js",
+      "default": "./dist/proxy.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js",
+      "default": "./dist/client.js"
+    },
+    "./mastra": {
+      "types": "./dist/mastra.d.ts",
+      "import": "./dist/mastra.js",
+      "default": "./dist/mastra.js"
+    },
+    "./drizzle": {
+      "types": "./dist/drizzle.d.ts",
+      "import": "./dist/drizzle.js",
+      "default": "./dist/drizzle.js"
+    }
   },
   "devDependencies": {
+    "esbuild": "^0.25.9",
     "ts-json-schema-generator": "^2.4.0",
     "wrangler": "^4.13.2"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   }
 }
