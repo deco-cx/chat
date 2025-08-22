@@ -323,18 +323,21 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     connection: string | MCPConnection,
     signal?: AbortSignal,
   ): Promise<ToolsInput | null> {
-    const [mcpId, integration] =
+    const mcpId =
+      typeof connection === "string" ? connection : normalizeMCPId(connection);
+
+    if (this.callableToolSet[mcpId]) {
+      return this.callableToolSet[mcpId];
+    }
+
+    const integration =
       typeof connection === "string"
-        ? [
-            connection,
-            await this.metadata?.mcpClient?.INTEGRATIONS_GET({
-              id: connection,
-            }),
-          ]
-        : [normalizeMCPId(connection), { connection }];
+        ? await this.metadata?.mcpClient?.INTEGRATIONS_GET({
+            id: connection,
+          })
+        : { connection };
 
     if (!integration) {
-      console.log("integration not found", mcpId);
       this._trackEvent("agent_mcp_client_error", {
         error: "Integration not found",
         integrationId: mcpId,
