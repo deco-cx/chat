@@ -1,91 +1,177 @@
 ---
-title: Construindo Fluxos de Trabalho
-description: Aprenda como criar fluxos de trabalho no deco.chat usando Mastra
+title: Construindo Workflows
+description: Orquestre múltiplas tools em processos automatizados
 icon: GitBranch
 ---
 
-Enquanto uma única ferramenta pode fazer uma tarefa simples, **Fluxos de Trabalho** permitem combinar múltiplas ferramentas e lógica para realizar objetivos mais complexos. Fluxos de trabalho no deco.chat usam o framework Mastra sob o capô, dando a você um conjunto de padrões composáveis para controle de fluxo.
+import Callout from "../../../components/ui/Callout.astro";
 
-## Básicos de Fluxo de Trabalho
+Workflows orquestram múltiplas tools em sequência para automatizar processos complexos. Diferente de agentes de IA que decidem quais tools chamar, workflows seguem passos determinísticos. Workflows no deco.chat usam o framework Mastra por baixo dos panos, dando a você um conjunto de padrões componíveis para fluxo de controle.
 
-Um fluxo de trabalho é como uma função que executa uma série de etapas. Cada etapa pode ser uma ferramenta ou até mesmo outro fluxo de trabalho. Você define um fluxo de trabalho usando `createWorkflow({...})` especificando um id, esquema de entrada e esquema de saída, e então encadeia etapas e operações antes de finalizar com `.commit()`.
+## Básico de Workflows
 
-Por exemplo, um fluxo de trabalho simples pode:
+Um workflow encadeia tools e outros workflows em uma sequência determinística. Defina um com `createWorkflow()`, especifique schemas, encadeie steps com `.then()` e finalize com `.commit()`.
 
-1. Pegar alguma entrada (ex: uma consulta do usuário).
-2. Usar uma ferramenta para obter dados (etapa 1).
-3. Transformar esses dados (ex: formatá-los) na etapa 2.
-4. Usar outra ferramenta para agir sobre os dados transformados (etapa 3).
-5. Retornar um resultado.
+```typescript
+import { createWorkflow, createStepFromTool } from "@deco/workers-runtime";
 
-Usando pseudo-código:
+const createCustomerRegistrationWorkflow = (env: Env) => {
+  const captureInput = createStepFromTool(createCaptureCustomerInputTool(env));
+  const searchCep = createStepFromTool(createCepSearchTool(env));
+  const insertCustomer = createStepFromTool(createCustomerInsertTool(env));
+  const sendEmail = createStepFromTool(createSendWelcomeEmailTool(env));
 
-```ts
-const createMyWorkflow = (env: Env) => {
-  const step1 = createStepFromTool(createToolA(env));
-  const step2 = createStepFromTool(createToolB(env));
-  return createWorkflow({ id: "MY_WORKFLOW", inputSchema: ..., outputSchema: ... })
-    .then(step1)           // etapa1: chamar ToolA
-    .map(({ step1Output }) => ({ newInput: transform(step1Output) }))  // transformar dados
-    .then(step2)           // etapa2: chamar ToolB com dados transformados
+  return createWorkflow({
+    id: "CUSTOMER_REGISTRATION",
+    inputSchema: z.object({
+      name: z.string(),
+      cpf: z.string(),
+      cep: z.string(),
+    }),
+    outputSchema: z.object({
+      customerId: z.number(),
+      emailSent: z.boolean(),
+    }),
+  })
+    .then(captureInput)
+    .then(searchCep)
+    .map(({ captureInputOutput, searchCepOutput }) => ({
+      name: captureInputOutput.name,
+      cpf: captureInputOutput.cpf,
+      city: searchCepOutput.localidade,
+      state: searchCepOutput.uf,
+    }))
+    .then(insertCustomer)
+    .then(sendEmail)
     .commit();
 };
 ```
 
-Neste padrão, `.then()` é usado para encadear etapas sequencialmente, e `.map()` injeta uma função de processamento de dados no meio.
+## Padrões de Fluxo de Controle
 
-## Padrões de Controle de Fluxo Mastra
+### Sequential Steps (`.then()`)
+Chain tools one after another:
 
-Fluxos de trabalho suportam várias estruturas de controle através de uma API fluente. Os padrões principais são:
+```typescript
+return createWorkflow({...})
+  .then(step1)
+  .then(step2)
+  .then(step3)
+  .commit();
+```
 
-### Sequencial (`.then()`)
+### Data Transformation (`.map()`)
+Transform data between steps:
 
-Adiciona uma etapa que executa após a anterior. Cada `.then(step)` passa a saída da etapa anterior como entrada para a próxima (assumindo que esquemas se alinham ou são mapeados).
+```typescript
+.then(cepSearch)
+.map(({ cepSearchOutput }) => ({
+  address: `${cepSearchOutput.logradouro}, ${cepSearchOutput.localidade}`,
+  state: cepSearchOutput.uf,
+}))
+.then(saveCustomer)
+```
 
-### Paralelo (`.parallel()`)
+### Parallel Execution (`.parallel()`)
+Run multiple tools simultaneously:
 
-Executa múltiplas etapas ao mesmo tempo, e espera todas terminarem antes de continuar. Isso é ótimo para chamadas de API concorrentes. As saídas podem ser combinadas ou processadas em uma etapa subsequente.
+```typescript
+.parallel([
+  createStepFromTool(checkInventory(env)),
+  createStepFromTool(validatePayment(env)),
+  createStepFromTool(calculateShipping(env)),
+])
+.then(processOrder)
+```
 
-### Ramificação Condicional (`.branch()`)
+### Conditional Logic (`.branch()`)
+Execute different paths based on conditions:
 
-Fornece lógica if/else. Você pode especificar condições e etapas correspondentes para executar baseado na condição. Apenas o ramo cuja condição retorna true executará, e você pode lidar com múltiplos ramos exclusivos. (Sob o capô, ramos que correspondem executam em paralelo se mais de uma condição for true, mas tipicamente você usa como um if/else if.)
+```typescript
+.branch([
+  {
+    condition: ({ previousOutput }) => previousOutput.type === "premium",
+    step: createStepFromTool(premiumProcessing(env)),
+  },
+  {
+    condition: ({ previousOutput }) => previousOutput.type === "standard",
+    step: createStepFromTool(standardProcessing(env)),
+  },
+])
+```
 
 ### Looping (`.dowhile()` / `.dountil()` / `.foreach()`)
+Repeat steps based on conditions or iterate over arrays:
 
-Repete etapas. Mastra suporta padrões de loop:
+```typescript
+// Poll an API until a task is complete
+.dountil(
+  createStepFromTool(checkTaskStatus(env)),
+  ({ checkTaskStatusOutput }) => checkTaskStatusOutput.status === "completed"
+)
 
-- `.dowhile(step, condition)`: Repete uma etapa enquanto a condição for true (verifica após cada iteração).
-- `.dountil(step, condition)`: Repete uma etapa até a condição se tornar true.
-- `.foreach(step)`: Itera sobre um array, executando a etapa dada para cada elemento (opcionalmente com limites de concorrência).
+// Process a list of items
+.foreach(
+  createStepFromTool(processItem(env)),
+  { 
+    concurrency: 3 // Process 3 items at a time
+  }
+)
 
-Estes loops permitem lidar com cenários como fazer polling de uma API até um resultado estar pronto, ou processar uma lista de itens sequencialmente ou em paralelo.
+// Retry on failure
+.dowhile(
+  createStepFromTool(attemptOperation(env)),
+  ({ attemptOperationOutput }) => 
+    attemptOperationOutput.failed && attemptOperationOutput.retryCount < 3
+)
+```
 
-### Mapeamento de Dados (`.map()`)
+## Testing Workflows
 
-Insere uma função de transformação entre etapas. Isso é útil quando a saída de uma etapa não é diretamente compatível com o esquema de entrada da próxima etapa. Você pode manipular o contexto ou forma dos dados conforme fluem através.
+Workflows appear as tools with three actions:
 
-### Tratamento de Erros e Ramificação
+1. **Start**: Begin workflow execution
+2. **Resume**: Continue a paused workflow
+3. **Cancel**: Stop workflow execution
 
-Você pode usar `.branch()` ou lógica adicional para lidar com erros (por exemplo, ramificar baseado na saída de uma etapa indicando um erro, ou usar try/catch dentro de uma ferramenta para produzir uma flag de erro que o fluxo de trabalho pode ramificar). Fluxos de trabalho Mastra também permitem capturar exceções globalmente, mas o padrão típico é projetar ferramentas para produzir estados de erro em vez de lançar.
+<Callout type="info">
+  Workflows run asynchronously. They return a run ID immediately and execute in the background.
+</Callout>
 
-## Regra de Ouro
+### Monitor Workflow Runs
 
-Ao construir fluxos de trabalho, **cada etapa deve idealmente chamar exatamente uma ferramenta** – esta é a regra de ouro. Mantenha lógica de negócio (processamento de dados, decisões) no fluxo de trabalho usando `.map`, `.branch`, etc., em vez de dentro das funções de ferramenta. Esta separação torna mais claro o que o fluxo de trabalho está fazendo, e permite que a plataforma visualize ou monitore o progresso do fluxo de trabalho etapa por etapa.
+1. Go to your workspace in deco.chat
+2. Click **Workflows** in the sidebar
+3. View execution details, including:
+   - Step-by-step progress
+   - Input/output for each step
+   - Execution time
+   - Success/failure status
 
-## Composição e Orquestração de Etapas
+## Hybrid Approach: LLMs in Workflows
 
-Você define etapas geralmente envolvendo suas ferramentas: ex. `const stepA = createStepFromTool(createToolA(env))`. Isso ajuda com tipagem e reutilização (a mesma ferramenta pode ser usada em múltiplos fluxos de trabalho). Você também pode criar sub-fluxos de trabalho e usá-los como etapas em um fluxo de trabalho maior – apenas passe o sub-fluxo de trabalho para `.then()` como se fosse uma etapa. Fluxos de trabalho podem chamar outros fluxos de trabalho!
+Use AI for specific steps within deterministic workflows:
 
-## Exemplos Comuns
+```typescript
+const createDataProcessingWorkflow = (env: Env) => {
+  const extractStructuredData = createStepFromTool(createExtractDataTool(env));
+  const validateData = createStepFromTool(createValidateDataTool(env));
+  const saveData = createStepFromTool(createSaveDataTool(env));
 
-Alguns padrões que você pode implementar:
+  return createWorkflow({
+    id: "PROCESS_CUSTOMER_MESSAGE",
+    inputSchema: z.object({
+      message: z.string(), // Unstructured user message
+    }),
+    outputSchema: z.object({
+      processed: z.boolean(),
+    }),
+  })
+    .then(extractStructuredData) // AI extracts structured data
+    .then(validateData)          // Deterministic validation
+    .then(saveData)             // Deterministic save
+    .commit();
+};
+```
 
-- **Chamadas de API paralelas**: ex. consultar múltiplas APIs de uma vez para dados, então mesclar os resultados (usando `.parallel([...]).then(nextStep)`).
-
-- **Lógica condicional**: ex. se uma consulta do usuário requer uma busca no banco de dados vs uma chamada de API, ramificar adequadamente com `.branch()`.
-
-- **Loops**: ex. fazer polling do status de uma tarefa externa a cada 5 segundos até completar (`.dountil()` com um delay dentro da etapa), ou processar um array de registros (`.foreach()`).
-
-- **Retry de erro**: ex. usar um loop ou ramificação para tentar novamente uma etapa se falhar, ou rotear para uma ferramenta de tratamento de erro se a saída de uma etapa indicar falha.
-
-Fluxos de trabalho permitem tomada de decisão complexa, mas tente manter cada fluxo de trabalho focado. Se está se tornando muito complexo, considere quebrá-lo em múltiplos fluxos de trabalho ou ferramentas.
+This pattern handles unstructured input (user messages) but processes it deterministically.

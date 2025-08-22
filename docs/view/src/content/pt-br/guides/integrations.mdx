@@ -1,46 +1,46 @@
 ---
-title: Integrations
-description: Learn how to connect external services and APIs in deco.chat
+title: Integrações
+description: Aprenda como conectar serviços externos e APIs no deco.chat
 icon: Link
 ---
 
 import Callout from "../../../components/ui/Callout.astro";
 
-Integrations connect your MCP server to external services like Gmail, databases, file storage, and APIs. Connect to anything from SaaS APIs to your company database.
+Integrações conectam seu servidor MCP a serviços externos como Gmail, bancos de dados, armazenamento de arquivos e APIs. Conecte a qualquer coisa desde APIs SaaS até o banco da sua empresa.
 
-### Adding Integrations
+### Adicionando Integrações
 
-1. Go to your workspace in deco.chat
-2. Click **Add Integration**
-3. Select a service (e.g., Gmail)
-4. Complete the OAuth flow or provide API keys
-5. The integration becomes available in your `Env` object
+1. Vá para seu workspace no deco.chat
+2. Clique em **Add Integration**
+3. Selecione um serviço (ex: Gmail)
+4. Complete o fluxo OAuth ou forneça chaves de API
+5. A integração fica disponível no seu objeto `Env`
 
 <Callout type="info">
-  OAuth integrations may show security warnings during beta. This is normal - the integrations are safe to use.
+  Integrações OAuth podem mostrar avisos de segurança durante o beta. Isso é normal - as integrações são seguras para usar.
 </Callout>
 
-## Using Integrations
+## Usando Integrações
 
-### Add to Your Project
+### Adicionar ao Seu Projeto
 
-In your MCP project's `server/` directory:
+No diretório `server/` do seu projeto MCP:
 
 ```bash
 deco add
 ```
 
-Select the integration to add it to your project. This updates your `wrangler.toml` with the binding.
+Selecione a integração para adicioná-la ao seu projeto. Isso atualiza seu `wrangler.toml` com o binding.
 
-### Generate Types
+### Gerar Tipos
 
 ```bash
 npm run gen
 ```
 
-This updates your TypeScript types so you can call integration methods like `env.gmail.sendEmail` with full autocomplete.
+Isso atualiza seus tipos TypeScript para que você possa chamar métodos de integração como `env.gmail.sendEmail` com autocompletar completo.
 
-### Use in Tools
+### Usar em Tools
 
 ```typescript
 const createSendEmailTool = (env: Env) =>

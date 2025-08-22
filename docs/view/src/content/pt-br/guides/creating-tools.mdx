@@ -1,27 +1,32 @@
 ---
-title: Criando Ferramentas
-description: Aprenda como criar ferramentas no deco.chat
+title: Criando Tools
+description: Aprenda como criar tools no deco.chat
 icon: Wrench
 ---
 
-Ferramentas são as ações básicas que um agente pode executar. No deco.chat, você criará ferramentas para interfacear com serviços externos ou executar computações. Cada ferramenta é essencialmente uma função com uma entrada e saída definidas.
+import Callout from "../../../components/ui/Callout.astro";
 
-## Definindo uma Ferramenta
+Tools são funções discretas que agentes podem chamar para realizar ações específicas como chamadas de API, consultas de banco de dados ou computações. Cada tool é essencialmente uma função com entrada e saída definidas.
 
-Você tipicamente usa o helper `createTool` para definir uma ferramenta. Você fornece:
+## Estrutura Básica de Tool
 
-- Um `id` (nome único para a ferramenta).
-- Uma `description` (o que a ferramenta faz, útil para documentação e para a IA decidir quando usá-la).
-- Um `inputSchema` e `outputSchema` definidos com Zod – estes esquemas garantem que os dados que entram e saem são validados e tipados.
-- Uma função `execute` que contém a lógica real (executa quando a ferramenta é chamada por um agente ou fluxo de trabalho). Esta função pode usar o `context` que fornece acesso ao ambiente e outros dados de etapa, ou mais simples usar `inputData` (a entrada analisada).
+Toda tool precisa de:
 
-Por exemplo, a ferramenta "Hello" que mostramos anteriormente é muito simples. Uma ferramenta mais realista pode chamar uma API externa. Suponha que queremos uma ferramenta que envia um email via integração Gmail – pode parecer:
+- **`ID`**: Identificador único
+- **`Description`**: O que a tool faz (ajuda a IA decidir quando usá-la)
+- **`inputSchema` e `outputSchema`**: Schemas Zod para garantir que os dados de entrada e saída sejam validados e tipados
+- **`execute`**: A lógica real. Pode usar `context` que fornece acesso aos dados de ambiente e step, enquanto `inputData` oferece um método de entrada mais simples e parseado.
 
-```ts
-const createSendEmailTool = (env: Env) =>
+
+## Exemplo
+
+Este exemplo mostra uma tool que envia um email via Gmail.
+
+```typescript
+ const createSendEmailTool = (env: Env) =>
   createTool({
     id: "SEND_EMAIL",
-    description: "Enviar um email via Gmail",
+    description: "Send an email via Gmail",
     inputSchema: z.object({
       to: z.string().email(),
       subject: z.string(),
@@ -34,35 +39,136 @@ const createSendEmailTool = (env: Env) =>
         subject: inputData.subject,
         body: inputData.body,
       });
-      return { success: response.sent }; // assume que a integração retorna uma flag 'sent'
+      return { success: response.sent }; // assume the integration returns a 'sent' flag
+    },
+  }); 
+```
+
+## Padrões de Tools
+
+### Chamadas de API Externa
+
+```typescript
+const createWeatherTool = (env: Env) =>
+  createTool({
+    id: "GET_WEATHER",
+    description: "Get current weather for a city",
+    inputSchema: z.object({
+      city: z.string(),
+    }),
+    outputSchema: z.object({
+      temperature: z.number(),
+      condition: z.string(),
+    }),
+    execute: async ({ inputData }) => {
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${inputData.city}&appid=${env.API_KEY}`
+      );
+      const data = await response.json();
+      return {
+        temperature: data.main.temp,
+        condition: data.weather[0].description,
+      };
     },
   });
 ```
 
-Aqui `env.GMAIL.sendEmail` é um exemplo de usar uma ferramenta de integração fornecida pelo namespace de integração GMAIL (assumimos que você conectou Gmail na plataforma, então apareceu em `Env`). Note que validamos entradas (formato de email, etc.) usando Zod.
+### Usando Integrações
 
-## Melhores Práticas para Ferramentas
+Para serviços externos, use as integrações disponíveis no seu `env`:
 
-Mantenha estas diretrizes em mente:
+```typescript
+const createEmailTool = (env: Env) =>
+  createTool({
+    id: "SEND_EMAIL",
+    description: "Send an email",
+    inputSchema: z.object({
+      to: z.string().email(),
+      subject: z.string(),
+      body: z.string(),
+    }),
+    outputSchema: z.object({ success: z.boolean() }),
+    execute: async ({ inputData }) => {
+      await env.gmail.sendEmail(inputData);
+      return { success: true };
+    },
+  });
+```
 
-### Responsabilidade Única
+Veja o [guia de Integrações](/guides/integrations) para detalhes sobre como adicionar serviços externos.
 
-Cada ferramenta deve fazer uma coisa e fazer bem (uma chamada de API, uma consulta de banco de dados, um email). Isso torna ferramentas fáceis de reutilizar e testar.
+## Operações de Banco de Dados
 
-### Validação
+Todo workspace inclui um banco de dados SQLite integrado:
 
-Sempre valide entradas com esquemas Zod. Isso previne dados ruins de causar erros de runtime e fornece mensagens de erro claras. Similarmente, garanta que seu esquema de saída reflita acuradamente o que você retorna.
+```typescript
+const createCustomerInsertTool = (env: Env) =>
+  createTool({
+    id: "CUSTOMER_INSERT",
+    description: "Save a new customer to the database",
+    inputSchema: z.object({
+      name: z.string(),
+      cpf: z.string(),
+      city: z.string(),
+      state: z.string(),
+    }),
+    outputSchema: z.object({ id: z.number() }),
+    execute: async ({ inputData, context }) => {
+      const result = await context.runtime.workspace.db.run(
+        "INSERT INTO customers (name, cpf, city, state) VALUES (?, ?, ?, ?) RETURNING id",
+        [inputData.name, inputData.cpf, inputData.city, inputData.state]
+      );
+      return { id: result.meta.last_row_id };
+    },
+  });
+```
 
-### Tratamento de Erros
+<Callout type="info">
+  Cada workspace recebe um banco de dados SQLite isolado. Não é necessário gerenciar URLs ou credenciais do banco.
+</Callout>
 
-Não deixe exceções escaparem da ferramenta – trate erros dentro de `execute`. Por exemplo, capture erros de fetch ou erros de API e talvez retorne uma saída de erro estruturada (ou use `.catch` do Zod no esquema). Desta forma, o agente pode tratar falhas de ferramentas graciosamente. (Você pode até definir seu outputSchema para incluir uma união de erro.)
+## Registrar Suas Tools
 
-### Segurança de Tipos
+Adicione tools ao seu servidor MCP em `server/main.ts`:
 
-Aproveite TypeScript. Os tipos `deco.gen.ts` significam que você tem autocompletar para chamadas de integração `env`. Use esses tipos para que se, digamos, você mudar a API de uma integração, seu código mostrará erros de tipo até você atualizá-lo. Isso evita chamar ferramentas com parâmetros errados.
+```typescript
+import { withRuntime } from "@deco/workers-runtime";
 
-### Teste
+const { Workflow, ...runtime } = withRuntime<Env>({
+  tools: [
+    createCepSearchTool,
+    createSendEmailTool,
+    createCustomerInsertTool,
+  ],
+  workflows: [/* your workflows */],
+  fetch: fallbackToView("/"),
+});
 
-Pode ser útil testar ferramentas em isolamento. Como ferramentas são apenas funções, você pode chamar `await createMyTool(env).execute({ inputData: {...}, context })` em um script de desenvolvimento para ver se se comporta como esperado (fornecendo um env dummy se necessário).
+export { Workflow };
+export default runtime;
+```
 
-Forneceremos mais exemplos de implementações de ferramentas na documentação detalhada (ex: escrevendo para um banco de dados, chamando uma API de terceiros, executando cálculos). Por enquanto, lembre-se que ferramentas são a ponte entre seu agente e o mundo externo.
+## Testar Suas Tools
+
+1. Inicie seu servidor de dev: `npm run dev`
+2. Copie a URL de preview
+3. Adicione como integração customizada no deco.chat (URL + `/mcp`)
+4. Teste as tools na interface
+
+<Callout type="success">
+  Tools aparecem automaticamente quando você adiciona a integração. Não é necessário registro manual!
+</Callout>
+
+## Melhores Práticas
+
+### Mantenha Simples
+Cada tool deve fazer uma coisa e fazê-la bem (uma chamada de API, uma consulta de banco, uma computação). Isso torna as tools fáceis de reutilizar e testar.
+
+### Use Segurança de Tipos
+Os tipos gerados em `deco.gen.ts` fornecem autocompletar para integrações. Utilize definições de tipos para capturar erros potenciais de integração de API, garantindo validação em tempo de compilação dos parâmetros da tool.
+
+## Testando
+Testar tools individualmente é eficaz. Chame `await createMyTool(env).execute({ inputData: {...}, context })` em um script de dev para verificar o comportamento da tool, usando um ambiente fictício se necessário.
+
+### Valide Tudo
+Valide entradas e saídas com schemas Zod para prevenir erros de runtime e fornecer mensagens de erro claras.
