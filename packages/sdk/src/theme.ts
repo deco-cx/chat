@@ -1,6 +1,7 @@
 /**
  * TODO(camudo): Handle custom fonts
  */
+
 export const THEME_VARIABLES = [
   "--background",
   "--foreground",
@@ -25,13 +26,16 @@ export const THEME_VARIABLES = [
   "--border",
   "--input",
   "--sidebar",
+  "--sidebar-foreground",
+  "--sidebar-accent",
+  "--sidebar-accent-foreground",
+  "--sidebar-border",
+  "--sidebar-ring",
   "--primary-light",
   "--primary-dark",
   "--splash",
 ] as const;
-
 export type ThemeVariable = (typeof THEME_VARIABLES)[number];
-
 export interface GoogleFontsThemeFont {
   type: "Google Fonts";
   name: string;
@@ -51,7 +55,7 @@ export interface Theme {
 
 export const DEFAULT_THEME: Theme = {
   variables: {
-    "--background": "oklch(1 0 0)",
+    "--background": "oklch(0.9938 0.0013 106.42)",
     "--foreground": "oklch(26.8% 0.007 34.298)",
     "--primary-light": "#d0ec1a",
     "--primary-dark": "#07401a",
@@ -65,7 +69,7 @@ export const DEFAULT_THEME: Theme = {
     "--secondary-foreground": "oklch(26.8% 0.007 34.298)",
     "--muted": "oklch(97% 0.001 106.424)",
     "--muted-foreground": "oklch(55.3% 0.013 58.071)",
-    "--accent": "oklch(97% 0.001 106.424)",
+    "--accent": "oklch(0.9466 0.0017 67.8)",
     "--accent-foreground": "oklch(26.8% 0.007 34.298)",
     "--destructive": "oklch(0.577 0.245 27.325)",
     "--destructive-foreground": "oklch(1 0 0)",
@@ -76,7 +80,13 @@ export const DEFAULT_THEME: Theme = {
     "--border": "oklch(92.3% 0.003 48.717)",
     "--input": "oklch(92.3% 0.003 48.717)",
     "--sidebar": "oklch(98.5% 0.001 106.423)",
+    "--sidebar-foreground": "oklch(26.8% 0.007 34.298)",
+    "--sidebar-accent": "oklch(95.8% 0.003 48.717)",
+    "--sidebar-accent-foreground": "oklch(26.8% 0.007 34.298)",
+    "--sidebar-border": "oklch(92.3% 0.003 48.717)",
+    "--sidebar-ring": "oklch(92.3% 0.003 48.717)",
   },
+
   font: {
     type: "Google Fonts",
     name: "Inter",

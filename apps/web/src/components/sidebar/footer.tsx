@@ -413,7 +413,7 @@ function LoggedUser() {
             )}
             <Icon
               name="arrow_outward"
-              size={16}
+              size={18}
               className="text-muted-foreground"
             />
           </a>
@@ -429,7 +429,7 @@ function LoggedUser() {
             Homepage
             <Icon
               name="arrow_outward"
-              size={16}
+              size={18}
               className="ml-auto text-muted-foreground"
             />
           </a>
@@ -442,7 +442,7 @@ function LoggedUser() {
             href={logoutUrl}
             className="flex items-center gap-2 text-sm cursor-pointer"
           >
-            <Icon name="logout" size={16} className="text-muted-foreground" />
+            <Icon name="logout" size={18} className="text-muted-foreground" />
             Log out
           </a>
         </ResponsiveDropdownItem>
@@ -470,24 +470,16 @@ function TeamBalanceLabel() {
   if (!account?.balance) return null;
 
   return (
-    <span className="text-xs text-muted-foreground p-2 justify-between vertical-align-middle flex items-center gap-1">
-      <Link
-        to={withWorkspaceLink("/monitor/billing")}
-        className="flex items-center gap-1 transition-colors truncate"
-      >
-        <Icon name="attach_money" size={16} />
-        Team balance: {account.balance}
-      </Link>
-      <Link to={withWorkspaceLink("/monitor/billing")} className="shrink-0">
-        <Button
-          variant="special"
-          size="sm"
-          className="h-4 px-1 py-0 leading-none vertical-align-middle"
-        >
-          <Icon name="add" size={12} />
-        </Button>
-      </Link>
-    </span>
+    <Link
+      to={withWorkspaceLink("/monitor/billing")}
+      className="bg-sidebar-accent flex flex-col gap-1 px-4 py-3 rounded-xl w-full transition-colors hover:bg-sidebar-accent"
+    >
+      <div className="text-xs text-muted-foreground">FREE PLAN</div>
+      <div className="flex items-center justify-between w-full text-sm">
+        <span className="text-sidebar-foreground">Team Balance</span>
+        <span className="text-muted-foreground">{account.balance}</span>
+      </div>
+    </Link>
   );
 }
 
@@ -507,7 +499,7 @@ function AnonymouseUser() {
   return (
     <SidebarMenuButton>
       <Link to={to}>
-        <Icon name="person" size={16} />
+        <Icon name="person" size={18} />
         Sign in
       </Link>
     </SidebarMenuButton>
@@ -531,7 +523,7 @@ export function SidebarFooter() {
         shouldCatch={(error) => error instanceof UnauthorizedError}
         fallback={<AnonymouseUser />}
       >
-        <SidebarFooterInner className="border-t border-border">
+        <SidebarFooterInner>
           <SidebarMenu>
             <SidebarMenuItem>
               <TeamBalance />
