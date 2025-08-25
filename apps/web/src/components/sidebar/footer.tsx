@@ -474,9 +474,7 @@ function TeamBalanceLabel() {
       to={withWorkspaceLink("/monitor/billing")}
       className="bg-sidebar-accent flex flex-col gap-1 px-4 py-3 rounded-xl w-full transition-colors hover:bg-sidebar-accent"
     >
-      <div className="text-xs text-muted-foreground">
-        FREE PLAN
-      </div>
+      <div className="text-xs text-muted-foreground">FREE PLAN</div>
       <div className="flex items-center justify-between w-full text-sm">
         <span className="text-sidebar-foreground">Team Balance</span>
         <span className="text-muted-foreground">{account.balance}</span>

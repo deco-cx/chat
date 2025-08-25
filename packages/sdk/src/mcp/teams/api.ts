@@ -150,7 +150,9 @@ const themeVariablesSchema = z.object({
   "--sidebar-accent": z
     .string()
     .optional()
-    .describe("Accent background color for sidebar elements (OKLCH/hex format)"),
+    .describe(
+      "Accent background color for sidebar elements (OKLCH/hex format)",
+    ),
   "--sidebar-accent-foreground": z
     .string()
     .optional()

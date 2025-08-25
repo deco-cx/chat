@@ -457,11 +457,21 @@ function WorkspaceViews() {
   });
 
   // Separate items for organization
-  const mcpItems = firstLevelViews.filter(item => 
-    ["Agents", "Integrations", "Prompts", "Views", "Workflows"].includes(item.title)
+  const mcpItems = firstLevelViews.filter((item) =>
+    ["Agents", "Integrations", "Prompts", "Views", "Workflows"].includes(
+      item.title,
+    ),
   );
-  const otherItems = firstLevelViews.filter(item => 
-    !["Agents", "Integrations", "Prompts", "Views", "Workflows", "Triggers"].includes(item.title)
+  const otherItems = firstLevelViews.filter(
+    (item) =>
+      ![
+        "Agents",
+        "Integrations",
+        "Prompts",
+        "Views",
+        "Workflows",
+        "Triggers",
+      ].includes(item.title),
   );
 
   return (
@@ -536,7 +546,11 @@ function WorkspaceViews() {
             <div>
               <CollapsibleTrigger asChild>
                 <SidebarMenuButton className="w-full">
-                  <Icon name="apps" size={18} className="text-muted-foreground/75" />
+                  <Icon
+                    name="apps"
+                    size={18}
+                    className="text-muted-foreground/75"
+                  />
                   <span className="truncate">MCPs</span>
                   <Icon
                     name="chevron_right"
@@ -550,12 +564,18 @@ function WorkspaceViews() {
                   {mcpItems.map((item) => {
                     const meta = parseViewMetadata(item);
                     if (!meta) return null;
-                    
+
                     // Special handling for Integrations -> Tools
-                    const displayTitle = item.title === "Integrations" ? "Tools" : item.title;
-                    const href = item.title === "Integrations" 
-                      ? workspaceLink("/connections")
-                      : workspaceLink(meta.type === "custom" ? `/views/${item.id}` : meta.path);
+                    const displayTitle =
+                      item.title === "Integrations" ? "Tools" : item.title;
+                    const href =
+                      item.title === "Integrations"
+                        ? workspaceLink("/connections")
+                        : workspaceLink(
+                            meta.type === "custom"
+                              ? `/views/${item.id}`
+                              : meta.path,
+                          );
 
                     return (
                       <SidebarMenuSubItem key={item.title}>
@@ -563,11 +583,17 @@ function WorkspaceViews() {
                           <Link
                             to={href}
                             onClick={() => {
-                              trackEvent("sidebar_navigation_click", { item: displayTitle });
+                              trackEvent("sidebar_navigation_click", {
+                                item: displayTitle,
+                              });
                               isMobile && toggleSidebar();
                             }}
                           >
-                            <Icon name={item.icon} size={18} className="text-muted-foreground/75" />
+                            <Icon
+                              name={item.icon}
+                              size={18}
+                              className="text-muted-foreground/75"
+                            />
                             <span className="truncate">{displayTitle}</span>
                           </Link>
                         </SidebarMenuSubButton>
@@ -727,7 +753,7 @@ export function AppSidebar() {
             </>
           )}
         </div>
-        
+
         <SidebarFooter />
       </SidebarContent>
     </Sidebar>
