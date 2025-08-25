@@ -143,6 +143,26 @@ const themeVariablesSchema = z.object({
     .string()
     .optional()
     .describe("Background color for sidebar navigation (OKLCH/hex format)"),
+  "--sidebar-foreground": z
+    .string()
+    .optional()
+    .describe("Text color in sidebar navigation (OKLCH/hex format)"),
+  "--sidebar-accent": z
+    .string()
+    .optional()
+    .describe("Accent background color for sidebar elements (OKLCH/hex format)"),
+  "--sidebar-accent-foreground": z
+    .string()
+    .optional()
+    .describe("Text color on sidebar accent elements (OKLCH/hex format)"),
+  "--sidebar-border": z
+    .string()
+    .optional()
+    .describe("Border color for sidebar elements (OKLCH/hex format)"),
+  "--sidebar-ring": z
+    .string()
+    .optional()
+    .describe("Focus ring color for sidebar elements (OKLCH/hex format)"),
   "--splash": z
     .string()
     .optional()

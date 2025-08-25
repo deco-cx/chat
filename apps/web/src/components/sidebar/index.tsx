@@ -592,7 +592,7 @@ function WorkspaceViews() {
                       size="xs"
                       url={integration?.icon}
                       fallback={integration?.name}
-                      className="!w-[18px] !h-[18px]"
+                      className="!w-[18px] !h-[18px] !rounded-md"
                     />
                     <span className="truncate">
                       {integration?.name ?? "Custom"}
@@ -639,7 +639,7 @@ function WorkspaceViews() {
                                 <Icon
                                   name="unpin"
                                   size={18}
-                                  className="text-muted-foreground/75 opacity-0 group-hover/item:opacity-100 transition-opacity cursor-pointer ml-auto"
+                                  className="text-muted-foreground/75 opacity-0 group-hover/item:opacity-50 hover:opacity-100 transition-opacity cursor-pointer ml-auto"
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();

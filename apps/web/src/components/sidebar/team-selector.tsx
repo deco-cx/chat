@@ -89,7 +89,7 @@ function CurrentTeamDropdownTrigger() {
 
   return (
     <ResponsiveDropdownTrigger asChild>
-      <SidebarMenuButton className="p-1 group-data-[collapsible=icon]:p-1! gap-3 md:pl-2">
+      <SidebarMenuButton className="p-3 group-data-[collapsible=icon]:p-1! gap-3 md:pl-3.5">
         <Avatar
           shape="square"
           url={avatarUrl}
@@ -102,7 +102,7 @@ function CurrentTeamDropdownTrigger() {
           <Icon
             name="unfold_more"
             className="text-muted-foreground"
-            size={16}
+            size={18}
           />
         </div>
       </SidebarMenuButton>
@@ -125,7 +125,7 @@ function CurrentTeamDropdownOptions({
           className="w-full flex items-center gap-2 cursor-pointer"
         >
           <span className="grid place-items-center p-1">
-            <Icon name="settings" size={16} className="text-muted-foreground" />
+            <Icon name="settings" size={18} className="text-muted-foreground" />
           </span>
           <span className="md:text-sm">Settings</span>
         </Link>
@@ -139,7 +139,7 @@ function CurrentTeamDropdownOptions({
         }}
       >
         <span className="grid place-items-center p-1">
-          <Icon name="person_add" size={16} className="text-muted-foreground" />
+          <Icon name="person_add" size={18} className="text-muted-foreground" />
         </span>
         <span className="md:text-sm flex-grow justify-self-start">
           Invite members
@@ -242,7 +242,7 @@ function SwitchTeam({
           className="h-6 w-6"
           onClick={toggleSearch}
         >
-          <Icon name="search" size={16} className="text-muted-foreground" />
+          <Icon name="search" size={18} className="text-muted-foreground" />
         </Button>
       </div>
 
@@ -281,7 +281,7 @@ function SwitchTeam({
         onClick={onRequestCreateTeam}
       >
         <span className="grid place-items-center p-1">
-          <Icon name="add" size={16} className="text-muted-foreground" />
+          <Icon name="add" size={18} className="text-muted-foreground" />
         </span>
         <span className="md:text-sm">Create team</span>
       </ResponsiveDropdownItem>
