@@ -413,7 +413,7 @@ function LoggedUser() {
             )}
             <Icon
               name="arrow_outward"
-              size={16}
+              size={18}
               className="text-muted-foreground"
             />
           </a>
@@ -429,7 +429,7 @@ function LoggedUser() {
             Homepage
             <Icon
               name="arrow_outward"
-              size={16}
+              size={18}
               className="ml-auto text-muted-foreground"
             />
           </a>
@@ -442,7 +442,7 @@ function LoggedUser() {
             href={logoutUrl}
             className="flex items-center gap-2 text-sm cursor-pointer"
           >
-            <Icon name="logout" size={16} className="text-muted-foreground" />
+            <Icon name="logout" size={18} className="text-muted-foreground" />
             Log out
           </a>
         </ResponsiveDropdownItem>
@@ -475,7 +475,7 @@ function TeamBalanceLabel() {
         to={withWorkspaceLink("/monitor/billing")}
         className="flex items-center gap-1 transition-colors truncate"
       >
-        <Icon name="attach_money" size={16} />
+        <Icon name="attach_money" size={18} />
         Team balance: {account.balance}
       </Link>
       <Link to={withWorkspaceLink("/monitor/billing")} className="shrink-0">
@@ -507,7 +507,7 @@ function AnonymouseUser() {
   return (
     <SidebarMenuButton>
       <Link to={to}>
-        <Icon name="person" size={16} />
+        <Icon name="person" size={18} />
         Sign in
       </Link>
     </SidebarMenuButton>
