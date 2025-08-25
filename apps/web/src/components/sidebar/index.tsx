@@ -165,7 +165,7 @@ function ThreadActions({
           >
             <Icon
               name="more_vert"
-              size={16}
+              size={18}
               className="text-muted-foreground"
             />
           </Button>
@@ -179,7 +179,7 @@ function ThreadActions({
               onEdit();
             }}
           >
-            <Icon name="edit" className="mr-2" size={16} />
+            <Icon name="edit" className="mr-2" size={18} />
             Rename
           </DropdownMenuItem>
           {!isCurrentThread && (
@@ -192,7 +192,7 @@ function ThreadActions({
               }}
               className="text-destructive focus:text-destructive"
             >
-              <Icon name="delete" className="mr-2" size={16} />
+              <Icon name="delete" className="mr-2" size={18} />
               Delete
             </DropdownMenuItem>
           )}
@@ -363,7 +363,7 @@ function SidebarThreads() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarGroupLabel>Today</SidebarGroupLabel>
-            <SidebarMenu className="gap-0.5">
+            <SidebarMenu className="gap-0">
               <SidebarThreadList
                 threads={groupedThreads.today}
                 agents={agents}
@@ -377,7 +377,7 @@ function SidebarThreads() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarGroupLabel>Yesterday</SidebarGroupLabel>
-            <SidebarMenu className="gap-0.5">
+            <SidebarMenu className="gap-0">
               <SidebarThreadList
                 threads={groupedThreads.yesterday}
                 agents={agents}
@@ -393,7 +393,7 @@ function SidebarThreads() {
               <SidebarGroup key={date}>
                 <SidebarGroupContent>
                   <SidebarGroupLabel>{date}</SidebarGroupLabel>
-                  <SidebarMenu className="gap-0.5">
+                  <SidebarMenu className="gap-0">
                     <SidebarThreadList threads={threads} agents={agents} />
                   </SidebarMenu>
                 </SidebarGroupContent>
@@ -456,9 +456,18 @@ function WorkspaceViews() {
     }
   });
 
+  // Separate items for organization
+  const mcpItems = firstLevelViews.filter(item => 
+    ["Agents", "Integrations", "Prompts", "Views", "Workflows"].includes(item.title)
+  );
+  const otherItems = firstLevelViews.filter(item => 
+    !["Agents", "Integrations", "Prompts", "Views", "Workflows", "Triggers"].includes(item.title)
+  );
+
   return (
     <>
-      {firstLevelViews.map((item) => {
+      {/* Regular items */}
+      {otherItems.map((item) => {
         const meta = parseViewMetadata(item);
         if (!meta) {
           return null;
@@ -489,7 +498,8 @@ function WorkspaceViews() {
                     <Icon
                       name={item.icon}
                       filled={isActive}
-                      className="text-muted-foreground"
+                      size={18}
+                      className="text-muted-foreground/75"
                     />
                     <span className="truncate">{item.title}</span>
 
@@ -506,7 +516,7 @@ function WorkspaceViews() {
                       >
                         <Icon
                           name="remove"
-                          size={16}
+                          size={18}
                           className="text-muted-foreground ml-auto group-hover/item:block! hidden!"
                         />
                       </Button>
@@ -518,10 +528,57 @@ function WorkspaceViews() {
           </SidebarMenuItem>
         );
       })}
-      {Object.entries(fromIntegration).length > 0 && (
-        <>
-          <span className="text-xs text-muted-foreground mt-2 ">APPS</span>
-        </>
+
+      {/* MCPs section */}
+      {mcpItems.length > 0 && (
+        <SidebarMenuItem>
+          <Collapsible asChild defaultOpen className="group/collapsible">
+            <div>
+              <CollapsibleTrigger asChild>
+                <SidebarMenuButton className="w-full">
+                  <Icon name="apps" size={18} className="text-muted-foreground/75" />
+                  <span className="truncate">MCPs</span>
+                  <Icon
+                    name="chevron_right"
+                    size={18}
+                    className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 text-muted-foreground/75"
+                  />
+                </SidebarMenuButton>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarMenuSub>
+                  {mcpItems.map((item) => {
+                    const meta = parseViewMetadata(item);
+                    if (!meta) return null;
+                    
+                    // Special handling for Integrations -> Tools
+                    const displayTitle = item.title === "Integrations" ? "Tools" : item.title;
+                    const href = item.title === "Integrations" 
+                      ? workspaceLink("/connections")
+                      : workspaceLink(meta.type === "custom" ? `/views/${item.id}` : meta.path);
+
+                    return (
+                      <SidebarMenuSubItem key={item.title}>
+                        <SidebarMenuSubButton asChild>
+                          <Link
+                            to={href}
+                            onClick={() => {
+                              trackEvent("sidebar_navigation_click", { item: displayTitle });
+                              isMobile && toggleSidebar();
+                            }}
+                          >
+                            <Icon name={item.icon} size={18} className="text-muted-foreground/75" />
+                            <span className="truncate">{displayTitle}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    );
+                  })}
+                </SidebarMenuSub>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
+        </SidebarMenuItem>
       )}
       {Object.entries(fromIntegration).map(([integrationId, views]) => {
         const integration = integrationMap.get(integrationId);
@@ -530,21 +587,22 @@ function WorkspaceViews() {
             <Collapsible asChild defaultOpen className="group/collapsible">
               <div>
                 <CollapsibleTrigger asChild>
-                  <div className="flex items-center gap-2 w-full cursor-pointer py-2">
+                  <SidebarMenuButton className="w-full">
                     <IntegrationAvatar
                       size="xs"
                       url={integration?.icon}
                       fallback={integration?.name}
+                      className="!w-[18px] !h-[18px]"
                     />
-                    <span className="truncate text-foreground">
+                    <span className="truncate">
                       {integration?.name ?? "Custom"}
                     </span>
                     <Icon
                       name="chevron_right"
-                      size={16}
-                      className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
+                      size={18}
+                      className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 text-muted-foreground/75"
                     />
-                  </div>
+                  </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarMenuSub>
@@ -573,27 +631,21 @@ function WorkspaceViews() {
                             >
                               <Icon
                                 name={view.icon}
-                                size={16}
-                                className="text-muted-foreground"
+                                size={18}
+                                className="text-muted-foreground/75"
                               />
                               <span className="truncate">{view.title}</span>
                               {meta.type === "custom" && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-destructive hover:text-destructive ml-auto group-hover/item:block! hidden! p-0.5 h-6"
+                                <Icon
+                                  name="unpin"
+                                  size={18}
+                                  className="text-muted-foreground/75 opacity-0 group-hover/item:opacity-100 transition-opacity cursor-pointer ml-auto"
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     handleRemoveView(view);
                                   }}
-                                >
-                                  <Icon
-                                    name="remove"
-                                    size={16}
-                                    className="text-muted-foreground ml-auto group-hover/item:block! hidden!"
-                                  />
-                                </Button>
+                                />
                               )}
                             </Link>
                           </SidebarMenuSubButton>
@@ -631,11 +683,11 @@ export function AppSidebar() {
       <SidebarHeader />
 
       <SidebarContent className="flex flex-col h-full overflow-x-hidden">
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col flex-1 min-h-0">
           <div className="flex-none">
             <SidebarGroup className="font-medium">
               <SidebarGroupContent>
-                <SidebarMenu className="gap-0.5">
+                <SidebarMenu className="gap-0">
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       className="cursor-pointer"
@@ -650,8 +702,8 @@ export function AppSidebar() {
                     >
                       <Icon
                         name="edit_square"
-                        size={16}
-                        className="text-muted-foreground"
+                        size={18}
+                        className="text-muted-foreground/75"
                       />
                       <span className="truncate">New chat</span>
                     </SidebarMenuButton>
@@ -667,7 +719,6 @@ export function AppSidebar() {
 
           {!isCollapsed && (
             <>
-              <SidebarSeparator className="!w-[224px]" />
               <div className="flex-1 overflow-y-auto overflow-x-hidden">
                 <Suspense fallback={<SidebarThreads.Skeleton />}>
                   <SidebarThreads />
@@ -675,9 +726,9 @@ export function AppSidebar() {
               </div>
             </>
           )}
-
-          <SidebarFooter />
         </div>
+        
+        <SidebarFooter />
       </SidebarContent>
     </Sidebar>
   );

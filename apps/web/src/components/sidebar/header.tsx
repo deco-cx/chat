@@ -24,7 +24,7 @@ export function Header() {
           >
             <Icon
               name={isMobile ? "menu" : "dock_to_right"}
-              size={16}
+              size={18}
               className="text-muted-foreground"
             />
           </SidebarMenuButton>
