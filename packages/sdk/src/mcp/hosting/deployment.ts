@@ -212,6 +212,91 @@ const DEFAULT_HEADERS_FILE = () =>
   X-Deco-Worker-Cdn: 1
 `;
 
+async function attachQueueConsumer({
+  accountId,
+  apiToken,
+  namespace,
+  queueName,
+  scriptSlug,
+  settings,
+}: {
+  accountId: string;
+  apiToken: string;
+  namespace: string;
+  queueName: string;
+  scriptSlug: string;
+  settings: {
+    max_batch_size?: number;
+    max_batch_timeout?: number;
+    max_retries?: number;
+  };
+}) {
+  const base = `https://api.cloudflare.com/client/v4/accounts/${accountId}`;
+  const headers: HeadersInit = {
+    Authorization: `Bearer ${apiToken}`,
+    "Content-Type": "application/json",
+  };
+
+  // Check queue existence (do not create here)
+  let queueExists = false;
+  try {
+    const res = await fetch(`${base}/queues/${encodeURIComponent(queueName)}`, {
+      headers,
+    });
+    const data = (await res.json()) as { success?: boolean };
+    queueExists = res.ok && Boolean(data?.success);
+  } catch {
+    queueExists = false;
+  }
+  if (!queueExists) {
+    console.warn(
+      `Queue '${queueName}' does not exist. Skipping consumer attachment.`,
+    );
+    return;
+  }
+
+  // 2) Attach consumer to the queue for this dispatch namespace + script
+  // Workers for Platforms consumer path:
+  // /accounts/:account_id/queues/:queue/consumers/dispatch/namespaces/:namespace/scripts/:script
+  const consumerUrl =
+    `${base}/queues/${encodeURIComponent(queueName)}` +
+    `/consumers/dispatch/namespaces/${encodeURIComponent(namespace)}` +
+    `/scripts/${encodeURIComponent(scriptSlug)}`;
+
+  const body = {
+    settings: {
+      ...(settings.max_batch_size != null
+        ? { max_batch_size: settings.max_batch_size }
+        : {}),
+      ...(settings.max_batch_timeout != null
+        ? { max_batch_timeout: settings.max_batch_timeout }
+        : {}),
+      ...(settings.max_retries != null
+        ? { max_retries: settings.max_retries }
+        : {}),
+    },
+  };
+
+  try {
+    const res = await fetch(consumerUrl, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      console.warn(
+        `Failed to attach consumer '${scriptSlug}' to queue '${queueName}': ${res.status} ${errText}`,
+      );
+    }
+  } catch (err) {
+    console.warn(
+      `Error attaching consumer '${scriptSlug}' to queue '${queueName}':`,
+      err,
+    );
+  }
+}
+
 export async function deployToCloudflare({
   c,
   mainModule,
@@ -262,7 +347,7 @@ export async function deployToCloudflare({
   const scriptSlug = Entrypoint.id(wranglerName, deploymentId);
   await Promise.all(
     (routes ?? []).map(
-      (route) =>
+      (route: { pattern: string; custom_domain?: boolean }) =>
         route.custom_domain &&
         !route.pattern.endsWith(HOSTING_APPS_DOMAIN) &&
         assertsDomainOwnership(route.pattern, wranglerName).then(() => {
@@ -421,6 +506,31 @@ export async function deployToCloudflare({
       metadata: JSON.stringify(metadata, null, 2),
     });
     throw error;
+  }
+
+  // After script is updated, attach any configured queue consumers (no creation here)
+  if (queues?.consumers && queues.consumers.length > 0) {
+    await Promise.all(
+      queues.consumers.map((consumer) =>
+        attachQueueConsumer({
+          accountId: env.CF_ACCOUNT_ID,
+          apiToken: c.envVars.CF_API_TOKEN,
+          namespace: env.CF_DISPATCH_NAMESPACE,
+          queueName: consumer.queue,
+          scriptSlug,
+          settings: {
+            // These fields are optional in the wrangler config
+            // Provide only those present to avoid API validation errors
+            // deno-lint-ignore no-explicit-any
+            max_batch_size: (consumer as any).max_batch_size,
+            // deno-lint-ignore no-explicit-any
+            max_batch_timeout: (consumer as any).max_batch_timeout,
+            // deno-lint-ignore no-explicit-any
+            max_retries: (consumer as any).max_retries,
+          },
+        }),
+      ),
+    );
   }
 
   if (envVars) {
