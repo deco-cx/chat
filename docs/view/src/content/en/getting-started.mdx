@@ -1,108 +1,86 @@
 ---
 title: Getting Started
-description: Set up your development environment and create your first deco.chat project
+description: Create and deploy your first MCP server in minutes
 icon: Play
 ---
 
 import { StepGroup } from "../../components/ui/StepGroup";
 import { Step } from "../../components/ui/Step";
+import Callout from "../../components/ui/Callout.astro";
 
 ## Prerequisites
 
-Before you begin, make sure you have the following:
+Before starting,  make sure you have:
 
-- **Node.js** (v18+ recommended) – required for running the frontend development server and bundling assets.
-
-- **deco.chat CLI** – the command-line interface for deco.chat, which you can install via NPM.
-
-- **Cloudflare Account** – needed to deploy your app (Cloudflare Workers is the runtime).
-
-- **Basic TypeScript knowledge** – The project is TypeScript-heavy, so familiarity with TS is important (if you're new, see the official TypeScript docs for a primer).
+- **Node.js** v18+ ([download here](https://nodejs.org))
+- **Git** for version control
+- **Code editor** (we recommend [Cursor](https://cursor.com) for AI-powered development)
+- **Basic TypeScript knowledge** – The project is TypeScript-heavy, so familiarity with TS is important (if you’re new, see the official TypeScript docs for a primer).
 
 ## Project Setup with the CLI
 
-Once your environment is ready, follow these steps to create a new deco.chat project:
-
 <StepGroup>
-  <Step number={1} title="Install the Deco CLI">
-    Open your terminal and run:
-    
+  <Step number={1} title="Install Deco CLI">
     ```bash
     npm i -g deco-cli
     ```
     
-    This globally installs the deco command. After installation, you can run `deco --help` to verify it's working.
+    Verify installation with `deco --help`.
   </Step>
 
-  <Step number={2} title="Log in to deco.chat">
-    Use `deco login` to authenticate the CLI with your deco.chat account:
-    
+  <Step number={2} title="Login to deco.chat">
     ```bash
     deco login
     ```
     
-    A browser window will prompt you to sign in, and the CLI will store an API token for your session. (If you don't have an account, sign up on the deco.chat website first.)
+    This opens your browser to authenticate. Create an account at [deco.chat](https://deco.chat) if you don't have one.
   </Step>
 
-  <Step number={3} title="Initialize a new project">
-    Navigate to the directory where you want your project and run:
-    
+  <Step number={3} title="Create your project">
     ```bash
-    deco create
+    deco create my-mcp-project
     ```
     
-    You'll be guided to pick a template (for example, a **React + Tailwind View** template or a minimal server-only template). The CLI will scaffold a project with the recommended structure. It will also prompt you to configure your workspace and app name (or you can run `deco configure` manually to set these).
+    - Choose your team/workspace
+    - Select the default template (recommended)
+    - Accept Git repository initialization
+    - Configure IDE setup
   </Step>
 
-  <Step number={4} title="Install dependencies">
-    After scaffolding, `cd` into the project folder. If the project includes a frontend, run:
-    
+  <Step number={4} title="Start development">
     ```bash
+    cd my-mcp-project
     npm install
-    ```
-    
-    (or `pnpm install`) to install Node dependencies for the view.
-  </Step>
-
-  <Step number={5} title="Run the development server">
-    Start your app locally with:
-    
-    ```bash
     npm run dev
     ```
     
-    This will spin up the development environment – usually it runs the Cloudflare Worker (MCP server) on a local port (8787 by default) and a Vite dev server for the frontend, with hot-reload for both. Check the terminal output for the local URL (often something like `https://localhost-<hash>.deco.host`), and open it in your browser. You should see the default deco.chat app interface loading.
+    Your MCP server will start with hot reload enabled. Copy the preview URL from the terminal output.
     
-    <Callout type="success">
-      At this point, you have a running deco.chat application on your machine! 🎉
+    <Callout type="info">
+      The server runs on port 8787 and serves both MCP endpoints at `/mcp` and documentation assets.
     </Callout>
   </Step>
 </StepGroup>
 
-## "Hello World" Example
+## Test your MCP
 
-Let's illustrate how you might add a simple "Hello World" tool to your app:
+Test your MCP server in deco.chat:
 
-In your project's server code (e.g., `server/main.ts`), you can define a new Tool that returns a greeting:
+1. Go to your team in [deco.chat](https://deco.chat)
+2. Click **Add Integration** → **Custom Integration**
+3. Paste your preview URL + `/mcp` (e.g., `https://localhost-abc123.deco.host/mcp`)
+4. Save and test the default tools
 
-```typescript
-import { createTool } from "@deco/workers-runtime";
-import { z } from "zod";
+<Callout type="success">
+  Your MCP server is now running locally and connected to deco.chat! 🎉
+</Callout>
 
-const createHelloTool = () =>
-  createTool({
-    id: "HELLO_TOOL",
-    description: "Returns a hello message",
-    inputSchema: z.object({ name: z.string() }),
-    outputSchema: z.object({ greeting: z.string() }),
-    execute: async ({ inputData }) => {
-      return { greeting: `Hello, ${inputData.name}!` };
-    },
-  });
+## Deploy to production
+
+When ready to share your MCP:
+
+```bash
+npm run deploy
 ```
 
-Here we use **Zod** to define that this tool expects a name (string) and outputs a greeting string. _(If you're unfamiliar with Zod: it's a TypeScript-friendly schema validation library that ensures inputs/outputs conform to the types your code expects.)_
-
-Register this tool in the `withRuntime` setup (we'll explain this in _Project Structure_ next). Then run `deco configure` (if needed) and restart the dev server. Don't forget to run `deco gen` to update types (more on the gen command under **CLI Reference**).
-
-Now you can test the tool. For example, using the deco UI or a curl request to the MCP endpoint, call the `HELLO_TOOL` with `{"name": "World"}` and see if you get back `{"greeting": "Hello, World!"}`.
+Your app deploys to Cloudflare Workers and becomes available as a public integration in your workspace.

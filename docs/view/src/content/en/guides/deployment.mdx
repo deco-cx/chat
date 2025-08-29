@@ -4,47 +4,79 @@ description: Learn how to deploy your deco.chat applications to production
 icon: Rocket
 ---
 
-When you're ready to share your agent with the world (or your team), you'll deploy it to Cloudflare Workers via the deco.chat CLI. Deployment in deco.chat is remarkably simple compared to traditional apps – since your entire stack (front and back) is serverless and lives at Cloudflare's edge, going to production is often just one command.
+import Callout from "../../../components/ui/Callout.astro";
 
-## Build and Deploy Process
+Deploy your MCP server to Cloudflare Workers with one command. Your entire stack runs serverless on Cloudflare's global edge network.
 
-### 1. Build the frontend
+## Deploy Process
 
-The `npm run deploy` script will typically run `npm run build` in the `/view` directory to produce optimized static files (if you have a frontend). This yields an `dist/` or `build/` folder with your HTML, JS, CSS assets ready for production.
+```bash
+npm run deploy
+```
 
-### 2. Publish the worker
+This command:
+1. **Build frontend**: Optimizes React app into static assets
+2. **Bundle server**: Packages MCP server code and dependencies  
+3. **Upload to Workers**: Deploys to Cloudflare with asset bindings
+4. **Live at URL**: App available at `https://your-app.deco.page`
 
-After building the view, the deploy script triggers the Cloudflare Workers publish. Under the hood this might call `wrangler publish` or use the deco CLI's deployment API. It takes your `server/main.ts` (and bundled dependencies) and uploads it to Cloudflare, along with the static assets (which get uploaded to Workers KV or as an asset bundle). The `wrangler.toml` is used to find account IDs, project names, and any bindings.
+## What Gets Deployed
 
-When `deco deploy` finishes, your app will be live at a URL, likely something like `https://<app>.<workspace>.deco.app` or a `workers.dev` subdomain (the exact pattern may depend on your configuration). The CLI or output will show the deployed address.
+- **MCP Server**: Available at `/mcp` endpoint for AI agents
+- **React App**: Web interface served from root
+- **Database**: SQLite with isolated workspace data
+- **Integrations**: OAuth tokens and API credentials (encrypted)
 
-## Cloudflare Workers Runtime Notes
+## Runtime Environment
 
-- Your code runs on Cloudflare's global edge network. It means low latency access for users around the world and automatic scaling. It also means some constraints: e.g., CPU time per request is limited (50ms by default for free tier, 50ms+ and up to 30s for paid with "Workers Unbound" – the exact policy may vary).
+Your code runs on Cloudflare's global edge network with automatic scaling and low latency worldwide.
 
-- If your workflows or tools do heavy computation or wait on external APIs, that's okay – just be mindful to use asynchronous waits properly (which you likely are, since most I/O is via `await` calls). Cloudflare will suspend the worker during fetch waits so it doesn't count against CPU time heavily.
+### Performance Limits
 
-- **Durable Objects**: If you need longer-running or stateful interactions (like maintaining a conversation state beyond the context provided by deco by default), you might use Durable Objects. These are like single-instance workers that can hold state. Deco's advanced libs (like the actors library) can help if needed. But for many use cases, storing state in the agent's conversation history or a database is sufficient.
+- **CPU Time**: 50ms free tier, up to 30s with Workers Unbound
+- **Async I/O**: API calls and database queries don't count against CPU time
+- **Request Volume**: Monitor usage in Cloudflare dashboard
 
-- **Cron Triggers**: deco.chat's platform supports agent triggers (as seen in the intro video) – e.g., running an agent daily at 9am. Under the hood, this may use Workers Cron Triggers. If you set up triggers via the UI, ensure you deploy after scheduling them so the Worker has the trigger configured in `wrangler.toml`.
+<Callout type="info">
+  Cloudflare suspends workers during fetch calls, so most MCP operations complete within limits.
+</Callout>
 
-- **Limits**: Keep an eye on your usage. Cloudflare's free tier is generous but has limits on request count, etc. If your agent is going to be heavily used, consider enabling billing or at least monitoring usage in the Cloudflare dashboard.
+### Advanced Capabilities
+
+**Durable Objects**: For stateful interactions beyond conversation context. Maintain persistent state across requests using single-instance workers.
+
+**Cron Triggers**: Schedule agents to run periodically. Set up in deco.chat UI, then deploy to update `wrangler.toml`.
+
+**Usage Monitoring**: Track request count, errors, CPU time, and set billing alerts in the Cloudflare dashboard.
 
 ## Custom Domains
 
-If you want to serve the app on your own domain (e.g., `ai.mycompany.com`), you can set up Cloudflare DNS for that domain and map it to the worker (using Cloudflare's custom domains for Workers feature). This is outside the scope of deco specific docs, but worth mentioning. Alternatively, you can frame the deco app within another site or just use the provided URL.
+Map your own domain (e.g., `ai.mycompany.com`):
 
-## Post-Deploy Testing
+1. Add domain to Cloudflare DNS
+2. Configure custom domain in Workers dashboard  
+3. Update DNS records to point to worker
 
-Always test your deployed agent as a user would:
+Alternative: Embed in iframe or use the provided `.deco.page` URL.
 
-- Open the production URL, ensure the frontend loads.
-- Try interacting with the agent (the Worker should be live and responding).
-- Check that integrations (which might have different credentials in prod) work as expected.
-- Use `deco hosting list -w <workspace>` to see your deployed apps if needed.
+## Testing Deployment
 
-## Rollbacks and Updates
+Always verify your production deployment:
 
-If something goes wrong, you can update your code and deploy again. Cloudflare doesn't have a built-in version rollback via CLI, but since deployments are fast, you can re-deploy an earlier stable version of your code. It's wise to use version control (git) for your project so you can revert changes locally and redeploy.
+```bash
+# Test MCP endpoint
+curl https://your-app.deco.page/mcp
 
-Your continuous integration (CI) could also be set up to deploy on git pushes, but the deco CLI simplifies things enough that manual deploys are okay for many cases. In a team, just ensure only one person deploys at a time to avoid clashing versions.
+# List your deployed apps
+deco hosting list -w <workspace>
+```
+
+**Manual Verification**:
+- Open production URL, ensure frontend loads
+- Test agent interactions and tool responses
+- Verify integrations work with production credentials
+- Check database operations and data persistence
+
+## Updates and Rollbacks
+
+If something goes wrong, update your code and deploy again. Cloudflare doesn't have built-in CLI rollbacks, but deployments are fast enough to redeploy an earlier stable version. Use version control to revert changes locally, then redeploy. You can set up CI to deploy on git pushes, but manual deploys work fine for most cases. In teams, coordinate deployments so only one person deploys at a time to avoid version conflicts.

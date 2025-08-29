@@ -1,0 +1,82 @@
+---
+title: Deployment
+description: Aprenda como fazer deploy das suas aplicações deco.chat para produção
+icon: Rocket
+---
+
+import Callout from "../../../components/ui/Callout.astro";
+
+Faça deploy do seu servidor MCP para Cloudflare Workers com um comando. Sua stack completa roda serverless na rede global edge da Cloudflare.
+
+## Processo de Deploy
+
+```bash
+npm run deploy
+```
+
+Este comando:
+1. **Build frontend**: Otimiza app React em assets estáticos
+2. **Bundle server**: Empacota código do servidor MCP e dependências  
+3. **Upload para Workers**: Faz deploy para Cloudflare com asset bindings
+4. **Live na URL**: App disponível em `https://your-app.deco.page`
+
+## O que é Deployado
+
+- **Servidor MCP**: Disponível no endpoint `/mcp` para agentes de IA
+- **App React**: Interface web servida da raiz
+- **Banco de Dados**: SQLite com dados isolados do workspace
+- **Integrações**: Tokens OAuth e credenciais de API (criptografadas)
+
+## Ambiente de Runtime
+
+Seu código roda na rede global edge da Cloudflare com scaling automático e baixa latência mundial.
+
+### Limites de Performance
+
+- **Tempo de CPU**: 50ms nível gratuito, até 30s com Workers Unbound
+- **I/O Assíncrono**: Chamadas de API e consultas de banco não contam contra tempo de CPU
+- **Volume de Requests**: Monitore uso no dashboard Cloudflare
+
+<Callout type="info">
+  Cloudflare suspende workers durante chamadas fetch, então a maioria das operações MCP completam dentro dos limites.
+</Callout>
+
+### Capacidades Avançadas
+
+**Durable Objects**: Para interações com estado além do contexto de conversação. Mantenha estado persistente entre requests usando workers de instância única.
+
+**Cron Triggers**: Agende agentes para rodar periodicamente. Configure na UI do deco.chat, depois faça deploy para atualizar `wrangler.toml`.
+
+**Monitoramento de Uso**: Acompanhe contagem de requests, erros, tempo de CPU e configure alertas de cobrança no dashboard Cloudflare.
+
+## Custom Domains
+
+Map your own domain (e.g., `ai.mycompany.com`):
+
+1. Add domain to Cloudflare DNS
+2. Configure custom domain in Workers dashboard  
+3. Update DNS records to point to worker
+
+Alternative: Embed in iframe or use the provided `.deco.page` URL.
+
+## Testing Deployment
+
+Always verify your production deployment:
+
+```bash
+# Test MCP endpoint
+curl https://your-app.deco.page/mcp
+
+# List your deployed apps
+deco hosting list -w <workspace>
+```
+
+**Manual Verification**:
+- Open production URL, ensure frontend loads
+- Test agent interactions and tool responses
+- Verify integrations work with production credentials
+- Check database operations and data persistence
+
+## Updates and Rollbacks
+
+If something goes wrong, update your code and deploy again. Cloudflare doesn't have built-in CLI rollbacks, but deployments are fast enough to redeploy an earlier stable version. Use version control to revert changes locally, then redeploy. You can set up CI to deploy on git pushes, but manual deploys work fine for most cases. In teams, coordinate deployments so only one person deploys at a time to avoid version conflicts.

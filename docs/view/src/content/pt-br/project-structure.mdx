@@ -1,81 +1,281 @@
 ---
 title: Estrutura do Projeto
-description: Entendendo o layout do projeto deco.chat e organização de arquivos
+description: Entenda como servidores MCP são organizados com componentes server e view
 icon: Folder
 ---
 
-Entender o layout do projeto ajudará você a localizar onde escrever código para ferramentas, fluxos de trabalho e a UI. Um projeto deco.chat típico (especialmente um criado com o template React+Tailwind) é organizado da seguinte forma:
+import Callout from "../../components/ui/Callout.astro";
 
 ```
-my-deco-app/
-├── package.json          # Pacote raiz (scripts para dev, gen, deploy)
-├── server/               # Código Cloudflare Workers (servidor MCP)
-│   ├── main.ts           # Ponto de entrada principal do servidor (define ferramentas & fluxos de trabalho)
-│   ├── deco.gen.ts       # Tipos gerados para integrações (atualizado automaticamente)
-│   ├── wrangler.toml     # Configuração Cloudflare Workers (env, conta, etc.)
-│   └── package.json      # Dependências específicas do servidor (runtime Cloudflare, etc.)
-└── view/                 # Código frontend (React + Tailwind via Vite)
+my-mcp-project/
+├── package.json          # Scripts do workspace root (dev, gen, deploy)
+├── tsconfig.json         # Configuração TypeScript
+├── server/               # Servidor MCP (Cloudflare Worker)
+│   ├── main.ts          # Entry point do servidor - importa tools/workflows/views
+│   ├── tools.ts         # Definições de tools
+│   ├── workflows.ts     # Definições de workflows
+│   ├── views.ts         # Configurações de views
+│   ├── schema.ts        # Schema do banco de dados (Drizzle ORM)
+│   ├── db.ts            # Helper de conexão do banco
+│   ├── drizzle.config.ts # Configuração Drizzle
+│   ├── deco.gen.ts      # Tipos gerados para integrações
+│   ├── wrangler.toml    # Configuração Cloudflare & bindings
+│   ├── drizzle/         # Arquivos de migração
+│   │   ├── migrations.js
+│   │   └── *.sql
+│   └── package.json     # Dependências do servidor
+└── view/                # App React (Vite + TanStack Router)
     ├── src/
-    │   ├── main.tsx      # Entrada frontend (inicializa app React e router)
-    │   ├── lib/rpc.ts    # Cliente RPC para chamar ferramentas/fluxos de trabalho do servidor
-    │   ├── routes/       # React Router (TanStack) componentes de rota
-    │   └── components/   # Componentes UI reutilizáveis
-    ├── index.html        # Template HTML para o app
-    ├── package.json      # Dependências frontend
-    └── vite.config.ts    # Configuração Vite (para construir a visualização)
+    │   ├── main.tsx     # Entry point do app com setup do router
+    │   ├── routes/      # Componentes de página (home.tsx, profile.tsx)
+    │   ├── components/  # Componentes UI reutilizáveis
+    │   ├── lib/         # Cliente RPC e utilitários
+    │   └── styles.css   # Estilos Tailwind CSS
+    ├── public/          # Assets estáticos
+    ├── vite.config.ts   # Configuração Vite
+    ├── components.json  # Configuração shadcn/ui
+    └── package.json     # Dependências frontend
+
 ```
 
-## Diretório do Servidor (`/server`)
+## Server (`/server`)
 
-Este é o backend Cloudflare Worker que executa sua lógica de agente.
+Seu servidor MCP roda como um Cloudflare Worker e expõe tools e workflows.
 
-### `main.ts`
+### `main.ts` - Lógica Principal do Servidor
 
-O módulo de entrada para seu Cloudflare Worker. Aqui você importará o runtime da plataforma deco e registrará suas Ferramentas e Fluxos de Trabalho. Pense nisso como o "cérebro" do seu backend de agente. Por exemplo, você pode usar `withRuntime` de `@deco/workers-runtime` para criar um Worker que conhece suas ferramentas/fluxos de trabalho e também serve os assets frontend.
+O entry point principal importa de arquivos separados para organização:
 
-### `deco.gen.ts`
+```typescript
+import { withRuntime } from "@deco/workers-runtime";
+import { tools } from "./tools.ts";
+import { workflows } from "./workflows.ts";
+import { views } from "./views.ts";
 
-Este arquivo é gerado automaticamente pelo CLI (comando `deco gen` ou `npm run gen`). Ele contém tipos TypeScript para todas as integrações (APIs externas) que você conectou em seu workspace deco, bem como tipos para suas próprias ferramentas/fluxos de trabalho se você executar `gen:self`. Em resumo, fornece uma interface fortemente tipada para chamar qualquer integração do seu código. **Não edite este arquivo manualmente.** Regenera-o sempre que adicionar novas integrações ou alterar suas ferramentas.
+const runtime = withRuntime<Env, typeof StateSchema>({
+  oauth: {
+    scopes: ["AI_GENERATE", "AI_GENERATE_OBJECT"],
+    state: StateSchema,
+  },
+  views,
+  workflows,
+  tools,
+  fetch: fallbackToView("/"), // Serves React app assets
+});
 
-### `wrangler.toml`
+export const Workflow = runtime.Workflow;
+export default runtime;
+```
 
-Configuração para implantação Cloudflare Workers. É onde seu nome de script, ID da conta, vinculações de namespace KV, vinculações de objeto durável, etc., são definidos. Por exemplo, se seu aplicativo precisa de segredos de ambiente ou usa o armazenamento KV para a Base de Conhecimento, esses seriam referenciados aqui. O `wrangler.toml` em um projeto deco tipicamente é pré-configurado para servir os assets frontend construídos (via configuração `[site]` ou `[assets]`) e usar as flags de compatibilidade apropriadas.
+### `tools.ts` - Definições de Tools
 
-### Outros arquivos
+Todas as suas tools em um arquivo organizado:
 
-ex: um `package.json` para dependências do servidor (como o runtime deco, Mastra, etc.), ou módulos utilitários que você adiciona.
+```typescript
+import { createTool, createPrivateTool } from "@deco/workers-runtime/mastra";
 
-## Diretório View (`/view`)
+export const createListTodosTool = (env: Env) =>
+  createTool({
+    id: "LIST_TODOS",
+    description: "List all todos",
+    inputSchema: z.object({}),
+    outputSchema: z.object({
+      todos: z.array(z.object({
+        id: z.number(),
+        title: z.string().nullable(),
+        completed: z.boolean(),
+      })),
+    }),
+    execute: async () => {
+      const db = await getDb(env);
+      const todos = await db.select().from(todosTable);
+      return { todos };
+    },
+  });
 
-Este contém o frontend web (se seu aplicativo tem uma UI personalizada). É uma aplicação React padrão estruturada com Vite e Tailwind CSS.
+export const tools = [
+  createListTodosTool,
+  // ... other tools
+];
+```
 
-### `src/main.tsx`
+### `workflows.ts` - Definições de Workflows
 
-O ponto de entrada React. Ele configura o router do lado do cliente (usando TanStack Router no template) e renderiza o App. Provavelmente importa todas as definições de rota e estabelece o contexto `<Router>`.
+Processos complexos de múltiplos passos:
 
-### `src/lib/rpc.ts`
+```typescript
+import { createWorkflow, createStepFromTool } from "@deco/workers-runtime/mastra";
 
-**Importante** – este arquivo cria um cliente RPC que permite que seu frontend chame Ferramentas e Fluxos de Trabalho do backend facilmente. Ele usa os tipos de `deco.gen.ts` para garantir que você chame coisas com os parâmetros corretos. Por exemplo, você pode ver:
+const createMyWorkflow = (env: Env) => {
+  const step = createStepFromTool(createMyTool(env));
+  
+  return createWorkflow({
+    id: "MY_WORKFLOW",
+    inputSchema: z.object({ name: z.string() }),
+    outputSchema: z.object({ message: z.string() }),
+  })
+    .then(step)
+    .commit();
+};
 
-```ts
+export const workflows = [createMyWorkflow];
+```
+
+### `views.ts` - Configurações de Views
+
+Apps React externos que podem ser instalados com seu MCP:
+
+```typescript
+export const views = () => [
+  {
+    title: "My App",
+    icon: "dashboard",
+    url: "https://my-app.deco.page",
+  },
+];
+```
+
+### `deco.gen.ts` - Tipos Gerados
+
+Tipos TypeScript auto-gerados para integrações. **Nunca edite manualmente.**
+
+```bash
+# Regenerar após adicionar integrações
+npm run gen
+
+# Gerar tipos para suas próprias tools
+npm run gen:self
+```
+
+### `schema.ts` - Schema do Banco de Dados
+
+Defina suas tabelas do banco usando Drizzle ORM:
+
+```typescript
+import { integer, sqliteTable, text } from "@deco/workers-runtime/drizzle";
+
+export const todosTable = sqliteTable("todos", {
+  id: integer("id").primaryKey(),
+  title: text("title"),
+  completed: integer("completed").default(0),
+});
+```
+
+### `db.ts` - Helper do Banco
+
+Helper de conexão do banco de dados:
+
+```typescript
+import { getDatabase } from "@deco/workers-runtime/drizzle";
+import type { Env } from "./main.ts";
+import * as schema from "./schema.ts";
+
+export const getDb = (env: Env) => getDatabase(env, schema);
+```
+
+### `wrangler.toml` - Configuração
+
+Configuração do Cloudflare Workers:
+
+```toml
+name = "my-mcp-project"
+main = "main.ts"
+compatibility_date = "2025-06-17"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./view-build"
+binding = "ASSETS"
+
+[deco]
+workspace = "deco.cx"
+bindings = []
+enable_workflows = true
+
+[durable_objects]
+[[durable_objects.bindings]]
+name = "DECO_CHAT_WORKFLOW_DO"
+class_name = "Workflow"
+```
+
+<Callout type="info">
+  Integrações adicionadas via `deco add` atualizam automaticamente este arquivo.
+</Callout>
+
+## View (`/view`)
+
+O diretório view contém um app React construído com Vite e TanStack Router.
+
+### Estrutura do App
+
+```
+view/src/
+├── main.tsx            # App entry point with router setup
+├── routes/             # Page components
+│   ├── home.tsx       # Homepage route
+│   └── profile.tsx    # Profile route
+├── components/         # Reusable UI components
+│   ├── ui/            # shadcn/ui components
+│   └── error-boundary.tsx
+├── lib/               # Utilities and RPC client
+│   ├── rpc.ts         # Typed RPC client for calling tools
+│   ├── hooks.ts       # Custom React hooks
+│   └── utils.ts       # Utility functions
+└── styles.css         # Tailwind CSS styles
+```
+
+### Cliente RPC
+
+Chame suas tools backend com total segurança de tipos:
+
+```typescript
+// view/src/lib/rpc.ts
 import { createClient } from "@deco/workers-runtime/client";
 import type { Env } from "../../server/deco.gen.ts";
+
 type SelfMCP = Env["SELF"];
 export const client = createClient<SelfMCP>();
 ```
 
-Isso configura um objeto cliente onde, se você tem uma ferramenta `HELLO_TOOL` como definido anteriormente, você pode fazer `await client.tools.HELLO_TOOL({ name: "Alice" })` do seu código React, e ele chamará a ferramenta do Worker e retornará o resultado. Não há necessidade de escrever chamadas fetch ou endpoints de API – o runtime deco lida com isso via chamadas RPC para o Worker.
+### Componentes de Rota
 
-### `src/routes/` e `src/components/`
+Crie páginas usando TanStack Router:
 
-As páginas UI do seu aplicativo e blocos de construção. O template usa uma abordagem de router baseada em arquivos – cada arquivo em `routes/` exporta uma definição de rota. Por exemplo, você pode ter uma rota `agents.tsx` que mostra uma lista de agentes ou uma interface de chat. A biblioteca de roteamento (TanStack Router) permite definir rotas filhas e layouts. A estilização UI é feita com classes Tailwind CSS em JSX.
+```typescript
+// view/src/routes/home.tsx
+import { createRoute } from "@tanstack/react-router";
+import { client } from "../lib/rpc";
 
-### Assets estáticos
+export default (parentRoute) => createRoute({
+  getParentRoute: () => parentRoute,
+  path: "/",
+  component: HomePage,
+});
 
-O `index.html` e quaisquer assets públicos são usados pelo Vite para construir seu aplicativo. Em última análise, os arquivos construídos serão servidos pelo Cloudflare Worker (o Worker é configurado para fazer fallback para servir a visualização quando nenhuma rota de API corresponde). O servidor de desenvolvimento serve estes separadamente, mas em produção é unificado.
+function HomePage() {
+  const handleListTodos = async () => {
+    const todos = await client.tools.LIST_TODOS({});
+    console.log(todos);
+  };
 
-## Arquitetura Unificada
+  return (
+    <div>
+      <h1>My App</h1>
+      <button onClick={handleListTodos}>Load Todos</button>
+    </div>
+  );
+}
+```
 
-Um aspecto poderoso: **o servidor serve tanto endpoints de API quanto o frontend.** Durante o desenvolvimento, `npm run dev` executa o Worker em localhost:8787 que serve API (no caminho `/mcp`, etc.) e também faz proxy do servidor de desenvolvimento Vite para a UI. Em produção, após implantar, seu Cloudflare Worker em si serve os arquivos estáticos. Isso é habilitado pelo `fallbackToView("/")` do runtime deco em `main.ts`, que captura requisições para arquivos HTML e assets estáticos. Praticamente, isso significa que todo seu aplicativo (frontend + backend) está contido em uma única implantação Cloudflare Worker – tornando muito fácil implantar e hospedar.
 
-**Para resumir:** **Escreva sua lógica de servidor em `server/main.ts` (defina ferramentas, fluxos de trabalho, integre com APIs externas), e construa sua UI no diretório view (componentes React chamando essas ferramentas).** O CLI e runtime irão conectá-los e fazer tudo funcionar para você.
+### O que é Deployado
+
+- **Servidor MCP**: Disponível no endpoint `/mcp` para agentes de IA
+- **App React**: Interface web pública para suas tools
+- **Banco de Dados**: Banco SQLite com dados isolados do workspace  
+- **Integrações**: Tokens OAuth e credenciais de API (criptografadas)
+
+<Callout type="warning">
+  Apps React são públicos por padrão. Adicione autenticação para funcionalidades privadas.
+</Callout>
+

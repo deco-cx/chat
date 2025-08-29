@@ -1,16 +1,16 @@
 ---
-title: Building Views
-description: Learn how to build custom React frontends in deco.chat
+title: Construindo Views
+description: Aprenda como construir frontends React customizados no deco.chat
 icon: Globe
 ---
 
 import Callout from "../../../components/ui/Callout.astro";
 
-Views provide custom user interfaces for your MCP servers. Create web dashboards, forms, or any React application that can call your tools and workflows directly.
+Views fornecem interfaces de usuário customizadas para seus servidores MCP. Crie dashboards web, formulários ou qualquer aplicação React que possa chamar suas tools e workflows diretamente.
 
-## Register Views
+## Registrar Views
 
-Declare views in your MCP server to make them discoverable:
+Declare views no seu servidor MCP para torná-las detectáveis:
 
 ```typescript
 // server/main.ts
@@ -31,12 +31,12 @@ const { Workflow, ...runtime } = withRuntime<Env>({
 ```
 
 <Callout type="info">
-  Views are declared as a function returning an array of view configurations.
+  Views são declaradas como uma função que retorna um array de configurações de view.
 </Callout>
 
-## RPC Client
+## Cliente RPC
 
-Views call your MCP tools and workflows using a typed RPC client in `src/lib/rpc.ts`:
+Views chamam suas tools e workflows MCP usando um cliente RPC tipado em `src/lib/rpc.ts`:
 
 ```typescript
 import { createClient } from "@deco/workers-runtime/client";
@@ -46,7 +46,7 @@ type SelfMCP = Env["SELF"];
 export const client = createClient<SelfMCP>();
 ```
 
-### Calling Tools and Workflows
+### Chamando Tools e Workflows
 
 ```typescript
 import { client } from "../lib/rpc";
@@ -77,26 +77,26 @@ function MyComponent() {
 }
 ```
 
-The RPC client handles routing to your Worker's MCP endpoint automatically, with full TypeScript support from your generated types.
+O cliente RPC lida com roteamento para o endpoint MCP do seu Worker automaticamente, com suporte completo ao TypeScript dos seus tipos gerados.
 
-### Type Generation
+### Geração de Tipos
 
-When you add new tools or workflows, update your view types:
+Quando você adiciona novas tools ou workflows, atualize os tipos da sua view:
 
 ```bash
-npm run gen      # Update integration types
-npm run gen:self # Update your own tool types
+npm run gen      # Atualizar tipos de integração
+npm run gen:self # Atualizar tipos das suas próprias tools
 ```
 
-This ensures `client.tools` and `client.workflows` have the latest methods with full TypeScript validation.
+Isso garante que `client.tools` e `client.workflows` tenham os métodos mais recentes com validação completa do TypeScript.
 
-## Routing
+## Roteamento
 
-Views use **TanStack Router** for type-safe routing. Create route components and organize them in the route tree:
+Views usam **TanStack Router** para roteamento type-safe. Crie componentes de rota e organize-os na árvore de rotas:
 
-### Adding Routes
+### Adicionando Rotas
 
-1. Create a route file in `src/routes/`:
+1. Crie um arquivo de rota em `src/routes/`:
 
 ```typescript
 // src/routes/my-page.tsx
@@ -113,12 +113,12 @@ function MyPageComponent() {
 }
 ```
 
-2. Import and register in `src/main.tsx`:
+2. Importe e registre em `src/main.tsx`:
 
 ```typescript
 import myPageRoute from "./routes/my-page";
 
-// Add to route tree
+// Adicionar à árvore de rotas
 const routeTree = rootRoute.addChildren([
   indexRoute,
   myPageRoute(rootRoute),
@@ -127,5 +127,5 @@ const routeTree = rootRoute.addChildren([
 
 
 <Callout type="warning">
-  Views are publicly accessible by default. Implement authentication if you need access control.
+  Views são publicamente acessíveis por padrão. Implemente autenticação se precisar de controle de acesso.
 </Callout>
