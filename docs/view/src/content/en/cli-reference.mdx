@@ -4,87 +4,42 @@ description: Complete reference for the deco.chat CLI commands
 icon: Terminal
 ---
 
-The **deco CLI** is your friend for managing projects and deployment. Here are some commonly used commands:
+Essential deco CLI commands for project management and deployment.
 
-## Authentication Commands
-
-Authenticate with deco.chat (prompts for your credentials). Do this once to allow the CLI to act on behalf of your account:
+## Authentication
 
 ```bash
-deco login
-```
-
-Log out of the CLI, or check which account is currently logged in:
-
-```bash
-deco logout
-deco whoami
+deco login      # Authenticate with deco.chat
+deco logout     # Log out of CLI
+deco whoami     # Check current account
 ```
 
 ## Project Management
 
-Initialize a new deco.chat app. This sets up boilerplate code in the current directory (or a new directory) using a chosen template. It's the easiest way to start a project without manual configuration:
-
 ```bash
-deco create
+deco create     # Create new project from template
+deco configure  # Link project to workspace
 ```
 
-Set or update the workspace/app configuration for the current project. If you didn't configure during init, run this to link your local code with a deco.chat workspace and application name:
+## Development
 
 ```bash
-deco configure
+npm run dev                              # Start local development
+deco link                                # Expose local server to public URL
 ```
 
-## Development Commands
+Use `deco link` to connect external AI clients (Cursor, Claude Desktop) to your local MCP server.
 
-_(Coming soon)_ Run your app in development mode. In practice, you will usually run `npm run dev`, which under the hood starts both the local Worker and frontend. A future CLI version may include `deco dev` to streamline this, but currently you use the `deco link` command for remote dev access (see below).
+## Deployment
 
 ```bash
-npm run dev
+deco deploy     # Deploy to Cloudflare Workers
 ```
 
-Expose your local dev server to a temporary public URL. This is useful if you want to connect an external AI client (like the Cursor IDE or Claude Desktop) to your locally running MCP server. It effectively tunnels your `npm run dev` server so that cloud-based LLMs can reach it. Usage: `deco link npm run dev` (the CLI will run your dev command and provide a URL):
+
+## Utilities
 
 ```bash
-deco link npm run dev
+deco update     # Update CLI to latest version
+deco --help     # Show all commands
 ```
-
-## Deployment Commands
-
-Deploy your application to Cloudflare Workers. This command bundles your code and uploads it to your Cloudflare account (using the config in `wrangler.toml`). You can specify `--workspace` and `--app` flags if you have multiple, but usually the CLI knows your current project settings.
-
-```bash
-deco deploy
-```
-
-## Type Generation Commands
-
-- **`deco gen`:** Generate types for external integrations. This updates your `deco.gen.ts` file with typed interfaces for all the integrations you've connected in your deco workspace.
-
-```bash
-npm run gen
-```
-
-- **`deco gen:self`:** Generate types for your own tools and workflows. This creates typed RPC interfaces for your own server's tools/workflows. Run this after adding new tools or workflows to your server.
-
-```bash
-DECO_SELF_URL=<your-dev-url> npm run gen:self
-```
-
-## Utility Commands
-
-- **`deco update`:** Update the CLI to the latest version (handy to get new features).
-
-```bash
-deco update
-```
-
-## Getting Help
-
-- **`deco --help`:** Show all available commands and their usage.
-
-```bash
-deco --help
-```
-
-For a full list of commands, see the CLI documentation or run `deco --help`. The CLI covers additional topics like listing deployments, environment setup, etc. It's constantly evolving.

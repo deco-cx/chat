@@ -29,9 +29,9 @@ import { Accordion } from "../../../components/ui/Accordion";
 
 <AccordionGroup>
   <Accordion title="How do I add a new tool?" icon="Wrench" client:load>
-    1. Define the tool in `server/main.ts` using `createTool`
-    2. Add it to the `withRuntime` tools array
-    3. Run `npm run gen` to update types
+    1. Define the tool in `server/tools.ts` using `createTool`
+    2. Add it to the `tools` array
+    3. Run `npm run gen:self` to update types
     4. Test it via the deco UI or RPC client
   </Accordion>
 
@@ -42,7 +42,7 @@ import { Accordion } from "../../../components/ui/Accordion";
   </Accordion>
 
   <Accordion title="How do I deploy my app?" icon="Rocket" client:load>
-    Run `deco deploy` to deploy to Cloudflare Workers. The CLI will handle building and publishing.
+    Run `npm run deploy` to build and deploy to Cloudflare Workers.
   </Accordion>
 
   <Accordion title="How do I debug my workflows?" icon="Bug" client:load>
@@ -90,10 +90,10 @@ import { Accordion } from "../../../components/ui/Accordion";
 
 <AccordionGroup>
   <Accordion title="My tool isn't working" icon="AlertCircle" client:load>
-    1. Check that it's registered in `withRuntime`
+    1. Check that it's in the `tools` array
     2. Verify your Zod schemas
     3. Check the logs for errors
-    4. Ensure you ran `npm run gen` after changes
+    4. Ensure you ran `npm run gen:self` after changes
   </Accordion>
 
   <Accordion title="My workflow isn't executing" icon="AlertTriangle" client:load>

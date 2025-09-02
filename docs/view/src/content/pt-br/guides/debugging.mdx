@@ -1,16 +1,16 @@
 ---
 title: Debugging
-description: Common issues and debugging strategies for deco.chat development
+description: Problemas comuns e estratégias de debugging para desenvolvimento deco.chat
 icon: Bug
 ---
 
 import Callout from "../../../components/ui/Callout.astro";
 
-Common debugging strategies and solutions for building AI agents and workflows.
+Estratégias comuns de debugging e soluções para construir agentes de IA e workflows.
 
 ## Logging
 
-Use `console.log` extensively in your tools and workflows:
+Use `console.log` extensivamente nas suas tools e workflows:
 
 ```typescript
 execute: async ({ inputData }) => {
@@ -21,33 +21,33 @@ execute: async ({ inputData }) => {
 }
 ```
 
-**Local development**: Logs appear in your terminal during `npm run dev`
-**Production**: Use `wrangler tail` or Cloudflare dashboard → Workers → Logs
+**Desenvolvimento local**: Logs aparecem no seu terminal durante `npm run dev`
+**Produção**: Use `wrangler tail` ou dashboard Cloudflare → Workers → Logs
 
 <Callout type="warning">
-  Don't log sensitive information in production.
+  Não registre informações sensíveis em produção.
 </Callout>
 
-## Type Errors
+## Erros de Tipo
 
-Most TypeScript errors come from outdated generated types:
+A maioria dos erros TypeScript vem de tipos gerados desatualizados:
 
 ```bash
-npm run gen      # After adding integrations
-npm run gen:self # After adding tools/workflows
+npm run gen      # Após adicionar integrações
+npm run gen:self # Após adicionar tools/workflows
 ```
 
-Common issues:
-- Tool not appearing in `client.tools` → Run `gen:self`
-- Integration undefined → Check integration setup, run `gen`
-- Schema mismatches → Ensure Zod schemas match TypeScript types
+Problemas comuns:
+- Tool não aparece em `client.tools` → Execute `gen:self`
+- Integração undefined → Verifique setup da integração, execute `gen`
+- Schemas não coincidem → Garanta que schemas Zod coincidem com tipos TypeScript
 
-## Integration Errors
+## Erros de Integração
 
-When external API calls fail:
+Quando chamadas de API externa falham:
 
-1. **Check integration setup**: Connected in deco.chat UI?
-2. **Verify credentials**: API keys valid and not expired?
+1. **Verifique setup da integração**: Conectada na UI do deco.chat?
+2. **Verifique credenciais**: Chaves de API válidas e não expiradas?
 3. **Check environment**: Integration available in `env` object?
 4. **Examine API response**: Log error status codes (401, 400, etc.)
 
