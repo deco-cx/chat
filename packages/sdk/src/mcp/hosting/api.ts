@@ -149,9 +149,8 @@ interface UpdateDatabaseArgs {
   workspace: string;
   scriptSlug: string;
   deploymentId: string;
-  result: DeployResult;
+  cloudflareDeploymentId: string;
   wranglerConfig: WranglerConfig;
-  force?: boolean;
   files?: Record<string, string>;
 }
 
@@ -160,9 +159,8 @@ async function updateDatabase({
   workspace,
   scriptSlug,
   deploymentId,
-  result,
+  cloudflareDeploymentId,
   wranglerConfig,
-  force,
 }: UpdateDatabaseArgs) {
   // First, ensure the app exists (without deployment-specific data)
   let { data: app, error: updateError } = await c.db
@@ -205,7 +203,7 @@ async function updateDatabase({
     .insert({
       id: deploymentId,
       hosting_app_id: app.id,
-      cloudflare_deployment_id: result.id, // Store Cloudflare worker ID separately
+      cloudflare_deployment_id: cloudflareDeploymentId, // Store Cloudflare worker ID separately
       // TODO (@mcandeia) files should be stored in R2 instead.
       // files,
       updated_at: new Date().toISOString(),
@@ -223,12 +221,15 @@ async function updateDatabase({
     route_pattern: r.pattern,
     custom_domain: r.custom_domain,
   }));
+  // PRECISA
+  // fazer HOSTING_APP_ID ser uma FK pra HOSTING_APPS
+  // so adicionar custom domains que mudaram
 
-  // 1. Fetch current routes for this deployment
+  // 1. Fetch current routes for this app
   const { data: currentRoutes, error: fetchRoutesError } = await c.db
     .from(DECO_CHAT_HOSTING_ROUTES_TABLE)
     .select("id, route_pattern, custom_domain")
-    .eq("deployment_id", deployment.id);
+    .eq("hosting_app_id", app.id);
   if (fetchRoutesError) throw fetchRoutesError;
 
   // 2. Build sets for diffing
@@ -267,47 +268,20 @@ async function updateDatabase({
   }
 
   // 6. Handle route insertions/updates
+  // Only accept custom domains, insert with deploymentId for tracking (routing ignores deploymentId)
   if (toInsert.length > 0) {
-    // Separate custom domains from regular routes
+    // Filter to only custom domains - we don't accept regular routes anymore
     const customDomainRoutes = toInsert.filter((r) => r.custom_domain);
-    const regularRoutes = toInsert.filter((r) => !r.custom_domain);
 
-    // For custom domains, use the promote functionality (update existing routes only)
-
-    await Promise.all(
-      customDomainRoutes.map(async (route) => {
-        try {
-          await promoteDeployment(c, {
-            deploymentId: deployment.id,
-            routePattern: route.route_pattern,
-            force,
-          });
-        } catch (error) {
-          // If route doesn't exist, create it (only during initial deployment)
-          if (error instanceof NotFoundError) {
-            const { error: insertError } = await c.db
-              .from(DECO_CHAT_HOSTING_ROUTES_TABLE)
-              .insert({
-                deployment_id: deployment.id,
-                route_pattern: route.route_pattern,
-                custom_domain: true,
-              });
-            if (insertError) throw insertError;
-          } else {
-            throw error;
-          }
-        }
-      }),
-    );
-    // For regular routes (non-custom domains), just insert them in batch
-    if (regularRoutes.length > 0) {
+    if (customDomainRoutes.length > 0) {
       const { error: insertError } = await c.db
         .from(DECO_CHAT_HOSTING_ROUTES_TABLE)
         .insert(
-          regularRoutes.map((r) => ({
-            deployment_id: deployment.id,
+          customDomainRoutes.map((r) => ({
+            hosting_app_id: app.id,
+            deployment_id: deployment.id, // Track which deployment added this domain
             route_pattern: r.route_pattern,
-            custom_domain: false,
+            custom_domain: true,
           })),
         );
       if (insertError) throw insertError;
@@ -317,11 +291,11 @@ async function updateDatabase({
   return Mappers.toApp(app);
 }
 
-// Promote a deployment to a route pattern
+// Promote a deployment to a route pattern (still useful for non-Durable Object apps)
 export const promoteApp = createTool({
   name: "HOSTING_APPS_PROMOTE",
   description:
-    "Promote a specific deployment to an existing route pattern and update routing cache",
+    "Promote a specific deployment to an existing route pattern and update routing cache. Note: This won't work properly for apps using Durable Objects as it changes the script target.",
   inputSchema: z.object({
     deploymentId: z.string().describe("The deployment ID to promote"),
     routePattern: z
@@ -399,7 +373,7 @@ const createNamespaceOnce = async (c: AppContext) => {
       name: env.CF_DISPATCH_NAMESPACE,
       account_id: env.CF_ACCOUNT_ID,
     })
-    .catch(() => {});
+    .catch(() => { });
 };
 
 // main.ts or main.mjs or main.js or main.cjs
@@ -715,12 +689,11 @@ Important Notes:
       const wranglerFile = CONFIGS.find((file) => file in filesRecord);
       const wranglerConfig: WranglerConfig = wranglerFile
         ? (parseToml(
-            filesRecord[wranglerFile]?.content,
-            // deno-lint-ignore no-explicit-any
-          ) as any as WranglerConfig)
+          filesRecord[wranglerFile]?.content,
+          // deno-lint-ignore no-explicit-any
+        ) as any as WranglerConfig)
         : ({ name: _appSlug } as WranglerConfig);
 
-      addDefaultCustomDomain(wranglerConfig);
       // check if the entrypoint is in the files
       const entrypoints = [
         ...ENTRYPOINTS,
@@ -776,11 +749,11 @@ Important Notes:
 
       const keyPair =
         c.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY &&
-        c.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY
+          c.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY
           ? {
-              public: c.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY,
-              private: c.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY,
-            }
+            public: c.envVars.DECO_CHAT_API_JWT_PUBLIC_KEY,
+            private: c.envVars.DECO_CHAT_API_JWT_PRIVATE_KEY,
+          }
           : undefined;
 
       const issuer = await JwtIssuer.forKeyPair(keyPair);
@@ -801,7 +774,7 @@ Important Notes:
         DECO_CHAT_APP_SLUG: scriptSlug,
         DECO_CHAT_APP_NAME: appName,
         DECO_CHAT_APP_DEPLOYMENT_ID: deploymentId,
-        DECO_CHAT_APP_ENTRYPOINT: Entrypoint.build(scriptSlug, deploymentId),
+        DECO_CHAT_APP_ENTRYPOINT: Entrypoint.build(scriptSlug, deploymentId), // Keep deployment-specific for tracking
       };
 
       await Promise.all(
@@ -812,19 +785,38 @@ Important Notes:
         ),
       );
 
-      const result = await deployToCloudflare({
-        c,
-        wranglerConfig,
-        mainModule: bundle ? SCRIPT_FILE_NAME : entrypoint,
-        deploymentId,
-        bundledCode,
-        assets: assetFiles,
-        _envVars: { ...envVars, ...appEnvVars },
-      });
+      const deploy = async (deploymentId?: string) => {
+        return await deployToCloudflare({
+          c,
+          wranglerConfig,
+          mainModule: bundle ? SCRIPT_FILE_NAME : entrypoint,
+          deploymentId, // Deploy to deployment-specific script first
+          bundledCode,
+          assets: assetFiles,
+          _envVars: { ...envVars, ...appEnvVars },
+        });
+      }
+
+      // STEP 1: Deploy to deployment-specific script for testing/validation
+      await deploy(deploymentId);
+
+      // STEP 2: Check for breaking changes against deployment-specific script
+      if (!force) {
+        const currentMainUrl = Entrypoint.build(scriptSlug);
+        const newDeploymentUrl = Entrypoint.build(scriptSlug, deploymentId);
+        await assertsNoMCPBreakingChanges(c, {
+          from: Entrypoint.mcp(currentMainUrl),
+          to: Entrypoint.mcp(newDeploymentUrl),
+        });
+      }
+
+      // STEP 3: If no breaking changes, deploy to main script to preserve Durable Object state
+      const productionDeployment = await deploy();
+
       const client = MCPClient.forContext(c);
 
       await Promise.all(
-        (result.contracts ?? []).map((contract) => {
+        (productionDeployment.contracts ?? []).map((contract) => {
           return client.CONTRACT_REGISTER({
             contract,
             author: {
@@ -837,10 +829,9 @@ Important Notes:
 
       const data = await updateDatabase({
         c,
-        force,
         workspace,
         scriptSlug,
-        result,
+        cloudflareDeploymentId: productionDeployment.id!, // Use deployment-specific result for tracking
         deploymentId,
         wranglerConfig,
         files: codeFiles,
@@ -858,7 +849,7 @@ Important Notes:
           unlisted: isUnlisted,
           connection: Entrypoint.mcp(data.entrypoint),
         })
-        .catch((err) => {
+        .catch((err: unknown) => {
           console.error("publish error", err);
           if (!isUnlisted) {
             throw err;
@@ -866,7 +857,7 @@ Important Notes:
         });
       return {
         entrypoint: data.entrypoint,
-        hosts: [data.entrypoint, Entrypoint.build(data.slug!, deploymentId)],
+        hosts: [data.entrypoint, Entrypoint.build(data.slug!, deploymentId)], // Keep both for tracking
         id: data.id,
         workspace: data.workspace,
         deploymentId,
@@ -1454,18 +1445,6 @@ export const getWorkflowStatus = createTool({
   },
 });
 
-function addDefaultCustomDomain(wranglerConfig: WranglerConfig) {
-  const latest = Entrypoint.host(wranglerConfig.name);
-  const routes = wranglerConfig.routes ?? [];
-  wranglerConfig.routes = [
-    {
-      pattern: latest,
-      custom_domain: true,
-    },
-    ...routes.filter((r) => r.pattern !== latest),
-  ];
-}
-
 /**
  * Promote a specific deployment to an existing custom domain route pattern
  */
@@ -1516,7 +1495,7 @@ export async function promoteDeployment(
   // Update the existing route to point to the new deployment
   const { data: updatedRoute, error: updateError } = await c.db
     .from(DECO_CHAT_HOSTING_ROUTES_TABLE)
-    .update({ deployment_id: deploymentId })
+    .update({ deployment_id: deploymentId, hosting_app_id: deployment.hosting_app_id })
     .eq("route_pattern", routePattern)
     .eq("custom_domain", true)
     .select("id")

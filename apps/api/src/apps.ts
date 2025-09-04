@@ -78,6 +78,9 @@ app.all("/*", async (c: Context<AppEnv>) => {
     }
     const deployment = data?.deco_chat_hosting_apps_deployments;
     const slug = deployment?.deco_chat_hosting_apps?.slug;
+    if (data?.hosting_app_id && slug) { // route to $name.deco.page
+      return slug;
+    }
     const deploymentId = deployment?.id;
     if (!slug || !deploymentId) {
       throw new Error("No slug or deployment ID found");

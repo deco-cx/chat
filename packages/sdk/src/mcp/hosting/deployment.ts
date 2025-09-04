@@ -243,7 +243,7 @@ export async function deployToCloudflare({
   c: AppContext;
   wranglerConfig: WranglerConfig;
   mainModule: string;
-  deploymentId: string;
+  deploymentId: string | null; // CHANGED: Allow null to deploy to main script
   bundledCode: Record<string, File>;
   assets: Record<string, string>;
   _envVars?: Record<string, string>;
@@ -259,7 +259,9 @@ export async function deployToCloudflare({
     throw new Error("CF_ZONE_ID is not set");
   }
 
-  const scriptSlug = Entrypoint.id(wranglerName, deploymentId);
+  // CHANGED: Deploy to main script name when deploymentId is null
+  // This preserves Durable Object state across deployments
+  const scriptSlug = deploymentId ? Entrypoint.id(wranglerName, deploymentId) : wranglerName;
   await Promise.all(
     (routes ?? []).map(
       (route) =>
@@ -344,11 +346,11 @@ export async function deployToCloudflare({
     })) ?? []),
     ...(wranglerAssetsConfig?.binding && hasAssets
       ? [
-          {
-            type: "assets" as const,
-            name: wranglerAssetsConfig.binding,
-          },
-        ]
+        {
+          type: "assets" as const,
+          name: wranglerAssetsConfig.binding,
+        },
+      ]
       : []),
   ];
 
