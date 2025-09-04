@@ -111,7 +111,7 @@ function Projects({ query }: { query?: string }) {
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {teams.data?.map((team) => (
         <ProjectCard
           key={team.id}
@@ -162,7 +162,7 @@ Projects.Error = () => (
 Projects.Empty = () => (
   <div className="flex flex-col items-center justify-center mt-64 gap-4 p-8 w-full">
     <div className="text-sm text-muted-foreground text-center">
-        No projects found.
+      No projects found.
     </div>
   </div>
 );
@@ -173,22 +173,25 @@ function Home() {
   return (
     <div>
       <DecoDayBanner />
-      <div className="p-8 flex flex-col gap-4">
-        <div className="flex flex-col gap-4">
-          <h1 className="text-2xl font-bold">Projects</h1>
-          <Input
-            className="max-w-xs"
-            placeholder="Search projects..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="overflow-y-auto max-h-[calc(100vh-12rem)] pb-8">
-          <ErrorBoundary fallback={<Projects.Error />}>
-            <Suspense fallback={<Projects.Skeleton />}>
-              <Projects query={searchQuery} />
-            </Suspense>
-          </ErrorBoundary>
+      <div className="flex w-full h-full items-start">
+        <div className="w-[200px] h-screen bg-sidebar border-r border-border shrink-0" />
+        <div className="p-8 flex flex-col gap-4 w-full">
+          <div className="flex flex-col gap-4">
+            <h1 className="text-2xl font-semibold">Worksprojects</h1>
+            <Input
+              className="max-w-xs"
+              placeholder="Search projects..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="overflow-y-auto max-h-[calc(100vh-12rem)] pb-8">
+            <ErrorBoundary fallback={<Projects.Error />}>
+              <Suspense fallback={<Projects.Skeleton />}>
+                <Projects query={searchQuery} />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
         </div>
       </div>
     </div>

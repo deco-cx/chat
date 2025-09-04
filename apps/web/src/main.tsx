@@ -265,6 +265,10 @@ const router = createBrowserRouter([
     Component: PageviewTrackerLayout,
     children: [
       {
+        index: true,
+        Component: Home,
+      },
+      {
         path: "/login",
         Component: Login,
       },
@@ -288,10 +292,6 @@ const router = createBrowserRouter([
       {
         path: "/apps-auth",
         Component: AppAuth,
-      },
-      {
-        index: true,
-        Component: Home,
       },
       {
         path: "/:teamSlug?",

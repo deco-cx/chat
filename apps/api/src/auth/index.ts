@@ -25,7 +25,7 @@ const withDefaultProjectEnsuring = (next: string) => {
   const newUrl = new URL(ENSURE_DEFAULT_PROJECT_ENDPOINT, next);
   newUrl.searchParams.set("next", next);
   return newUrl.toString();
-}
+};
 
 const appAuth = new Hono();
 const appLogin = new Hono();
