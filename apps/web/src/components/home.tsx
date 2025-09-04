@@ -106,6 +106,10 @@ function ProjectCard({
 function Projects({ query }: { query?: string }) {
   const teams = useTeams({ searchQuery: query });
 
+  if (teams.data?.length === 0) {
+    return <Projects.Empty />;
+  }
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {teams.data?.map((team) => (
@@ -151,6 +155,14 @@ Projects.Error = () => (
       We couldn't load your projects right now.
       <br />
       Please try again later.
+    </div>
+  </div>
+);
+
+Projects.Empty = () => (
+  <div className="flex flex-col items-center justify-center mt-64 gap-4 p-8 w-full">
+    <div className="text-sm text-muted-foreground text-center">
+        No projects found.
     </div>
   </div>
 );
