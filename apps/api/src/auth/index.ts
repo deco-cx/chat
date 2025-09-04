@@ -19,6 +19,13 @@ import { assertPrincipalIsUser } from "./assertions.ts";
 import { AUTH_URL_CLI } from "../../../../packages/sdk/src/constants.ts";
 
 const AUTH_CALLBACK_OAUTH = "/auth/callback/oauth";
+const ENSURE_DEFAULT_PROJECT_ENDPOINT = "/ensure-default-project";
+
+const withDefaultProjectEnsuring = (next: string) => {
+  const newUrl = new URL(ENSURE_DEFAULT_PROJECT_ENDPOINT, next);
+  newUrl.searchParams.set("next", next);
+  return newUrl.toString();
+}
 
 const appAuth = new Hono();
 const appLogin = new Hono();
@@ -223,7 +230,8 @@ appAuth.all("/callback/oauth", async (ctx: AppContext) => {
 
     setHeaders(headers, ctx);
 
-    return ctx.redirect(next);
+    const uri = withDefaultProjectEnsuring(next);
+    return ctx.redirect(uri);
   } catch (e) {
     if (e instanceof Error) {
       return ctx.text(e.message, 400);
@@ -264,7 +272,8 @@ appAuth.all("/callback/magiclink", async (ctx: AppContext) => {
 
     setHeaders(headers, ctx);
 
-    return ctx.redirect(next);
+    const uri = withDefaultProjectEnsuring(next);
+    return ctx.redirect(uri);
   } catch (e) {
     if (e instanceof Error) {
       return ctx.text(e.message, 400);
@@ -282,6 +291,21 @@ appAuth.all("/logout", async (ctx: AppContext) => {
   const redirectUrl = url.searchParams.get("next") ?? "/";
 
   setHeaders(headers, ctx);
+
+  return ctx.redirect(redirectUrl);
+});
+
+async function assertUserHasDefaultProject(ctx: AppContext) {
+  const { db } = createDbAndHeadersForRequest(ctx);
+  const user = await db.auth.getUser();
+}
+
+appAuth.all("/ensure-default-project", async (ctx: AppContext) => {
+  const url = new URL(ctx.req.url);
+  const nextDefault = new URL("/", url.origin).toString();
+  const redirectUrl = url.searchParams.get("next") ?? nextDefault;
+
+  await assertUserHasDefaultProject(ctx);
 
   return ctx.redirect(redirectUrl);
 });

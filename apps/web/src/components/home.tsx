@@ -1,113 +1,184 @@
-import { DecoQueryClientProvider, Team, useTeams } from "@deco/sdk";
+import {
+  DecoQueryClientProvider,
+  Team,
+  useTeamMembers,
+  useTeams,
+} from "@deco/sdk";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Link } from "react-router";
 import { Avatar } from "./common/avatar";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
+import { DecoDayBanner } from "./common/event/deco-day";
+import { ErrorBoundary } from "../error-boundary";
+import { Input } from "@deco/ui/components/input.tsx";
 
 function HomeLayout({ children }: { children: React.ReactNode }) {
   return <DecoQueryClientProvider>{children}</DecoQueryClientProvider>;
 }
 
-const DECO_DAY_START_DATE = new Date("2025-09-08T14:00:00");
-const DECO_DAY_END_DATE = new Date("2025-09-08T18:00:00");
-
-const getDecoDayState = (): "upcoming" | "active" | "past" => {
-    const now = new Date();
-    if (now < DECO_DAY_START_DATE) {
-        return "upcoming";
-    }
-    if (now > DECO_DAY_END_DATE) {
-        return "past";
-    }
-    return "active";
-};
-
-function DecoDayBanner() {
-  const state = getDecoDayState();
-
+function Avatars({ teamId }: { teamId: number }) {
+  const members = useTeamMembers(teamId ?? null);
   return (
-    <div className="bg-primary text-primary-foreground">
-      <div className="container mx-auto px-4 py-2">
-        <h1 className="text-2xl font-bold">Deco Day {state}</h1>
-        <p className="text-sm">This is a test banner for the Deco Day event.</p>
-      </div>
+    <div className="flex items-center">
+      {members.data.members.slice(0, 4).map((member) => (
+        <Avatar
+          key={member.id}
+          url={member.profiles.metadata.avatar_url}
+          fallback={member.profiles.metadata.full_name}
+          shape="circle"
+          className="w-6 h-6 border border-border -ml-2 first:ml-0"
+          size="sm"
+        />
+      ))}
     </div>
   );
 }
 
-function Avatars({ team }: { team: Team }) {
-    return null;
-}
+Avatars.Skeleton = () => (
+  <div className="flex items-center">
+    <div className="h-6 w-6 bg-stone-200 rounded-full animate-pulse" />
+    <div className="h-6 w-6 bg-stone-200 rounded-full animate-pulse -ml-2" />
+    <div className="h-6 w-6 bg-stone-200 rounded-full animate-pulse -ml-2" />
+    <div className="h-6 w-6 bg-stone-200 rounded-full animate-pulse -ml-2" />
+  </div>
+);
 
-function ProjectCard({ name, slug, url, avatarUrl }: { name: string, slug: string, url: string, avatarUrl: string }) {
-    return (
-        <Link to={url} className="bg-stone-50 hover:bg-stone-100 transition-colors flex flex-col rounded-lg">
-            <div className="p-4 flex flex-col gap-4">
-                <div className="flex justify-between items-start">
-                    <Avatar 
-                        url={avatarUrl}
-                        fallback={slug}
-                        size="lg"
-                    />
-                    <Icon name="chevron_right" size={20} className="text-muted-foreground" />
-                </div>
-                <div className="flex flex-col gap-[2px]">
-                    <h3 className="text-sm text-muted-foreground">@{slug}</h3>
-                    <p className="font-medium">{name}</p>
-                </div>
-            </div>
-            <div className="p-4 border-t border-border">
-                <Avatars />
-            </div>
-        </Link>
-    );
-}
+const MemberCount = ({ teamId }: { teamId: number }) => {
+  const members = useTeamMembers(teamId ?? null);
+  return <div className="text-xs">{members.data.members.length} members</div>;
+};
 
-function Projects() {
-    const teams = useTeams();
-    console.log(teams.data);
-    return (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-8">
-            {teams.data?.map((team) => (
-                <ProjectCard 
-                  key={team.id} 
-                  name={team.name} 
-                  slug={team.slug} 
-                  url={`/${team.slug}`} 
-                  avatarUrl={team.avatar_url || ""} 
-                />
-            ))}
+MemberCount.Skeleton = () => (
+  <div className="h-4 w-8 bg-stone-200 rounded-md animate-pulse" />
+);
+
+function ProjectCard({
+  name,
+  slug,
+  url,
+  avatarUrl,
+  teamId,
+}: {
+  name: string;
+  slug: string;
+  url: string;
+  avatarUrl: string;
+  teamId: number;
+}) {
+  return (
+    <Link
+      to={url}
+      className="bg-stone-50 hover:bg-stone-100 transition-colors flex flex-col rounded-lg"
+    >
+      <div className="p-4 flex flex-col gap-4">
+        <div className="flex justify-between items-start">
+          <Avatar
+            url={avatarUrl}
+            fallback={slug}
+            size="lg"
+            objectFit="contain"
+          />
+          <Icon
+            name="chevron_right"
+            size={20}
+            className="text-muted-foreground"
+          />
         </div>
-    );
+        <div className="flex flex-col gap-[2px]">
+          <h3 className="text-sm text-muted-foreground">@{slug}</h3>
+          <p className="font-medium">{name}</p>
+        </div>
+      </div>
+      <div className="p-4 border-t border-border flex justify-between items-center">
+        <ErrorBoundary fallback={<div className="w-full h-8"></div>}>
+          <Suspense fallback={<Avatars.Skeleton />}>
+            <Avatars teamId={teamId} />
+          </Suspense>
+          <Suspense fallback={<MemberCount.Skeleton />}>
+            <MemberCount teamId={teamId} />
+          </Suspense>
+        </ErrorBoundary>
+      </div>
+    </Link>
+  );
 }
 
-Projects.Skeleton = () => {
+function Projects({ query }: { query?: string }) {
+  const teams = useTeams({ searchQuery: query });
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-8">
-        {Array.from({ length: 8 }).map((_, index) => (
-            <div key={index} className="bg-stone-50 hover:bg-stone-100 transition-colors flex flex-col rounded-lg animate-pulse">
-                <div className="p-4 flex flex-col gap-4">
-                    <div className="h-12 w-12 bg-stone-100 rounded-lg"></div>
-                    <div className="h-4 w-32 bg-stone-100 rounded-lg"></div>
-                    <div className="h-4 w-32 bg-stone-100 rounded-lg"></div>
-                </div>
-                <div className="p-4 border-t border-border">
-                    <div className="h-6 w-6 bg-stone-100 rounded-full"></div>
-                </div>
-            </div>
-        ))}
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      {teams.data?.map((team) => (
+        <ProjectCard
+          key={team.id}
+          name={team.name}
+          slug={team.slug}
+          url={`/${team.slug}`}
+          avatarUrl={team.avatar_url || ""}
+          teamId={team.id}
+        />
+      ))}
     </div>
   );
-};
+}
+
+Projects.Skeleton = () => (
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-8">
+    {Array.from({ length: 8 }).map((_, index) => (
+      <div
+        key={index}
+        className="bg-stone-50 hover:bg-stone-100 transition-colors flex flex-col rounded-lg animate-pulse"
+      >
+        <div className="p-4 flex flex-col gap-4">
+          <div className="h-12 w-12 bg-stone-100 rounded-lg"></div>
+          <div className="h-4 w-32 bg-stone-100 rounded-lg"></div>
+          <div className="h-4 w-32 bg-stone-100 rounded-lg"></div>
+        </div>
+        <div className="p-4 border-t border-border flex items-center">
+          <div className="h-6 w-6 bg-stone-100 rounded-full animate-pulse"></div>
+          <div className="h-6 w-6 bg-stone-100 rounded-full animate-pulse -ml-2"></div>
+          <div className="h-6 w-6 bg-stone-100 rounded-full animate-pulse -ml-2"></div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+Projects.Error = () => (
+  <div className="flex flex-col items-center justify-center mt-64 gap-4 p-8">
+    <Icon name="error" size={24} className="text-muted-foreground" />
+    <div className="text-sm text-muted-foreground text-center">
+      We couldn't load your projects right now.
+      <br />
+      Please try again later.
+    </div>
+  </div>
+);
 
 function Home() {
+  const [searchQuery, setSearchQuery] = useState("");
+
   return (
     <div>
       <DecoDayBanner />
-      <h1>Home</h1>
-      <Suspense fallback={<Projects.Skeleton />}>
-        <Projects />
-      </Suspense>
+      <div className="p-8 flex flex-col gap-4">
+        <div className="flex flex-col gap-4">
+          <h1 className="text-2xl font-bold">Projects</h1>
+          <Input
+            className="max-w-xs"
+            placeholder="Search projects..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="overflow-y-auto max-h-[calc(100vh-12rem)] pb-8">
+          <ErrorBoundary fallback={<Projects.Error />}>
+            <Suspense fallback={<Projects.Skeleton />}>
+              <Projects query={searchQuery} />
+            </Suspense>
+          </ErrorBoundary>
+        </div>
+      </div>
     </div>
   );
 }

@@ -26,13 +26,29 @@ import { useSDK } from "./store.tsx";
 import { MCPConnection } from "../models/index.ts";
 import { listIntegrations } from "../crud/mcp.ts";
 
-export const useTeams = () => {
-  return useSuspenseQuery({
+/**
+ * Hook to fetch teams - searching is done client-side for now.
+ */
+export const useTeams = (options: { searchQuery?: string } = {}) => {
+  const search = options.searchQuery ?? "";
+
+  const queryResult = useSuspenseQuery({
+    // Once filtering is done server-side, update the queryKey to KEYS.TEAMS(options.query)
     queryKey: KEYS.TEAMS(),
     queryFn: ({ signal }) => listTeams({ signal }),
     retry: (failureCount, error) =>
       error instanceof InternalServerError && failureCount < 2,
   });
+
+  if (search) {
+    queryResult.data = queryResult.data.filter(
+      (team) =>
+        team.name.toLowerCase().includes(search.toLowerCase()) ||
+        team.slug.toLowerCase().includes(search.toLowerCase()),
+    );
+  }
+
+  return queryResult;
 };
 
 export const useTeam = (slug: string = "") => {
