@@ -3,7 +3,34 @@ import type { Env } from "../main";
 import type { BlobInfo } from "./blobs";
 
 const BLOB_DO = "blob-1";
+async function streamToBase64(
+  stream: ReadableStream<Uint8Array>,
+): Promise<string> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
 
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) chunks.push(value);
+  }
+
+  // Flatten chunks into a single Uint8Array
+  const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+  const combined = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  // Convert Uint8Array → binary string → base64
+  let binary = "";
+  for (let i = 0; i < combined.length; i++) {
+    binary += String.fromCharCode(combined[i]);
+  }
+  return btoa(binary);
+}
 export const BranchId = {
   build(name: string, projectId: string) {
     return `${projectId}-${name}`;
@@ -160,7 +187,7 @@ export interface WatchOptions {
   pathFilter?: string;
 }
 
-/**
+/**q
  * File change event sent through the watch stream.
  */
 export interface FileChangeEvent {
@@ -603,7 +630,7 @@ export class Branch extends DurableObject<Env> {
     controller: ReadableStreamDefaultController<Uint8Array>,
     options: WatchOptions,
   ) {
-    if (!options.fromCtime) return;
+    if (typeof options.fromCtime !== "number") return;
 
     // Query patches newer than fromCtime
     const result = this.sql.exec(

@@ -65,6 +65,12 @@ import { genEnv } from "./commands/gen/gen.js";
 import { upgradeCommand } from "./commands/update/upgrade.js";
 import { updateCommand } from "./commands/update/update.js";
 import { addCommand } from "./commands/add/add.js";
+import {
+  mountCommand,
+  getCommand,
+  putCommand,
+  watchCommand,
+} from "./commands/deconfig/index.js";
 import { detectRuntime } from "./lib/runtime.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -416,6 +422,120 @@ const gen = new Command("gen")
     }
   });
 
+// Get command for deconfig
+const deconfigGet = new Command("get")
+  .description("Get a file from a deconfig branch.")
+  .argument("<path>", "File path to get")
+  .requiredOption("-b, --branch <branchName>", "Branch name")
+  .option("-o, --output <file>", "Output file (defaults to stdout)")
+  .action(async (path, options) => {
+    try {
+      await getCommand({
+        path,
+        branch: options.branch,
+        output: options.output,
+      });
+    } catch (error) {
+      console.error(
+        "❌ Get failed:",
+        error instanceof Error ? error.message : String(error),
+      );
+      process.exit(1);
+    }
+  });
+
+// Put command for deconfig
+const deconfigPut = new Command("put")
+  .description("Put a file to a deconfig branch.")
+  .argument("<path>", "File path to put")
+  .requiredOption("-b, --branch <branchName>", "Branch name")
+  .option("-f, --file <file>", "Local file to upload")
+  .option("-c, --content <content>", "Content to upload")
+  .option("-m, --metadata <metadata>", "Metadata JSON string")
+  .action(async (path, options) => {
+    try {
+      await putCommand({
+        path,
+        branch: options.branch,
+        file: options.file,
+        content: options.content,
+        metadata: options.metadata,
+      });
+    } catch (error) {
+      console.error(
+        "❌ Put failed:",
+        error instanceof Error ? error.message : String(error),
+      );
+      process.exit(1);
+    }
+  });
+
+// Watch command for deconfig
+const deconfigWatch = new Command("watch")
+  .description("Watch a deconfig branch for changes.")
+  .requiredOption("-b, --branch <branchName>", "Branch name")
+  .option("-p, --path <path>", "Path filter for watching specific files")
+  .option(
+    "--from-ctime <ctime>",
+    "Start watching from this ctime",
+    (value) => parseInt(value),
+    1,
+  )
+  .action(async (options) => {
+    try {
+      await watchCommand({
+        branch: options.branch,
+        path: options.path,
+        fromCtime: options.fromCtime,
+      });
+    } catch (error) {
+      console.error(
+        "❌ Watch failed:",
+        error instanceof Error ? error.message : String(error),
+      );
+      process.exit(1);
+    }
+  });
+
+// Mount command for deconfig
+const deconfigMount = new Command("mount")
+  .description(
+    "Mount a deconfig branch to a local directory and watch for changes.",
+  )
+  .requiredOption("-b, --branch <branchName>", "Branch name to mount")
+  .requiredOption("--path <path>", "Local directory path to sync files to")
+  .option(
+    "--from-ctime <ctime>",
+    "Start watching from this ctime",
+    (value) => parseInt(value),
+    1,
+  )
+  .option("--path-filter <filter>", "Filter files by path pattern")
+  .action(async (options) => {
+    try {
+      await mountCommand({
+        branchName: options.branch,
+        path: options.path,
+        fromCtime: options.fromCtime,
+        pathFilter: options.pathFilter,
+      });
+    } catch (error) {
+      console.error(
+        "❌ Mount failed:",
+        error instanceof Error ? error.message : String(error),
+      );
+      process.exit(1);
+    }
+  });
+
+// Deconfig parent command
+const deconfig = new Command("deconfig")
+  .description("Manage deconfig filesystem operations.")
+  .addCommand(deconfigGet)
+  .addCommand(deconfigPut)
+  .addCommand(deconfigWatch)
+  .addCommand(deconfigMount);
+
 // Main CLI program
 const program = new Command()
   .name(packageJson.name)
@@ -467,6 +587,7 @@ const program = new Command()
   .addCommand(update)
   .addCommand(linkCmd)
   .addCommand(gen)
-  .addCommand(create);
+  .addCommand(create)
+  .addCommand(deconfig);
 
 program.parse();

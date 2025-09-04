@@ -1,0 +1,112 @@
+diff --git a/apps/deconfig/server/src/branch.ts b/apps/deconfig/server/src/branch.ts
+index a88d9332..65c8da63 100644
+--- a/apps/deconfig/server/src/branch.ts
++++ b/apps/deconfig/server/src/branch.ts
+@@ -3,7 +3,34 @@ import type { Env } from "../main";
+ import type { BlobInfo } from "./blobs";
+ 
+ const BLOB_DO = "blob-1";
++async function streamToBase64(
++  stream: ReadableStream<Uint8Array>,
++): Promise<string> {
++  const reader = stream.getReader();
++  const chunks: Uint8Array[] = [];
++
++  while (true) {
++    const { done, value } = await reader.read();
++    if (done) break;
++    if (value) chunks.push(value);
++  }
++
++  // Flatten chunks into a single Uint8Array
++  const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
++  const combined = new Uint8Array(totalLength);
++  let offset = 0;
++  for (const chunk of chunks) {
++    combined.set(chunk, offset);
++    offset += chunk.length;
++  }
+ 
++  // Convert Uint8Array → binary string → base64
++  let binary = "";
++  for (let i = 0; i < combined.length; i++) {
++    binary += String.fromCharCode(combined[i]);
++  }
++  return btoa(binary);
++}
+ export const BranchId = {
+   build(name: string, projectId: string) {
+     return `${projectId}-${name}`;
+@@ -160,7 +187,7 @@ export interface WatchOptions {
+   pathFilter?: string;
+ }
+ 
+-/**
++/**q
+  * File change event sent through the watch stream.
+  */
+ export interface FileChangeEvent {
+@@ -603,7 +630,7 @@ export class Branch extends DurableObject<Env> {
+     controller: ReadableStreamDefaultController<Uint8Array>,
+     options: WatchOptions,
+   ) {
+-    if (!options.fromCtime) return;
++    if (typeof options.fromCtime !== "number") return;
+ 
+     // Query patches newer than fromCtime
+     const result = this.sql.exec(
+diff --git a/apps/deconfig/server/tools/deconfig.ts b/apps/deconfig/server/tools/deconfig.ts
+index 1f76c1aa..21b9c98e 100644
+--- a/apps/deconfig/server/tools/deconfig.ts
++++ b/apps/deconfig/server/tools/deconfig.ts
+@@ -297,7 +297,7 @@ const BaseFileOperationInputSchema = (env: Env) =>
+       .string()
+       .describe("The file path within the branch")
+       .transform((arg) => {
+-        const pathPrefix = env.DECO_CHAT_REQUEST_CONTEXT.state.pathPrefix;
++        const pathPrefix = env.DECO_CHAT_REQUEST_CONTEXT?.state?.pathPrefix;
+         const argPath = normalizePath(arg);
+         if (pathPrefix) {
+           return normalizePath(`${pathPrefix}${argPath}`);
+@@ -357,7 +357,7 @@ export const createPutFileTool = (env: Env) =>
+       const fileResult = result.results[context.path];
+ 
+       return {
+-        conflict: fileResult?.success ?? false,
++        conflict: fileResult?.success === false,
+       };
+     },
+   });
+diff --git a/apps/deconfig/server/wrangler.toml b/apps/deconfig/server/wrangler.toml
+index 113d0323..c1fe6ef3 100644
+--- a/apps/deconfig/server/wrangler.toml
++++ b/apps/deconfig/server/wrangler.toml
+@@ -2,7 +2,7 @@
+ name = "deconfig"
+ main = "main.ts"
+ compatibility_date = "2025-06-17"
+-compatibility_flags = ["nodejs_compat"]
++compatibility_flags = [ "nodejs_compat" ]
+ scope = "deco"
+ 
+ [assets]
+@@ -25,8 +25,8 @@ icon = "https://assets.decocache.com/mcp/24cfa17a-a0a8-40dc-9313-b4c3bdb63af6/de
+ 
+ [[migrations]]
+ tag = "v1"
+-new_classes = ["Workflow"]
+-new_sqlite_classes = ["Blobs", "Branch"]
++new_classes = [ "Workflow" ]
++new_sqlite_classes = [ "Blobs", "Branch" ]
+ 
+ [durable_objects]
+ [[durable_objects.bindings]]
+@@ -43,5 +43,5 @@ class_name = "Workflow"
+ 
+ [[rules]]
+ type = "Text"
+-globs = ["**/*.sql"]
+-fallthrough = true
++globs = [ "**/*.sql" ]
++fallthrough = true
+\ No newline at end of file

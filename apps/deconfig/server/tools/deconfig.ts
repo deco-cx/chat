@@ -297,7 +297,7 @@ const BaseFileOperationInputSchema = (env: Env) =>
       .string()
       .describe("The file path within the branch")
       .transform((arg) => {
-        const pathPrefix = env.DECO_CHAT_REQUEST_CONTEXT.state.pathPrefix;
+        const pathPrefix = env.DECO_CHAT_REQUEST_CONTEXT?.state?.pathPrefix;
         const argPath = normalizePath(arg);
         if (pathPrefix) {
           return normalizePath(`${pathPrefix}${argPath}`);
@@ -357,7 +357,7 @@ export const createPutFileTool = (env: Env) =>
       const fileResult = result.results[context.path];
 
       return {
-        conflict: fileResult?.success ?? false,
+        conflict: fileResult?.success === false,
       };
     },
   });
