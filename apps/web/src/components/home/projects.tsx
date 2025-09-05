@@ -1,12 +1,19 @@
 import { useProjects } from "@deco/sdk";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Input } from "@deco/ui/components/input.tsx";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deco/ui/components/tooltip.tsx";
 import { Suspense, useState } from "react";
 import { Link, useParams } from "react-router";
 import { ErrorBoundary } from "../../error-boundary";
+import { Button } from "@deco/ui/components/button.tsx";
 import { Avatar } from "../common/avatar";
 import { DecoDayBanner } from "../common/event/deco-day";
 import { OrgAvatars, OrgMemberCount } from "./members";
+import { DefaultBreadcrumb, PageLayout } from "../layout/project";
 
 function ProjectCard({
   name,
@@ -124,7 +131,7 @@ Projects.Empty = () => (
   </div>
 );
 
-export function OrgProjectList() {
+function OrgProjectListContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const { org } = useParams();
 
@@ -132,13 +139,24 @@ export function OrgProjectList() {
     <div className="flex w-full h-full items-start bg-background">
       <div className="p-8 flex flex-col gap-4 w-full">
         <DecoDayBanner />
-        <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
           <Input
             className="max-w-xs"
             placeholder="Search projects..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+          <Tooltip>
+            <TooltipTrigger>
+              <Button variant="special" disabled>
+                <Icon name="add" size={16} />
+                <span>New project</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Multiple projects in a single organization is coming soon</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
         <div className="@container overflow-y-auto max-h-[calc(100vh-12rem)] pb-8">
           <ErrorBoundary fallback={<Projects.Error />}>
@@ -149,5 +167,31 @@ export function OrgProjectList() {
         </div>
       </div>
     </div>
+  );
+}
+
+export function OrgProjectList() {
+  const { org } = useParams();
+
+  return (
+    <PageLayout
+      hideViewsButton
+      tabs={{
+        orgProjectList: {
+          title: "Projects",
+          Component: OrgProjectListContent,
+          initialOpen: true,
+        },
+      }}
+      breadcrumb={
+        <DefaultBreadcrumb
+          items={[
+            { label: "My Organizations", link: "/" },
+            { label: org ?? "", link: `/${org}` },
+          ]}
+          useWorkspaceLink={false}
+        />
+      }
+    />
   );
 }

@@ -227,12 +227,18 @@ interface BreadcrumbItem {
   link?: string;
 }
 
-export function DefaultBreadcrumb({ items }: { items: BreadcrumbItem[] }) {
+export function DefaultBreadcrumb({
+  items,
+  useWorkspaceLink: useWorkspaceLinkProp = true,
+}: {
+  items: BreadcrumbItem[];
+  useWorkspaceLink?: boolean;
+}) {
   const { toggleSidebar, open, isMobile } = useSidebar();
   const withWorkspace = useWorkspaceLink();
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 pl-2">
       {!open && (
         <Button
           variant="ghost"
@@ -255,7 +261,9 @@ export function DefaultBreadcrumb({ items }: { items: BreadcrumbItem[] }) {
           ) : (
             items?.map((item, index) => {
               const isLast = index === items.length - 1;
-              const link = withWorkspace(item.link ?? "");
+              const link = useWorkspaceLinkProp
+                ? withWorkspace(item.link ?? "")
+                : (item.link ?? "");
 
               if (isLast) {
                 return (

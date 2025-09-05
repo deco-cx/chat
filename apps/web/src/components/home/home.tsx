@@ -7,6 +7,9 @@ import { ErrorBoundary } from "../../error-boundary";
 import { Avatar } from "../common/avatar";
 import { DecoDayBanner } from "../common/event/deco-day";
 import { OrgAvatars, OrgMemberCount } from "./members";
+import { DefaultBreadcrumb, PageLayout } from "../layout/project";
+import { Button } from "@deco/ui/components/button.tsx";
+import { CreateOrganizationDialog } from "../sidebar/create-team-dialog";
 
 function OrganizationCard({
   name,
@@ -123,22 +126,27 @@ Organizations.Empty = () => (
   </div>
 );
 
-export function Home() {
+function MyOrganizations() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   return (
     <div className="flex w-full h-full items-start bg-background">
       <div className="p-8 flex flex-col gap-4 w-full">
         <DecoDayBanner />
-        <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
           <Input
             className="max-w-xs"
             placeholder="Search organizations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+          <Button variant="special" onClick={() => setIsCreateDialogOpen(true)}>
+            <Icon name="add" size={16} />
+            <span>New organization</span>
+          </Button>
         </div>
-        <div className="@container overflow-y-auto max-h-[calc(100vh-12rem)] pb-8">
+        <div className="@container overflow-y-auto max-h-[calc(100vh-12rem)] pb-28">
           <ErrorBoundary fallback={<Organizations.Error />}>
             <Suspense fallback={<Organizations.Skeleton />}>
               <Organizations query={searchQuery} />
@@ -146,6 +154,32 @@ export function Home() {
           </ErrorBoundary>
         </div>
       </div>
+
+      <CreateOrganizationDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+      />
     </div>
+  );
+}
+
+export function Home() {
+  return (
+    <PageLayout
+      hideViewsButton
+      tabs={{
+        myOrganizations: {
+          title: "My Organizations",
+          Component: MyOrganizations,
+          initialOpen: true,
+        },
+      }}
+      breadcrumb={
+        <DefaultBreadcrumb
+          items={[{ label: "My Organizations", link: "/" }]}
+          useWorkspaceLink={false}
+        />
+      }
+    />
   );
 }

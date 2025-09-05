@@ -16,7 +16,7 @@ import { Link, useParams } from "react-router";
 import { useUser } from "../../hooks/use-user.ts";
 import { useWorkspaceLink } from "../../hooks/use-navigate-workspace.ts";
 import { Avatar } from "../common/avatar/index.tsx";
-import { CreateTeamDialog } from "./create-team-dialog.tsx";
+import { CreateOrganizationDialog } from "./create-team-dialog.tsx";
 import { InviteTeamMembersDialog } from "../common/invite-team-members-dialog.tsx";
 import { type Theme, type View, withDefaultViews } from "@deco/sdk";
 import { useDocumentMetadata } from "../../hooks/use-document-metadata.ts";
@@ -329,7 +329,7 @@ export function TeamSelector() {
           <SwitchTeam onRequestCreateTeam={() => setIsCreateDialogOpen(true)} />
         </ResponsiveDropdownContent>
       </ResponsiveDropdown>
-      <CreateTeamDialog
+      <CreateOrganizationDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
       />
