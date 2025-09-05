@@ -13,12 +13,21 @@ const CountdownBox = ({ value, label }: { value: string; label: string }) => (
 
 const Separator = () => <span className="text-2xl font-semibold">:</span>;
 
-const LinkWrapper = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+const LinkWrapper = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
   <a
     href="https://deco.day"
     target="_blank"
     rel="noopener noreferrer"
-    className={cn("w-full h-[120px] rounded-lg ring ring-border overflow-hidden hover:ring-4 transition-all duration-400", className)}
+    className={cn(
+      "w-full h-[120px] rounded-lg ring ring-border overflow-hidden hover:ring-4 transition-all duration-400",
+      className,
+    )}
   >
     {children}
   </a>
@@ -33,7 +42,9 @@ const Upcoming = () => {
       href="https://deco.day"
       target="_blank"
       rel="noopener noreferrer"
-      className={cn("bg-[url('/img/deco-day-upcoming.png')] bg-cover h-[120px] rounded-lg ring ring-border overflow-hidden hover:ring-4 transition-all duration-400")}
+      className={cn(
+        "bg-[url('/img/deco-day-upcoming.png')] bg-cover h-[120px] rounded-lg ring ring-border overflow-hidden hover:ring-4 transition-all duration-400",
+      )}
     >
       <div className="flex justify-end pt-10 pr-56 gap-3">
         <CountdownBox value={days} label="days" />
