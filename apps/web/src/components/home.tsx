@@ -172,12 +172,11 @@ function Home() {
 
   return (
     <div>
-      <DecoDayBanner />
       <div className="flex w-full h-full items-start">
-        <div className="w-[200px] h-screen bg-sidebar border-r border-border shrink-0" />
+        <div className="w-[230px] h-screen bg-sidebar border-r border-border shrink-0" />
         <div className="p-8 flex flex-col gap-4 w-full">
+          <DecoDayBanner />
           <div className="flex flex-col gap-4">
-            <h1 className="text-2xl font-semibold">Worksprojects</h1>
             <Input
               className="max-w-xs"
               placeholder="Search projects..."
