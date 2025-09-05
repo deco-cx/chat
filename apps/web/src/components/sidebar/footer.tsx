@@ -301,7 +301,7 @@ function UserPreferencesModal({
   );
 }
 
-function LoggedUser() {
+export function LoggedUser() {
   const user = useUser();
   const location = useLocation();
   const href = "/invites";
@@ -421,7 +421,7 @@ function LoggedUser() {
         </ResponsiveDropdownItem>
         <ResponsiveDropdownItem asChild>
           <a
-            href="/about"
+            href="https://decocms.com"
             target="_blank"
             rel="noopener noreferrer"
             className="flex w-full items-center gap-2 text-sm cursor-pointer"

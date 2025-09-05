@@ -11,8 +11,19 @@ import { Suspense, useState } from "react";
 import { DecoDayBanner } from "./common/event/deco-day";
 import { ErrorBoundary } from "../error-boundary";
 import { Input } from "@deco/ui/components/input.tsx";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter as SidebarFooterInner,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarProvider,
+} from "@deco/ui/components/sidebar.tsx";
+import { LoggedUser } from "./sidebar/footer";
+import { useLocalStorage } from "../hooks/use-local-storage";
 
-function HomeLayout({ children }: { children: React.ReactNode }) {
+function HomeProviders({ children }: { children: React.ReactNode }) {
   return <DecoQueryClientProvider>{children}</DecoQueryClientProvider>;
 }
 
@@ -171,36 +182,75 @@ function Home() {
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
-    <div>
-      <div className="flex w-full h-full items-start">
-        <div className="w-[230px] h-screen bg-sidebar border-r border-border shrink-0" />
-        <div className="p-8 flex flex-col gap-4 w-full">
-          <DecoDayBanner />
-          <div className="flex flex-col gap-4">
-            <Input
-              className="max-w-xs"
-              placeholder="Search projects..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="overflow-y-auto max-h-[calc(100vh-12rem)] pb-8">
-            <ErrorBoundary fallback={<Projects.Error />}>
-              <Suspense fallback={<Projects.Skeleton />}>
-                <Projects query={searchQuery} />
-              </Suspense>
-            </ErrorBoundary>
-          </div>
+    <div className="flex w-full h-full items-start bg-background">
+      <div className="p-8 flex flex-col gap-4 w-full">
+        <DecoDayBanner />
+        <div className="flex flex-col gap-4">
+          <Input
+            className="max-w-xs"
+            placeholder="Search projects..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="overflow-y-auto max-h-[calc(100vh-12rem)] pb-8">
+          <ErrorBoundary fallback={<Projects.Error />}>
+            <Suspense fallback={<Projects.Skeleton />}>
+              <Projects query={searchQuery} />
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </div>
     </div>
   );
 }
 
+function HomeLayout({ children }: { children: React.ReactNode }) {
+  const { value: defaultOpen, update: setDefaultOpen } = useLocalStorage({
+    key: "deco-chat-sidebar",
+    defaultValue: true,
+  });
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <SidebarProvider
+      open={open}
+      onOpenChange={(open) => {
+        setDefaultOpen(open);
+        setOpen(open);
+      }}
+      className="h-full bg-sidebar"
+      style={
+        {
+          "--sidebar-width": "16rem",
+          "--sidebar-width-mobile": "14rem",
+        } as Record<string, string>
+      }
+    >
+      <Sidebar variant="sidebar">
+        <SidebarContent>
+          <SidebarFooterInner>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <LoggedUser />
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooterInner>
+        </SidebarContent>
+      </Sidebar>
+      <SidebarInset className="h-full flex-col bg-sidebar">
+        {children}
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
+
 export default function HomeWrapper() {
   return (
-    <HomeLayout>
-      <Home />
-    </HomeLayout>
+    <HomeProviders>
+      <HomeLayout>
+        <Home />
+      </HomeLayout>
+    </HomeProviders>
   );
 }

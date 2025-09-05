@@ -19,10 +19,10 @@ import { assertPrincipalIsUser } from "./assertions.ts";
 import { AUTH_URL_CLI } from "../../../../packages/sdk/src/constants.ts";
 
 const AUTH_CALLBACK_OAUTH = "/auth/callback/oauth";
-const ENSURE_DEFAULT_PROJECT_ENDPOINT = "/ensure-default-project";
+const ENSURE_DEFAULT_PROJECT_ENDPOINT = "/auth/ensure-default-project";
 
-const withDefaultProjectEnsuring = (next: string) => {
-  const newUrl = new URL(ENSURE_DEFAULT_PROJECT_ENDPOINT, next);
+const withDefaultProjectEnsuring = (next: string, apiUrl: string) => {
+  const newUrl = new URL(ENSURE_DEFAULT_PROJECT_ENDPOINT, apiUrl);
   newUrl.searchParams.set("next", next);
   return newUrl.toString();
 };
@@ -230,7 +230,10 @@ appAuth.all("/callback/oauth", async (ctx: AppContext) => {
 
     setHeaders(headers, ctx);
 
-    const uri = withDefaultProjectEnsuring(next);
+    const uri = withDefaultProjectEnsuring(
+      next,
+      DECO_CMS_API(honoCtxToAppCtx(ctx), url.host.includes("deco.chat")),
+    );
     return ctx.redirect(uri);
   } catch (e) {
     if (e instanceof Error) {
@@ -272,7 +275,10 @@ appAuth.all("/callback/magiclink", async (ctx: AppContext) => {
 
     setHeaders(headers, ctx);
 
-    const uri = withDefaultProjectEnsuring(next);
+    const uri = withDefaultProjectEnsuring(
+      next,
+      DECO_CMS_API(honoCtxToAppCtx(ctx), url.host.includes("deco.chat")),
+    );
     return ctx.redirect(uri);
   } catch (e) {
     if (e instanceof Error) {

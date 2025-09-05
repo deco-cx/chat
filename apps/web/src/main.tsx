@@ -176,11 +176,6 @@ function ErrorFallback() {
       return;
     }
 
-    if (pathname === "/") {
-      globalThis.location.href = "/about";
-      return;
-    }
-
     const next = new URL(`${pathname}${search}`, globalThis.location.origin);
     globalThis.location.href = `/login?next=${encodeURIComponent(next.toString())}`;
   }, [isUnauthorized, pathname, search]);

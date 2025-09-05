@@ -161,14 +161,14 @@ starlight({
 ## 📖 Learn More
 
 This template is built for deploying primarily on top of the
-[Deco platform](https://deco.chat/about) which can be found at the
+[Deco platform](https://decocms.com) which can be found at the
 [deco-cx/chat](https://github.com/deco-cx/chat) repository.
 
 - [Astro Documentation](https://docs.astro.build/)
 - [Starlight Documentation](https://starlight.astro.build/)
-- [Deco Platform](https://deco.chat/)
+- [Deco Platform](https://decocms.com/)
 
 ---
 
 **Ready to build your next MCP server with beautiful documentation?
-[Get started now!](https://deco.chat)**
+[Get started now!](https://decocms.com)**
