@@ -45,18 +45,18 @@ function useUserTeam(): CurrentTeam & { views: View[] } {
 }
 
 export function useCurrentTeam(): CurrentTeam & { views: View[] } {
-  const { teamSlug } = useParams();
+  const { org } = useParams();
   const userTeam = useUserTeam();
-  const { data: teamData } = useTeam(teamSlug);
-  if (!teamSlug) {
+  const { data: teamData } = useTeam(org);
+  if (!org) {
     return userTeam;
   }
 
   return {
     avatarUrl: teamData?.avatar_url,
-    label: teamData?.name || teamSlug || "",
+    label: teamData?.name || org || "",
     id: teamData?.id ?? "",
-    slug: teamData?.slug ?? teamSlug ?? "",
+    slug: teamData?.slug ?? org ?? "",
     theme: teamData?.theme,
     views: withDefaultViews(teamData?.views ?? []),
   };
@@ -309,6 +309,17 @@ export function TeamSelector() {
           <CurrentTeamDropdownTrigger />
         </Suspense>
         <ResponsiveDropdownContent align="start" className="md:w-[240px]">
+          <ResponsiveDropdownItem asChild>
+            <Link
+              to="/"
+              className="w-full flex items-center gap-2 cursor-pointer"
+            >
+              <span className="grid place-items-center p-1">
+                <Icon name="home" size={18} className="text-muted-foreground" />
+              </span>
+              <span className="md:text-sm">Home</span>
+            </Link>
+          </ResponsiveDropdownItem>
           <Suspense fallback={<CurrentTeamDropdownOptions.Skeleton />}>
             <CurrentTeamDropdownOptions
               onRequestInvite={() => setIsInviteDialogOpen(true)}

@@ -13,7 +13,7 @@ import { Icon } from "@deco/ui/components/icon.tsx";
 import { Card, CardContent } from "@deco/ui/components/card.tsx";
 import { Badge } from "@deco/ui/components/badge.tsx";
 import { timeAgo } from "../../utils/time-ago.ts";
-import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
 import { ListPageHeader } from "../common/list-page-header.tsx";
 import { Table, type TableColumn } from "../common/table/index.tsx";
 import { EmptyState } from "../common/empty-state.tsx";
@@ -209,10 +209,10 @@ function InvitesListContent() {
         return;
       }
 
-      const teamSlug = result.teamSlug;
+      const org = result.teamSlug;
 
-      if (teamSlug) {
-        navigate(`/${teamSlug}/agents`);
+      if (org) {
+        navigate(`/${org}/default/agents`);
       } else {
         navigate("/");
       }

@@ -38,10 +38,10 @@ function createUnknownMember(userId: string): Member {
 }
 
 function useMembers() {
-  const { teamSlug } = useParams();
+  const { org } = useParams();
   const {
     data: { members: _members },
-  } = useTeamMembersBySlug(teamSlug ?? null);
+  } = useTeamMembersBySlug(org ?? null);
   const user = useUser();
 
   const members = useMemo(() => {

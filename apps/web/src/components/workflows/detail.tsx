@@ -8,7 +8,7 @@ import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
 import { useState } from "react";
 import { useParams } from "react-router";
 import type { Tab } from "../dock/index.tsx";
-import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
 import { WorkflowFlowVisualization } from "./workflow-flow-visualization.tsx";
 
 function tryParseJson(str: unknown): unknown {

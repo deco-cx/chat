@@ -663,7 +663,7 @@ function RoleMembersPanel({
 function RoleDialogUserInfo({ userId }: RoleDialogUserInfoProps) {
   const user = useUser();
   const params = useParams();
-  const resolvedTeamSlug = params.teamSlug;
+  const resolvedTeamSlug = params.org;
   const { data: teams } = useTeams();
 
   const teamId: number | null = useMemo(

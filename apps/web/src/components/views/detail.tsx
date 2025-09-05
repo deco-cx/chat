@@ -1,19 +1,17 @@
 import {
-  NotFoundError,
-  useConnectionViews,
-  useIntegrations,
-  findConnectionView,
+  findConnectionView, NotFoundError, useConnectionViews,
+  useIntegrations
 } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { createContext, useContext, useMemo } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
+import { dispatchRulesUpdated } from "../../utils/events.ts";
 import Preview from "../agent/preview";
 import type { Tab } from "../dock/index.tsx";
-import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
 import { InternalResourceListWithIntegration } from "./internal-resource-list.tsx";
 import { ViewRouteProvider } from "./view-route-context.tsx";
-import { dispatchRulesUpdated } from "../../utils/events.ts";
 
 interface ViewDetailContextValue {
   integrationId?: string;
