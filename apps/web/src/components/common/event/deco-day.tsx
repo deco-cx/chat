@@ -1,7 +1,6 @@
 import { cn } from "@deco/ui/lib/utils.ts";
 import { EventBanner, useCountdown } from "../event-banner";
 import { Button } from "@deco/ui/components/button.tsx";
-import { useState } from "react";
 
 const DECO_DAY_START_DATE = new Date("2025-09-08T14:00:00");
 const DECO_DAY_END_DATE = new Date("2025-09-08T18:00:00");
@@ -103,43 +102,13 @@ const Past = () => {
 };
 
 export function DecoDayBanner() {
-  const [state, setState] = useState<"upcoming" | "active" | "past">(
-    "upcoming",
-  );
-
-  const cycle = () => {
-    setState((prev) => {
-      if (prev === "upcoming") return "active";
-      if (prev === "active") return "past";
-      return "upcoming";
-    });
-  };
-
   return (
-    <>
-      <EventBanner
-        startDate={DECO_DAY_START_DATE}
-        endDate={DECO_DAY_END_DATE}
-        upcoming={
-          state === "upcoming" ? (
-            <Upcoming />
-          ) : state === "active" ? (
-            <Active />
-          ) : (
-            <Past />
-          )
-        }
-        active={<Active />}
-        past={<Past />}
-      />
-      <div className="fixed top-4 right-4">
-        <button
-          className="cursor-pointer p-1 border border-border rounded-md bg-background"
-          onClick={cycle}
-        >
-          cycle
-        </button>
-      </div>
-    </>
+    <EventBanner
+      startDate={DECO_DAY_START_DATE}
+      endDate={DECO_DAY_END_DATE}
+      upcoming={<Upcoming />}
+      active={<Active />}
+      past={<Past />}
+    />
   );
 }
