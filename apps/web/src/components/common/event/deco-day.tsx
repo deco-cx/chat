@@ -7,12 +7,16 @@ const DECO_DAY_END_DATE = new Date("2025-09-08T18:00:00");
 
 const CountdownBox = ({ value, label }: { value: string; label: string }) => (
   <div className="flex flex-col items-center justify-center gap-2">
-    <div className="text-3xl font-medium text-foreground">{value}</div>
+    <div className="text-xl @min-xl:text-3xl font-medium text-foreground">
+      {value}
+    </div>
     <div className="text-[10px]">{label}</div>
   </div>
 );
 
-const Separator = () => <span className="text-2xl font-semibold">:</span>;
+const Separator = () => (
+  <span className="text-xl @min-xl:text-2xl font-semibold">:</span>
+);
 
 const LinkWrapper = ({
   children,
@@ -44,23 +48,19 @@ const Upcoming = () => {
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "bg-[url('/img/deco-day-upcoming-bg.svg')] bg-cover h-[120px] rounded-lg ring ring-border overflow-hidden hover:ring-4 transition-all duration-400 flex items-center",
+        "@container",
+        "bg-[url('/img/deco-day-upcoming-bg.svg')] bg-cover h-[120px] rounded-lg",
+        "ring ring-border overflow-hidden hover:ring-4 transition-all duration-400",
+        "flex items-center justify-between px-8",
       )}
     >
-      <div className="flex flex-col items-start self-end shrink-0">
-        <span className="px-6 bg-black text-white">@techweeksaopaulo</span>
-        <span className="px-6 py-4 bg-black text-white text-[28px]">
-          Learn from industry leaders
-        </span>
-      </div>
-
       <img
         src="/img/deco-day-logo-outline.svg"
         alt="deco.day upcoming"
-        className="h-[50px] object-cover ml-auto mr-4"
+        className="h-[30px] @min-xl:h-[50px] object-cover"
       />
 
-      <div className="flex justify-end gap-3 ml-auto">
+      <div className="hidden @min-md:flex justify-end gap-2 @min-xl:gap-3">
         <CountdownBox value={days} label="days" />
         <Separator />
         <CountdownBox value={hours} label="hours" />
@@ -70,7 +70,7 @@ const Upcoming = () => {
         <CountdownBox value={seconds} label="seconds" />
       </div>
 
-      <Button variant="special" className="ml-auto mr-4">
+      <Button variant="special">
         <span>Watch on YouTube</span>
       </Button>
     </a>
