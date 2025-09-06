@@ -21,11 +21,15 @@ const client = new QueryClient({
 
 const Context = createContext<State | null>(null);
 
+export function DecoQueryClientProvider({ children }: PropsWithChildren) {
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}
+
 export function SDKProvider({ children, ...props }: PropsWithChildren<State>) {
   return (
-    <QueryClientProvider client={client}>
+    <DecoQueryClientProvider>
       <Context.Provider value={props}>{children}</Context.Provider>
-    </QueryClientProvider>
+    </DecoQueryClientProvider>
   );
 }
 

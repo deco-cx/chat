@@ -14,7 +14,7 @@ import { useMatch } from "react-router";
 import { ListPageHeader } from "../common/list-page-header.tsx";
 import type { ViewModeSwitcherProps } from "../common/view-mode-switcher.tsx";
 import type { Tab } from "../dock/index.tsx";
-import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
 import { SelectConnectionDialog } from "./select-connection-dialog.tsx";
 import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 import { AppKeys, getConnectionAppKey } from "./apps.ts";
@@ -72,8 +72,8 @@ export const Header = ({
   viewMode: ViewModeSwitcherProps["viewMode"];
   setViewMode: (viewMode: ViewModeSwitcherProps["viewMode"]) => void;
 }) => {
-  const teamConnectionsViewActive = useMatch({
-    path: `:teamSlug?/connections`,
+  const projectConnectionsViewActive = useMatch({
+    path: `:org/:project/connections`,
   });
 
   const { data: installedIntegrations } = useIntegrations();
@@ -84,11 +84,11 @@ export const Header = ({
       filter={{
         items: [
           {
-            active: !!teamConnectionsViewActive,
+            active: !!projectConnectionsViewActive,
             label: (
               <span className="flex items-center gap-2">
                 <Icon name="groups" size={16} />
-                Team
+                Project
               </span>
             ),
             id: "connected",
@@ -98,7 +98,7 @@ export const Header = ({
               ).length ?? 0,
           },
           {
-            active: !teamConnectionsViewActive,
+            active: !projectConnectionsViewActive,
             disabled: true,
             tooltip: "Coming soon",
             label: (

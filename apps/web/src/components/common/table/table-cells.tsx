@@ -67,11 +67,11 @@ function UserInfo({
 }: UserInfoProps) {
   const user = useUser();
   const params = useParams();
-  const resolvedTeamSlug = params.teamSlug;
+  const resolvedOrgSlug = params.org;
   const { data: teams } = useTeams();
-  const teamId = useMemo(
-    () => teams?.find((t) => t.slug === resolvedTeamSlug)?.id ?? null,
-    [teams, resolvedTeamSlug],
+  const orgId = useMemo(
+    () => teams?.find((t) => t.slug === resolvedOrgSlug)?.id ?? null,
+    [teams, resolvedOrgSlug],
   );
 
   // If userId matches current user, use user data directly
@@ -79,8 +79,8 @@ function UserInfo({
 
   const {
     data: { members: teamMembers = [] },
-  } = useTeamMembers(teamId ?? null);
-  const members = !isCurrentUser && teamId !== null ? teamMembers : [];
+  } = useTeamMembers(orgId ?? null);
+  const members = !isCurrentUser && orgId !== null ? teamMembers : [];
   const member = useMemo(
     () => members.find((m) => m.user_id === userId),
     [members, userId],

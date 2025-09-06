@@ -14,7 +14,7 @@ import { ChatInput } from "../chat/chat-input.tsx";
 import { ChatMessages } from "../chat/chat-messages.tsx";
 import { AgentAvatar } from "../common/avatar/agent.tsx";
 import type { Tab } from "../dock/index.tsx";
-import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
 import AdvancedTab from "../settings/advanced.tsx";
 import AgentProfileTab from "../settings/agent-profile.tsx";
 import ToolsAndKnowledgeTab from "../settings/integrations.tsx";

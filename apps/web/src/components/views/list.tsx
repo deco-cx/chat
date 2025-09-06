@@ -16,7 +16,7 @@ import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 import { EmptyState } from "../common/empty-state.tsx";
 import { ListPageHeader } from "../common/list-page-header.tsx";
 import { Table, TableColumn } from "../common/table/index.tsx";
-import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
 import { useCurrentTeam } from "../sidebar/team-selector";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 

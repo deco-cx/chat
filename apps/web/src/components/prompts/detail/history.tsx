@@ -41,15 +41,15 @@ export default function HistoryTab() {
 
   const user = useUser();
   const params = useParams();
-  const resolvedTeamSlug = params.teamSlug;
+  const resolvedOrgSlug = params.org;
   const { data: teams } = useTeams();
-  const teamId = useMemo(
-    () => teams?.find((t) => t.slug === resolvedTeamSlug)?.id ?? null,
-    [teams, resolvedTeamSlug],
+  const orgId = useMemo(
+    () => teams?.find((t) => t.slug === resolvedOrgSlug)?.id ?? null,
+    [teams, resolvedOrgSlug],
   );
   const {
     data: { members: teamMembers = [] },
-  } = useTeamMembers(teamId ?? null);
+  } = useTeamMembers(orgId ?? null);
 
   const filteredVersions = useMemo(() => {
     return versions?.slice(1);
@@ -110,7 +110,7 @@ export default function HistoryTab() {
                 user={user}
                 teamMembersMap={teamMembersMap}
                 workspace={workspace}
-                teamId={teamId}
+                teamId={orgId}
                 refetch={refetch}
               />
             );

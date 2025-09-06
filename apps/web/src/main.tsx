@@ -11,7 +11,6 @@ import { type JSX, lazy, StrictMode, Suspense, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import {
   createBrowserRouter,
-  Navigate,
   RouterProvider,
   useLocation,
   useRouteError,
@@ -39,9 +38,33 @@ export const wrapWithUILoadingFallback = <P,>(
     ),
   }));
 
-const RouteLayout = lazy(() =>
-  import("./components/layout.tsx").then((mod) => ({
-    default: mod.RouteLayout,
+const ProjectLayout = lazy(() =>
+  import("./components/layout/project.tsx").then((mod) => ({
+    default: mod.ProjectLayout,
+  })),
+);
+
+const HomeLayout = lazy(() =>
+  import("./components/layout/home.tsx").then((mod) => ({
+    default: mod.HomeLayout,
+  })),
+);
+
+const Home = lazy(() =>
+  import("./components/home/home.tsx").then((mod) => ({
+    default: mod.Home,
+  })),
+);
+
+const OrgProjectList = lazy(() =>
+  import("./components/home/projects.tsx").then((mod) => ({
+    default: mod.OrgProjectList,
+  })),
+);
+
+const ProjectHome = lazy(() =>
+  import("./components/home/project-home.tsx").then((mod) => ({
+    default: mod.ProjectHome,
   })),
 );
 
@@ -159,18 +182,6 @@ function NotFound(): null {
   throw new NotFoundError("The path was not found");
 }
 
-const DEFAULT_PATH = "/agents";
-
-/**
- * Home component that redirects to the default path while preserving team workspace context.
- * This replaces the previous loader-based approach to avoid double redirects while maintaining
- * proper team slug handling.
- */
-function Home() {
-  const workspaceLink = useWorkspaceLink();
-  return <Navigate to={workspaceLink(DEFAULT_PATH)} replace />;
-}
-
 function ErrorFallback() {
   const { pathname, search } = useLocation();
   const error = useRouteError();
@@ -183,11 +194,6 @@ function ErrorFallback() {
 
   useEffect(() => {
     if (!isUnauthorized) {
-      return;
-    }
-
-    if (pathname === "/") {
-      globalThis.location.href = "/about";
       return;
     }
 
@@ -275,17 +281,27 @@ const router = createBrowserRouter([
     Component: PageviewTrackerLayout,
     children: [
       {
+        path: "/",
+        Component: HomeLayout,
+        children: [{ index: true, Component: Home }],
+      },
+      {
+        path: "/:org",
+        Component: HomeLayout,
+        children: [{ index: true, Component: OrgProjectList }],
+      },
+      {
+        path: "/invites",
+        Component: HomeLayout,
+        children: [{ index: true, Component: InvitesList }],
+      },
+      {
         path: "/login",
         Component: Login,
       },
       {
         path: "/login/magiclink",
         Component: MagicLink,
-      },
-      {
-        path: "/invites",
-        Component: RouteLayout,
-        children: [{ index: true, Component: InvitesList }],
       },
       {
         path: "/sales-deck",
@@ -300,13 +316,10 @@ const router = createBrowserRouter([
         Component: AppAuth,
       },
       {
-        path: "/:teamSlug?",
-        Component: RouteLayout,
+        path: "/:org/:project",
+        Component: ProjectLayout,
         children: [
-          {
-            index: true,
-            Component: Home,
-          },
+          { index: true, Component: ProjectHome },
           { path: "agents", Component: AgentList },
           { path: "agent/:id/:threadId", Component: AgentDetail },
           { path: "connections", Component: ConnectionsList },

@@ -1,5 +1,5 @@
 import type { Tab } from "../dock/index.tsx";
-import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
 import { useMemo } from "react";
 import { useParams } from "react-router";
 import GeneralSettings from "./general.tsx";

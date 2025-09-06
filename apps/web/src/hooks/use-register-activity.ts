@@ -3,7 +3,7 @@ import {
   useTeam,
 } from "@deco/sdk";
 
-export const useRegisterActivity = (teamSlug?: string) => {
-  const { data: team } = useTeam(teamSlug);
+export const useRegisterActivity = (org?: string) => {
+  const { data: team } = useTeam(org);
   useSDKRegisterActivity(team?.id);
 };

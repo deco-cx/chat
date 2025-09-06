@@ -26,13 +26,75 @@ import { useSDK } from "./store.tsx";
 import { MCPConnection } from "../models/index.ts";
 import { listIntegrations } from "../crud/mcp.ts";
 
-export const useTeams = () => {
-  return useSuspenseQuery({
+/**
+ * Hook to fetch teams - searching is done client-side for now.
+ */
+export const useTeams = (options: { searchQuery?: string } = {}) => {
+  const search = options.searchQuery ?? "";
+
+  const queryResult = useSuspenseQuery({
+    // Once filtering is done server-side, update the queryKey to KEYS.TEAMS(options.query)
     queryKey: KEYS.TEAMS(),
     queryFn: ({ signal }) => listTeams({ signal }),
     retry: (failureCount, error) =>
       error instanceof InternalServerError && failureCount < 2,
   });
+
+  if (search) {
+    queryResult.data = queryResult.data.filter(
+      (team) =>
+        team.name.toLowerCase().includes(search.toLowerCase()) ||
+        team.slug.toLowerCase().includes(search.toLowerCase()),
+    );
+  }
+
+  return queryResult;
+};
+
+export interface Project {
+  id: number;
+  name: string;
+  slug: string;
+  avatar_url?: string;
+  org: {
+    id: number;
+    slug: string;
+    avatar_url?: string;
+  };
+}
+
+export const useProjects = (options: {
+  searchQuery?: string;
+  org: string;
+}): Project[] => {
+  const teams = useTeams();
+  const search = options.searchQuery ?? "";
+  const org = teams.data.find((team) => team.slug === options.org);
+
+  if (!org) {
+    throw new Error(`Organization ${options.org} not found`);
+  }
+
+  const projects = [
+    {
+      id: 1,
+      name: `${org.name} Default Project`,
+      slug: "default",
+      org: {
+        id: org.id,
+        slug: org.slug,
+        avatar_url: org.avatar_url,
+      },
+    },
+  ];
+
+  const filtered = projects.filter(
+    (project) =>
+      project.name.toLowerCase().includes(search.toLowerCase()) ||
+      project.slug.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  return filtered;
 };
 
 export const useTeam = (slug: string = "") => {

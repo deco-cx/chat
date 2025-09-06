@@ -114,8 +114,7 @@ const providers: Record<string, Provider> = {
 } as const;
 
 const OPENROUTER_HEADERS = {
-  // Change this to https://decocms.com or setup a redirect?
-  "HTTP-Referer": "https://deco.chat/about",
+  "HTTP-Referer": "https://decocms.com",
   "X-Title": "Deco",
 };
 

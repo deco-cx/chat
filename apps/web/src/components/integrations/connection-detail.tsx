@@ -1,7 +1,7 @@
 import { Button } from "@deco/ui/components/button.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import { Navigate, useParams, useSearchParams } from "react-router";
-import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
 import { isWellKnownApp, useGroupedApp } from "./apps.ts";
 import { IntegrationIcon } from "./common.tsx";
 import { Skeleton } from "@deco/ui/components/skeleton.tsx";

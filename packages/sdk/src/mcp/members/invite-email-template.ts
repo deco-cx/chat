@@ -101,7 +101,7 @@ export function getInviteEmailTemplate({
         <table style="width: 100%; background-color: #e7e5e4; border-radius: 30px;" cellpadding="0" cellspacing="0" border="0">
           <tr>
             <td style="padding: 40px; text-align: center;">
-              <a href="https://admin.decocms.com/about" style="color: #000000; font-size: 13px; text-decoration: underline; margin-right: 16px;">About us</a>
+              <a href="https://decocms.com" style="color: #000000; font-size: 13px; text-decoration: underline; margin-right: 16px;">About us</a>
               <span style="color: #000000; font-size: 13px;">Made with ❤️ in Brazil</span>
             </td>
           </tr>
