@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 
 export const useOptionsLoader = (type: string) => {
   const { workspace } = useSDK();
-  const { data, isPending, refetch } = useQuery({
+  const { data, isPending } = useQuery({
     queryKey: ["optionsLoader", type],
     refetchOnWindowFocus: true,
     staleTime: 0,
@@ -40,5 +40,5 @@ export const useOptionsLoader = (type: string) => {
       }));
     },
   });
-  return { data: data ?? [], isPending, refetch: refetch };
+  return { data: data ?? [], isPending };
 };

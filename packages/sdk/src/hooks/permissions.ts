@@ -110,7 +110,6 @@ export function usePermissionDescriptions(scopes: AppScope[]): {
           return {
             scope: scope.name,
             description: tool.description,
-            app: scope.app,
           };
         }
       }

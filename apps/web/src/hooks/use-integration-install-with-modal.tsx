@@ -4,17 +4,17 @@ import {
   useCreateIntegration,
   useGetRegistryApp,
   useInstallFromMarketplace,
-  useMarketplaceAppSchema,
   usePermissionDescriptions,
 } from "@deco/sdk/hooks";
 import type { Integration } from "@deco/sdk/models";
 import type { JSONSchema7 } from "json-schema";
-import { useState as _useState } from "react";
+import { useState } from "react";
 import { useWorkspaceLink } from "./use-navigate-workspace.ts";
 import { useMutation } from "@tanstack/react-query";
 import { createPolicyStatements, getAllScopes } from "../utils/scopes.ts";
 
 interface InstallState {
+  isModalOpen: boolean;
   scopes?: string[];
   stateSchema?: JSONSchema7;
   integrationName?: string;
@@ -83,9 +83,11 @@ export const useInstallCreatingApiKeyAndIntegration = () => {
   return mutation;
 };
 
-export function useIntegrationInstall(appName?: string) {
-  const { data: appSchema, isLoading: appSchemaLoading } =
-    useMarketplaceAppSchema(appName);
+export function useIntegrationInstallWithModal() {
+  const [installState, setInstallState] = useState<InstallState>({
+    isModalOpen: false,
+  });
+
   const getLinkFor = useWorkspaceLink();
   const installMutation = useInstallFromMarketplace();
   const getRegistryApp = useGetRegistryApp();
@@ -93,15 +95,12 @@ export function useIntegrationInstall(appName?: string) {
   const installCreatingApiKeyAndIntegration =
     useInstallCreatingApiKeyAndIntegration();
 
-  const handleInstall = async (
-    params: {
-      appId: string;
-      appName: string;
-      provider: string;
-      returnUrl: string;
-    },
-    formData: Record<string, unknown> | null,
-  ) => {
+  const handleInstall = async (params: {
+    appId: string;
+    appName: string;
+    provider: string;
+    returnUrl: string;
+  }) => {
     try {
       const result = await installMutation.mutateAsync(params);
 
@@ -109,18 +108,15 @@ export function useIntegrationInstall(appName?: string) {
       if (result.stateSchema) {
         const scopes = result.scopes || [];
 
-        const installState: InstallState = {
+        setInstallState({
+          isModalOpen: true,
           stateSchema: result.stateSchema as JSONSchema7,
           scopes: scopes,
           integrationName: params.appName,
           integration: result.integration,
           appName: params.appName,
           provider: params.provider,
-        };
-
-        if (formData) {
-          await setupAppOauth(formData, installState);
-        }
+        });
       }
 
       return result;
@@ -130,10 +126,7 @@ export function useIntegrationInstall(appName?: string) {
     }
   };
 
-  const setupAppOauth = async (
-    formData: Record<string, unknown>,
-    installState: InstallState,
-  ) => {
+  const handleModalSubmit = async (formData: Record<string, unknown>) => {
     if (!installState.appName || !installState.provider) {
       throw new Error("Missing app name or provider");
     }
@@ -154,6 +147,12 @@ export function useIntegrationInstall(appName?: string) {
         installId,
       });
 
+      // Close modal after successful submission
+      setInstallState((prev: InstallState) => ({
+        ...prev,
+        isModalOpen: false,
+      }));
+
       const redirectPath = getLinkFor(`/connection/unknown:::${installId}`);
       globalThis.location.href = redirectPath;
     } catch (error) {
@@ -162,10 +161,15 @@ export function useIntegrationInstall(appName?: string) {
     }
   };
 
-  const integrationSchema = appSchema?.schema as JSONSchema7;
-  const integrationScopes = appSchema?.scopes ?? [];
+  const handleModalClose = () => {
+    setInstallState((prev: InstallState) => ({ ...prev, isModalOpen: false }));
+  };
+
   // Get dynamic permission descriptions for all scopes
-  const allScopes = getAllScopes(integrationScopes, integrationSchema);
+  const allScopes = getAllScopes(
+    installState.scopes ?? [],
+    installState.stateSchema,
+  );
   const { permissions: dynamicPermissions, isLoading: permissionsLoading } =
     usePermissionDescriptions(allScopes);
 
@@ -173,25 +177,24 @@ export function useIntegrationInstall(appName?: string) {
     // Install function
     install: handleInstall,
 
-    // // Modal state and handlers
-    integrationState: {
-      schema: integrationSchema,
-      scopes: integrationScopes,
+    // Modal state and handlers
+    modalState: {
+      isOpen: installState.isModalOpen,
+      schema: installState.stateSchema,
+      scopes: installState.scopes,
       permissions: dynamicPermissions,
-      integrationName: installMutation.variables?.appName,
-      integration: installMutation.data?.integration,
+      integrationName: installState.integrationName,
+      integration: installState.integration,
+      onSubmit: handleModalSubmit,
+      onClose: handleModalClose,
       isLoading:
-        appSchemaLoading ||
         installCreatingApiKeyAndIntegration.isPending ||
         getRegistryApp.isPending ||
         permissionsLoading,
     },
 
     // Mutation state
-    isLoading:
-      installMutation.isPending ||
-      installCreatingApiKeyAndIntegration.isPending ||
-      getRegistryApp.isPending,
+    isLoading: installMutation.isPending,
     error: installMutation.error,
   };
 }

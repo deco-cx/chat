@@ -1,6 +1,5 @@
 import {
   useMutation,
-  useQuery,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
@@ -308,17 +307,12 @@ export const useInstallFromMarketplace = () => {
   return mutation;
 };
 
-export const useMarketplaceAppSchema = (appName?: string) => {
+export const useMarketplaceAppSchema = (appName: string) => {
   const { workspace } = useSDK();
-  const canRunQuery = !!appName;
-
-  return useQuery({
+  return useSuspenseQuery({
     queryKey: ["integrations", "marketplace", appName, "schema"],
     queryFn: () =>
-      canRunQuery
-        ? MCPClient.forWorkspace(workspace).DECO_GET_APP_SCHEMA({ appName })
-        : null,
-    enabled: canRunQuery,
+      MCPClient.forWorkspace(workspace).DECO_GET_APP_SCHEMA({ appName }),
   });
 };
 

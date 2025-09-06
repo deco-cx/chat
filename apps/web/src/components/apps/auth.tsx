@@ -20,7 +20,7 @@ import { AppsAuthLayout, OAuthSearchParams } from "./layout.tsx";
 import { useRegistryApp, type RegistryApp } from "@deco/sdk";
 import { IntegrationAvatar } from "../common/avatar/integration.tsx";
 import { ErrorBoundary } from "../../error-boundary.tsx";
-import { useInstallCreatingApiKeyAndIntegration } from "../../hooks/use-integration-install.tsx";
+import { useInstallCreatingApiKeyAndIntegration } from "../../hooks/use-integration-install-with-modal.tsx";
 import { FormProvider, useForm } from "react-hook-form";
 import { Badge } from "@deco/ui/components/badge.tsx";
 import { Separator } from "@deco/ui/components/separator.tsx";
@@ -264,7 +264,7 @@ const InlineCreateIntegrationForm = ({
 }) => {
   const { data } = useMarketplaceAppSchema(appName);
   const scopes = data?.scopes ?? [];
-  const schema = data?.schema as JSONSchema7 | undefined;
+  const schema = data?.schema as JSONSchema7;
 
   const form = useForm({
     defaultValues: schema ? generateDefaultValues(schema) : {},
@@ -279,7 +279,7 @@ const InlineCreateIntegrationForm = ({
   }, [permissions]);
 
   const shouldShowForm = useMemo(() => {
-    return schema?.properties && Object.keys(schema.properties).length > 0;
+    return schema.properties && Object.keys(schema.properties).length > 0;
   }, [schema]);
 
   // Update form defaults when schema changes
@@ -353,7 +353,7 @@ const InlineCreateIntegrationForm = ({
       )}
 
       {/* Configuration Form */}
-      {shouldShowForm && schema && (
+      {shouldShowForm && (
         <>
           <Separator />
           <div>
