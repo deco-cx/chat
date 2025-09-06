@@ -68,7 +68,7 @@ export function HomeLayout() {
             <SidebarFooter className="mt-auto">
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <LoggedUser />
+                  <LoggedUser disablePreferences />
                 </SidebarMenuItem>
               </SidebarMenu>
             </SidebarFooter>

@@ -301,7 +301,11 @@ function UserPreferencesModal({
   );
 }
 
-export function LoggedUser() {
+export function LoggedUser({
+  disablePreferences,
+}: {
+  disablePreferences?: boolean;
+}) {
   const user = useUser();
   const location = useLocation();
   const href = "/invites";
@@ -363,16 +367,18 @@ export function LoggedUser() {
             Profile
           </button>
         </ResponsiveDropdownItem>
-        <ResponsiveDropdownItem asChild>
-          <button
-            type="button"
-            className="flex items-center gap-2 text-sm w-full cursor-pointer"
-            onClick={() => setPreferencesOpen(true)}
-          >
-            <Icon name="tune" className="text-muted-foreground" />
-            Preferences
-          </button>
-        </ResponsiveDropdownItem>
+        {!disablePreferences && (
+          <ResponsiveDropdownItem asChild>
+            <button
+              type="button"
+              className="flex items-center gap-2 text-sm w-full cursor-pointer"
+              onClick={() => setPreferencesOpen(true)}
+            >
+              <Icon name="tune" className="text-muted-foreground" />
+              Preferences
+            </button>
+          </ResponsiveDropdownItem>
+        )}
         <ResponsiveDropdownItem asChild>
           <Link
             to={href}
@@ -451,7 +457,7 @@ export function LoggedUser() {
       {profileOpen && (
         <ProfileSettings open={profileOpen} onOpenChange={setProfileOpen} />
       )}
-      {preferencesOpen && (
+      {!disablePreferences && preferencesOpen && (
         <UserPreferencesModal
           open={preferencesOpen}
           onOpenChange={setPreferencesOpen}
