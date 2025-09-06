@@ -1,6 +1,8 @@
 import {
   getAgentsUsage,
   getBillingHistory,
+  getContractsPreAuthorizations,
+  getContractsCommits,
   getThreadsUsage,
   getWalletAccount,
   getWorkspacePlan,
@@ -76,6 +78,44 @@ export function useBillingHistory({
 
 export type BillingHistoryItem = Awaited<
   ReturnType<typeof useBillingHistory>
+>["items"][number];
+
+export function useContractsPreAuthorizations({
+  range,
+}: {
+  range: "day" | "week" | "month" | "year";
+}) {
+  const { workspace } = useSDK();
+  const { data: contractsPreAuthorizations } = useSuspenseQuery({
+    queryKey: KEYS.WALLET_CONTRACTS_PRE_AUTHORIZATIONS(workspace, range),
+    queryFn: () => getContractsPreAuthorizations(workspace, range),
+  });
+
+  console.log({ contractsPreAuthorizations });
+
+  return contractsPreAuthorizations;
+}
+
+export type ContractsPreAuthorizationsItem = Awaited<
+  ReturnType<typeof useContractsPreAuthorizations>
+>["items"][number];
+
+export function useContractsCommits({
+  range,
+}: {
+  range: "day" | "week" | "month" | "year";
+}) {
+  const { workspace } = useSDK();
+  const { data: contractsCommits } = useSuspenseQuery({
+    queryKey: KEYS.WALLET_CONTRACTS_COMMITS(workspace, range),
+    queryFn: () => getContractsCommits(workspace, range),
+  });
+
+  return contractsCommits;
+}
+
+export type ContractsCommitsItem = Awaited<
+  ReturnType<typeof useContractsCommits>
 >["items"][number];
 
 export function usePlan() {

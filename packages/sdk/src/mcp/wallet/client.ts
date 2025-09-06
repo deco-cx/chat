@@ -369,11 +369,52 @@ export interface WalletAPI {
       }[];
     };
   };
+
+  "GET /contracts/pre-authorizations": {
+    searchParams: {
+      workspace: string;
+      range: "day" | "week" | "month" | "year";
+    };
+    response: {
+      items: {
+        id: string;
+        amount: string;
+        contractId: string;
+        clauses: {
+          clauseId: string;
+          amount: number;
+        }[];
+        timestamp: string;
+        type: TransactionType;
+      }[];
+    };
+  };
+
+  "GET /contracts/commits": {
+    searchParams: {
+      workspace: string;
+      range: "day" | "week" | "month" | "year";
+    };
+    response: {
+      items: {
+        id: string;
+        amount: number;
+        contractId: string;
+        callerApp?: string;
+        clauses: {
+          clauseId: string;
+          amount: number;
+        }[];
+        timestamp: string;
+        type: TransactionType;
+      }[];
+    };
+  };
 }
 
 // for local dev
-// const WALLET_API_URL = "http://localhost:8001";
-const WALLET_API_URL = "https://wallet.webdraw.com";
+const WALLET_API_URL = "http://localhost:8001";
+// const WALLET_API_URL = "https://wallet.webdraw.com";
 
 export function createWalletClient(
   apiKey: string,

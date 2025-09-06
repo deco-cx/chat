@@ -146,6 +146,14 @@ export const KEYS = {
     workspace: Workspace,
     range: "day" | "week" | "month" | "year",
   ) => ["wallet-billing-history", workspace, range],
+  WALLET_CONTRACTS_PRE_AUTHORIZATIONS: (
+    workspace: Workspace,
+    range: "day" | "week" | "month" | "year",
+  ) => ["wallet-contracts-pre-authorizations", workspace, range],
+  WALLET_CONTRACTS_COMMITS: (
+    workspace: Workspace,
+    range: "day" | "week" | "month" | "year",
+  ) => ["wallet-contracts-commits", workspace, range],
   WORKSPACE_PLAN: (workspace: Workspace) => ["workspace-plan", workspace],
   WORKFLOWS: (workspace: Workspace, page?: number, per_page?: number) => [
     "workflows",

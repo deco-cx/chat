@@ -26,6 +26,7 @@ export type InnateConnection = {
 export type HTTPConnection = {
   type: "HTTP";
   url: string;
+  headers?: Record<string, string>;
   token?: string;
 };
 

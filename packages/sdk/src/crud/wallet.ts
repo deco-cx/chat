@@ -27,6 +27,22 @@ export const getBillingHistory = (
     range,
   });
 
+export const getContractsPreAuthorizations = (
+  workspace: string,
+  range: "day" | "week" | "month" | "year",
+) =>
+  MCPClient.forWorkspace(workspace).GET_CONTRACTS_PRE_AUTHORIZATIONS({
+    range,
+  });
+
+export const getContractsCommits = (
+  workspace: string,
+  range: "day" | "week" | "month" | "year",
+) =>
+  MCPClient.forWorkspace(workspace).GET_CONTRACTS_COMMITS({
+    range,
+  });
+
 export const createWalletCheckoutSession = ({
   workspace,
   amountUSDCents,

@@ -170,7 +170,6 @@ function TransactionsTable() {
   const [sortKey, setSortKey] = useState<string>("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const history = useBillingHistory({ range: "year" });
-
   const getTypeIcon = (item: BillingHistoryItem) => {
     const type = item.type;
 

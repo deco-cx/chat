@@ -64,11 +64,12 @@ export const honoCtxToAppCtx = (c: Context<AppEnv>): AppContext => {
   const policyClient = PolicyClient.getInstance(c.var.db);
   const authorizationClient = new AuthorizationClient(policyClient);
 
-  return {
+  const appContext = {
     ...c.var,
     params: { ...c.req.query(), ...c.req.param() },
     envVars: envs,
     cookie: c.req.header("Cookie"),
+    callerApp: c.var.callerApp,
     policy: policyClient,
     authorization: authorizationClient,
     token: c.req.header("Authorization")?.replace("Bearer ", ""),
@@ -80,6 +81,7 @@ export const honoCtxToAppCtx = (c: Context<AppEnv>): AppContext => {
       apiHost: envs.POSTHOG_API_HOST,
     }),
   };
+  return appContext;
 };
 
 const mapMCPErrorToHTTPExceptionOrThrow = (err: Error) => {
@@ -214,12 +216,21 @@ interface ProxyOptions {
 const proxy = (
   mcpConnection: MCPConnection,
   { middlewares, tools }: ProxyOptions = {},
+  callerApp?: string,
 ) => {
   const createMcpClient = async () => {
-    const client = await createServerClient({
-      connection: mcpConnection,
-      name: "proxy",
-    });
+    const client = await createServerClient(
+      {
+        connection: mcpConnection,
+        name: "proxy",
+      },
+      undefined,
+      callerApp
+        ? {
+            "x-caller-app": callerApp,
+          }
+        : undefined,
+    );
 
     const listTools = compose(
       ...(middlewares?.listTools ?? []),
@@ -230,10 +241,9 @@ const proxy = (
         >),
     );
 
-    const callTool = compose(
-      ...(middlewares?.callTool ?? []),
-      (req) => client.callTool(req.params) as ReturnType<CallToolMiddleware>,
-    );
+    const callTool = compose(...(middlewares?.callTool ?? []), (req) => {
+      return client.callTool(req.params) as ReturnType<CallToolMiddleware>;
+    });
 
     return { listTools, callTool };
   };
@@ -286,17 +296,24 @@ const createMcpServerProxyForIntegration = async (
   >,
 ) => {
   const ctx = honoCtxToAppCtx(c);
+  const callerApp = ctx.callerApp;
 
   const integration = await fetchIntegration();
 
-  const mcpServerProxy = proxy(integration.connection, {
-    tools: integration.tools
-      ? { tools: integration.tools as ListToolsResult["tools"] }
-      : undefined,
-    middlewares: {
-      callTool: [withMCPAuthorization(ctx, { integrationId: integration.id })],
+  const mcpServerProxy = proxy(
+    integration.connection,
+    {
+      tools: integration.tools
+        ? { tools: integration.tools as ListToolsResult["tools"] }
+        : undefined,
+      middlewares: {
+        callTool: [
+          withMCPAuthorization(ctx, { integrationId: integration.id }),
+        ],
+      },
     },
-  });
+    callerApp,
+  );
 
   return mcpServerProxy;
 };

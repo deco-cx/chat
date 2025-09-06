@@ -51,7 +51,8 @@ export function createMCPClientProxy<T extends Record<string, unknown>>(
     token: options?.token,
     url: new URL(
       `${getWorkspace(options?.workspace)}/mcp`,
-      options?.decoCmsApiUrl ?? `https://api.decocms.com`,
+      // options?.decoCmsApiUrl ?? `https://api.decocms.com`,
+      options?.decoCmsApiUrl ?? `http://localhost:3001`,
     ).href,
   };
 

@@ -174,6 +174,7 @@ export interface Vars {
   tool?: { name: string };
   cookie?: string;
   token?: string;
+  callerApp?: string;
   db: Client;
   user: Principal;
   policy: PolicyClient;

@@ -114,6 +114,7 @@ export interface RequestContext<TSchema extends z.ZodTypeAny = any> {
   ensureAuthenticated: (options?: {
     workspaceHint?: string;
   }) => User | undefined;
+  callerApp?: string;
 }
 
 // 2. Map binding type to its creator function
@@ -246,6 +247,9 @@ export const withBindings = <TEnv>({
     context = tokenOrContext;
     const decoded = decodeJwt(tokenOrContext.token);
     const workspace = decoded.aud as string;
+
+    const appName = decoded.appName as string | undefined;
+    context.callerApp = appName;
     context.ensureAuthenticated = AUTHENTICATED(decoded.user, workspace);
   } else {
     context = {
