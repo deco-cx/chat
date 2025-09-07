@@ -33,7 +33,7 @@ import { trackEvent } from "../../../hooks/analytics.ts";
 import { AgentProvider } from "../../agent/provider.tsx";
 import type { Tab } from "../../dock/index.tsx";
 import { togglePanel } from "../../dock/index.tsx";
-import { DefaultBreadcrumb, PageLayout } from "../../layout/project.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../../layout.tsx";
 import { Context } from "./context.ts";
 import { DetailForm } from "./form.tsx";
 import HistoryTab from "./history.tsx";

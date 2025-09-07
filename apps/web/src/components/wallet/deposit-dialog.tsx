@@ -67,7 +67,7 @@ function useDepositDialog() {
 }
 
 export function DepositDialog() {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const workspaceLink = useWorkspaceLink();
   const plan = usePlan();
   const { isOpen, setIsOpen } = useDepositDialog();
@@ -75,7 +75,7 @@ export function DepositDialog() {
   const createCheckoutSession = useMutation({
     mutationFn: (amountInCents: number) =>
       createWalletCheckoutSession({
-        locator: locator,
+        workspace,
         amountUSDCents: amountInCents,
         successUrl: `${location.origin}${workspaceLink("/monitor/billing?deposit_success=true")}`,
         cancelUrl: `${location.origin}${workspaceLink("/monitor/billing?deposit_success=false")}`,

@@ -4,6 +4,7 @@ import {
   SDKProvider,
   useCreateOAuthCodeForIntegration,
   useIntegrations,
+  type Workspace,
 } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
@@ -12,6 +13,7 @@ import { Combobox } from "@deco/ui/components/combobox.tsx";
 import { useEffect, useMemo, useState, Suspense } from "react";
 import { ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@deco/ui/lib/utils.ts";
+import { useUser } from "../../hooks/use-user.ts";
 import { Avatar } from "../common/avatar/index.tsx";
 import { type CurrentTeam, useUserTeams } from "../sidebar/team-selector.tsx";
 import { AppsAuthLayout, OAuthSearchParams } from "./layout.tsx";
@@ -37,7 +39,6 @@ import {
 import type { JSONSchema7 } from "json-schema";
 import { getAllScopes } from "../../utils/scopes.ts";
 import { VerifiedBadge } from "../integrations/marketplace.tsx";
-import { Locator } from "@deco/sdk";
 
 const preSelectTeam = (
   teams: CurrentTeam[],
@@ -139,16 +140,16 @@ const NoProjectFound = () => {
   );
 };
 
-const SelectOrganization = ({
+const SelectProject = ({
   registryApp,
-  orgs,
-  setOrg,
+  teams,
+  setTeam,
 }: {
   registryApp: RegistryApp;
-  orgs: CurrentTeam[];
-  setOrg: (team: CurrentTeam | null) => void;
+  teams: CurrentTeam[];
+  setTeam: (team: CurrentTeam | null) => void;
 }) => {
-  const [selectedOrg, setSelectedOrg] = useState<CurrentTeam | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<CurrentTeam | null>(null);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">
@@ -172,14 +173,16 @@ const SelectOrganization = ({
           </p>
           <div className="w-full">
             <Combobox
-              options={orgs.map((team) => ({
+              options={teams.map((team) => ({
                 value: team.slug,
                 label: team.label,
                 avatarUrl: team.avatarUrl,
               }))}
-              value={selectedOrg?.slug ?? ""}
+              value={selectedTeam?.slug ?? ""}
               onChange={(value) =>
-                setSelectedOrg(orgs.find((team) => team.slug === value) ?? null)
+                setSelectedTeam(
+                  teams.find((team) => team.slug === value) ?? null,
+                )
               }
               placeholder="Select a project"
               width="w-full"
@@ -232,8 +235,8 @@ const SelectOrganization = ({
 
         <Button
           className="w-full"
-          disabled={!selectedOrg}
-          onClick={() => setOrg(selectedOrg)}
+          disabled={!selectedTeam}
+          onClick={() => setTeam(selectedTeam)}
         >
           Continue
         </Button>
@@ -476,16 +479,16 @@ const FooterButtons = ({
 
 const SelectProjectAppInstance = ({
   app,
-  org,
   project,
+  workspace,
   selectAnotherProject,
   clientId,
   redirectUri,
   state,
 }: {
   app: RegistryApp;
-  org: CurrentTeam;
-  project: string;
+  project: CurrentTeam;
+  workspace: Workspace;
   selectAnotherProject: () => void;
   clientId: string;
   redirectUri: string;
@@ -527,7 +530,7 @@ const SelectProjectAppInstance = ({
   }) => {
     const { redirectTo } = await createOAuthCode.mutateAsync({
       integrationId,
-      workspace: Locator.from({ org: org.slug, project }),
+      workspace,
       redirectUri,
       state,
     });
@@ -542,8 +545,8 @@ const SelectProjectAppInstance = ({
             <div className="relative">
               <Avatar
                 shape="square"
-                url={org.avatarUrl}
-                fallback={org.label}
+                url={project.avatarUrl}
+                fallback={project.label}
                 objectFit="contain"
                 size="xl"
               />
@@ -642,46 +645,40 @@ function AppsOAuth({
   workspace_hint,
 }: OAuthSearchParams) {
   const { data: registryApp } = useRegistryApp({ clientId: client_id });
-  const orgs = useUserTeams();
-  const [org, setOrg] = useState<CurrentTeam | null>(
-    preSelectTeam(orgs, workspace_hint),
+  const teams = useUserTeams();
+  const user = useUser();
+  const [team, setTeam] = useState<CurrentTeam | null>(
+    preSelectTeam(teams, workspace_hint),
   );
 
-  const selectedOrgSlug = useMemo(() => {
-    if (!org) {
+  const selectedWorkspace = useMemo(() => {
+    if (!team) {
       return null;
     }
-    return org.slug;
-  }, [org]);
+    return team.id === user.id ? `users/${user.id}` : `shared/${team.slug}`;
+  }, [team]);
 
-  const selectedProject = "default";
-
-  if (!orgs || orgs.length === 0) {
+  if (!teams || teams.length === 0) {
     return <NoProjectFound />;
   }
 
-  if (!selectedOrgSlug || !org) {
+  if (!selectedWorkspace || !team) {
     return (
-      <SelectOrganization
+      <SelectProject
         registryApp={registryApp}
-        orgs={orgs}
-        setOrg={setOrg}
+        teams={teams}
+        setTeam={setTeam}
       />
     );
   }
 
-  const workspace = Locator.from({
-    org: selectedOrgSlug,
-    project: selectedProject,
-  });
-
   return (
-    <SDKProvider locator={workspace}>
+    <SDKProvider workspace={selectedWorkspace as Workspace}>
       <SelectProjectAppInstance
         app={registryApp}
-        org={org}
-        project={selectedProject}
-        selectAnotherProject={() => setOrg(null)}
+        project={team}
+        workspace={selectedWorkspace as Workspace}
+        selectAnotherProject={() => setTeam(null)}
         clientId={client_id}
         redirectUri={redirect_uri}
         state={state}

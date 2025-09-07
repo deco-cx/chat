@@ -1,9 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createContext, type PropsWithChildren, use } from "react";
-import { ProjectLocator } from "../locator";
+
+export type Workspace = `users/${string}` | `shared/${string}`;
 
 interface State {
-  locator: ProjectLocator;
+  /** The context of the account, i.e. users/123 or shared/teamId */
+  workspace: Workspace;
 }
 
 const client = new QueryClient({
@@ -19,15 +21,11 @@ const client = new QueryClient({
 
 const Context = createContext<State | null>(null);
 
-export function DecoQueryClientProvider({ children }: PropsWithChildren) {
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
-}
-
 export function SDKProvider({ children, ...props }: PropsWithChildren<State>) {
   return (
-    <DecoQueryClientProvider>
+    <QueryClientProvider client={client}>
       <Context.Provider value={props}>{children}</Context.Provider>
-    </DecoQueryClientProvider>
+    </QueryClientProvider>
   );
 }
 

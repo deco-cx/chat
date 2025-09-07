@@ -1,4 +1,4 @@
-import { useAgents, useTeamMembers, useOrganizations } from "@deco/sdk";
+import { useAgents, useTeamMembers, useTeams } from "@deco/sdk";
 import { WELL_KNOWN_AGENT_IDS } from "@deco/sdk/constants";
 import {
   Tooltip,
@@ -67,11 +67,11 @@ function UserInfo({
 }: UserInfoProps) {
   const user = useUser();
   const params = useParams();
-  const resolvedOrgSlug = params.org;
-  const { data: teams } = useOrganizations();
-  const orgId = useMemo(
-    () => teams?.find((t) => t.slug === resolvedOrgSlug)?.id ?? null,
-    [teams, resolvedOrgSlug],
+  const resolvedTeamSlug = params.teamSlug;
+  const { data: teams } = useTeams();
+  const teamId = useMemo(
+    () => teams?.find((t) => t.slug === resolvedTeamSlug)?.id ?? null,
+    [teams, resolvedTeamSlug],
   );
 
   // If userId matches current user, use user data directly
@@ -79,8 +79,8 @@ function UserInfo({
 
   const {
     data: { members: teamMembers = [] },
-  } = useTeamMembers(orgId ?? null);
-  const members = !isCurrentUser && orgId !== null ? teamMembers : [];
+  } = useTeamMembers(teamId ?? null);
+  const members = !isCurrentUser && teamId !== null ? teamMembers : [];
   const member = useMemo(
     () => members.find((m) => m.user_id === userId),
     [members, userId],

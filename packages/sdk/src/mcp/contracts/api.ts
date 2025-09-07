@@ -58,10 +58,7 @@ const createContractTool = createToolFactory<ContractContext>(
     return {
       ...(c as unknown as ContractContext),
       state,
-      workspace: fromWorkspaceString(
-        c.user.aud!,
-        c.user?.id as string | undefined,
-      ),
+      workspace: fromWorkspaceString(c.user.aud!),
     };
   },
   WellKnownMcpGroups.Contracts,

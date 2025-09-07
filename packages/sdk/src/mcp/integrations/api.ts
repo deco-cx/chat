@@ -17,10 +17,8 @@ import {
   type Integration,
   IntegrationSchema,
   InternalServerError,
-  Locator,
   type MCPConnection,
   NEW_INTEGRATION_TEMPLATE,
-  ProjectLocator,
   UserInputError,
   WellKnownMcpGroups,
 } from "../../index.ts";
@@ -30,7 +28,6 @@ import type { QueryResult } from "../../storage/supabase/client.ts";
 import { getKnowledgeBaseIntegrationId } from "../../utils/index.ts";
 import { IMPORTANT_ROLES } from "../agents/api.ts";
 import {
-  assertHasLocator,
   assertHasWorkspace,
   assertWorkspaceResourceAccess,
 } from "../assertions.ts";
@@ -190,7 +187,7 @@ export const listTools = createIntegrationManagementTool({
 });
 
 const virtualIntegrationsFor = (
-  locator: ProjectLocator,
+  workspace: string,
   knowledgeBases: string[],
   token?: string,
 ) => {
@@ -206,10 +203,10 @@ const virtualIntegrationsFor = (
       token,
     },
     icon: "https://i.imgur.com/GD4o7vx.png",
-    workspace: Locator.adaptToRootSlug(locator),
+    workspace,
     created_at: new Date().toISOString(),
   };
-  const workspaceMcp = new URL(`/${locator}/mcp`, DECO_CMS_API_URL);
+  const workspaceMcp = new URL(`${workspace}/mcp`, DECO_CMS_API_URL);
 
   // Create a virtual Workspace Management integration
   const workspaceManagementIntegration = {
@@ -222,7 +219,7 @@ const virtualIntegrationsFor = (
       token,
     },
     icon: "https://assets.webdraw.app/uploads/deco-avocado-light.png",
-    workspace: Locator.adaptToRootSlug(locator),
+    workspace,
     created_at: new Date().toISOString(),
   };
 
@@ -241,7 +238,7 @@ const virtualIntegrationsFor = (
           url: url.href,
           token,
         },
-        workspace: Locator.adaptToRootSlug(locator),
+        workspace,
         created_at: new Date().toISOString(),
       };
     },
@@ -265,7 +262,7 @@ const virtualIntegrationsFor = (
           token,
         },
         icon: "https://assets.decocache.com/mcp/1b6e79a9-7830-459c-a1a6-ba83e7e58cbe/Knowledge-Base.png",
-        workspace: Locator.adaptToRootSlug(locator),
+        workspace,
         created_at: new Date().toISOString(),
       };
     }),
@@ -311,7 +308,6 @@ export const listIntegrations = createIntegrationManagementTool({
   }),
   handler: async ({ binder }, c) => {
     assertHasWorkspace(c);
-    assertHasLocator(c);
     const workspace = c.workspace.value;
 
     await assertWorkspaceResourceAccess(c);
@@ -355,11 +351,7 @@ export const listIntegrations = createIntegrationManagementTool({
 
     // Build the result with all integrations
     const baseResult = [
-      ...virtualIntegrationsFor(
-        c.locator.value,
-        knowledgeBases.names ?? [],
-        c.token,
-      ),
+      ...virtualIntegrationsFor(workspace, knowledgeBases.names ?? [], c.token),
       ...filteredIntegrations.map(mapIntegration),
       ...filteredAgents
         .map((item) => AgentSchema.safeParse(item)?.data)
@@ -457,9 +449,8 @@ export const getIntegration = createIntegrationManagementTool({
 
     const knowledgeBases = await listKnowledgeBases.handler({});
 
-    assertHasLocator(c);
     const virtualIntegrations = virtualIntegrationsFor(
-      c.locator.value,
+      c.workspace.value,
       knowledgeBases.names ?? [],
       c.token,
     );

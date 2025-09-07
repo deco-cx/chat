@@ -19,16 +19,16 @@ export const clearThemeCache = (workspace: string) => {
 };
 
 export const useTheme = () => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const { data: theme, isLoading: isQueryLoading } = useWorkspaceTheme();
   const [cachedTheme, setCachedTheme] = useState(() => {
-    const cached = localStorage.getItem(THEME_CACHE_KEY(locator));
+    const cached = localStorage.getItem(THEME_CACHE_KEY(workspace));
     return cached ? JSON.parse(cached) : null;
   });
 
   useEffect(() => {
     if (theme) {
-      localStorage.setItem(THEME_CACHE_KEY(locator), JSON.stringify(theme));
+      localStorage.setItem(THEME_CACHE_KEY(workspace), JSON.stringify(theme));
       setCachedTheme(theme);
     }
   }, [theme]);
@@ -65,9 +65,9 @@ export function WithWorkspaceTheme({
   const forceCloseSplashPromise = useRef<PromiseWithResolvers<void>>(
     Promise.withResolvers(),
   );
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const [showSplash, setShowSplash] = useState(() => {
-    return !localStorage.getItem(THEME_CACHE_KEY(locator));
+    return !localStorage.getItem(THEME_CACHE_KEY(workspace));
   });
 
   useEffect(() => {

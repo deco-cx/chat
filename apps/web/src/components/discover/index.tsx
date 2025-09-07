@@ -11,7 +11,7 @@ import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 import type { Tab } from "../dock/index.tsx";
 import { AppKeys, getConnectionAppKey } from "../integrations/apps.ts";
 import { VerifiedBadge } from "../integrations/marketplace.tsx";
-import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../layout";
 import { IntegrationAvatar } from "../common/avatar/integration.tsx";
 import { useCreateCustomConnection } from "../../hooks/use-create-custom-connection.ts";
 

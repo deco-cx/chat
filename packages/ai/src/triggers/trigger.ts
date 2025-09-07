@@ -24,7 +24,7 @@ import {
   MCPClient,
   type MCPClientStub,
   PolicyClient,
-  type ProjectTools,
+  type WorkspaceTools,
 } from "@deco/sdk/mcp";
 import type { Callbacks } from "@deco/sdk/mcp/binder";
 import type { CallTool } from "@deco/sdk/models";
@@ -77,7 +77,7 @@ export interface TriggerMetadata {
 
 function mapTriggerToTriggerData(
   trigger: NonNullable<
-    Awaited<ReturnType<MCPClientStub<ProjectTools>["TRIGGERS_GET"]>>
+    Awaited<ReturnType<MCPClientStub<WorkspaceTools>["TRIGGERS_GET"]>>
   >,
 ): TriggerData {
   return {
@@ -126,7 +126,7 @@ const buildInvokeUrl = (
 @Actor()
 export class Trigger {
   public metadata?: TriggerMetadata;
-  public mcpClient: MCPClientStub<ProjectTools>;
+  public mcpClient: MCPClientStub<WorkspaceTools>;
 
   protected data: TriggerData | null = null;
   protected hooks: TriggerHooks<TriggerData> | null = null;
@@ -200,8 +200,6 @@ export class Trigger {
       isLocal: true,
       workspaceDO: this.actorEnv.WORKSPACE_DB,
       stub: this.state.stub as AppContext["stub"],
-      // i suspect triggers on old root/slug format for
-      // root == "users" will not work anymore
       workspace: fromWorkspaceString(this.workspace),
       resourceAccess: createResourceAccess(),
       cf: new Cloudflare({ apiToken: this.env.CF_API_TOKEN }),

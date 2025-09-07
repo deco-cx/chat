@@ -52,7 +52,7 @@ import { Table, TableColumn } from "../../common/table/index.tsx";
 import { useParams } from "react-router";
 import { UserAvatar } from "../../common/avatar/user.tsx";
 import { useUser } from "../../../hooks/use-user.ts";
-import { useOrganizations } from "@deco/sdk";
+import { useTeams } from "@deco/sdk";
 import { AgentAvatar } from "../../common/avatar/agent.tsx";
 import { IntegrationAvatar } from "../../common/avatar/integration.tsx";
 import { Skeleton } from "@deco/ui/components/skeleton.tsx";
@@ -663,8 +663,8 @@ function RoleMembersPanel({
 function RoleDialogUserInfo({ userId }: RoleDialogUserInfoProps) {
   const user = useUser();
   const params = useParams();
-  const resolvedTeamSlug = params.org;
-  const { data: teams } = useOrganizations();
+  const resolvedTeamSlug = params.teamSlug;
+  const { data: teams } = useTeams();
 
   const teamId: number | null = useMemo(
     () => teams?.find((t) => t.slug === resolvedTeamSlug)?.id ?? null,

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Button } from "@deco/ui/components/button.tsx";
 import { SplitScreenLayout } from "../login/layout.tsx";
-import { BaseRouteLayout } from "../layout/project.tsx";
+import { BaseRouteLayout } from "../layout.tsx";
 
 export const OAuthSearchParamsSchema = z.object({
   client_id: z.string(),

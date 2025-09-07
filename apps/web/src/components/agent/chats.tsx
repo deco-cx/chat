@@ -1,4 +1,4 @@
-import { SDKProvider, UnauthorizedError, type ProjectLocator } from "@deco/sdk";
+import { SDKProvider, UnauthorizedError, type Workspace } from "@deco/sdk";
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
 import { SidebarInset, SidebarProvider } from "@deco/ui/components/sidebar.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
@@ -9,7 +9,7 @@ import { ChatInput } from "../chat/chat-input.tsx";
 import { ChatMessages } from "../chat/chat-messages.tsx";
 import { AgentProvider } from "./provider.tsx";
 import { EmptyState } from "../common/empty-state.tsx";
-import { PageLayout } from "../layout/project.tsx";
+import { PageLayout } from "../layout.tsx";
 import { ChatHeader } from "./chat-header.tsx";
 import AgentPreview from "./preview.tsx";
 import ThreadView from "./thread.tsx";
@@ -45,10 +45,7 @@ const TABS = {
   },
 };
 
-export const getPublicChatLink = (
-  agentId: string,
-  workspace: ProjectLocator,
-) => {
+export const getPublicChatLink = (agentId: string, workspace: Workspace) => {
   const url = new URL("/chats", globalThis.location.href);
   url.searchParams.set("agentId", agentId);
   url.searchParams.set("workspace", workspace);
@@ -60,7 +57,7 @@ function Page() {
   const [params] = useSearchParams();
 
   const { agentId, workspace, threadId, toolsets } = useMemo(() => {
-    const workspace = params.get("workspace") as ProjectLocator | null;
+    const workspace = params.get("workspace") as Workspace | null;
     const agentId = params.get("agentId");
     const threadId = params.get("threadId") ?? crypto.randomUUID();
     const toolsets = params.getAll("toolsets").map((toolset) => {
@@ -110,7 +107,7 @@ function Page() {
           </div>
         }
       >
-        <SDKProvider locator={workspace}>
+        <SDKProvider workspace={workspace}>
           <AgentProvider
             agentId={agentId}
             threadId={threadId}

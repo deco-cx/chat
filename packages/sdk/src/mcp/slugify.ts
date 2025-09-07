@@ -81,7 +81,7 @@ export const slugifyForDNS = (name: string) => {
 };
 
 /**
- * Slugifies a string by converting it to uppercase and replacing all non-alphanumeric characters with a dash.
+ * Slugifies a string by converting it to lowercase and replacing all non-alphanumeric characters with a dash.
  * @param input The string to slugify.
  * @returns The slugified string.
  */

@@ -1,4 +1,4 @@
-import { SDKProvider } from "@deco/sdk";
+import { SDKProvider, type Workspace } from "@deco/sdk";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -19,48 +19,44 @@ import { cn } from "@deco/ui/lib/utils.ts";
 import { DockviewReadyEvent } from "dockview-react";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { Link, Outlet, useParams } from "react-router";
-import { useLocalStorage } from "../../hooks/use-local-storage.ts";
-import { useWorkspaceLink } from "../../hooks/use-navigate-workspace.ts";
-import { useUserPreferences } from "../../hooks/use-user-preferences.ts";
-import { useUser } from "../../hooks/use-user.ts";
-import RegisterActivity from "../common/register-activity.tsx";
+import { useLocalStorage } from "../hooks/use-local-storage.ts";
+import { useWorkspaceLink } from "../hooks/use-navigate-workspace.ts";
+import { useUserPreferences } from "../hooks/use-user-preferences.ts";
+import { useUser } from "../hooks/use-user.ts";
+import RegisterActivity from "./common/register-activity.tsx";
 import {
   DecopilotChat,
   DecopilotTabs,
   toggleDecopilotTab,
-} from "../decopilot/index.tsx";
-import Docked, { useDock, type Tab } from "../dock/index.tsx";
-import { ProfileModalProvider, useProfileModal } from "../profile-modal.tsx";
-import { AppSidebar } from "../sidebar/index.tsx";
-import { WithWorkspaceTheme } from "../theme.tsx";
-import { useIsMobile } from "@deco/ui/hooks/use-mobile.ts";
-import { ErrorBoundary } from "../../error-boundary.tsx";
-import { Locator } from "@deco/sdk";
+} from "./decopilot/index.tsx";
+import Docked, { useDock, type Tab } from "./dock/index.tsx";
+import { ProfileModalProvider, useProfileModal } from "./profile-modal.tsx";
+import { AppSidebar } from "./sidebar/index.tsx";
+import { WithWorkspaceTheme } from "./theme.tsx";
 
 export function BaseRouteLayout({ children }: { children: ReactNode }) {
-  // remove?
-  useUser();
-  const { org, project } = useParams();
+  const user = useUser();
+  const { teamSlug } = useParams();
 
-  if (!org || !project) {
-    throw new Error("No organization or project found");
-  }
+  const rootContext: Workspace = teamSlug
+    ? `shared/${teamSlug}`
+    : `users/${user?.id}`;
 
   return (
-    <SDKProvider locator={Locator.from({ org, project })}>
+    <SDKProvider workspace={rootContext}>
       {children}
       <Toaster />
     </SDKProvider>
   );
 }
 
-export function ProjectLayout() {
+export function RouteLayout() {
   const { value: defaultOpen, update: setDefaultOpen } = useLocalStorage({
     key: "deco-chat-sidebar",
     defaultValue: true,
   });
   const [open, setOpen] = useState(defaultOpen);
-  const { org } = useParams();
+  const { teamSlug } = useParams();
 
   const {
     profileOpen,
@@ -98,7 +94,7 @@ export function ProjectLayout() {
             <SidebarInset className="h-full flex-col bg-sidebar">
               <Outlet />
             </SidebarInset>
-            <RegisterActivity orgSlug={org} />
+            <RegisterActivity teamSlug={teamSlug} />
           </SidebarProvider>
         </ProfileModalProvider>
       </WithWorkspaceTheme>
@@ -228,45 +224,27 @@ export function PageLayout({
   );
 }
 
-function BreadcrumbSidebarToggle() {
-  const { toggleSidebar, open, isMobile } = useSidebar();
-
-  if (open) {
-    return null;
-  }
-
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={() => toggleSidebar()}
-      className={cn(isMobile && "hidden", "size-8")}
-    >
-      <Icon name="dock_to_right" className="text-muted-foreground" />
-    </Button>
-  );
-}
-
 interface BreadcrumbItem {
   label: string | ReactNode;
   link?: string;
 }
 
-export function DefaultBreadcrumb({
-  items,
-  useWorkspaceLink: useWorkspaceLinkProp = true,
-}: {
-  items: BreadcrumbItem[];
-  useWorkspaceLink?: boolean;
-}) {
-  const isMobile = useIsMobile();
+export function DefaultBreadcrumb({ items }: { items: BreadcrumbItem[] }) {
+  const { toggleSidebar, open, isMobile } = useSidebar();
   const withWorkspace = useWorkspaceLink();
 
   return (
-    <div className="flex items-center gap-3 pl-2">
-      <ErrorBoundary fallback={null}>
-        <BreadcrumbSidebarToggle />
-      </ErrorBoundary>
+    <div className="flex items-center gap-3">
+      {!open && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => toggleSidebar()}
+          className={cn(isMobile && "hidden", "size-8")}
+        >
+          <Icon name="dock_to_right" className="text-muted-foreground" />
+        </Button>
+      )}
 
       <Breadcrumb>
         <BreadcrumbList>
@@ -279,9 +257,7 @@ export function DefaultBreadcrumb({
           ) : (
             items?.map((item, index) => {
               const isLast = index === items.length - 1;
-              const link = useWorkspaceLinkProp
-                ? withWorkspace(item.link ?? "")
-                : (item.link ?? "");
+              const link = withWorkspace(item.link ?? "");
 
               if (isLast) {
                 return (

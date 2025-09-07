@@ -41,7 +41,7 @@ import {
   PolicyClient,
   serializeError,
   SupabaseLLMVault,
-  type ProjectTools,
+  type WorkspaceTools,
 } from "@deco/sdk/mcp";
 import type { AgentMemoryConfig } from "@deco/sdk/memory";
 import { AgentMemory, slugify, toAlphanumericId } from "@deco/sdk/memory";
@@ -132,7 +132,7 @@ export interface AgentMetadata extends AuthMetadata {
   wallet?: Promise<AgentWallet>;
   userCookie?: string | null;
   timings?: ServerTimingsBuilder;
-  mcpClient?: MCPClientStub<ProjectTools>;
+  mcpClient?: MCPClientStub<WorkspaceTools>;
   toolsets?: Toolset[];
 }
 
@@ -223,7 +223,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
   private agentId: string;
   private wallet: AgentWallet;
   private db: Awaited<ReturnType<typeof createServerClient>>;
-  private agentScoppedMcpClient: MCPClientStub<ProjectTools>;
+  private agentScoppedMcpClient: MCPClientStub<WorkspaceTools>;
   private llmVault?: LLMVault;
   private telemetry?: Telemetry;
   private posthog: PosthogServerClient;
@@ -299,7 +299,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
       stub: this.state.stub as AppContext["stub"],
       workspaceDO: this.actorEnv.WORKSPACE_DB,
       cookie: metadata?.userCookie ?? undefined,
-      workspace: fromWorkspaceString(this.workspace, metadata?.user?.id),
+      workspace: fromWorkspaceString(this.workspace),
       resourceAccess: createResourceAccess(),
       cf: new Cloudflare({ apiToken: this.env.CF_API_TOKEN }),
       policy: policyClient,

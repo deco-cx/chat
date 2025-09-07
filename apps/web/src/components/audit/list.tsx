@@ -1,10 +1,5 @@
 import type { ThreadFilterOptions } from "@deco/sdk";
-import {
-  useAgents,
-  useAuditEvents,
-  useTeamMembers,
-  useOrganizations,
-} from "@deco/sdk";
+import { useAgents, useAuditEvents, useTeamMembers, useTeams } from "@deco/sdk";
 import {
   Alert,
   AlertDescription,
@@ -23,7 +18,7 @@ import { useParams, useSearchParams } from "react-router";
 import { ErrorBoundary } from "../../error-boundary.tsx";
 import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 import type { Tab } from "../dock/index.tsx";
-import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
 import { AuditFilters } from "./audit-filters.tsx";
 import { AuditTable } from "./audit-table.tsx";
 
@@ -105,10 +100,10 @@ export function AuditListContent({
   const currentCursor =
     getSafeCursor(searchParams.get(CURSOR_PAGINATION_SEARCH_PARAM)) ??
     undefined;
-  const { data: teams } = useOrganizations();
-  const resolvedOrgSlug = params.org;
-  const orgId = teams?.find((t) => t.slug === resolvedOrgSlug)?.id ?? null;
-  const members = orgId !== null ? useTeamMembers(orgId).data.members : [];
+  const { data: teams } = useTeams();
+  const resolvedTeamSlug = params.teamSlug;
+  const teamId = teams?.find((t) => t.slug === resolvedTeamSlug)?.id ?? null;
+  const members = teamId !== null ? useTeamMembers(teamId).data.members : [];
 
   const { data: auditData, isLoading } = useAuditEvents({
     agentId: filters?.agentId ?? selectedAgent,

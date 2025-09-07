@@ -28,27 +28,27 @@ export function useTrigger(
     "queryKey" | "queryFn"
   >,
 ) {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   return useQuery({
-    queryKey: KEYS.TRIGGER(locator, triggerId),
-    queryFn: () => getTrigger(locator, triggerId),
+    queryKey: KEYS.TRIGGER(workspace, triggerId),
+    queryFn: () => getTrigger(workspace, triggerId),
     staleTime: 0,
     ...options,
   });
 }
 
 export function useListTriggers() {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const client = useQueryClient();
 
   return useQuery({
-    queryKey: KEYS.TRIGGERS(locator),
+    queryKey: KEYS.TRIGGERS(workspace),
     queryFn: async () => {
-      const result = await listAllTriggers(locator);
+      const result = await listAllTriggers(workspace);
 
       // Update individual trigger caches
       for (const trigger of result.triggers) {
-        const itemKey = KEYS.TRIGGER(locator, trigger.id);
+        const itemKey = KEYS.TRIGGER(workspace, trigger.id);
         client.cancelQueries({ queryKey: itemKey });
         client.setQueryData<TriggerOutput>(itemKey, trigger);
       }
@@ -60,16 +60,16 @@ export function useListTriggers() {
 
 export function useUpdateTriggerCache() {
   const client = useQueryClient();
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   const update = (trigger: TriggerOutput) => {
     // Update the individual trigger in cache
-    const itemKey = KEYS.TRIGGER(locator, trigger.id);
+    const itemKey = KEYS.TRIGGER(workspace, trigger.id);
     client.cancelQueries({ queryKey: itemKey });
     client.setQueryData<TriggerOutput>(itemKey, trigger);
 
     // Update the list
-    const listKey = KEYS.TRIGGERS(locator);
+    const listKey = KEYS.TRIGGERS(workspace);
     client.cancelQueries({ queryKey: listKey });
     client.setQueryData<ListTriggersOutput>(listKey, (old) => {
       if (!old) return { triggers: [trigger] };
@@ -83,20 +83,20 @@ export function useUpdateTriggerCache() {
 }
 
 export function useCreateTrigger() {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const client = useQueryClient();
 
   return useMutation({
     mutationFn: (trigger: CreateTriggerInput) =>
-      createTrigger(locator, trigger),
+      createTrigger(workspace, trigger),
     onSuccess: (result) => {
       // update item
-      const itemKey = KEYS.TRIGGER(locator, result.id);
+      const itemKey = KEYS.TRIGGER(workspace, result.id);
       client.cancelQueries({ queryKey: itemKey });
       client.setQueryData<TriggerOutput>(itemKey, result);
 
       // update list
-      const listKey = KEYS.TRIGGERS(locator);
+      const listKey = KEYS.TRIGGERS(workspace);
       client.cancelQueries({ queryKey: listKey });
       client.setQueryData<ListTriggersOutput>(listKey, (old) => {
         if (!old) return { triggers: [result] };
@@ -107,7 +107,7 @@ export function useCreateTrigger() {
 }
 
 export function useUpdateTrigger() {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const updateTriggerCache = useUpdateTriggerCache();
 
   return useMutation({
@@ -117,25 +117,25 @@ export function useUpdateTrigger() {
     }: {
       triggerId: string;
       trigger: CreateTriggerInput;
-    }) => updateTrigger(locator, triggerId, trigger),
+    }) => updateTrigger(workspace, triggerId, trigger),
     onSuccess: (result) => updateTriggerCache(result),
   });
 }
 
 export function useDeleteTrigger() {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const client = useQueryClient();
 
   return useMutation({
-    mutationFn: (triggerId: string) => deleteTrigger(locator, triggerId),
+    mutationFn: (triggerId: string) => deleteTrigger(workspace, triggerId),
     onSuccess: (_, triggerId) => {
       // Remove the individual trigger from cache
-      const itemKey = KEYS.TRIGGER(locator, triggerId);
+      const itemKey = KEYS.TRIGGER(workspace, triggerId);
       client.cancelQueries({ queryKey: itemKey });
       client.removeQueries({ queryKey: itemKey });
 
       // Update the list
-      const listKey = KEYS.TRIGGERS(locator);
+      const listKey = KEYS.TRIGGERS(workspace);
       client.cancelQueries({ queryKey: listKey });
       client.setQueryData<ListTriggersOutput>(listKey, (old) => {
         if (!old) return { triggers: [] };
@@ -148,22 +148,22 @@ export function useDeleteTrigger() {
 }
 
 export function useActivateTrigger() {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const client = useQueryClient();
 
   return useMutation({
-    mutationFn: (triggerId: string) => activateTrigger(locator, triggerId),
+    mutationFn: (triggerId: string) => activateTrigger(workspace, triggerId),
     onSuccess: (result, triggerId) => {
       if (result.success) {
         // Update the trigger's active status in cache
-        const itemKey = KEYS.TRIGGER(locator, triggerId);
+        const itemKey = KEYS.TRIGGER(workspace, triggerId);
         client.cancelQueries({ queryKey: itemKey });
         client.setQueryData<TriggerOutput>(itemKey, (old) =>
           old ? { ...old, active: true } : undefined,
         );
 
         // Update lists
-        const listKey = KEYS.TRIGGERS(locator);
+        const listKey = KEYS.TRIGGERS(workspace);
         client.cancelQueries({ queryKey: listKey });
         client.setQueryData<ListTriggersOutput>(listKey, (old) => {
           if (!old) return old;
@@ -179,22 +179,22 @@ export function useActivateTrigger() {
 }
 
 export function useDeactivateTrigger() {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const client = useQueryClient();
 
   return useMutation({
-    mutationFn: (triggerId: string) => deactivateTrigger(locator, triggerId),
+    mutationFn: (triggerId: string) => deactivateTrigger(workspace, triggerId),
     onSuccess: (result, triggerId) => {
       if (result.success) {
         // Update the trigger's active status in cache
-        const itemKey = KEYS.TRIGGER(locator, triggerId);
+        const itemKey = KEYS.TRIGGER(workspace, triggerId);
         client.cancelQueries({ queryKey: itemKey });
         client.setQueryData<TriggerOutput>(itemKey, (old) =>
           old ? { ...old, active: false } : undefined,
         );
 
         // Update lists
-        const listKey = KEYS.TRIGGERS(locator);
+        const listKey = KEYS.TRIGGERS(workspace);
         client.cancelQueries({ queryKey: listKey });
         client.setQueryData<ListTriggersOutput>(listKey, (old) => {
           if (!old) return old;

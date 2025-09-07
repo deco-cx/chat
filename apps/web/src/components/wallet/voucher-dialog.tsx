@@ -15,11 +15,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 export function VoucherDialog() {
   const [voucher, setVoucher] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const queryClient = useQueryClient();
 
   const { mutate: redeemVoucher, isPending } = useMutation({
-    mutationFn: () => redeemWalletVoucher({ locator: locator, voucher }),
+    mutationFn: () => redeemWalletVoucher({ workspace, voucher }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
       setIsOpen(false);

@@ -16,7 +16,7 @@ import type { Integration } from "../index.ts";
 
 export const useCreateChannel = () => {
   const client = useQueryClient();
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   const create = useMutation({
     mutationFn: (channel: {
@@ -24,13 +24,13 @@ export const useCreateChannel = () => {
       integrationId: string;
       agentId?: string;
       name?: string;
-    }) => createChannel(locator, channel),
+    }) => createChannel(workspace, channel),
     onSuccess: (result) => {
-      const itemKey = KEYS.CHANNELS(locator, result.id);
+      const itemKey = KEYS.CHANNELS(workspace, result.id);
       client.cancelQueries({ queryKey: itemKey });
       client.setQueryData<Channel>(itemKey, result);
 
-      const listKey = KEYS.CHANNELS(locator);
+      const listKey = KEYS.CHANNELS(workspace);
       client.cancelQueries({ queryKey: listKey });
       client.setQueryData<{ channels: Channel[] }>(listKey, (old) =>
         !old
@@ -47,14 +47,14 @@ export const useCreateChannel = () => {
 
 export const useUpdateChannelCache = () => {
   const client = useQueryClient();
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   const update = (channel: Channel) => {
-    const itemKey = KEYS.CHANNELS(locator, channel.id);
+    const itemKey = KEYS.CHANNELS(workspace, channel.id);
     client.cancelQueries({ queryKey: itemKey });
     client.setQueryData<Channel>(itemKey, channel ?? ({} as Channel));
 
-    const listKey = KEYS.CHANNELS(locator);
+    const listKey = KEYS.CHANNELS(workspace);
     client.cancelQueries({ queryKey: listKey });
     client.setQueryData<{ channels: Channel[] }>(listKey, (old) =>
       !old
@@ -71,7 +71,7 @@ export const useUpdateChannelCache = () => {
 };
 
 export const useJoinChannel = () => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const updateChannelCache = useUpdateChannelCache();
 
   const res = useMutation({
@@ -81,7 +81,7 @@ export const useJoinChannel = () => {
     }: {
       channelId: string;
       agentId: string;
-    }) => joinChannel(locator, channelId, agentId),
+    }) => joinChannel(workspace, channelId, agentId),
     onSuccess: (result) => updateChannelCache(result),
   });
 
@@ -89,7 +89,7 @@ export const useJoinChannel = () => {
 };
 
 export const useLeaveChannel = () => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const updateChannelCache = useUpdateChannelCache();
 
   const res = useMutation({
@@ -99,7 +99,7 @@ export const useLeaveChannel = () => {
     }: {
       channelId: string;
       agentId: string;
-    }) => leaveChannel(locator, channelId, agentId),
+    }) => leaveChannel(workspace, channelId, agentId),
     onSuccess: (result) => updateChannelCache(result),
   });
 
@@ -108,16 +108,16 @@ export const useLeaveChannel = () => {
 
 export const useRemoveChannel = () => {
   const client = useQueryClient();
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   const remove = useMutation({
-    mutationFn: (id: string) => deleteChannel(locator, id),
+    mutationFn: (id: string) => deleteChannel(workspace, id),
     onSuccess: (_, id) => {
-      const itemKey = KEYS.CHANNELS(locator, id);
+      const itemKey = KEYS.CHANNELS(workspace, id);
       client.cancelQueries({ queryKey: itemKey });
       client.removeQueries({ queryKey: itemKey });
 
-      const listKey = KEYS.CHANNELS(locator);
+      const listKey = KEYS.CHANNELS(workspace);
       client.cancelQueries({ queryKey: listKey });
       client.setQueryData<{ channels: Channel[] }>(listKey, (old) =>
         !old
@@ -133,11 +133,11 @@ export const useRemoveChannel = () => {
 };
 
 export const useChannel = (id: string) => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   const data = useQuery({
-    queryKey: KEYS.CHANNELS(locator, id),
-    queryFn: ({ signal }) => getChannel(locator, id, signal),
+    queryKey: KEYS.CHANNELS(workspace, id),
+    queryFn: ({ signal }) => getChannel(workspace, id, signal),
     retry: (failureCount, error) =>
       error instanceof InternalServerError && failureCount < 2,
   });
@@ -146,16 +146,16 @@ export const useChannel = (id: string) => {
 };
 
 export const useChannels = () => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const client = useQueryClient();
 
   const data = useQuery({
-    queryKey: KEYS.CHANNELS(locator),
+    queryKey: KEYS.CHANNELS(workspace),
     queryFn: async ({ signal }) => {
-      const result = await listChannels(locator, signal);
+      const result = await listChannels(workspace, signal);
 
       for (const item of result.channels) {
-        const itemKey = KEYS.CHANNELS(locator, item.id);
+        const itemKey = KEYS.CHANNELS(workspace, item.id);
         client.cancelQueries({ queryKey: itemKey });
         client.setQueryData<Channel>(itemKey, item);
       }
@@ -168,13 +168,13 @@ export const useChannels = () => {
 };
 
 export const useConnectionChannels = (binding: Integration) => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   const data = useQuery({
-    queryKey: KEYS.CHANNELS(locator, binding.id),
+    queryKey: KEYS.CHANNELS(workspace, binding.id),
     queryFn: async () => {
       const result = await listAvailableChannelsForConnection(
-        locator,
+        workspace,
         binding.connection,
       ).catch((error) => {
         console.error(error);

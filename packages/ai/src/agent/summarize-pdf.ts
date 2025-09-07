@@ -1,4 +1,4 @@
-import type { MCPClientStub, ProjectTools } from "@deco/sdk/mcp";
+import type { MCPClientStub, WorkspaceTools } from "@deco/sdk/mcp";
 import type { Message as AIMessage } from "ai";
 import { extractText } from "unpdf";
 
@@ -52,7 +52,7 @@ function chunkText(text: string, maxChunkSize: number): string[] {
 async function summarizeChunk(
   chunk: string,
   previousSummaries: string[],
-  mcpClient: MCPClientStub<ProjectTools>,
+  mcpClient: MCPClientStub<WorkspaceTools>,
   model: string,
   maxTokens: number,
 ): Promise<string> {
@@ -144,7 +144,7 @@ export function shouldSummarizePDFs(messages: AIMessage[]): {
  */
 export async function summarizePDFMessages(
   messages: AIMessage[],
-  mcpClient: MCPClientStub<ProjectTools>,
+  mcpClient: MCPClientStub<WorkspaceTools>,
   options: {
     model: string;
     maxChunkSize: number;

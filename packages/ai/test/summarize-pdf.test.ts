@@ -1,6 +1,6 @@
 // deno-lint-ignore-file
 import { expect, test, describe, vi, beforeEach } from "vitest";
-import type { MCPClientStub, ProjectTools } from "@deco/sdk/mcp";
+import type { MCPClientStub, WorkspaceTools } from "@deco/sdk/mcp";
 import type { Message as AIMessageOriginal } from "ai";
 import {
   summarizePDFMessages,
@@ -161,7 +161,7 @@ describe("shouldSummarizePDFs", () => {
 });
 
 describe("summarizePDFMessages", () => {
-  let mockMCPClient: MCPClientStub<ProjectTools>;
+  let mockMCPClient: MCPClientStub<WorkspaceTools>;
 
   beforeEach(() => {
     mockMCPClient = {

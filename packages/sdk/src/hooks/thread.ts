@@ -28,47 +28,47 @@ const TITLE_GENERATION_MIN_DELAY_MS = 2000;
 
 /** Hook for fetching thread details */
 export const useThread = (threadId: string) => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   return useSuspenseQuery({
-    queryKey: KEYS.THREAD(locator, threadId),
-    queryFn: ({ signal }) => getThread(locator, threadId, { signal }),
+    queryKey: KEYS.THREAD(workspace, threadId),
+    queryFn: ({ signal }) => getThread(workspace, threadId, { signal }),
   });
 };
 
 /** Hook for fetching messages from a thread */
 export const useThreadMessages = (threadId: string) => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   return useSuspenseQuery({
-    queryKey: KEYS.THREAD_MESSAGES(locator, threadId),
-    queryFn: ({ signal }) => getThreadMessages(locator, threadId, { signal }),
+    queryKey: KEYS.THREAD_MESSAGES(workspace, threadId),
+    queryFn: ({ signal }) => getThreadMessages(workspace, threadId, { signal }),
     staleTime: 0,
     gcTime: 0,
   });
 };
 
 export const useUpdateThreadMessages = () => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const client = useQueryClient();
 
   return useCallback(
     (threadId: string, messages: unknown[] = []) => {
-      const messagesKey = KEYS.THREAD_MESSAGES(locator, threadId);
+      const messagesKey = KEYS.THREAD_MESSAGES(workspace, threadId);
 
       client.cancelQueries({ queryKey: messagesKey });
       client.setQueryData(messagesKey, messages);
     },
-    [client, locator],
+    [client, workspace],
   );
 };
 
 /** Hook for fetching all threads for the user */
 export const useThreads = (partialOptions: ThreadFilterOptions = {}) => {
   const client = useQueryClient();
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const options: ThreadFilterOptions = {
     ...partialOptions,
   };
-  const key = KEYS.THREADS(locator, options);
+  const key = KEYS.THREADS(workspace, options);
   const updateThreadTitle = useUpdateThreadTitle();
 
   const generateThreadTitle = useCallback(
@@ -80,7 +80,7 @@ export const useThreads = (partialOptions: ThreadFilterOptions = {}) => {
       threadId: string;
     }) => {
       const [result] = await Promise.all([
-        MCPClient.forLocator(locator).AI_GENERATE({
+        MCPClient.forWorkspace(workspace).AI_GENERATE({
           // This can break if the workspace disabled 4.1-nano.
           // TODO: Implement something like a model price/quality/speed hinting system.
           model: "openai:gpt-4.1-nano",
@@ -106,7 +106,7 @@ export const useThreads = (partialOptions: ThreadFilterOptions = {}) => {
       ]);
       updateThreadTitle.mutate({ threadId, title: result.text, stream: true });
     },
-    [updateThreadTitle, locator],
+    [updateThreadTitle, workspace],
   );
 
   const effect = useCallback(
@@ -170,7 +170,7 @@ export const useThreads = (partialOptions: ThreadFilterOptions = {}) => {
 
   return useSuspenseQuery({
     queryKey: key,
-    queryFn: ({ signal }) => listThreads(locator, options, { signal }),
+    queryFn: ({ signal }) => listThreads(workspace, options, { signal }),
   });
 };
 
@@ -181,17 +181,17 @@ export interface UpdateThreadTitleParams {
 }
 
 export const useUpdateThreadTitle = () => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const client = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ threadId, title }: UpdateThreadTitleParams) => {
-      return await updateThreadTitle(locator, threadId, title);
+      return await updateThreadTitle(workspace, threadId, title);
     },
     onMutate: async ({ threadId, title, stream }: UpdateThreadTitleParams) => {
       // Cancel all threads queries to prevent race conditions
       await client.cancelQueries({
-        queryKey: KEYS.THREADS(locator),
+        queryKey: KEYS.THREADS(workspace),
       });
 
       if (stream) {
@@ -204,7 +204,7 @@ export const useUpdateThreadTitle = () => {
             const partialTitle = title.slice(0, currentIndex);
 
             client.setQueriesData(
-              { queryKey: KEYS.THREADS(locator) },
+              { queryKey: KEYS.THREADS(workspace) },
               (oldData: ThreadList | undefined) => {
                 if (!oldData?.threads) return oldData;
 
@@ -238,7 +238,7 @@ export const useUpdateThreadTitle = () => {
       } else {
         // Optimistically update all threads queries that contain this thread
         client.setQueriesData(
-          { queryKey: KEYS.THREADS(locator) },
+          { queryKey: KEYS.THREADS(workspace) },
           (oldData: ThreadList | undefined) => {
             if (!oldData?.threads) return oldData;
 
@@ -265,29 +265,29 @@ export const useUpdateThreadTitle = () => {
     },
     onSettled: (_, __, { threadId }: UpdateThreadTitleParams) => {
       // Always refetch after error or success to ensure data is in sync
-      client.invalidateQueries({ queryKey: KEYS.THREAD(locator, threadId) });
+      client.invalidateQueries({ queryKey: KEYS.THREAD(workspace, threadId) });
       client.invalidateQueries({
-        queryKey: KEYS.THREADS(locator),
+        queryKey: KEYS.THREADS(workspace),
       });
     },
   });
 };
 
 export const useDeleteThread = (threadId: string) => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const client = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
-      return await updateThreadMetadata(locator, threadId, {
+      return await updateThreadMetadata(workspace, threadId, {
         deleted: true,
       });
     },
     onSuccess: () => {
       // Invalidate both the thread and all threads list queries
-      client.invalidateQueries({ queryKey: KEYS.THREAD(locator, threadId) });
+      client.invalidateQueries({ queryKey: KEYS.THREAD(workspace, threadId) });
       client.invalidateQueries({
-        queryKey: KEYS.THREADS(locator),
+        queryKey: KEYS.THREADS(workspace),
       });
     },
   });

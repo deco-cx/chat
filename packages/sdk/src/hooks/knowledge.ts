@@ -17,11 +17,11 @@ interface ForConnection {
 }
 
 export const useCreateKnowledge = () => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   return useMutation({
     mutationFn: ({ name }: { name: string }) =>
-      createKnowledge({ locator: locator, name }),
+      createKnowledge({ workspace, name }),
   });
 };
 
@@ -33,7 +33,7 @@ interface AddFileToKnowledgeParams extends ForConnection {
 }
 
 export const useKnowledgeAddFile = () => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const client = useQueryClient();
 
   return useMutation({
@@ -45,7 +45,7 @@ export const useKnowledgeAddFile = () => {
       connection,
     }: AddFileToKnowledgeParams) =>
       knowledgeAddFile({
-        locator: locator,
+        workspace,
         fileUrl,
         metadata,
         path,
@@ -54,7 +54,7 @@ export const useKnowledgeAddFile = () => {
       }),
     onSuccess: (fileResponse, { connection }) => {
       const connectionUrl = getConnectionUrl({ connection });
-      const knowledgeFilesKey = KEYS.KNOWLEDGE_FILES(locator, connectionUrl);
+      const knowledgeFilesKey = KEYS.KNOWLEDGE_FILES(workspace, connectionUrl);
       client.cancelQueries({ queryKey: knowledgeFilesKey });
       client.setQueryData<Awaited<ReturnType<typeof knowledgeListFiles>>>(
         knowledgeFilesKey,
@@ -69,15 +69,15 @@ interface KnowledgeDeleteFileParams extends ForConnection {
 }
 
 export const useKnowledgeDeleteFile = () => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const client = useQueryClient();
 
   return useMutation({
     mutationFn: ({ connection, fileUrl }: KnowledgeDeleteFileParams) =>
-      knowledgeDeleteFile({ locator: locator, fileUrl, connection }),
+      knowledgeDeleteFile({ workspace, fileUrl, connection }),
     onSuccess: (_, { fileUrl, connection }) => {
       const connectionUrl = getConnectionUrl({ connection });
-      const knowledgeFilesKey = KEYS.KNOWLEDGE_FILES(locator, connectionUrl);
+      const knowledgeFilesKey = KEYS.KNOWLEDGE_FILES(workspace, connectionUrl);
 
       client.cancelQueries({ queryKey: knowledgeFilesKey });
       client.setQueryData<Awaited<ReturnType<typeof knowledgeListFiles>>>(
@@ -91,16 +91,16 @@ export const useKnowledgeDeleteFile = () => {
 interface KnowledgeListFilesParams extends ForConnection {}
 
 export const useKnowledgeListFiles = (params: KnowledgeListFilesParams) => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const { connection } = params;
   const connectionUrl = getConnectionUrl(params);
   const hasConnection = "connection" in params;
 
   return useQuery({
-    queryKey: KEYS.KNOWLEDGE_FILES(locator, connectionUrl),
+    queryKey: KEYS.KNOWLEDGE_FILES(workspace, connectionUrl),
     queryFn: () =>
       "connection" in params
-        ? knowledgeListFiles({ locator: locator, connection })
+        ? knowledgeListFiles({ workspace, connection })
         : [],
     enabled: hasConnection ? !!connectionUrl : true,
   });

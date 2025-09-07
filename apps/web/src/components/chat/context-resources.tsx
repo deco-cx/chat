@@ -127,7 +127,7 @@ export function ContextResources({
   setUploadedFiles,
 }: ContextResourcesProps) {
   const { agent } = useAgent();
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const { data: integrations = [] } = useIntegrations();
   const { data: agents = [] } = useAgents();
   const { data: models } = useModels({
@@ -291,7 +291,7 @@ export function ContextResources({
         content: new Uint8Array(buffer),
       });
 
-      const url = `https://${Hosts.API_LEGACY}/files/${locator}/${path}`; // does not work when running locally
+      const url = `https://${Hosts.API_LEGACY}/files/${workspace}/${path}`; // does not work when running locally
 
       setUploadedFiles((prev) =>
         prev.map((uf) =>

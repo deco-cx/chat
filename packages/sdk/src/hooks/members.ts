@@ -19,7 +19,7 @@ import {
   updateMemberRole,
 } from "../crud/members.ts";
 import { KEYS } from "./api.ts";
-import { useOrganizations } from "./teams.ts";
+import { useTeams } from "./teams.ts";
 import { type User, useSDK } from "../index.ts";
 
 type TeamMembers = Awaited<ReturnType<typeof getTeamMembers>>;
@@ -57,7 +57,7 @@ export const useTeamMembers = (
  * @param currentTeamSlug - The slug of the current team
  */
 export const useTeamMembersBySlug = (currentTeamSlug: string | null) => {
-  const { data: teams } = useOrganizations();
+  const { data: teams } = useTeams();
   const teamId = useMemo(
     () => teams?.find((t) => t.slug === currentTeamSlug)?.id ?? null,
     [teams, currentTeamSlug],
@@ -132,7 +132,7 @@ export const useRejectInvite = () => {
  */
 export const useInviteTeamMember = () => {
   const queryClient = useQueryClient();
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   return useMutation({
     mutationFn: ({
@@ -144,7 +144,7 @@ export const useInviteTeamMember = () => {
         email: string;
         roles: Array<{ id: number; name: string }>;
       }>;
-    }) => inviteTeamMembers(teamId, invitees, locator),
+    }) => inviteTeamMembers(teamId, invitees, workspace),
     onSuccess: (_, { teamId }) => {
       const membersKey = KEYS.TEAM_MEMBERS(teamId);
       queryClient.invalidateQueries({ queryKey: membersKey });

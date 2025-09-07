@@ -1,11 +1,11 @@
 import { useRegisterActivity } from "../../hooks/use-register-activity.ts";
 
 interface Props {
-  orgSlug?: string;
+  teamSlug?: string;
 }
 
-export default function RegisterActivity({ orgSlug }: Props) {
-  useRegisterActivity(orgSlug);
+export default function RegisterActivity({ teamSlug }: Props) {
+  useRegisterActivity(teamSlug);
 
   return null;
 }

@@ -1,13 +1,12 @@
 import { MCPClient } from "../fetcher.ts";
-import { ProjectLocator } from "../locator.ts";
 
 interface ListOptions {
-  locator: ProjectLocator;
+  workspace: string;
   root: string;
 }
 
-export const listFiles = async ({ locator, root }: ListOptions) => {
-  const data = await MCPClient.forLocator(locator).FS_LIST({
+export const listFiles = async ({ workspace, root }: ListOptions) => {
+  const data = await MCPClient.forWorkspace(workspace).FS_LIST({
     prefix: root,
   });
 
@@ -16,7 +15,7 @@ export const listFiles = async ({ locator, root }: ListOptions) => {
 
 interface WriteOptions {
   path: string;
-  locator: ProjectLocator;
+  workspace: string;
   content: Uint8Array;
   contentType: string;
   expiresIn?: number;
@@ -25,13 +24,13 @@ interface WriteOptions {
 
 export const writeFile = async ({
   path,
-  locator,
+  workspace,
   content,
   contentType,
   expiresIn,
   metadata,
 }: WriteOptions) => {
-  const { url: uploadUrl } = await MCPClient.forLocator(locator).FS_WRITE({
+  const { url: uploadUrl } = await MCPClient.forWorkspace(workspace).FS_WRITE({
     path,
     contentType,
     metadata,
@@ -56,17 +55,17 @@ export const writeFile = async ({
 };
 
 interface ReadOptions {
-  locator: ProjectLocator;
+  workspace: string;
   path: string;
   expiresIn?: number;
 }
 
-export const readFile = async ({ locator, path, expiresIn }: ReadOptions) => {
+export const readFile = async ({ workspace, path, expiresIn }: ReadOptions) => {
   if (!path) {
     return null;
   }
 
-  const { url } = await MCPClient.forLocator(locator).FS_READ({
+  const { url } = await MCPClient.forWorkspace(workspace).FS_READ({
     path,
     ...(expiresIn ? { expiresIn } : {}),
   });
@@ -75,9 +74,9 @@ export const readFile = async ({ locator, path, expiresIn }: ReadOptions) => {
 };
 
 interface DeleteOptions {
-  locator: ProjectLocator;
+  workspace: string;
   path: string;
 }
 
-export const deleteFile = ({ locator, path }: DeleteOptions) =>
-  MCPClient.forLocator(locator).FS_DELETE({ path });
+export const deleteFile = ({ workspace, path }: DeleteOptions) =>
+  MCPClient.forWorkspace(workspace).FS_DELETE({ path });

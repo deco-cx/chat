@@ -7,9 +7,9 @@ import {
   type User,
   useSDK,
   useTeamMembers,
-  useOrganizations,
+  useTeams,
   useUpdatePrompt,
-  type ProjectLocator,
+  type Workspace,
 } from "@deco/sdk";
 import {
   Avatar,
@@ -34,22 +34,22 @@ import { useFormContext } from "./context.ts";
 
 export default function HistoryTab() {
   const { id } = useParams();
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const { data: versions, refetch } = usePromptVersions(id ?? "");
   const { form, prompt, setSelectedPrompt, promptVersion, setPromptVersion } =
     useFormContext();
 
   const user = useUser();
   const params = useParams();
-  const resolvedOrgSlug = params.org;
-  const { data: teams } = useOrganizations();
-  const orgId = useMemo(
-    () => teams?.find((t) => t.slug === resolvedOrgSlug)?.id ?? null,
-    [teams, resolvedOrgSlug],
+  const resolvedTeamSlug = params.teamSlug;
+  const { data: teams } = useTeams();
+  const teamId = useMemo(
+    () => teams?.find((t) => t.slug === resolvedTeamSlug)?.id ?? null,
+    [teams, resolvedTeamSlug],
   );
   const {
     data: { members: teamMembers = [] },
-  } = useTeamMembers(orgId ?? null);
+  } = useTeamMembers(teamId ?? null);
 
   const filteredVersions = useMemo(() => {
     return versions?.slice(1);
@@ -109,8 +109,8 @@ export default function HistoryTab() {
                 length={filteredVersions.length}
                 user={user}
                 teamMembersMap={teamMembersMap}
-                workspace={locator}
-                teamId={orgId}
+                workspace={workspace}
+                teamId={teamId}
                 refetch={refetch}
               />
             );
@@ -138,7 +138,7 @@ export function HistoryCard({
   length: number;
   teamId: number | null;
   teamMembersMap: Map<string, TeamMember>;
-  workspace: ProjectLocator;
+  workspace: Workspace;
   refetch: () => void;
 }) {
   const updatePrompt = useUpdatePrompt();

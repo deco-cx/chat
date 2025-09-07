@@ -21,7 +21,7 @@ import { ChatInput } from "../chat/chat-input.tsx";
 import { ChatMessages } from "../chat/chat-messages.tsx";
 import { useAgent } from "./provider.tsx";
 import { AgentProvider } from "./provider.tsx";
-import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
 import { AgentBreadcrumbSegment } from "./breadcrumb-segment.tsx";
 import AgentPreview from "./preview.tsx";
 import ThreadView from "./thread.tsx";

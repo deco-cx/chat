@@ -4,37 +4,37 @@ import { useSDK } from "../index.ts";
 import { KEYS } from "./api.ts";
 
 export const useFile = (path: string) => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   return useQuery({
-    queryKey: KEYS.FILE(locator, path),
-    queryFn: () => readFile({ locator: locator, path }),
+    queryKey: KEYS.FILE(workspace, path),
+    queryFn: () => readFile({ workspace, path }),
   });
 };
 
 export const useReadFile = () => {
   const queryClient = useQueryClient();
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   return (path: string, { expiresIn }: { expiresIn?: number } = {}) =>
     queryClient.fetchQuery({
-      queryKey: KEYS.FILE(locator, path),
-      queryFn: () => readFile({ locator: locator, path, expiresIn }),
+      queryKey: KEYS.FILE(workspace, path),
+      queryFn: () => readFile({ workspace, path, expiresIn }),
     });
 };
 
 export const useFiles = ({ root }: { root: string }) => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   return useQuery({
-    queryKey: KEYS.FILE(locator, root),
-    queryFn: () => listFiles({ locator: locator, root }),
+    queryKey: KEYS.FILE(workspace, root),
+    queryFn: () => listFiles({ workspace, root }),
   });
 };
 
 export const useWriteFile = () => {
   const queryClient = useQueryClient();
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   return useMutation({
     mutationFn: ({
@@ -47,16 +47,16 @@ export const useWriteFile = () => {
       content: Uint8Array;
       contentType: string;
       metadata?: Record<string, string | string[]>;
-    }) => writeFile({ path, locator: locator, content, contentType, metadata }),
+    }) => writeFile({ path, workspace, content, contentType, metadata }),
     onMutate: async ({ path, content, contentType, metadata }) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: KEYS.FILE(locator, path) });
+      await queryClient.cancelQueries({ queryKey: KEYS.FILE(workspace, path) });
 
       // Snapshot the previous value
-      const previousData = queryClient.getQueryData(KEYS.FILE(locator, path));
+      const previousData = queryClient.getQueryData(KEYS.FILE(workspace, path));
 
       // Optimistically update to the new value
-      queryClient.setQueryData(KEYS.FILE(locator, path), () => ({
+      queryClient.setQueryData(KEYS.FILE(workspace, path), () => ({
         path,
         content,
         contentType,
@@ -70,7 +70,7 @@ export const useWriteFile = () => {
       // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousData) {
         queryClient.setQueryData(
-          KEYS.FILE(locator, variables.path),
+          KEYS.FILE(workspace, variables.path),
           context.previousData,
         );
       }
@@ -78,7 +78,7 @@ export const useWriteFile = () => {
     onSettled: (_, __, variables) => {
       // Always refetch after error or success to ensure data is in sync
       queryClient.invalidateQueries({
-        queryKey: KEYS.FILE(locator, variables.path),
+        queryKey: KEYS.FILE(workspace, variables.path),
       });
     },
   });
@@ -91,16 +91,15 @@ interface DeleteFileParams {
 }
 
 export const useDeleteFile = () => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ path }: DeleteFileParams) =>
-      deleteFile({ locator: locator, path }),
+    mutationFn: ({ path }: DeleteFileParams) => deleteFile({ workspace, path }),
     onSuccess: (_, { root }) => {
       if (!root) return;
 
-      const rootKey = KEYS.FILE(locator, root);
+      const rootKey = KEYS.FILE(workspace, root);
 
       queryClient.invalidateQueries({ queryKey: rootKey });
     },

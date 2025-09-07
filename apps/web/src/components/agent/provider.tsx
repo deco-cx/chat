@@ -46,7 +46,6 @@ import { useCreateAgent } from "../../hooks/use-create-agent.ts";
 import { useUserPreferences } from "../../hooks/use-user-preferences.ts";
 import { IMAGE_REGEXP, openPreviewPanel } from "../chat/utils/preview.ts";
 import { onRulesUpdated } from "../../utils/events.ts";
-import { useUser } from "../../hooks/use-user.ts";
 
 interface UiOptions {
   showThreadTools: boolean;
@@ -143,8 +142,7 @@ export function AgentProvider({
   const { data: serverAgent } = useAgentData(agentId);
   const isPublic = serverAgent.visibility === "PUBLIC";
   const { data: installedIntegrations } = useIntegrations({ isPublic });
-  const user = useUser();
-  const updateAgentMutation = useUpdateAgent(user.id);
+  const updateAgentMutation = useUpdateAgent();
   const createAgent = useCreateAgent();
   const agentRoot = useAgentRoot(agentId);
   const { preferences } = useUserPreferences();

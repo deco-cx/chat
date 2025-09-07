@@ -35,24 +35,24 @@ function slugify(input: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-const createOrgSchema = z.object({
+const createTeamSchema = z.object({
   name: z.string().min(2, "Team name is required"),
 });
 
-interface CreateOrganizationDialogProps {
+interface CreateTeamDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateOrganizationDialog({
+export function CreateTeamDialog({
   open,
   onOpenChange,
-}: CreateOrganizationDialogProps) {
+}: CreateTeamDialogProps) {
   const createTeam = useCreateTeam();
   const [error, setError] = useState<string | null>(null);
 
-  const form = useForm<z.infer<typeof createOrgSchema>>({
-    resolver: zodResolver(createOrgSchema),
+  const form = useForm<z.infer<typeof createTeamSchema>>({
+    resolver: zodResolver(createTeamSchema),
     defaultValues: {
       name: "",
     },
@@ -63,7 +63,7 @@ export function CreateOrganizationDialog({
   const nameValue = form.watch("name");
   const slug = slugify(nameValue || "");
 
-  async function onSubmit(data: z.infer<typeof createOrgSchema>) {
+  async function onSubmit(data: z.infer<typeof createTeamSchema>) {
     setError(null);
     try {
       const result = await createTeam.mutateAsync({
@@ -88,9 +88,9 @@ export function CreateOrganizationDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Create a new organization</AlertDialogTitle>
+          <AlertDialogTitle>Create a new team</AlertDialogTitle>
           <AlertDialogDescription>
-            Set up a new organization to collaborate with others.
+            Set up a new team to collaborate with others.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <Form {...form}>
@@ -104,7 +104,7 @@ export function CreateOrganizationDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Organization Name</FormLabel>
+                  <FormLabel>Team Name</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -118,7 +118,7 @@ export function CreateOrganizationDialog({
                   {/* Slug preview */}
                   {slug && (
                     <div className="text-xs text-muted-foreground mt-1">
-                      Organization URL:{" "}
+                      Team URL:{" "}
                       <span className="font-mono">
                         {typeof window !== "undefined"
                           ? globalThis.location.origin
@@ -150,7 +150,7 @@ export function CreateOrganizationDialog({
                     <Spinner size="xs" /> Creating...
                   </span>
                 ) : (
-                  "Create Organization"
+                  "Create Team"
                 )}
               </Button>
             </AlertDialogFooter>

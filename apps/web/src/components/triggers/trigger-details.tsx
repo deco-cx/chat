@@ -7,7 +7,7 @@ import { Skeleton } from "@deco/ui/components/skeleton.tsx";
 import { useState } from "react";
 import { useParams } from "react-router";
 import { AuditListContent } from "../audit/list.tsx";
-import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
 import { CronDetails } from "./cron-details.tsx";
 import { TriggerModal } from "./trigger-dialog.tsx";
 import { TriggerToggle } from "./trigger-toggle.tsx";

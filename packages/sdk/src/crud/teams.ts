@@ -1,7 +1,6 @@
 import { MCPClient } from "../fetcher.ts";
 import type { MCPConnection } from "../models/mcp.ts";
 import type { Theme } from "../theme.ts";
-import { ProjectLocator } from "../locator.ts";
 import { View } from "../views.ts";
 
 export interface Team {
@@ -38,7 +37,7 @@ export const createTeam = (
   init?: RequestInit,
 ): Promise<Team> => MCPClient.TEAMS_CREATE(input, init) as Promise<Team>;
 
-export const getOrgTheme = (
+export const getWorkspaceTheme = (
   slug: string,
   init?: RequestInit,
 ): Promise<{ theme?: Theme } | null> =>
@@ -81,11 +80,11 @@ export interface AddViewInput {
 }
 
 export const addView = (
-  locator: ProjectLocator,
+  workspace: string,
   input: AddViewInput,
   init?: RequestInit,
 ): Promise<View> =>
-  MCPClient.forLocator(locator)
+  MCPClient.forWorkspace(workspace)
     .TEAMS_ADD_VIEW(input, init)
     .then((v) => v as unknown as View);
 
@@ -94,11 +93,11 @@ export interface RemoveViewInput {
 }
 
 export const removeView = (
-  locator: ProjectLocator,
+  workspace: string,
   input: RemoveViewInput,
   init?: RequestInit,
 ): Promise<{ success: boolean }> =>
-  MCPClient.forLocator(locator).TEAMS_REMOVE_VIEW(input, init) as Promise<{
+  MCPClient.forWorkspace(workspace).TEAMS_REMOVE_VIEW(input, init) as Promise<{
     success: boolean;
   }>;
 

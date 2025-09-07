@@ -29,7 +29,7 @@ import { EmptyState } from "../common/empty-state.tsx";
 import { ListPageHeader } from "../common/list-page-header.tsx";
 import { Table, type TableColumn } from "../common/table/index.tsx";
 import type { Tab } from "../dock/index.tsx";
-import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
 import type { WorkflowRun } from "./types.ts";
 import {
   formatStatus,

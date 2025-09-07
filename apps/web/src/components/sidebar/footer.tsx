@@ -3,7 +3,6 @@ import {
   UnauthorizedError,
   useInvites,
   usePlan,
-  User,
   useWorkspaceWalletBalance,
 } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
@@ -302,44 +301,7 @@ function UserPreferencesModal({
   );
 }
 
-export function LoggedUserSidebarTrigger({ user }: { user: User }) {
-  const userAvatarURL = user?.metadata?.avatar_url ?? undefined;
-  const userName = user?.metadata?.full_name || user?.email;
-
-  return (
-    <SidebarMenuButton className="cursor-pointer gap-3 group-data-[collapsible=icon]:px-1! group-data-[collapsible=icon]:py-2!">
-      <UserAvatar url={userAvatarURL} fallback={userName} size="xs" />
-      <span className="text-sm grow">{user.metadata?.full_name}</span>
-
-      <Suspense fallback={null}>
-        <div className="size-3 flex items-center">
-          <NotificationDot className="justify-end" />
-        </div>
-      </Suspense>
-    </SidebarMenuButton>
-  );
-}
-
-export function LoggedUserAvatarTrigger({ user }: { user: User }) {
-  return (
-    <UserAvatar
-      url={user?.metadata?.avatar_url}
-      fallback={user?.metadata?.full_name || user?.email}
-      size="sm"
-      className="cursor-pointer hover:ring-2 ring-muted-foreground transition-all"
-    />
-  );
-}
-
-export function LoggedUser({
-  trigger,
-  disablePreferences,
-  align = "start",
-}: {
-  trigger: (user: User) => React.ReactNode;
-  disablePreferences?: boolean;
-  align?: "start" | "end";
-}) {
+function LoggedUser() {
   const user = useUser();
   const location = useLocation();
   const href = "/invites";
@@ -358,6 +320,8 @@ export function LoggedUser({
     return url.href;
   }, [location.pathname]);
 
+  const userAvatarURL = user?.metadata?.avatar_url ?? undefined;
+  const userName = user?.metadata?.full_name || user?.email;
   const formattedStars = stars
     ? stars >= 1000
       ? `${(stars / 1000).toFixed(1)}k`
@@ -373,11 +337,20 @@ export function LoggedUser({
   return (
     <ResponsiveDropdown>
       <ResponsiveDropdownTrigger asChild>
-        <div>{trigger(user)}</div>
+        <SidebarMenuButton className="cursor-pointer gap-3 group-data-[collapsible=icon]:px-1! group-data-[collapsible=icon]:py-2!">
+          <UserAvatar url={userAvatarURL} fallback={userName} size="xs" />
+          <span className="text-sm grow">{user.metadata?.full_name}</span>
+
+          <Suspense fallback={null}>
+            <div className="size-3 flex items-center">
+              <NotificationDot className="justify-end" />
+            </div>
+          </Suspense>
+        </SidebarMenuButton>
       </ResponsiveDropdownTrigger>
       <ResponsiveDropdownContent
         side="top"
-        align={align}
+        align="start"
         className="md:w-[240px]"
       >
         <ResponsiveDropdownItem asChild>
@@ -390,18 +363,16 @@ export function LoggedUser({
             Profile
           </button>
         </ResponsiveDropdownItem>
-        {!disablePreferences && (
-          <ResponsiveDropdownItem asChild>
-            <button
-              type="button"
-              className="flex items-center gap-2 text-sm w-full cursor-pointer"
-              onClick={() => setPreferencesOpen(true)}
-            >
-              <Icon name="tune" className="text-muted-foreground" />
-              Preferences
-            </button>
-          </ResponsiveDropdownItem>
-        )}
+        <ResponsiveDropdownItem asChild>
+          <button
+            type="button"
+            className="flex items-center gap-2 text-sm w-full cursor-pointer"
+            onClick={() => setPreferencesOpen(true)}
+          >
+            <Icon name="tune" className="text-muted-foreground" />
+            Preferences
+          </button>
+        </ResponsiveDropdownItem>
         <ResponsiveDropdownItem asChild>
           <Link
             to={href}
@@ -450,7 +421,7 @@ export function LoggedUser({
         </ResponsiveDropdownItem>
         <ResponsiveDropdownItem asChild>
           <a
-            href="https://decocms.com"
+            href="/about"
             target="_blank"
             rel="noopener noreferrer"
             className="flex w-full items-center gap-2 text-sm cursor-pointer"
@@ -480,7 +451,7 @@ export function LoggedUser({
       {profileOpen && (
         <ProfileSettings open={profileOpen} onOpenChange={setProfileOpen} />
       )}
-      {!disablePreferences && preferencesOpen && (
+      {preferencesOpen && (
         <UserPreferencesModal
           open={preferencesOpen}
           onOpenChange={setPreferencesOpen}
@@ -562,9 +533,7 @@ export function SidebarFooter() {
               <TeamBalance />
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <LoggedUser
-                trigger={(user) => <LoggedUserSidebarTrigger user={user} />}
-              />
+              <LoggedUser />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooterInner>

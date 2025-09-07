@@ -1,4 +1,4 @@
-import { useTeam, useOrganizations } from "@deco/sdk";
+import { useTeam, useTeams } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Input } from "@deco/ui/components/input.tsx";
@@ -13,9 +13,10 @@ import {
 import { SidebarMenuButton } from "@deco/ui/components/sidebar.tsx";
 import { Suspense, useState } from "react";
 import { Link, useParams } from "react-router";
+import { useUser } from "../../hooks/use-user.ts";
 import { useWorkspaceLink } from "../../hooks/use-navigate-workspace.ts";
 import { Avatar } from "../common/avatar/index.tsx";
-import { CreateOrganizationDialog } from "./create-team-dialog.tsx";
+import { CreateTeamDialog } from "./create-team-dialog.tsx";
 import { InviteTeamMembersDialog } from "../common/invite-team-members-dialog.tsx";
 import { type Theme, type View, withDefaultViews } from "@deco/sdk";
 import { useDocumentMetadata } from "../../hooks/use-document-metadata.ts";
@@ -28,35 +29,54 @@ export interface CurrentTeam {
   theme: Theme | undefined;
 }
 
-export function useCurrentTeam(): CurrentTeam & { views: View[] } {
-  const { org } = useParams();
-  const { data: teamData } = useTeam(org);
+function useUserTeam(): CurrentTeam & { views: View[] } {
+  const user = useUser();
+  const avatarUrl = user?.metadata?.avatar_url ?? undefined;
+  const name = user?.metadata?.full_name || user?.email;
+  const label = `${name.split(" ")[0]}'s team`;
+  return {
+    avatarUrl,
+    label,
+    id: user?.id ?? "",
+    slug: "",
+    theme: undefined,
+    views: withDefaultViews([]),
+  };
+}
 
-  if (!org) {
-    throw new Error("No organization found");
+export function useCurrentTeam(): CurrentTeam & { views: View[] } {
+  const { teamSlug } = useParams();
+  const userTeam = useUserTeam();
+  const { data: teamData } = useTeam(teamSlug);
+  if (!teamSlug) {
+    return userTeam;
   }
 
   return {
     avatarUrl: teamData?.avatar_url,
-    label: teamData?.name || org || "",
+    label: teamData?.name || teamSlug || "",
     id: teamData?.id ?? "",
-    slug: teamData?.slug ?? org ?? "",
+    slug: teamData?.slug ?? teamSlug ?? "",
     theme: teamData?.theme,
     views: withDefaultViews(teamData?.views ?? []),
   };
 }
 
 export function useUserTeams() {
-  const { data: teams } = useOrganizations();
+  const { data: teams } = useTeams();
+  const personalTeam = useUserTeam();
   const { slug: currentSlug } = useCurrentTeam();
 
-  const allTeams: CurrentTeam[] = teams.map((team) => ({
-    avatarUrl: team.avatar_url,
-    slug: team.slug,
-    label: team.name,
-    id: team.id,
-    theme: team.theme,
-  }));
+  const allTeams: CurrentTeam[] = [
+    personalTeam,
+    ...teams.map((team) => ({
+      avatarUrl: team.avatar_url,
+      slug: team.slug,
+      label: team.name,
+      id: team.id,
+      theme: team.theme,
+    })),
+  ];
 
   const teamsWithoutCurrentTeam = allTeams.filter(
     (team) => team.slug !== currentSlug,
@@ -289,17 +309,6 @@ export function TeamSelector() {
           <CurrentTeamDropdownTrigger />
         </Suspense>
         <ResponsiveDropdownContent align="start" className="md:w-[240px]">
-          <ResponsiveDropdownItem asChild>
-            <Link
-              to="/"
-              className="w-full flex items-center gap-2 cursor-pointer"
-            >
-              <span className="grid place-items-center p-1">
-                <Icon name="home" size={18} className="text-muted-foreground" />
-              </span>
-              <span className="md:text-sm">Home</span>
-            </Link>
-          </ResponsiveDropdownItem>
           <Suspense fallback={<CurrentTeamDropdownOptions.Skeleton />}>
             <CurrentTeamDropdownOptions
               onRequestInvite={() => setIsInviteDialogOpen(true)}
@@ -309,7 +318,7 @@ export function TeamSelector() {
           <SwitchTeam onRequestCreateTeam={() => setIsCreateDialogOpen(true)} />
         </ResponsiveDropdownContent>
       </ResponsiveDropdown>
-      <CreateOrganizationDialog
+      <CreateTeamDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
       />

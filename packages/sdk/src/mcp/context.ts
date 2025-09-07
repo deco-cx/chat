@@ -24,7 +24,6 @@ import type { ResourceAccess } from "./auth/index.ts";
 import { DatatabasesRunSqlInput, QueryResult } from "./databases/api.ts";
 import { addGroup, type GroupIntegration } from "./groups.ts";
 import { generateUUIDv5, toAlphanumericId } from "./slugify.ts";
-import { ProjectLocator } from "../locator.ts";
 
 export type UserPrincipal = Pick<SupaUser, "id" | "email" | "is_anonymous">;
 
@@ -165,18 +164,10 @@ export type WorkspaceDO = DurableObjectNamespace<
 
 export interface Vars {
   params: Record<string, string>;
-  /**
-   * @deprecated Use locator instead
-   */
   workspace?: {
     root: string;
     slug: string;
     value: string;
-  };
-  locator?: {
-    org: string;
-    project: string;
-    value: ProjectLocator;
   };
   resourceAccess: ResourceAccess;
   /** Current tool being executed definitions */

@@ -69,7 +69,6 @@ export const GLOBAL_TOOLS = [
   teamsAPI.deleteTeamRole,
   teamsAPI.getTeamRole,
   teamsAPI.getWorkspaceTheme,
-  teamsAPI.listProjects,
   membersAPI.getTeamMembers,
   membersAPI.updateTeamMember,
   membersAPI.removeTeamMember,
@@ -87,7 +86,7 @@ export const GLOBAL_TOOLS = [
 ] as const;
 
 // Tools tied to an specific workspace
-export const PROJECT_TOOLS = [
+export const WORKSPACE_TOOLS = [
   teamsAPI.addView,
   teamsAPI.removeView,
   membersAPI.inviteTeamMembers,
@@ -208,7 +207,7 @@ export const AGENT_TOOLS = [
 export const AI_TOOLS = [aiAPI.aiGenerate] as const;
 
 export type GlobalTools = typeof GLOBAL_TOOLS;
-export type ProjectTools = typeof PROJECT_TOOLS;
+export type WorkspaceTools = typeof WORKSPACE_TOOLS;
 export type ToolLike<
   TName extends string = string,
   // deno-lint-ignore no-explicit-any
@@ -238,17 +237,13 @@ export const createGlobalForContext = (context?: AppContext): typeof global => {
 };
 export const fromWorkspaceString = (
   _workspace: string,
-  userId?: string,
 ): AppContext["workspace"] => {
-  const normalized = _workspace.startsWith("/") ? _workspace : `/${_workspace}`;
-
-  const [_, org, project] = normalized.split("/");
-
-  const root = project === "personal" && userId ? "users" : "shared";
-  const slug = root === "users" && userId ? userId : org;
-
+  const workspace: string = _workspace.startsWith("/")
+    ? _workspace
+    : `/${_workspace}`;
+  const [_, root, slug] = workspace.split("/");
   return {
-    value: `/${root}/${slug}`,
+    value: workspace,
     root,
     slug,
   };
@@ -258,13 +253,13 @@ export const MCPClient = new Proxy(
   {} as typeof global & {
     forContext: (
       ctx: Omit<AppContext, "user"> & { user?: AppContext["user"] },
-    ) => MCPClientStub<ProjectTools>;
+    ) => MCPClientStub<WorkspaceTools>;
   },
   {
     get(_, name) {
       if (name === "forContext") {
         return (ctx: AppContext) =>
-          createMCPToolsStub({ tools: PROJECT_TOOLS, context: ctx });
+          createMCPToolsStub({ tools: WORKSPACE_TOOLS, context: ctx });
       }
       return global[name as keyof typeof global];
     },

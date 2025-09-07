@@ -1,7 +1,6 @@
 import type { Model } from "../constants.ts";
 import { MCPClient } from "../fetcher.ts";
 import type { CreateModelInput } from "../mcp/models/api.ts";
-import { ProjectLocator } from "../locator.ts";
 
 export interface ListModelsInput {
   excludeDisabled?: boolean;
@@ -9,25 +8,22 @@ export interface ListModelsInput {
 }
 
 export const listModels = (
-  locator: ProjectLocator,
+  workspace: string,
   options: ListModelsInput = {},
   init?: RequestInit,
 ) =>
-  MCPClient.forLocator(locator)
+  MCPClient.forWorkspace(workspace)
     .MODELS_LIST(options, init)
     .then((res) => res.items);
 
-export const getModel = (
-  locator: ProjectLocator,
-  id: string,
-  init?: RequestInit,
-) => MCPClient.forLocator(locator).MODELS_GET({ id }, init);
+export const getModel = (workspace: string, id: string, init?: RequestInit) =>
+  MCPClient.forWorkspace(workspace).MODELS_GET({ id }, init);
 
 export const createModel = (
-  locator: ProjectLocator,
+  workspace: string,
   input: CreateModelInput,
   init?: RequestInit,
-) => MCPClient.forLocator(locator).MODELS_CREATE(input, init);
+) => MCPClient.forWorkspace(workspace).MODELS_CREATE(input, init);
 
 export interface UpdateModelInput {
   id: string;
@@ -40,16 +36,16 @@ export interface UpdateModelInput {
 }
 
 export const updateModel = (
-  locator: ProjectLocator,
+  workspace: string,
   input: UpdateModelInput,
   init?: RequestInit,
-) => MCPClient.forLocator(locator).MODELS_UPDATE(input, init);
+) => MCPClient.forWorkspace(workspace).MODELS_UPDATE(input, init);
 
 export const deleteModel = (
-  locator: ProjectLocator,
+  workspace: string,
   id: string,
   init?: RequestInit,
 ): Promise<{ success: boolean }> =>
-  MCPClient.forLocator(locator).MODELS_DELETE({ id }, init) as Promise<{
+  MCPClient.forWorkspace(workspace).MODELS_DELETE({ id }, init) as Promise<{
     success: boolean;
   }>;

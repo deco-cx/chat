@@ -11,12 +11,12 @@ import { useSDK } from "./store.tsx";
  * Hook to get all unique workflow names in the workspace
  */
 export const useWorkflowNames = () => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   const { data, refetch, isRefetching } = useSuspenseQuery({
-    queryKey: ["workflow-names", locator],
+    queryKey: ["workflow-names", workspace],
     queryFn: async ({ signal }) => {
-      const result = await listWorkflowNames(locator, signal);
+      const result = await listWorkflowNames(workspace, signal);
       return result;
     },
     retry: (failureCount, error) =>
@@ -40,13 +40,13 @@ export const useWorkflowRuns = (
   page = 1,
   per_page = 25,
 ) => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   const { data, refetch, isRefetching } = useSuspenseQuery({
-    queryKey: ["workflow-runs", locator, workflowName, page, per_page],
+    queryKey: ["workflow-runs", workspace, workflowName, page, per_page],
     queryFn: async ({ signal }) => {
       const result = await listWorkflowRuns(
-        locator,
+        workspace,
         page,
         per_page,
         workflowName,
@@ -69,13 +69,13 @@ export const useWorkflowRuns = (
  * Hook to get recent workflow runs from any workflow
  */
 export const useRecentWorkflowRuns = (page = 1, per_page = 25) => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   const { data, refetch, isRefetching } = useSuspenseQuery({
-    queryKey: ["recent-workflow-runs", locator, page, per_page],
+    queryKey: ["recent-workflow-runs", workspace, page, per_page],
     queryFn: async ({ signal }) => {
       const result = await listWorkflowRuns(
-        locator,
+        workspace,
         page,
         per_page,
         undefined,
@@ -97,11 +97,11 @@ export const useRecentWorkflowRuns = (page = 1, per_page = 25) => {
 };
 
 export const useWorkflowStatus = (workflowName: string, instanceId: string) => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   return useSuspenseQuery({
-    queryKey: ["workflow-status", locator, workflowName, instanceId],
+    queryKey: ["workflow-status", workspace, workflowName, instanceId],
     queryFn: ({ signal }) =>
-      getWorkflowStatus(locator, { workflowName, instanceId }, signal),
+      getWorkflowStatus(workspace, { workflowName, instanceId }, signal),
     retry: (failureCount, error) =>
       error instanceof InternalServerError && failureCount < 2,
     refetchInterval: (query) => {

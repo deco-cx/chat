@@ -1,6 +1,6 @@
 import type * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
-import { MoreHorizontal, Slash } from "lucide-react";
+import { ChevronRight, MoreHorizontal } from "lucide-react";
 
 import { cn } from "@deco/ui/lib/utils.ts";
 
@@ -72,10 +72,10 @@ function BreadcrumbSeparator({
       data-slot="breadcrumb-separator"
       role="presentation"
       aria-hidden="true"
-      className={cn("[&>svg]:size-3.5 list-none", className)}
+      className={cn("[&>svg]:size-3.5", className)}
       {...props}
     >
-      {children ?? <Slash />}
+      {children ?? <ChevronRight />}
     </li>
   );
 }

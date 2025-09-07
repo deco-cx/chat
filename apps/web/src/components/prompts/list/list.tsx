@@ -29,7 +29,7 @@ import { useReducer, useState } from "react";
 import { useNavigateWorkspace } from "../../../hooks/use-navigate-workspace.ts";
 import { EmptyState } from "../../common/empty-state.tsx";
 import { Table, type TableColumn } from "../../common/table/index.tsx";
-import { DefaultBreadcrumb, PageLayout } from "../../layout/project.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../../layout.tsx";
 import { Header } from "./common.tsx";
 import { useViewMode } from "@deco/ui/hooks/use-view-mode.ts";
 

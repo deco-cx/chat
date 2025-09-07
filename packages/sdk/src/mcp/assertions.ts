@@ -1,6 +1,5 @@
 import type { AuthContext, Statement } from "../auth/policy.ts";
 import { ForbiddenError, NotFoundError, UnauthorizedError } from "../errors.ts";
-import { ProjectLocator } from "../locator.ts";
 import type { Workspace } from "../path.ts";
 import { QueryResult } from "../storage/index.ts";
 import type { AppContext, UserPrincipal } from "./context.ts";
@@ -17,13 +16,6 @@ type WithWorkspace<TAppContext extends AppContext = AppContext> = Omit<
   "workspace"
 > & {
   workspace: { root: string; slug: string; value: Workspace };
-};
-
-type WithLocator<TAppContext extends AppContext = AppContext> = Omit<
-  TAppContext,
-  "locator"
-> & {
-  locator: { org: string; project: string; value: ProjectLocator };
 };
 
 type WithKbFileProcessor<TAppContext extends AppContext = AppContext> = Omit<
@@ -45,14 +37,6 @@ export function assertHasWorkspace<TContext extends AppContext = AppContext>(
 ): asserts c is WithWorkspace<TContext> {
   if (!c.workspace) {
     throw new NotFoundError("Workspace not found");
-  }
-}
-
-export function assertHasLocator<TContext extends AppContext = AppContext>(
-  c: Pick<TContext, "locator"> | Pick<WithLocator<TContext>, "locator">,
-): asserts c is WithLocator<TContext> {
-  if (!c.locator) {
-    throw new NotFoundError("Locator not found");
   }
 }
 

@@ -10,17 +10,17 @@ import { useSDK } from "./store.tsx";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 export function useWorkspaceWalletBalance() {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const queryClient = useQueryClient();
   const { data: account, isRefetching } = useSuspenseQuery({
-    queryKey: KEYS.WALLET(locator),
-    queryFn: () => getWalletAccount(locator),
+    queryKey: KEYS.WALLET(workspace),
+    queryFn: () => getWalletAccount(workspace),
   });
 
   return {
     ...account,
     refetch: () =>
-      queryClient.invalidateQueries({ queryKey: KEYS.WALLET(locator) }),
+      queryClient.invalidateQueries({ queryKey: KEYS.WALLET(workspace) }),
     isRefetching,
   };
 }
@@ -30,11 +30,11 @@ export function useUsagePerAgent({
 }: {
   range: "day" | "week" | "month";
 }) {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
   const { data: usage } = useSuspenseQuery({
-    queryKey: KEYS.WALLET_USAGE_AGENTS(locator, range),
-    queryFn: () => getAgentsUsage(locator, range),
+    queryKey: KEYS.WALLET_USAGE_AGENTS(workspace, range),
+    queryFn: () => getAgentsUsage(workspace, range),
   });
 
   return usage;
@@ -48,10 +48,10 @@ export function useUsagePerThread({
 }: {
   range: "day" | "week" | "month";
 }) {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const { data: usage } = useSuspenseQuery({
-    queryKey: KEYS.WALLET_USAGE_THREADS(locator, range),
-    queryFn: () => getThreadsUsage(locator, range),
+    queryKey: KEYS.WALLET_USAGE_THREADS(workspace, range),
+    queryFn: () => getThreadsUsage(workspace, range),
   });
 
   return usage;
@@ -65,10 +65,10 @@ export function useBillingHistory({
 }: {
   range: "day" | "week" | "month" | "year";
 }) {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const { data: billingHistory } = useSuspenseQuery({
-    queryKey: KEYS.WALLET_BILLING_HISTORY(locator, range),
-    queryFn: () => getBillingHistory(locator, range),
+    queryKey: KEYS.WALLET_BILLING_HISTORY(workspace, range),
+    queryFn: () => getBillingHistory(workspace, range),
   });
 
   return billingHistory;
@@ -79,10 +79,10 @@ export type BillingHistoryItem = Awaited<
 >["items"][number];
 
 export function usePlan() {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const { data: plan } = useSuspenseQuery({
-    queryKey: KEYS.WORKSPACE_PLAN(locator),
-    queryFn: () => getWorkspacePlan(locator),
+    queryKey: KEYS.WORKSPACE_PLAN(workspace),
+    queryFn: () => getWorkspacePlan(workspace),
   });
 
   return plan;

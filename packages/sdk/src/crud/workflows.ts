@@ -1,5 +1,4 @@
 import { MCPClient } from "../fetcher.ts";
-import { ProjectLocator } from "../locator.ts";
 
 export interface WorkflowStartParams {
   workflowName: string;
@@ -15,22 +14,19 @@ export interface WorkflowDeleteParams {
   workflowName: string;
 }
 
-export function listWorkflowNames(
-  locator: ProjectLocator,
-  signal?: AbortSignal,
-) {
-  const client = MCPClient.forLocator(locator);
+export function listWorkflowNames(workspace: string, signal?: AbortSignal) {
+  const client = MCPClient.forWorkspace(workspace);
   return client.HOSTING_APP_WORKFLOWS_LIST_NAMES({}, { signal });
 }
 
 export function listWorkflowRuns(
-  locator: ProjectLocator,
+  workspace: string,
   page = 1,
   per_page = 25,
   workflowName?: string,
   signal?: AbortSignal,
 ) {
-  const client = MCPClient.forLocator(locator);
+  const client = MCPClient.forWorkspace(workspace);
   return client.HOSTING_APP_WORKFLOWS_LIST_RUNS(
     {
       page,
@@ -42,10 +38,10 @@ export function listWorkflowRuns(
 }
 
 export function getWorkflowStatus(
-  locator: ProjectLocator,
+  workspace: string,
   params: WorkflowStatusParams,
   signal?: AbortSignal,
 ) {
-  const client = MCPClient.forLocator(locator);
+  const client = MCPClient.forWorkspace(workspace);
   return client.HOSTING_APP_WORKFLOWS_STATUS(params, { signal });
 }

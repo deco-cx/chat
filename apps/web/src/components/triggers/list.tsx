@@ -15,7 +15,7 @@ import {
   IntegrationInfo,
   UserInfo,
 } from "../common/table/table-cells.tsx";
-import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
+import { DefaultBreadcrumb, PageLayout } from "../layout.tsx";
 import { TriggerActions } from "./trigger-actions.tsx";
 import { TriggerCard } from "./trigger-card.tsx";
 import { TriggerModal } from "./trigger-dialog.tsx";

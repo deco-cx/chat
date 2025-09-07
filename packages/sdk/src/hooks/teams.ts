@@ -11,7 +11,7 @@ import {
   type CreateTeamInput,
   deleteTeam,
   getTeam,
-  getOrgTheme,
+  getWorkspaceTheme,
   listAvailableViewsForConnection,
   listTeams,
   removeView,
@@ -25,68 +25,19 @@ import { DEFAULT_THEME } from "../theme.ts";
 import { useSDK } from "./store.tsx";
 import { MCPConnection } from "../models/index.ts";
 import { listIntegrations } from "../crud/mcp.ts";
-import { listProjects } from "../crud/projects.ts";
-import { Locator } from "../locator.ts";
 
-/**
- * Hook to fetch teams - searching is done client-side for now.
- */
-export const useOrganizations = (options: { searchQuery?: string } = {}) => {
-  const search = options.searchQuery ?? "";
-
-  const queryResult = useSuspenseQuery({
-    // Once filtering is done server-side, update the queryKey to KEYS.TEAMS(options.query)
+export const useTeams = () => {
+  return useSuspenseQuery({
     queryKey: KEYS.TEAMS(),
     queryFn: ({ signal }) => listTeams({ signal }),
     retry: (failureCount, error) =>
       error instanceof InternalServerError && failureCount < 2,
   });
-
-  if (search) {
-    queryResult.data = queryResult.data.filter(
-      (team) =>
-        team.name.toLowerCase().includes(search.toLowerCase()) ||
-        team.slug.toLowerCase().includes(search.toLowerCase()),
-    );
-  }
-
-  return queryResult;
-};
-
-export interface Project {
-  id: string;
-  title: string;
-  slug: string;
-  avatar_url: string | null;
-  org: {
-    id: number;
-    slug: string;
-    avatar_url?: string;
-  };
-}
-
-export const useProjects = (options: {
-  searchQuery?: string;
-  org: string;
-}): Project[] => {
-  const query = useSuspenseQuery({
-    queryKey: KEYS.PROJECTS(options.org),
-    queryFn: () => listProjects(options.org),
-  });
-  const search = options.searchQuery ?? "";
-
-  const filtered = query.data.filter(
-    (project) =>
-      project.title.toLowerCase().includes(search.toLowerCase()) ||
-      project.slug.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  return filtered;
 };
 
 export const useTeam = (slug: string = "") => {
   return useSuspenseQuery({
-    queryKey: KEYS.ORGANIZATION(slug),
+    queryKey: KEYS.TEAM(slug),
     retry: (failureCount, error) =>
       error instanceof InternalServerError && failureCount < 2,
     queryFn: ({ signal }) => {
@@ -132,13 +83,12 @@ export function useDeleteTeam() {
 }
 
 export function useWorkspaceTheme() {
-  const { locator } = useSDK();
-  const { org } = Locator.parse(locator);
-
+  const { workspace } = useSDK();
+  const slug = workspace.split("/")[1] ?? "";
   return useQuery({
-    queryKey: KEYS.TEAM_THEME(org),
+    queryKey: KEYS.TEAM_THEME(slug),
     queryFn: async () => {
-      const data = await getOrgTheme(org);
+      const data = await getWorkspaceTheme(slug);
       const theme = data?.theme ?? {};
       return {
         ...DEFAULT_THEME,
@@ -150,28 +100,28 @@ export function useWorkspaceTheme() {
 
 export function useAddView() {
   const client = useQueryClient();
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
+  const slug = workspace.split("/")[1] ?? "";
 
   return useMutation({
-    mutationFn: (input: AddViewInput) => addView(locator, input),
+    mutationFn: (input: AddViewInput) => addView(workspace, input),
     onSuccess: () => {
-      const { org } = Locator.parse(locator);
       // Invalidate team data to refresh views
-      client.invalidateQueries({ queryKey: KEYS.ORGANIZATION(org) });
+      client.invalidateQueries({ queryKey: KEYS.TEAM(slug) });
     },
   });
 }
 
 export function useRemoveView() {
   const client = useQueryClient();
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
+  const slug = workspace.split("/")[1] ?? "";
 
   return useMutation({
-    mutationFn: (input: RemoveViewInput) => removeView(locator, input),
+    mutationFn: (input: RemoveViewInput) => removeView(workspace, input),
     onSuccess: () => {
-      const { org } = Locator.parse(locator);
       // Invalidate team data to refresh views
-      client.invalidateQueries({ queryKey: KEYS.ORGANIZATION(org) });
+      client.invalidateQueries({ queryKey: KEYS.TEAM(slug) });
     },
   });
 }
@@ -180,11 +130,11 @@ export function useConnectionViews(
   integration: { id: string; connection: MCPConnection } | null,
   suspense = true,
 ) {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   const hook = suspense ? useSuspenseQuery : useQuery;
 
   const data = hook({
-    queryKey: KEYS.TEAM_VIEWS(locator, integration?.id ?? "null"),
+    queryKey: KEYS.TEAM_VIEWS(workspace, integration?.id ?? "null"),
     queryFn: () => {
       if (!integration) {
         return { views: [] };
@@ -198,13 +148,13 @@ export function useConnectionViews(
 }
 
 export function useIntegrationViews({ enabled = true }: { enabled?: boolean }) {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
   return useQuery({
-    queryKey: KEYS.WORKSPACE_VIEWS(locator),
+    queryKey: KEYS.WORKSPACE_VIEWS(workspace),
     enabled,
     queryFn: async ({ signal }) => {
       const integrations = await listIntegrations(
-        locator,
+        workspace,
         { binder: "View" },
         signal,
       );

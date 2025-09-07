@@ -14,7 +14,7 @@ const getContactUsUrl = (workspace: string) => {
 };
 
 export const useContactUsUrl = () => {
-  const { locator } = useSDK();
+  const { workspace } = useSDK();
 
-  return getContactUsUrl(locator);
+  return getContactUsUrl(workspace);
 };
