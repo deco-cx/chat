@@ -155,35 +155,6 @@ const BillingHistory = {
   },
 };
 
-const ContractsCommits = {
-  fetch: async (
-    wallet: ClientOf<WalletAPI>,
-    workspace: string,
-    range: "day" | "week" | "month" | "year",
-  ) => {
-    const historyResponse = await wallet["GET /contracts/commits"]({
-      workspace: encodeURIComponent(workspace),
-      range,
-    });
-
-    if (!historyResponse.ok) {
-      throw new Error("Failed to fetch billing history");
-    }
-
-    return historyResponse.json();
-  },
-  format: (history: WalletAPI["GET /contracts/commits"]["response"]) => {
-    return {
-      items: history.items.map((item) => {
-        return {
-          ...item,
-          amount: item.amount,
-        };
-      }),
-    };
-  },
-};
-
 const createTool = createToolGroup("Wallet", {
   name: "Wallet & Billing",
   description: "Handle payments and subscriptions.",
@@ -295,6 +266,7 @@ export const getBillingHistory = createTool({
     ),
   }),
   handler: async ({ range }, c) => {
+    c.resourceAccess.grant();
     assertHasWorkspace(c);
 
     await assertWorkspaceResourceAccess(c);
@@ -307,49 +279,6 @@ export const getBillingHistory = createTool({
       range,
     );
     return BillingHistory.format(history);
-  },
-});
-
-export const getContractsCommits = createTool({
-  name: "GET_CONTRACTS_COMMITS",
-  description: "Get the contracts commits for the current tenant's wallet",
-  inputSchema: z.object({
-    range: z.enum(["day", "week", "month", "year"]),
-  }),
-  outputSchema: z.object({
-    items: z.array(
-      z.object({
-        id: z.string(),
-        amount: z.number(),
-        contractId: z.string(),
-        callerApp: z.string().nullish(),
-        clauses: z.array(
-          z.object({
-            clauseId: z.string(),
-            amount: z.number(),
-          }),
-        ),
-        timestamp: z.string(),
-        type: z.string(),
-      }),
-    ),
-  }),
-  handler: async ({ range }, c) => {
-    c.resourceAccess.grant();
-    assertHasWorkspace(c);
-
-    await assertWorkspaceResourceAccess(c);
-
-    const wallet = getWalletClient(c);
-
-    const history = await ContractsCommits.fetch(
-      wallet,
-      c.workspace.value,
-      range,
-    );
-
-    const formatted = ContractsCommits.format(history);
-    return formatted;
   },
 });
 

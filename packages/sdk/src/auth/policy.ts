@@ -111,7 +111,9 @@ export class PolicyClient {
     userId: string,
     teamIdOrSlug: number | string,
   ): Promise<MemberRole[]> {
-    this.assertDb(this.db);
+    if (!this.db) {
+      throw new Error("PolicyClient not initialized with database client");
+    }
 
     const teamId =
       typeof teamIdOrSlug === "number"
@@ -239,7 +241,9 @@ export class PolicyClient {
     teamId: number;
     memberId: number;
   }) {
-    this.assertDb(this.db);
+    if (!this.db) {
+      throw new Error("PolicyClient not initialized with database client");
+    }
 
     // Get member's user_id for cache invalidation
     const { data: member } = await this.db
@@ -618,7 +622,6 @@ export class PolicyClient {
 
   private assertDb(db: unknown = this.db): asserts db is Client {
     if (!db) {
-      console.trace("Tracing error");
       throw new Error("PolicyClient not initialized with database client");
     }
   }

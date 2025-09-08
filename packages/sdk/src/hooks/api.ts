@@ -147,14 +147,6 @@ export const KEYS = {
     locator: ProjectLocator,
     range: "day" | "week" | "month" | "year",
   ) => ["wallet-billing-history", locator, range],
-  WALLET_CONTRACTS_PRE_AUTHORIZATIONS: (
-    locator: ProjectLocator,
-    range: "day" | "week" | "month" | "year",
-  ) => ["wallet-contracts-pre-authorizations", locator, range],
-  WALLET_CONTRACTS_COMMITS: (
-    locator: ProjectLocator,
-    range: "day" | "week" | "month" | "year",
-  ) => ["wallet-contracts-commits", locator, range],
   WORKSPACE_PLAN: (locator: ProjectLocator) => ["workspace-plan", locator],
   WORKFLOWS: (locator: ProjectLocator, page?: number, per_page?: number) => [
     "workflows",

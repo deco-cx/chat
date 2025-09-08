@@ -1,12 +1,6 @@
-import type {
-  Agent,
-  AgentUsage,
-  ContractsCommitsItem,
-  Member,
-  ThreadUsage,
-} from "@deco/sdk";
+import type { Agent, AgentUsage, Member, ThreadUsage } from "@deco/sdk";
 import { ChartBarStack } from "./stacked-bar-chart.tsx";
-import type { TimeRange } from "./usage.tsx";
+import { TimeRange } from "./usage.tsx";
 import { color } from "./util.ts";
 
 export interface UsageChartData {
@@ -281,21 +275,6 @@ const buildThreadStack = createStackBuilder<ThreadChartTransaction>({
   getType: () => "thread",
   getAdditionalData: () => ({}),
 });
-
-const buildContractsCommitsStack =
-  createStackBuilder<ContractsCommitsChartTransaction>({
-    getKey: (transaction) =>
-      transaction.callerApp
-        ? `${transaction.contractId}-${transaction.callerApp}`
-        : transaction.contractId,
-    getName: (transaction) =>
-      transaction.callerApp
-        ? `${transaction.integrationName} (${transaction.callerApp})`
-        : transaction.integrationName,
-    getAvatar: () => "",
-    getType: () => "contracts",
-    getAdditionalData: () => ({}),
-  });
 
 export function createAgentChartData(
   agents: Agent[],
@@ -626,163 +605,6 @@ export function createThreadChartData(
     });
   });
   const itemCount = filteredThreadIds.size;
-
-  return {
-    chartData: chartStackedBars,
-    totalCost,
-    itemCount,
-  };
-}
-
-interface ContractsCommitsChartTransaction {
-  timestamp: string;
-  amount: number;
-  contractId: string;
-  integrationName: string;
-  callerApp?: string;
-  clauses: {
-    clauseId: string;
-    amount: number;
-  }[];
-  type: string;
-}
-
-export function createContractsCommitsChartData(
-  contractsCommits: ContractsCommitsItem[],
-  timeRange: TimeRange,
-  integrations: { id: string; name: string }[],
-  clauseId?: string,
-  contractId?: string,
-): UsageChartData {
-  if (!contractsCommits || contractsCommits.length === 0) {
-    return {
-      chartData: [],
-      totalCost: 0,
-      itemCount: 0,
-    };
-  }
-
-  const allTransactions: Array<ContractsCommitsChartTransaction> = [];
-
-  contractsCommits.forEach((contract) => {
-    // Filter by contract if specified
-    if (contractId && contract.contractId !== contractId) {
-      return;
-    }
-
-    // Find the integration for this contract
-    const integration = integrations.find(
-      (integration) => integration.id === contract.contractId,
-    );
-    const integrationName = integration?.name || contract.contractId;
-
-    // If a clauseId is selected, calculate the proportional cost from the total contract amount
-    // This matches the calculation logic used in the contracts table
-    if (clauseId) {
-      const clause = (contract.clauses || []).find(
-        (c) => c.clauseId === clauseId,
-      );
-      if (clause) {
-        const totalTokensInContract = (contract.clauses || []).reduce(
-          (sum, c) => sum + c.amount,
-          0,
-        );
-        if (totalTokensInContract > 0) {
-          const proportionalAmount =
-            (clause.amount / totalTokensInContract) * contract.amount;
-          allTransactions.push({
-            timestamp: contract.timestamp,
-            amount: proportionalAmount,
-            contractId: contract.contractId,
-            integrationName,
-            callerApp: contract.callerApp ?? undefined,
-            clauses: contract.clauses,
-            type: contract.type,
-          });
-        }
-      }
-    } else {
-      allTransactions.push({
-        timestamp: contract.timestamp,
-        amount: contract.amount,
-        contractId: contract.contractId,
-        integrationName,
-        callerApp: contract.callerApp || undefined,
-        clauses: contract.clauses,
-        type: contract.type,
-      });
-    }
-  });
-
-  if (allTransactions.length === 0) {
-    return {
-      chartData: [],
-      totalCost: 0,
-      itemCount: 0,
-    };
-  }
-
-  let chartStackedBars: ChartBarStack[] = [];
-
-  if (timeRange === "day") {
-    const allTransactionsByHour = createMap<ContractsCommitsChartTransaction>({
-      keys: allDayHoursKeys,
-      fillWith: allTransactions,
-      getKey: hourId,
-    });
-
-    chartStackedBars = allTransactionsByHour.map(([label, transactions]) =>
-      buildContractsCommitsStack({
-        transactions: transactions,
-        label,
-      }),
-    );
-  } else if (timeRange === "week") {
-    const allTransactionsByDay = createMap<ContractsCommitsChartTransaction>({
-      keys: allWeekDaysKeys,
-      fillWith: allTransactions,
-      getKey: dayId,
-    });
-
-    chartStackedBars = allTransactionsByDay.map(([label, transactions]) =>
-      buildContractsCommitsStack({
-        transactions: transactions,
-        label,
-      }),
-    );
-  } else if (timeRange === "month") {
-    const allTransactionsByWeek = createMap<ContractsCommitsChartTransaction>({
-      keys: allMonthWeeksKeys,
-      fillWith: allTransactions,
-      getKey: weekId,
-    });
-
-    chartStackedBars = allTransactionsByWeek.map(([label, transactions]) =>
-      buildContractsCommitsStack({
-        transactions: transactions,
-        label,
-      }),
-    );
-  } else {
-    throw new Error("Unknown time Range");
-  }
-
-  // Calculate totals from the filtered transactions used in the chart
-  const totalCost = chartStackedBars.reduce(
-    (sum, stack) => sum + stack.total,
-    0,
-  );
-
-  // Calculate item count from filtered transactions
-  const filteredContractsCommitsIds = new Set<string>();
-  chartStackedBars.forEach((stack) => {
-    stack.items.forEach((item) => {
-      if (item.type === "contracts" && item.id !== "other") {
-        filteredContractsCommitsIds.add(item.id);
-      }
-    });
-  });
-  const itemCount = filteredContractsCommitsIds.size;
 
   return {
     chartData: chartStackedBars,

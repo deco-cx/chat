@@ -47,7 +47,7 @@ export const patchApiDecoChatTokenHTTPConnection = (
   return {
     ...connection,
     headers: {
-      ...(cookie ? { cookie } : {}),
+      cookie,
     },
   };
 };

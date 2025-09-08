@@ -273,7 +273,6 @@ export const contractSettle = createContractTool({
 
     const state = c.state;
     const contractId = c.user.integrationId;
-    const callerApp = c.callerApp;
 
     let amount = MicroDollar.ZERO;
     if ("amount" in context && context.amount !== undefined) {
@@ -288,11 +287,6 @@ export const contractSettle = createContractTool({
         identifier: context.transactionId,
         amount: amount.toMicrodollarString(),
         vendorId: context.vendorId,
-        metadata: callerApp
-          ? {
-              callerApp,
-            }
-          : undefined,
       }),
     );
 

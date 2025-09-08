@@ -369,27 +369,6 @@ export interface WalletAPI {
       }[];
     };
   };
-
-  "GET /contracts/commits": {
-    searchParams: {
-      workspace: string;
-      range: "day" | "week" | "month" | "year";
-    };
-    response: {
-      items: {
-        id: string;
-        amount: number;
-        contractId: string;
-        callerApp?: string;
-        clauses: {
-          clauseId: string;
-          amount: number;
-        }[];
-        timestamp: string;
-        type: TransactionType;
-      }[];
-    };
-  };
 }
 
 // for local dev

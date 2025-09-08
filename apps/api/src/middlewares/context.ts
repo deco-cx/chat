@@ -17,10 +17,6 @@ export const withContextMiddleware: MiddlewareHandler<AppEnv> = async (
   ctx.set("cf", new Cloudflare({ apiToken: CF_API_TOKEN }));
 
   ctx.set("resourceAccess", createResourceAccess());
-  const callerApp = ctx.req.raw.headers.get("x-caller-app");
-  if (callerApp) {
-    ctx.set("callerApp", callerApp);
-  }
 
   await next();
 };

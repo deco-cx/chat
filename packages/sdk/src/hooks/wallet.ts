@@ -1,7 +1,6 @@
 import {
   getAgentsUsage,
   getBillingHistory,
-  getContractsCommits,
   getThreadsUsage,
   getWalletAccount,
   getWorkspacePlan,
@@ -77,24 +76,6 @@ export function useBillingHistory({
 
 export type BillingHistoryItem = Awaited<
   ReturnType<typeof useBillingHistory>
->["items"][number];
-
-export function useContractsCommits({
-  range,
-}: {
-  range: "day" | "week" | "month" | "year";
-}) {
-  const { locator } = useSDK();
-  const { data: contractsCommits } = useSuspenseQuery({
-    queryKey: KEYS.WALLET_CONTRACTS_COMMITS(locator, range),
-    queryFn: () => getContractsCommits(locator, range),
-  });
-
-  return contractsCommits;
-}
-
-export type ContractsCommitsItem = Awaited<
-  ReturnType<typeof useContractsCommits>
 >["items"][number];
 
 export function usePlan() {

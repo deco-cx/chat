@@ -28,14 +28,6 @@ export const getBillingHistory = (
     range,
   });
 
-export const getContractsCommits = (
-  locator: ProjectLocator,
-  range: "day" | "week" | "month" | "year",
-) =>
-  MCPClient.forLocator(locator).GET_CONTRACTS_COMMITS({
-    range,
-  });
-
 export const createWalletCheckoutSession = ({
   locator,
   amountUSDCents,
