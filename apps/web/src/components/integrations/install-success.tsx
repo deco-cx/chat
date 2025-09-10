@@ -17,6 +17,7 @@ function ConnectionInstallSuccess() {
       const searchParams = new URLSearchParams(globalThis.location.search);
       trackException(error, {
         properties: {
+          integrationId: searchParams.get("integrationId"),
           installId: searchParams.get("installId"),
           appName: searchParams.get("appName"),
           mcpUrl: searchParams.get("mcpUrl"),
@@ -28,6 +29,7 @@ function ConnectionInstallSuccess() {
     onSuccess: () => {
       const searchParams = new URLSearchParams(globalThis.location.search);
       searchParams.delete("installId");
+      searchParams.delete("integrationId");
       const newUrl = `${globalThis.location.pathname}?${searchParams.toString()}`;
       globalThis.history.replaceState({}, "", newUrl);
 
@@ -40,6 +42,7 @@ function ConnectionInstallSuccess() {
   useEffect(() => {
     const searchParams = new URLSearchParams(globalThis.location.search);
     const installId = searchParams.get("installId");
+    const connectionId = searchParams.get("integrationId") ?? `i:${installId}`;
     const name = searchParams.get("name");
     const account = searchParams.get("account");
 
@@ -47,7 +50,6 @@ function ConnectionInstallSuccess() {
       return;
     }
 
-    const connectionId = `i:${installId}`;
     const existingIntegration = allIntegrations.find(
       (integration) => integration.id === connectionId,
     );

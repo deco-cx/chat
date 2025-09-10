@@ -41,10 +41,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
 import { ROUTES as loginRoutes } from "./auth/index.ts";
 import { withActorsStubMiddleware } from "./middlewares/actors-stub.ts";
-import {
-  withActorsMiddleware,
-  withActorsMiddlewareLegacy,
-} from "./middlewares/actors.ts";
+import { withActorsMiddleware } from "./middlewares/actors.ts";
 import { withContextMiddleware } from "./middlewares/context.ts";
 import { setUserMiddleware } from "./middlewares/user.ts";
 import { handleCodeExchange } from "./oauth/code.ts";
@@ -430,7 +427,6 @@ app.use(async (c, next) => {
 });
 
 app.use(withActorsMiddleware);
-app.use(withActorsMiddlewareLegacy);
 
 app.post(`/contracts/mcp`, createMCPHandlerFor(CONTRACTS_TOOLS));
 

@@ -259,7 +259,8 @@ export const useInstallFromMarketplace = () => {
         ).DECO_INTEGRATION_OAUTH_START({
           appName: appName,
           returnUrl,
-          installId: integration.id.split(":").pop()!,
+          integrationId: integration.id,
+          installId: crypto.randomUUID(),
           provider,
         });
 
