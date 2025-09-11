@@ -147,6 +147,7 @@ interface UpdateDatabaseArgs {
   result: DeployResult;
   wranglerConfig: WranglerConfig;
   force?: boolean;
+  preview?: boolean;
   files?: Record<string, string>;
 }
 
@@ -158,6 +159,7 @@ async function updateDatabase({
   result,
   wranglerConfig,
   force,
+  preview = false,
 }: UpdateDatabaseArgs) {
   // First, ensure the app exists (without deployment-specific data)
   let { data: app, error: updateError } = await c.db
@@ -275,32 +277,34 @@ async function updateDatabase({
     const regularRoutes = toInsert.filter((r) => !r.custom_domain);
 
     // For custom domains, use the promote functionality (update existing routes only)
-
-    await Promise.all(
-      customDomainRoutes.map(async (route) => {
-        try {
-          await promoteDeployment(c, {
-            deploymentId: deployment.id,
-            routePattern: route.route_pattern,
-            force,
-          });
-        } catch (error) {
-          // If route doesn't exist, create it (only during initial deployment)
-          if (error instanceof NotFoundError) {
-            const { error: insertError } = await c.db
-              .from(DECO_CHAT_HOSTING_ROUTES_TABLE)
-              .insert({
-                deployment_id: deployment.id,
-                route_pattern: route.route_pattern,
-                custom_domain: true,
-              });
-            if (insertError) throw insertError;
-          } else {
-            throw error;
+    // Skip promotion if this is a preview deployment
+    if (!preview) {
+      await Promise.all(
+        customDomainRoutes.map(async (route) => {
+          try {
+            await promoteDeployment(c, {
+              deploymentId: deployment.id,
+              routePattern: route.route_pattern,
+              force,
+            });
+          } catch (error) {
+            // If route doesn't exist, create it (only during initial deployment)
+            if (error instanceof NotFoundError) {
+              const { error: insertError } = await c.db
+                .from(DECO_CHAT_HOSTING_ROUTES_TABLE)
+                .insert({
+                  deployment_id: deployment.id,
+                  route_pattern: route.route_pattern,
+                  custom_domain: true,
+                });
+              if (insertError) throw insertError;
+            } else {
+              throw error;
+            }
           }
-        }
-      }),
-    );
+        }),
+      );
+    }
     // For regular routes (non-custom domains), just insert them in batch
     if (regularRoutes.length > 0) {
       const { error: insertError } = await c.db
@@ -445,6 +449,8 @@ const DECO_WORKER_RUNTIME_VERSION = "0.4.0";
 export const deployFiles = createTool({
   name: "HOSTING_APP_DEPLOY",
   description: `Deploy multiple TypeScript files that use Wrangler for bundling and deployment to Cloudflare Workers. You must provide a package.json file with the necessary dependencies and a wrangler.toml file matching the Workers for Platforms format. Use 'main_module' instead of 'main', and define bindings using the [[bindings]] array, where each binding is a table specifying its type and properties. To add custom Deco bindings, set type = "MCP" in a binding entry (these will be filtered and handled automatically).
+
+Set 'preview: true' to create a preview deployment that won't replace the production version. Preview deployments get their own unique URL but are not promoted to production routes.
 
 Common patterns:
 1. Use a package.json file to manage dependencies:
@@ -649,6 +655,13 @@ Important Notes:
         "If true, force the deployment even if there are breaking changes",
       )
       .optional(),
+    preview: z
+      .boolean()
+      .describe(
+        "If true, creates a preview deployment without promoting it to production routes. The deployment will be available at a unique URL but won't replace the production version.",
+      )
+      .optional()
+      .default(false),
     appSlug: z
       .string()
       .optional()
@@ -694,6 +707,7 @@ Important Notes:
   handler: async (
     {
       force,
+      preview = false,
       appSlug: _appSlug,
       files,
       envVars,
@@ -725,7 +739,9 @@ Important Notes:
           ) as any as WranglerConfig)
         : ({ name: _appSlug } as WranglerConfig);
 
-      addDefaultCustomDomain(wranglerConfig);
+      if (!preview) {
+        addDefaultCustomDomain(wranglerConfig);
+      }
       // check if the entrypoint is in the files
       const entrypoints = [
         ...ENTRYPOINTS,
@@ -851,6 +867,7 @@ Important Notes:
       const data = await updateDatabase({
         c,
         force,
+        preview,
         workspace,
         scriptSlug,
         result,

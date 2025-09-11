@@ -35,6 +35,7 @@ interface Options {
   unlisted?: boolean;
   assetsDirectory?: string;
   force?: boolean;
+  preview?: boolean;
   dryRun?: boolean;
 }
 
@@ -48,11 +49,12 @@ export const deploy = async ({
   assetsDirectory,
   skipConfirmation,
   force,
+  preview = false,
   unlisted = true,
   dryRun = false,
 }: Options) => {
   console.log(
-    `\n🚀 ${dryRun ? "Preparing" : "Deploying"} '${appSlug}' to '${workspace}'${dryRun ? " (dry run)" : ""}...\n`,
+    `\n🚀 ${dryRun ? "Preparing" : "Deploying"} '${appSlug}' to '${workspace}'${dryRun ? " (dry run)" : ""}${preview ? " (preview)" : ""}...\n`,
   );
 
   // Ensure the target directory exists
@@ -163,6 +165,7 @@ export const deploy = async ({
     bundle: hasTsFile,
     unlisted,
     force,
+    preview,
   };
 
   console.log("🚚 Deployment summary:");
@@ -170,6 +173,9 @@ export const deploy = async ({
   console.log(`  Files: ${files.length}`);
   console.log(`  ${envVarsStatus}`);
   console.log(`  ${wranglerConfigStatus}`);
+  if (preview) {
+    console.log(`  Preview mode: true (deployment won't replace production)`);
+  }
 
   if (dryRun) {
     const manifestPath = join(cwd, "deploy-manifest.json");
