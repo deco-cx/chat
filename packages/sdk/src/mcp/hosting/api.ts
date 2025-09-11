@@ -440,7 +440,8 @@ const splitFiles = (
   };
 };
 
-const DECO_WORKER_RUNTIME_VERSION = "0.4.0";
+const DECO_WORKER_RUNTIME_VERSION = "0.19.0";
+
 // Update the schema in deployFiles
 export const deployFiles = createTool({
   name: "HOSTING_APP_DEPLOY",
@@ -641,7 +642,124 @@ Important Notes:
 - When using template literals inside content strings, escape backticks with a backslash (\\) or use string concatenation (+)
 - You must include a package.json file with the @deco/workers-runtime dependency
 - Dependencies are managed through npm packages in package.json, not npm: or jsr: specifiers
-- Wrangler will handle the bundling process using the dependencies defined in package.json`,
+- Wrangler will handle the bundling process using the dependencies defined in package.json
+
+### Use @deco/workers-runtime to create tools, workflows, resources, and views.
+
+- Tools
+  - To create a tool, use createTool from @deco/workers-runtime/mastra and zod for input/output validation.
+
+  import { createTool } from "@deco/workers-runtime/mastra";
+  import { z } from "zod";
+
+  export const createHelloTool = (env: Env) => createTool({
+    id: "HELLO",
+    description: "Says hello",
+    inputSchema: z.object({ name: z.string() }),
+    outputSchema: z.object({ message: z.string() }),
+    execute: async ({ context }) => {
+      return { message: "Hello, " + context.name + "!" };
+    },
+  });
+
+- Workflows
+  - Wrap tools with createStepFromTool, compose with createWorkflow, use .map/.branch/.parallel, then .commit().
+
+  import { createStepFromTool, createWorkflow } from "@deco/workers-runtime/mastra";
+  import { z } from "zod";
+
+  export const createHelloWorkflow = (env: Env) => {
+    const helloStep = createStepFromTool(createHelloTool(env));
+
+    return createWorkflow({
+      id: "HELLO_FLOW",
+      inputSchema: z.object({ name: z.string() }),
+      outputSchema: z.object({ message: z.string() }),
+    })
+      .then(helloStep)
+      .map(({ inputData }) => ({ message: inputData.message }))
+      .commit();
+  };
+
+- Resources
+  - Factory (env) => ({ name, icon, title, description, views?, tools: { read|create|update|search } }).
+  - Use mimeType(uri) and env.DECO_CHAT_REQUEST_CONTEXT.state.site/env.
+  - Wrap admin tools via env.ADMINDECOCX["TOOL_NAME"].asTool().
+
+  import { mimeType } from "@deco/workers-runtime/resources";
+
+  export const createFilesResource = (env: Env) => ({
+    name: "File",
+    icon: "description",
+    title: "Files",
+    description: "Project files",
+    views: {},
+    tools: {
+      read: async ({ uri }: { uri: string }) => {
+        const readFile = await env.ADMINDECOCX?.["DAEMON_READ_FILE"]?.asTool();
+        const res = await readFile?.execute({
+          context: {
+            filepath: new URL(uri).pathname,
+            site: env.DECO_CHAT_REQUEST_CONTEXT.state.site,
+            env: env.DECO_CHAT_REQUEST_CONTEXT.state.env,
+          },
+        });
+        const text = (res as any)?.content ?? "";
+        return {
+          uri,
+          name: new URL(uri).pathname.split("/").pop()!,
+          title: new URL(uri).pathname.split("/").pop()!,
+          description: "File",
+          mimeType: mimeType(uri),
+          text,
+          size: text.length,
+          timestamp: (res as any)?.timestamp,
+        };
+      },
+    },
+  });
+
+- Views
+  - Function returning an array of menu entries that use site/env from request context.
+
+  export const views = (env: Env) => {
+    const state = env.DECO_CHAT_REQUEST_CONTEXT.state;
+    const site = state.site;
+    const space = state.env;
+    return [
+      {
+        title: "Sections",
+        icon: "deployed_code",
+        url: "https://admin.deco.cx/sites/" + site + "/spaces/sections?menuless=true&env=" + space,
+        tools: ["DAEMON_PATCH_FILE"],
+      },
+    ];
+  };
+
+- Register everything in withRuntime
+  - Extend OAuth state with site/env, add scopes, register tools/workflows/resources/views, add a fetch fallback.
+
+  import { withRuntime } from "@deco/workers-runtime";
+  import { z } from "zod";
+  import { StateSchema, Scopes } from "./deco.gen";
+
+  const { Workflow, ...runtime } = withRuntime<Env, typeof StateSchema>({
+    oauth: {
+      state: StateSchema.extend({ site: z.string(), env: z.string() }),
+      scopes: [...Object.values(Scopes.ADMINDECOCX ?? {})],
+    },
+    tools: [createHelloTool],
+    workflows: [createHelloWorkflow],
+    resources: [createFilesResource],
+    views,
+    fetch: (req, env) => env.ASSETS.fetch(req),
+  });
+  export { Workflow };
+  export default runtime;
+
+- Rules of thumb
+  - Normalize resource outputs: { uri, name, title, mimeType, ...payload }.
+`,
   inputSchema: z.object({
     force: z
       .boolean()
