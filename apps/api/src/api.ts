@@ -28,11 +28,12 @@ import {
   PolicyClient,
   PROJECT_TOOLS,
   IntegrationSub as ProxySub,
+  Tool,
   type ToolLike,
+  watchSSE,
   withMCPAuthorization,
   withMCPErrorHandling,
   wrapToolFn,
-  watchSSE,
 } from "@deco/sdk/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
@@ -142,15 +143,9 @@ const mapMCPErrorToHTTPExceptionOrThrow = (err: Error) => {
  * Creates and sets up an MCP server for the given tools
  */
 const createMCPHandlerFor = (
-  tools:
-    | typeof GLOBAL_TOOLS
-    | typeof PROJECT_TOOLS
-    | typeof EMAIL_TOOLS
-    | typeof AGENT_TOOLS
-    | typeof CONTRACTS_TOOLS
-    | typeof DECONFIG_TOOLS,
+  tools: readonly Tool[] | ((c: Context<AppEnv>) => Promise<Tool[]>),
 ) => {
-  return async (c: Context) => {
+  return async (c: Context<AppEnv>) => {
     const group = c.req.query("group");
 
     const server = new McpServer(
@@ -158,7 +153,7 @@ const createMCPHandlerFor = (
       { capabilities: { tools: {} } },
     );
 
-    for (const tool of tools) {
+    for (const tool of await (typeof tools === "function" ? tools(c) : tools)) {
       if (group && tool.group !== group) {
         continue;
       }
