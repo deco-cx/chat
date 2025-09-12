@@ -10,6 +10,9 @@ export const setUserMiddleware: MiddlewareHandler<AppEnv> = async (
   startTime(ctx, "get-user");
 
   const user = await getUser(ctx);
+  if (!user) {
+    console.log(ctx.req.url);
+  }
 
   if (user) {
     ctx.set("user", user);

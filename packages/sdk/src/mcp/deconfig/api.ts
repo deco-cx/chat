@@ -83,6 +83,7 @@ const createDeconfigTool = createToolFactory<DeconfigContext>(
     }
 
     if (
+      c.user &&
       "aud" in c.user &&
       typeof c.user.aud === "string" &&
       c.user.iss === DECO_CHAT_ISSUER
@@ -154,7 +155,7 @@ export const createBranch = createDeconfigTool({
 
       // Branch from existing branch using Durable Object
       using sourceRpc = await branchRpcFor(c, sourceBranch);
-      await sourceRpc.branch(branchName);
+      using _ = await sourceRpc.branch(branchName);
     }
     // Create empty branch
     const branch = await crud.createBranch({
@@ -303,7 +304,7 @@ export const mergeBranch = createDeconfigTool({
     await assertWorkspaceResourceAccess(c);
 
     using targetRpc = await branchRpcFor(c, targetBranch);
-    const result = await targetRpc.merge(
+    using result = await targetRpc.merge(
       sourceBranch,
       strategy as MergeStrategy,
     );
@@ -453,7 +454,7 @@ export const putFile = createDeconfigTool({
     using branchRpc = await branchRpcFor(c, branch);
 
     // Use transactional write (works for both conditional and unconditional writes)
-    const result = await branchRpc.transactionalWrite({
+    using result = await branchRpc.transactionalWrite({
       patches: [
         {
           path: normalizedPath,
@@ -501,7 +502,7 @@ export const readFile = createDeconfigTool({
     const normalizedPath = normalizePath(path);
 
     using branchRpc = await branchRpcFor(c, branch);
-    const fileData = await branchRpc.getFile(normalizedPath);
+    using fileData = await branchRpc.getFile(normalizedPath);
 
     if (!fileData) {
       throw new Error(`File not found: ${normalizedPath}`);
@@ -620,8 +621,7 @@ export const listFiles = createDeconfigTool({
     await assertWorkspaceResourceAccess(c);
 
     using branchRpc = await branchRpcFor(c, branch);
-
-    const files = await branchRpc.getFiles(prefix);
+    using files = await branchRpc.getFiles(prefix);
 
     return {
       files,

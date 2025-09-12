@@ -394,13 +394,14 @@ const sandboxRunTool = createTool({
     const { ctx, defaultHandle, guestConsole } = evaluation;
 
     try {
+      const env = await envPromise;
       // Call the function using the callFunction utility
       const callHandle = await callFunction(
         ctx,
         defaultHandle,
         undefined,
         input,
-        { env: await envPromise },
+        { env },
       );
 
       const callResult = ctx.dump(ctx.unwrapResult(callHandle));

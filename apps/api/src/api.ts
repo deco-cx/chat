@@ -1,4 +1,4 @@
-import { createServerClient } from "@deco/ai/mcp";
+import { createServerClient, jsonSchemaToModel } from "@deco/ai/mcp";
 import { HttpServerTransport } from "@deco/mcp/http";
 import {
   DECO_CMS_WEB_URL,
@@ -15,6 +15,7 @@ import {
   compose,
   CONTRACTS_TOOLS,
   createMCPToolsStub,
+  createToolGroup,
   DECONFIG_TOOLS,
   EMAIL_TOOLS,
   getIntegration,
@@ -25,6 +26,7 @@ import {
   type IntegrationWithTools,
   issuerFromContext,
   ListToolsMiddleware,
+  MCPClient,
   PolicyClient,
   PROJECT_TOOLS,
   IntegrationSub as ProxySub,
@@ -143,7 +145,9 @@ const mapMCPErrorToHTTPExceptionOrThrow = (err: Error) => {
  * Creates and sets up an MCP server for the given tools
  */
 const createMCPHandlerFor = (
-  tools: readonly Tool[] | ((c: Context<AppEnv>) => Promise<Tool[]>),
+  tools:
+    | readonly Tool[]
+    | ((c: Context<AppEnv>) => Promise<Tool[] | readonly Tool[]>),
 ) => {
   return async (c: Context<AppEnv>) => {
     const group = c.req.query("group");
@@ -453,8 +457,51 @@ app.get(`/:org/:project/deconfig/watch`, (ctx) => {
   });
 });
 
+const createTool = createToolGroup("Self", {
+  name: "Tools",
+  description: "Dynamic tools",
+  icon: "https://assets.decocache.com/mcp/81d602bb-45e2-4361-b52a-23379520a34d/sandbox.png",
+});
+
 app.all("/mcp", createMCPHandlerFor(GLOBAL_TOOLS));
-app.all("/:org/:project/mcp", createMCPHandlerFor(PROJECT_TOOLS));
+app.all(
+  "/:org/:project/mcp",
+  createMCPHandlerFor(async (ctx) => {
+    const appCtx = honoCtxToAppCtx(ctx);
+    const client = MCPClient.forContext(appCtx);
+    startTime(ctx, "sandbox-list-tools");
+
+    using _ = appCtx.resourceAccess.grant();
+    const { tools } = await State.run(
+      appCtx,
+      async () => await client.SANDBOX_LIST_TOOLS({}),
+    );
+
+    endTime(ctx, "sandbox-list-tools");
+
+    const createdTools = tools.map((tool) => {
+      return createTool({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: jsonSchemaToModel(tool.inputSchema),
+        outputSchema: jsonSchemaToModel(tool.outputSchema),
+        handler: async (ctx, appCtx) => {
+          const { result } = await State.run(
+            appCtx,
+            async () =>
+              await client.SANDBOX_RUN_TOOL({
+                name: tool.name,
+                input: ctx,
+              }),
+          );
+          return result;
+        },
+      });
+    });
+
+    return [...PROJECT_TOOLS, ...createdTools];
+  }),
+);
 app.all("/:org/:project/agents/:agentId/mcp", createMCPHandlerFor(AGENT_TOOLS));
 
 // Tool call endpoint handlers

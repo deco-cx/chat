@@ -25,7 +25,7 @@ import { createTool } from "./utils/create-tool.ts";
 import { jsonSchemaToModel } from "./utils/json-schema-to-model.ts";
 import { mapToolEntries } from "./utils/tool-entries.ts";
 export { createServerClient, createTransport };
-
+export { jsonSchemaToModel };
 const ApiDecoChatURLs = [
   "https://api.decocms.com",
   "https://api.deco.chat",

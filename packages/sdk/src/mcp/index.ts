@@ -31,6 +31,7 @@ import * as threadsAPI from "./threads/api.ts";
 import * as triggersAPI from "./triggers/api.ts";
 import * as walletAPI from "./wallet/api.ts";
 
+export { createTool, createToolGroup } from "./context.ts";
 export { AuthorizationClient, PolicyClient } from "../auth/policy.ts";
 export * from "../errors.ts";
 export { FileProcessor } from "../mcp/file-processor.ts";

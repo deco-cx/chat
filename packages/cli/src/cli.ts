@@ -79,6 +79,7 @@ import {
   pushCommand,
   pullCommand,
   listCommand,
+  deleteCommand,
 } from "./commands/deconfig/index.js";
 import { detectRuntime } from "./lib/runtime.js";
 
@@ -749,6 +750,32 @@ const deconfigList = new Command("list")
     }
   });
 
+// Delete command for deconfig
+const deconfigDelete = new Command("delete")
+  .description("Delete a file from a deconfig branch.")
+  .argument("<path>", "File path to delete")
+  .option("-b, --branch <branchName>", "Branch name", "main")
+  .option("-w, --workspace <workspace>", "Workspace name")
+  .action(async (path, options) => {
+    try {
+      const config = await getConfig({
+        inlineOptions: { workspace: options.workspace },
+      });
+      await deleteCommand({
+        path,
+        branchName: options.branch,
+        workspace: config.workspace,
+        local: config.local,
+      });
+    } catch (error) {
+      console.error(
+        "❌ Delete failed:",
+        error instanceof Error ? error.message : String(error),
+      );
+      process.exit(1);
+    }
+  });
+
 // Deconfig parent command
 const deconfig = new Command("deconfig")
   .description("Manage deconfig filesystem operations.")
@@ -758,7 +785,8 @@ const deconfig = new Command("deconfig")
   .addCommand(deconfigClone)
   .addCommand(deconfigPush)
   .addCommand(deconfigPull)
-  .addCommand(deconfigList);
+  .addCommand(deconfigList)
+  .addCommand(deconfigDelete);
 
 // Main CLI program
 const program = new Command()
