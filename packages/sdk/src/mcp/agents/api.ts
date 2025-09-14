@@ -8,6 +8,7 @@ import {
 import {
   assertHasWorkspace,
   assertWorkspaceResourceAccess,
+  assertPrincipalIsUser,
   type WithTool,
 } from "../assertions.ts";
 import { type AppContext, createToolGroup } from "../context.ts";
@@ -76,7 +77,12 @@ export const listAgents = createTool({
   description: "List all agents",
   inputSchema: z.object({}),
   outputSchema: z.object({
-    items: z.array(AgentSchema),
+    items: z.array(
+      AgentSchema.extend({
+        lastAccess: z.string().nullable().optional(),
+        lastAccessor: z.string().nullable().optional(),
+      }),
+    ),
   }),
   handler: async (_, c: WithTool<AppContext>) => {
     assertHasWorkspace(c);
@@ -105,13 +111,60 @@ export const listAgents = createTool({
         userRoles?.some((role) => IMPORTANT_ROLES.includes(role)),
     );
 
+    const agentIds = filteredAgents.map((a) => a.id);
+    let latestByAgent: Record<
+      string,
+      { created_at: string; user_id: string } | undefined
+    > = {};
+    if (agentIds.length > 0) {
+      const { data: activityData, error: activityError } = await c.db
+        .from("user_activity")
+        .select("user_id, value, created_at")
+        .eq("resource", "agent")
+        .eq("key", "id")
+        .in("value", agentIds)
+        .order("created_at", { ascending: false });
+
+      if (activityError) {
+        throw new InternalServerError(activityError.message);
+      }
+
+      latestByAgent = (activityData ?? []).reduce(
+        (acc, row) => {
+          const value = row.value as string | null;
+          if (!value) return acc;
+          if (!acc[value]) {
+            acc[value] = {
+              created_at: row.created_at as string,
+              user_id: row.user_id as string,
+            };
+          }
+          return acc;
+        },
+        {} as Record<
+          string,
+          { created_at: string; user_id: string } | undefined
+        >,
+      );
+    }
+
     return {
       items: filteredAgents
-        .map((item) => AgentSchema.safeParse(item)?.data)
+        .map((raw) => {
+          const base = AgentSchema.parse(raw);
+          const latest = latestByAgent[base.id];
+          return {
+            ...base,
+            lastAccess: latest?.created_at ?? null,
+            lastAccessor: latest?.user_id ?? null,
+          };
+        })
         .filter((a) => !!a),
     };
   },
 });
+
+// removed AGENTS_LIST_WITH_ACTIVITY and AGENT_ACTIVITY_REGISTER to avoid extra policy surface
 
 export const getAgent = createTool({
   name: "AGENTS_GET",

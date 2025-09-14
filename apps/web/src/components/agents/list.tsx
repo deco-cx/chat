@@ -42,10 +42,12 @@ import { AgentAvatar } from "../common/avatar/agent.tsx";
 import { EmptyState } from "../common/empty-state.tsx";
 import { ListPageHeader } from "../common/list-page-header.tsx";
 import { Table } from "../common/table/index.tsx";
+import { DateTimeCell, UserInfo } from "../common/table/table-cells.tsx";
 import type { Tab } from "../dock/index.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
 import { useFocusChat } from "./hooks.ts";
 import { useViewMode } from "@deco/ui/hooks/use-view-mode.ts";
+import { useUser } from "../../hooks/use-user.ts";
 
 export const useDuplicateAgent = (agent: Agent | null) => {
   const [duplicating, setDuplicating] = useState(false);
@@ -247,16 +249,33 @@ function listReducer(state: ListState, action: ListAction): ListState {
 
 function TableView({ agents }: { agents: Agent[] }) {
   const focusChat = useFocusChat();
-  const [sortKey, setSortKey] = useState<"name" | "description">("name");
+  const [sortKey, setSortKey] = useState<"name" | "description" | "lastAccess">(
+    "name",
+  );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   function getSortValue(agent: Agent, key: "name" | "description"): string {
     if (key === "description") return agent.description?.toLowerCase() || "";
     return agent.name?.toLowerCase() || "";
   }
+  const lastAccessByAgentId = useMemo(
+    () => ({}) as Record<string, string | null>,
+    [],
+  );
+  const lastAccessorByAgentId = useMemo(
+    () => ({}) as Record<string, string | null>,
+    [],
+  );
+
   const sortedAgents = [...agents].sort((a, b) => {
-    const aVal = getSortValue(a, sortKey);
-    const bVal = getSortValue(b, sortKey);
+    const aVal =
+      sortKey === "lastAccess"
+        ? (a as any).lastAccess || ""
+        : getSortValue(a, sortKey as "name" | "description");
+    const bVal =
+      sortKey === "lastAccess"
+        ? (b as any).lastAccess || ""
+        : getSortValue(b, sortKey as "name" | "description");
     if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
     if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
     return 0;
@@ -286,6 +305,21 @@ function TableView({ agents }: { agents: Agent[] }) {
       cellClassName: "max-w-xl",
     },
     {
+      id: "lastAccess",
+      header: "Last used",
+      render: (agent: Agent) => (
+        <DateTimeCell value={(agent as any).lastAccess} />
+      ),
+      sortable: true,
+    },
+    {
+      id: "lastAccessor",
+      header: "Last used by",
+      render: (agent: Agent) => (
+        <UserInfo userId={(agent as any).lastAccessor ?? undefined} />
+      ),
+    },
+    {
       id: "actions",
       header: "",
       render: (agent: Agent) => (
@@ -306,7 +340,7 @@ function TableView({ agents }: { agents: Agent[] }) {
         if (sortKey === key) {
           setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
         } else {
-          setSortKey(key as "name" | "description");
+          setSortKey(key as "name" | "description" | "lastAccess");
           setSortDirection("asc");
         }
       }}

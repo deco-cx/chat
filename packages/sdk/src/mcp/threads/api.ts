@@ -235,6 +235,8 @@ export const listThreads = createTool({
   },
 });
 
+// removed THREADS_LATEST_ACCESS_BY_AGENT (moved to AGENTS_LIST enrichment)
+
 export const getThreadMessages = createTool({
   name: "THREADS_GET_MESSAGES",
   description: "Get only the messages for a thread by thread id",

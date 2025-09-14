@@ -14,6 +14,7 @@ import {
   listAgents,
   loadAgent,
   updateAgent,
+  type AgentWithActivity,
 } from "../crud/agent.ts";
 import { InternalServerError } from "../errors.ts";
 import type { Agent } from "../models/agent.ts";
@@ -120,12 +121,12 @@ export const useAgents = () => {
   const data = useSuspenseQuery({
     queryKey: KEYS.AGENT(locator),
     queryFn: async ({ signal }) => {
-      const items = await listAgents(locator, signal);
+      const items = (await listAgents(locator, signal)) as AgentWithActivity[];
 
       for (const item of items) {
         const itemKey = KEYS.AGENT(locator, item.id);
         client.cancelQueries({ queryKey: itemKey });
-        client.setQueryData<Agent>(itemKey, item);
+        client.setQueryData(itemKey, item as AgentWithActivity);
       }
 
       return items;

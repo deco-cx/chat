@@ -108,3 +108,4 @@ export const updateThreadMetadata = (
     { threadId, metadata },
     init,
   ) as Promise<ThreadDetails>;
+
