@@ -334,7 +334,7 @@ function TableView({ agents }: { agents: Agent[] }) {
       id: "lastAccessor",
       header: "Last used by",
       render: (agent: Agent) => (
-        <UserInfo userId={(agent as any).lastAccessor ?? undefined} />
+        <UserInfo userId={(agent as any).lastAccessor ?? undefined} noTooltip />
       ),
     },
     {
