@@ -69,8 +69,8 @@ export function ListPageHeader<TChiplet extends Chiplet>({
   actionsRight,
 }: Props<TChiplet>) {
   return (
-    <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-2">
-      <div className="flex items-center gap-2">
+    <div className="w-full grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-2">
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar min-w-0">
         {filter?.items.map((chiplet) => (
           <Chiplet
             key={chiplet.id}
@@ -80,9 +80,14 @@ export function ListPageHeader<TChiplet extends Chiplet>({
         ))}
         {actionsLeft}
       </div>
-      <div className="flex items-center gap-2 justify-self-auto md:justify-self-end p-1">
+      <div className="flex items-center gap-2 justify-self-auto md:justify-self-end p-1 min-w-0 shrink-0">
         {view && <ViewModeSwitcher {...view} />}
-        {input && <Input className="w-80 text-sm" {...input} />}
+        {input && (
+          <Input
+            className="w-full sm:w-56 md:w-72 lg:w-80 text-sm min-w-0 flex-shrink"
+            {...input}
+          />
+        )}
         {actionsRight}
       </div>
     </div>
