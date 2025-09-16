@@ -10,6 +10,8 @@ export const OAuthSearchParamsSchema = z.object({
   redirect_uri: z.string(),
   state: z.string().optional(),
   workspace_hint: z.string().optional(),
+  state_hint: z.string().optional(),
+  redirectIfInstalled: z.string().optional(),
 });
 
 export type OAuthSearchParams = z.infer<typeof OAuthSearchParamsSchema>;

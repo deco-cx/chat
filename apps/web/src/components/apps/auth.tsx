@@ -248,6 +248,7 @@ const InlineCreateIntegrationForm = ({
   onFormSubmit,
   onBack,
   backEnabled,
+  state_hint,
 }: {
   appName: string;
   onFormSubmit: ({
@@ -259,13 +260,22 @@ const InlineCreateIntegrationForm = ({
   }) => Promise<void>;
   onBack: () => void;
   backEnabled: boolean;
+  state_hint: string | undefined;
 }) => {
   const { data } = useMarketplaceAppSchema(appName);
   const scopes = data?.scopes ?? [];
   const schema = data?.schema as JSONSchema7 | undefined;
 
+  const stateHint = useMemo(() => {
+    if (state_hint) {
+      return JSON.parse(decodeURIComponent(atob(state_hint)));
+    }
+    return null;
+  }, [state_hint]);
+
   const form = useForm({
-    defaultValues: schema ? generateDefaultValues(schema) : {},
+    defaultValues: stateHint ?? (schema ? generateDefaultValues(schema) : {}),
+    values: stateHint ?? {},
   });
 
   // Get permission descriptions
@@ -283,7 +293,7 @@ const InlineCreateIntegrationForm = ({
   // Update form defaults when schema changes
   useEffect(() => {
     if (schema) {
-      form.reset(generateDefaultValues(schema));
+      form.reset(stateHint ?? generateDefaultValues(schema));
     }
   }, [schema, form]);
 
@@ -483,6 +493,8 @@ const SelectProjectAppInstance = ({
   clientId,
   redirectUri,
   state,
+  state_hint,
+  redirectIfInstalled,
 }: {
   app: RegistryApp;
   org: Team;
@@ -491,8 +503,15 @@ const SelectProjectAppInstance = ({
   clientId: string;
   redirectUri: string;
   state: string | undefined;
+  state_hint: string | undefined;
+  redirectIfInstalled: string | undefined;
 }) => {
+
   const installedIntegrations = useAppIntegrations(clientId);
+
+  if (redirectIfInstalled === "true" && installedIntegrations.length > 0){
+    window.location.href = `/${org.slug}/default/connection/unknown:::${installedIntegrations[0].id}`;
+  }
   const createOAuthCode = useCreateOAuthCodeForIntegration();
   const installCreatingApiKeyAndIntegration =
     useInstallCreatingApiKeyAndIntegration();
@@ -594,6 +613,7 @@ const SelectProjectAppInstance = ({
                 }
               }}
               backEnabled={installedIntegrations.length > 0}
+              state_hint={state_hint}
             />
           </Suspense>
         ) : (
@@ -641,6 +661,8 @@ function AppsOAuth({
   redirect_uri,
   state,
   workspace_hint,
+  state_hint,
+  redirectIfInstalled,
 }: OAuthSearchParams) {
   const { data: registryApp } = useRegistryApp({ clientId: client_id });
   const { data: orgs } = useOrganizations();
@@ -686,6 +708,8 @@ function AppsOAuth({
         clientId={client_id}
         redirectUri={redirect_uri}
         state={state}
+        state_hint={state_hint}
+        redirectIfInstalled={redirectIfInstalled}
       />
     </SDKProvider>
   );
