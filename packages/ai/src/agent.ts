@@ -740,7 +740,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
     try {
       const accessorId = this.metadata?.user?.id as string | undefined;
       if (accessorId) {
-        await this.db.from("user_activity").insert({
+        await this.context.db.from("user_activity").insert({
           user_id: accessorId,
           resource: "agent",
           key: "id",
