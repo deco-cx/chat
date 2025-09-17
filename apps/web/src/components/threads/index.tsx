@@ -142,14 +142,17 @@ function App({ agentId }: { agentId: string }) {
   const my = useThreads({ agentId, resourceId: user?.id ?? "" });
   const all = useThreads({ agentId });
 
-  const myThreads = (my.data.threads ?? []).toSorted(
-    (a, b) =>
-      new Date(b.updatedAt || b.createdAt).getTime() -
-      new Date(a.updatedAt || a.createdAt).getTime(),
-  );
+  const myThreads = (my.data.threads ?? [])
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt || b.createdAt).getTime() -
+        new Date(a.updatedAt || a.createdAt).getTime(),
+    );
   const otherThreads = (all.data.threads ?? [])
+    .slice()
     .filter((t) => t.resourceId !== (user?.id ?? ""))
-    .toSorted(
+    .sort(
       (a, b) =>
         new Date(b.updatedAt || b.createdAt).getTime() -
         new Date(a.updatedAt || a.createdAt).getTime(),
