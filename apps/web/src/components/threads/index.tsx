@@ -96,7 +96,6 @@ function Item({
   );
 }
 
-
 function Section({
   title,
   threads,

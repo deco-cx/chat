@@ -260,7 +260,10 @@ function TableView({ agents }: { agents: AgentWithActivity[] }) {
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  function getSortValue(agent: AgentWithActivity, key: "name" | "description"): string {
+  function getSortValue(
+    agent: AgentWithActivity,
+    key: "name" | "description",
+  ): string {
     if (key === "description") return agent.description?.toLowerCase() || "";
     return agent.name?.toLowerCase() || "";
   }
