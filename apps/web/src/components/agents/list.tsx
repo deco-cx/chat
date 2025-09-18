@@ -48,7 +48,12 @@ import type { Tab } from "../dock/index.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
 import { useFocusChat } from "./hooks.ts";
 import { useViewMode } from "@deco/ui/hooks/use-view-mode.ts";
-import { useUser } from "../../hooks/use-user.ts";
+
+// Agent model enriched with last-used fields from API
+interface AgentWithActivity extends Agent {
+  lastAccess?: string | null;
+  lastAccessor?: string | null;
+}
 
 export const useDuplicateAgent = (agent: Agent | null) => {
   const [duplicating, setDuplicating] = useState(false);
@@ -248,35 +253,23 @@ function listReducer(state: ListState, action: ListAction): ListState {
   }
 }
 
-function TableView({ agents }: { agents: Agent[] }) {
+function TableView({ agents }: { agents: AgentWithActivity[] }) {
   const focusChat = useFocusChat();
   const [sortKey, setSortKey] = useState<"name" | "description" | "lastAccess">(
     "name",
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  function getSortValue(agent: Agent, key: "name" | "description"): string {
+  function getSortValue(agent: AgentWithActivity, key: "name" | "description"): string {
     if (key === "description") return agent.description?.toLowerCase() || "";
     return agent.name?.toLowerCase() || "";
   }
-  const lastAccessByAgentId = useMemo(
-    () => ({}) as Record<string, string | null>,
-    [],
-  );
-  const lastAccessorByAgentId = useMemo(
-    () => ({}) as Record<string, string | null>,
-    [],
-  );
 
   const sortedAgents = [...agents].sort((a, b) => {
     const aVal =
-      sortKey === "lastAccess"
-        ? (a as any).lastAccess || ""
-        : getSortValue(a, sortKey as "name" | "description");
+      sortKey === "lastAccess" ? a.lastAccess || "" : getSortValue(a, sortKey);
     const bVal =
-      sortKey === "lastAccess"
-        ? (b as any).lastAccess || ""
-        : getSortValue(b, sortKey as "name" | "description");
+      sortKey === "lastAccess" ? b.lastAccess || "" : getSortValue(b, sortKey);
     if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
     if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
     return 0;
@@ -286,7 +279,7 @@ function TableView({ agents }: { agents: Agent[] }) {
     {
       id: "name",
       header: "Name",
-      render: (agent: Agent) => (
+      render: (agent: AgentWithActivity) => (
         <div className="flex items-center gap-2 min-w-0">
           <AgentAvatar
             url={agent.avatar}
@@ -309,7 +302,7 @@ function TableView({ agents }: { agents: Agent[] }) {
     {
       id: "description",
       header: "Description",
-      accessor: (agent: Agent) => (
+      accessor: (agent: AgentWithActivity) => (
         <span
           className="text-muted-foreground text-sm leading-tight line-clamp-2 break-words"
           title={agent.description || ""}
@@ -325,22 +318,22 @@ function TableView({ agents }: { agents: Agent[] }) {
     {
       id: "lastAccess",
       header: "Last used",
-      render: (agent: Agent) => (
-        <DateTimeCell value={(agent as any).lastAccess} />
+      render: (agent: AgentWithActivity) => (
+        <DateTimeCell value={agent.lastAccess ?? undefined} />
       ),
       sortable: true,
     },
     {
       id: "lastAccessor",
       header: "Last used by",
-      render: (agent: Agent) => (
-        <UserInfo userId={(agent as any).lastAccessor ?? undefined} noTooltip />
+      render: (agent: AgentWithActivity) => (
+        <UserInfo userId={agent.lastAccessor ?? undefined} noTooltip />
       ),
     },
     {
       id: "actions",
       header: "",
-      render: (agent: Agent) => (
+      render: (agent: AgentWithActivity) => (
         <div onClick={(e) => e.stopPropagation()}>
           <Actions agent={agent} />
         </div>
@@ -371,7 +364,7 @@ function TableView({ agents }: { agents: Agent[] }) {
   );
 }
 
-function CardsView({ agents }: { agents: Agent[] }) {
+function CardsView({ agents }: { agents: AgentWithActivity[] }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 gap-3 peer">
       {agents.map((agent) => (
@@ -425,10 +418,10 @@ function List() {
 
   const agentsByVisibility = useMemo(() => {
     const initial = Object.fromEntries(
-      VISIBILITIES.map((v) => [v, []] as [string, Agent[]]),
+      VISIBILITIES.map((v) => [v, []] as [string, AgentWithActivity[]]),
     );
 
-    return agents?.reduce((acc, agent) => {
+    return (agents as AgentWithActivity[] | undefined)?.reduce((acc, agent) => {
       acc["all"].push(agent);
       acc[agent.visibility.toLowerCase()]?.push(agent);
 
@@ -444,7 +437,7 @@ function List() {
 
   const activeAgents = useMemo(() => {
     return (agentsByVisibility["all"] ?? []).filter((agent) => {
-      const last = (agent as any).lastAccess as string | undefined | null;
+      const last = agent.lastAccess;
       if (!last) return false;
       const when = new Date(last);
       return !Number.isNaN(when.getTime()) && when >= sevenDaysAgo;
@@ -517,9 +510,9 @@ function List() {
         <>
           {selectedTab === "active" ? (
             <EmptyState
-              icon={"history"}
-              title={"No agents used in the last 7 days"}
-              description={"Click All to see more."}
+              icon="history"
+              title="No agents used in the last 7 days"
+              description="Click All to see more."
               buttonProps={{
                 children: "All",
                 onClick: () => setSelectedTab("all"),

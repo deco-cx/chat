@@ -96,9 +96,6 @@ function Item({
   );
 }
 
-function Category({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-xs font-semibold px-2 py-1.5">{children}</h2>;
-}
 
 function Section({
   title,
