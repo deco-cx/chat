@@ -7,7 +7,7 @@ import { Link } from "react-router";
 import { ErrorBoundary } from "../../error-boundary";
 import { Avatar } from "../common/avatar";
 import { timeAgo } from "../../utils/time-ago";
-import { DecoDayBanner } from "../common/event/deco-day";
+import { BountiesBanner } from "../common/event/bounties-banner";
 import { OrgAvatars, OrgMemberCount } from "./members";
 import { Button } from "@deco/ui/components/button.tsx";
 import { CreateOrganizationDialog } from "../sidebar/create-team-dialog";
@@ -205,7 +205,7 @@ function MyOrganizations() {
   return (
     <div className="flex w-full h-full items-start bg-background">
       <div className="p-8 flex flex-col gap-4 w-full">
-        <DecoDayBanner />
+        <BountiesBanner />
         <ErrorBoundary fallback={null}>
           <Suspense fallback={<RecentProjectsSection.Skeleton />}>
             <RecentProjectsSection />
