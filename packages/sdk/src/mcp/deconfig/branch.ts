@@ -325,8 +325,15 @@ export class BranchRpc extends RpcTarget {
 
   /**
    * Get files with their metadata from the branch tree.
+   * When includeContent is true, files will include content as base64.
    */
-  getFiles(prefix?: string): Tree {
+  getFiles(
+    prefix?: string | string[],
+    includeContent?: boolean,
+  ): Tree | Promise<Tree> {
+    if (includeContent) {
+      return this.branchDO.listFilesWithContent(prefix);
+    }
     return this.branchDO.listFiles(prefix);
   }
 
@@ -863,16 +870,74 @@ export class Branch extends DurableObject<DeconfigEnv> {
   /**
    * List files that start with the given prefix.
    */
-  listFiles(prefix?: string): Tree {
+  listFiles(prefix?: string | string[]): Tree {
     const currentTree = this.state.tree;
     const matchingFiles: Tree = {};
 
     for (const filePath in currentTree) {
-      if (!prefix || filePath.startsWith(prefix)) {
+      if (
+        !prefix ||
+        (Array.isArray(prefix)
+          ? prefix.some((p) => filePath.startsWith(p))
+          : filePath.startsWith(prefix))
+      ) {
         matchingFiles[filePath] = currentTree[filePath];
       }
     }
     return matchingFiles;
+  }
+
+  /**
+   * List files with their content included as base64 in the metadata.
+   */
+  async listFilesWithContent(prefix?: string | string[]): Promise<Tree> {
+    const currentTree = this.state.tree;
+    const matchingFiles: Record<FilePath, FileMetadata> = {};
+
+    // First, collect matching files
+    for (const filePath in currentTree) {
+      if (
+        !prefix ||
+        (Array.isArray(prefix)
+          ? prefix.some((p) => filePath.startsWith(p))
+          : filePath.startsWith(prefix))
+      ) {
+        matchingFiles[filePath] = currentTree[filePath];
+      }
+    }
+
+    // Extract unique hashes for batch retrieval
+    const hashes = Array.from(
+      new Set(
+        Object.values(matchingFiles).map((metadata) =>
+          BlobAddress.hash(metadata.address),
+        ),
+      ),
+    );
+
+    // Batch retrieve all blob contents
+    using blobContents = await this.blobs.getBatch(hashes);
+
+    // Build result with content included in metadata
+    const result: Tree = {};
+    for (const [filePath, metadata] of Object.entries(matchingFiles)) {
+      const hash = BlobAddress.hash(metadata.address);
+      const content = blobContents.get(hash);
+
+      // Create enriched metadata with base64 content
+      const enrichedMetadata: FileMetadata & { content?: string } = {
+        ...metadata,
+      };
+
+      if (content) {
+        const uint8Array = new Uint8Array(content);
+        enrichedMetadata.content = btoa(String.fromCharCode(...uint8Array));
+      }
+
+      result[filePath] = enrichedMetadata;
+    }
+
+    return result;
   }
 
   /**

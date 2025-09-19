@@ -254,4 +254,36 @@ export class Blobs extends DurableObject<unknown> {
 
     return results;
   }
+
+  /**
+   * Retrieve multiple blobs by their hashes in a single batch operation.
+   * Returns a Map from hash to ArrayBuffer, with null values for missing blobs.
+   */
+  getBatch(hashes: string[]): Map<string, ArrayBuffer | null> {
+    const result = new Map<string, ArrayBuffer | null>();
+
+    // Initialize all hashes with null (not found)
+    for (const hash of hashes) {
+      result.set(hash, null);
+    }
+
+    if (hashes.length === 0) {
+      return result;
+    }
+
+    // Create parameterized query for batch retrieval
+    const placeholders = hashes.map(() => "?").join(",");
+    const query = `SELECT hash, content FROM blobs WHERE hash IN (${placeholders})`;
+
+    const sqlResult = this.sql.exec(query, ...hashes);
+
+    // Update result map with found blobs
+    for (const row of sqlResult) {
+      const hash = row.hash as string;
+      const content = row.content as ArrayBuffer;
+      result.set(hash, content);
+    }
+
+    return result;
+  }
 }

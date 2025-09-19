@@ -602,6 +602,7 @@ const listFilesOutputSchema = z.object({
       sizeInBytes: z.number(),
       mtime: z.number(),
       ctime: z.number(),
+      content: z.string().optional(),
     }),
   ),
   count: z.number(),
@@ -609,21 +610,37 @@ const listFilesOutputSchema = z.object({
 
 export const listFiles = createDeconfigTool({
   name: "LIST_FILES",
-  description: "List files in a DECONFIG branch with optional prefix filtering",
+  description:
+    "List files in a DECONFIG branch with optional prefix filtering and content inclusion",
   inputSchema: z.object({
     branch: z.string().optional().describe("The branch name"),
-    prefix: z.string().optional().describe("Optional prefix to filter files"),
+    prefix: z
+      .string()
+      .optional()
+      .describe("Optional prefix to filter files (use select instead)"),
+    select: z
+      .array(z.string())
+      .optional()
+      .describe("Optional list of files to select"),
+    includeContent: z
+      .boolean()
+      .optional()
+      .default(false)
+      .describe("Include file content as base64 in the response"),
   }),
   outputSchema: listFilesOutputSchema,
-  handler: async ({ branch, prefix }, c) => {
+  handler: async ({ branch, prefix, select, includeContent }, c) => {
     if (prefix) {
-      prefix = withPathPrefix(c, prefix);
+      select = [prefix];
+    }
+    if (select) {
+      select = select.map((s) => withPathPrefix(c, s));
     }
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
 
     using branchRpc = await branchRpcFor(c, branch);
-    using files = await branchRpc.getFiles(prefix);
+    using files = await branchRpc.getFiles(select, includeContent);
 
     return {
       files,
