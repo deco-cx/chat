@@ -3,6 +3,10 @@ import { Hosts } from "@deco/sdk/hosts";
 
 import { z } from "zod";
 import { InternalServerError, NotFoundError } from "../../errors.ts";
+import {
+  createTransitionQuery,
+  smartResolveProjectOrgIds,
+} from "../workspace-helpers.ts";
 
 import type { QueryResult } from "../../storage/index.ts";
 import {
@@ -59,12 +63,16 @@ export const listChannels = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const db = c.db;
-    const workspace = c.workspace.value;
 
-    const query = db
+    // Resolve project and org IDs from context (locator preferred, workspace fallback)
+    const ids = await smartResolveProjectOrgIds(db, c);
+
+    // Use transition query that works with both new foreign keys and old workspace strings
+    const baseQuery = db
       .from("deco_chat_channels")
-      .select(SELECT_CHANNEL_QUERY)
-      .eq("workspace", workspace);
+      .select(SELECT_CHANNEL_QUERY);
+
+    const query = createTransitionQuery(baseQuery, ids, c.workspace?.value);
 
     const { data, error } = await query;
 
@@ -93,15 +101,25 @@ export const createChannel = createTool({
   handler: async ({ discriminator, integrationId, agentId, name }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
-    const workspace = c.workspace.value;
+
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(c.db, c);
 
     const integrationIdWithoutPrefix = integrationId.replace("i:", "");
-    const { data: integration, error: integrationError } = await c.db
+
+    // Use transition query for integration lookup
+    const baseIntegrationQuery = c.db
       .from("deco_chat_integrations")
       .select("*")
-      .eq("workspace", workspace) // this ensures the integration is in the same workspace as the channel
-      .eq("id", integrationIdWithoutPrefix)
-      .maybeSingle();
+      .eq("id", integrationIdWithoutPrefix);
+    const integrationQuery = createTransitionQuery(
+      baseIntegrationQuery,
+      ids,
+      c.workspace?.value,
+    );
+
+    const { data: integration, error: integrationError } =
+      await integrationQuery.maybeSingle();
     if (integrationError) {
       throw new InternalServerError(integrationError.message);
     }
@@ -112,12 +130,14 @@ export const createChannel = createTool({
 
     const db = c.db;
 
-    // Insert the new channel
+    // Insert the new channel with foreign keys
     const { data: channel, error } = await db
       .from("deco_chat_channels")
       .insert({
         discriminator,
-        workspace,
+        workspace: c.workspace.value, // Keep workspace for backward compatibility during transition
+        project_id: ids.projectId,
+        org_id: ids.orgId,
         integration_id: integrationIdWithoutPrefix,
         name,
       })
@@ -147,7 +167,7 @@ export const createChannel = createTool({
       await binding.DECO_CHAT_CHANNELS_JOIN({
         agentLink: generateAgentLink(c.workspace, agentId),
         discriminator,
-        workspace,
+        workspace: c.workspace.value,
         agentName: data.name,
         agentId,
         callbacks: trigger.callbacks,
@@ -203,15 +223,18 @@ export const channelJoin = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const db = c.db;
-    const workspace = c.workspace.value;
 
-    // Fetch channel with agents
-    const { data: channel, error } = await db
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(db, c);
+
+    // Use transition query to fetch channel
+    const baseQuery = db
       .from("deco_chat_channels")
       .select(SELECT_CHANNEL_QUERY)
-      .eq("id", id)
-      .eq("workspace", workspace)
-      .single();
+      .eq("id", id);
+    const query = createTransitionQuery(baseQuery, ids, c.workspace?.value);
+
+    const { data: channel, error } = await query.single();
 
     if (error) {
       throw new InternalServerError(error.message);
@@ -232,7 +255,7 @@ export const channelJoin = createTool({
         agentName,
         agentLink: generateAgentLink(c.workspace, agentId),
         discriminator: channel.discriminator,
-        workspace,
+        workspace: c.workspace.value,
         agentId,
         callbacks: trigger.callbacks,
       });
@@ -265,15 +288,18 @@ export const channelLeave = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const db = c.db;
-    const workspace = c.workspace.value;
 
-    // Fetch channel with agents
-    const { data: channel, error } = await db
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(db, c);
+
+    // Use transition query to fetch channel
+    const baseQuery = db
       .from("deco_chat_channels")
       .select(SELECT_CHANNEL_QUERY)
-      .eq("id", id)
-      .eq("workspace", workspace)
-      .single();
+      .eq("id", id);
+    const query = createTransitionQuery(baseQuery, ids, c.workspace?.value);
+
+    const { data: channel, error } = await query.single();
 
     if (error) {
       throw new InternalServerError(error.message);
@@ -285,7 +311,7 @@ export const channelLeave = createTool({
       );
       await binding.DECO_CHAT_CHANNELS_LEAVE({
         discriminator: channel.discriminator,
-        workspace,
+        workspace: c.workspace.value,
       });
     }
 
@@ -312,14 +338,18 @@ export const getChannel = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const db = c.db;
-    const workspace = c.workspace.value;
 
-    const { data: channel, error } = await db
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(db, c);
+
+    // Use transition query to get channel
+    const baseQuery = db
       .from("deco_chat_channels")
       .select(SELECT_CHANNEL_QUERY)
-      .eq("id", id)
-      .eq("workspace", workspace)
-      .maybeSingle();
+      .eq("id", id);
+    const query = createTransitionQuery(baseQuery, ids, c.workspace?.value);
+
+    const { data: channel, error } = await query.maybeSingle();
 
     if (error) {
       throw new InternalServerError(error.message);
@@ -367,14 +397,22 @@ export const deleteChannel = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const db = c.db;
-    const workspace = c.workspace.value;
 
-    const { data: channel, error: selectError } = await db
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(db, c);
+
+    // Use transition query to get channel for deletion
+    const baseSelectQuery = db
       .from("deco_chat_channels")
       .select(SELECT_CHANNEL_QUERY)
-      .eq("id", id)
-      .eq("workspace", workspace)
-      .single();
+      .eq("id", id);
+    const selectQuery = createTransitionQuery(
+      baseSelectQuery,
+      ids,
+      c.workspace?.value,
+    );
+
+    const { data: channel, error: selectError } = await selectQuery.single();
 
     if (selectError) {
       throw new InternalServerError(selectError.message);
@@ -385,14 +423,18 @@ export const deleteChannel = createTool({
     );
     await binding.DECO_CHAT_CHANNELS_LEAVE({
       discriminator: channel.discriminator,
-      workspace,
+      workspace: c.workspace.value,
     });
 
-    const { error } = await db
-      .from("deco_chat_channels")
-      .delete()
-      .eq("id", id)
-      .eq("workspace", workspace);
+    // Use transition query for deletion
+    const baseDeleteQuery = db.from("deco_chat_channels").delete().eq("id", id);
+    const deleteQuery = createTransitionQuery(
+      baseDeleteQuery,
+      ids,
+      c.workspace?.value,
+    );
+
+    const { error } = await deleteQuery;
 
     if (error) {
       throw new InternalServerError(error.message);

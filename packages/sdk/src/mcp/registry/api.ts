@@ -16,6 +16,10 @@ import {
   assertWorkspaceResourceAccess,
 } from "../assertions.ts";
 import { type AppContext, createToolGroup } from "../context.ts";
+import {
+  createTransitionQuery,
+  smartResolveProjectOrgIds,
+} from "../workspace-helpers.ts";
 export { AppName };
 const DECO_CHAT_APPS_REGISTRY_TABLE = "deco_chat_apps_registry" as const;
 const DECO_CHAT_REGISTRY_SCOPES_TABLE = "deco_chat_registry_scopes" as const;
@@ -227,6 +231,7 @@ const MAX_SCOPES_PER_WORKSPACE = 5;
 async function ensureScope(
   scopeName: string,
   workspace: string,
+  ids: { projectId: string; orgId: number },
   db: AppContext["db"],
 ): Promise<string> {
   // First, try to find existing scope
@@ -248,11 +253,16 @@ async function ensureScope(
     return existingScope.id;
   }
 
-  // Check scope limit before creating new scope
-  const { data: existingScopes, error: countError } = await db
+  // Check scope limit before creating new scope - use transition query
+  const baseScopeCountQuery = db
     .from(DECO_CHAT_REGISTRY_SCOPES_TABLE)
-    .select("id", { count: "exact" })
-    .eq("workspace", workspace);
+    .select("id", { count: "exact" });
+  const scopeCountQuery = createTransitionQuery(
+    baseScopeCountQuery,
+    ids,
+    workspace,
+  );
+  const { data: existingScopes, error: countError } = await scopeCountQuery;
 
   if (countError) throw countError;
 
@@ -269,6 +279,8 @@ async function ensureScope(
     .insert({
       scope_name: scopeName,
       workspace,
+      project_id: ids.projectId,
+      org_id: ids.orgId,
       updated_at: new Date().toISOString(),
     })
     .select("id")
@@ -336,9 +348,11 @@ export const listRegistryApps = createTool({
     await assertWorkspaceResourceAccess(c);
 
     assertHasWorkspace(c);
-    // added both scenarios to the query
-    // because we used to registry personal apps workspace as /users/userId
-    // and now we save them as /shared/slug
+
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(c.db, c);
+
+    // Build complex query for public apps and workspace-specific unlisted apps
     const workspace = c.workspace.value;
     const personalSlug = `/shared/${c.locator?.org}`;
 
@@ -348,7 +362,8 @@ export const listRegistryApps = createTool({
       .or(
         `unlisted.eq.false,` +
           `and(workspace.eq."${workspace}",unlisted.eq.true),` +
-          `and(workspace.eq."${personalSlug}",unlisted.eq.true)`,
+          `and(workspace.eq."${personalSlug}",unlisted.eq.true),` +
+          `and(project_id.eq.${ids.projectId},org_id.eq.${ids.orgId},unlisted.eq.true)`,
       );
 
     if (scopeName) {
@@ -386,12 +401,15 @@ export const listPublishedApps = createTool({
     c.resourceAccess.grant(); // Public tool, no policies needed
 
     assertHasWorkspace(c);
-    const workspace = c.workspace.value;
 
-    let query = c.db
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(c.db, c);
+
+    // Use transition query for published apps
+    const baseQuery = c.db
       .from(DECO_CHAT_APPS_REGISTRY_TABLE)
-      .select(SELECT_REGISTRY_APP_WITH_SCOPE_QUERY)
-      .eq("workspace", workspace);
+      .select(SELECT_REGISTRY_APP_WITH_SCOPE_QUERY);
+    let query = createTransitionQuery(baseQuery, ids, c.workspace?.value);
 
     if (search) {
       query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
@@ -450,6 +468,9 @@ export const publishApp = createTool({
     await assertWorkspaceResourceAccess(c);
 
     assertHasWorkspace(c);
+
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(c.db, c);
     const workspace = c.workspace.value;
 
     if (!name.trim()) {
@@ -460,13 +481,15 @@ export const publishApp = createTool({
     const scopeName = scope_name.trim();
 
     // Ensure scope exists (automatically claim if needed)
-    const scopeId = await ensureScope(scopeName, workspace, c.db);
+    const scopeId = await ensureScope(scopeName, workspace, ids, c.db);
 
     const { data, error } = await c.db
       .from(DECO_CHAT_APPS_REGISTRY_TABLE)
       .upsert(
         {
-          workspace,
+          workspace, // Keep workspace for backward compatibility during transition
+          project_id: ids.projectId,
+          org_id: ids.orgId,
           scope_id: scopeId,
           friendly_name: friendlyName?.trim() || null,
           name: name.trim(),

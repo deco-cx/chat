@@ -429,7 +429,9 @@ export type Database = {
           enabled: boolean;
           id: string;
           name: string;
+          org_id: number | null;
           policies: Json | null;
+          project_id: string | null;
           updated_at: string;
           workspace: string;
         };
@@ -439,7 +441,9 @@ export type Database = {
           enabled?: boolean;
           id?: string;
           name: string;
+          org_id?: number | null;
           policies?: Json | null;
+          project_id?: string | null;
           updated_at?: string;
           workspace: string;
         };
@@ -449,7 +453,9 @@ export type Database = {
           enabled?: boolean;
           id?: string;
           name?: string;
+          org_id?: number | null;
           policies?: Json | null;
+          project_id?: string | null;
           updated_at?: string;
           workspace?: string;
         };
@@ -465,6 +471,8 @@ export type Database = {
           id: string;
           metadata: Json | null;
           name: string;
+          org_id: number | null;
+          project_id: string | null;
           scope_id: string;
           unlisted: boolean;
           updated_at: string;
@@ -480,6 +488,8 @@ export type Database = {
           id?: string;
           metadata?: Json | null;
           name: string;
+          org_id?: number | null;
+          project_id?: string | null;
           scope_id: string;
           unlisted?: boolean;
           updated_at?: string;
@@ -495,6 +505,8 @@ export type Database = {
           id?: string;
           metadata?: Json | null;
           name?: string;
+          org_id?: number | null;
+          project_id?: string | null;
           scope_id?: string;
           unlisted?: boolean;
           updated_at?: string;
@@ -563,7 +575,9 @@ export type Database = {
           filename: string | null;
           index_name: string | null;
           metadata: Json | null;
+          org_id: number | null;
           path: string | null;
+          project_id: string | null;
           status: string | null;
           workspace: string;
         };
@@ -574,7 +588,9 @@ export type Database = {
           filename?: string | null;
           index_name?: string | null;
           metadata?: Json | null;
+          org_id?: number | null;
           path?: string | null;
+          project_id?: string | null;
           status?: string | null;
           workspace: string;
         };
@@ -585,7 +601,9 @@ export type Database = {
           filename?: string | null;
           index_name?: string | null;
           metadata?: Json | null;
+          org_id?: number | null;
           path?: string | null;
+          project_id?: string | null;
           status?: string | null;
           workspace?: string;
         };
@@ -630,6 +648,8 @@ export type Database = {
           id: string;
           integration_id: string;
           name: string | null;
+          org_id: number | null;
+          project_id: string | null;
           updated_at: string;
           workspace: string;
         };
@@ -641,6 +661,8 @@ export type Database = {
           id?: string;
           integration_id: string;
           name?: string | null;
+          org_id?: number | null;
+          project_id?: string | null;
           updated_at?: string;
           workspace: string;
         };
@@ -652,6 +674,8 @@ export type Database = {
           id?: string;
           integration_id?: string;
           name?: string | null;
+          org_id?: number | null;
+          project_id?: string | null;
           updated_at?: string;
           workspace?: string;
         };
@@ -669,16 +693,22 @@ export type Database = {
         Row: {
           created_at: string;
           customer_id: string;
+          org_id: number | null;
+          project_id: string | null;
           workspace: string;
         };
         Insert: {
           created_at?: string;
           customer_id: string;
+          org_id?: number | null;
+          project_id?: string | null;
           workspace: string;
         };
         Update: {
           created_at?: string;
           customer_id?: string;
+          org_id?: number | null;
+          project_id?: string | null;
           workspace?: string;
         };
         Relationships: [];
@@ -692,6 +722,8 @@ export type Database = {
           files: Json | null;
           id: string;
           metadata: Json | null;
+          org_id: number | null;
+          project_id: string | null;
           slug: string;
           updated_at: string;
           workspace: string;
@@ -704,6 +736,8 @@ export type Database = {
           files?: Json | null;
           id?: string;
           metadata?: Json | null;
+          org_id?: number | null;
+          project_id?: string | null;
           slug: string;
           updated_at?: string;
           workspace: string;
@@ -716,6 +750,8 @@ export type Database = {
           files?: Json | null;
           id?: string;
           metadata?: Json | null;
+          org_id?: number | null;
+          project_id?: string | null;
           slug?: string;
           updated_at?: string;
           workspace?: string;
@@ -860,18 +896,24 @@ export type Database = {
           claims: Json;
           code: string;
           created_at: string;
+          org_id: number | null;
+          project_id: string | null;
           workspace: string;
         };
         Insert: {
           claims: Json;
           code: string;
           created_at?: string;
+          org_id?: number | null;
+          project_id?: string | null;
           workspace: string;
         };
         Update: {
           claims?: Json;
           code?: string;
           created_at?: string;
+          org_id?: number | null;
+          project_id?: string | null;
           workspace?: string;
         };
         Relationships: [];
@@ -1008,6 +1050,8 @@ export type Database = {
         Row: {
           created_at: string;
           id: string;
+          org_id: number | null;
+          project_id: string | null;
           scope_name: string;
           updated_at: string;
           workspace: string;
@@ -1015,6 +1059,8 @@ export type Database = {
         Insert: {
           created_at?: string;
           id?: string;
+          org_id?: number | null;
+          project_id?: string | null;
           scope_name: string;
           updated_at?: string;
           workspace: string;
@@ -1022,6 +1068,8 @@ export type Database = {
         Update: {
           created_at?: string;
           id?: string;
+          org_id?: number | null;
+          project_id?: string | null;
           scope_name?: string;
           updated_at?: string;
           workspace?: string;

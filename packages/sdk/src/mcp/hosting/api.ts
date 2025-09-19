@@ -20,6 +20,10 @@ import {
 } from "../context.ts";
 import { MCPClient } from "../index.ts";
 import { assertsNoMCPBreakingChanges } from "./assertions.ts";
+import {
+  createTransitionQuery,
+  smartResolveProjectOrgIds,
+} from "../workspace-helpers.ts";
 import { bundler } from "./bundler.ts";
 import { assertsDomainUniqueness } from "./custom-domains.ts";
 import { type DeployResult, deployToCloudflare } from "./deployment.ts";
@@ -121,12 +125,15 @@ export const listApps = createTool({
     await assertWorkspaceResourceAccess(c);
 
     assertHasWorkspace(c);
-    const workspace = c.workspace.value;
 
-    const { data, error } = await c.db
-      .from(DECO_CHAT_HOSTING_APPS_TABLE)
-      .select("*")
-      .eq("workspace", workspace);
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(c.db, c);
+
+    // Use transition query to list apps
+    const baseQuery = c.db.from(DECO_CHAT_HOSTING_APPS_TABLE).select("*");
+    const query = createTransitionQuery(baseQuery, ids, c.workspace?.value);
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -160,16 +167,20 @@ async function updateDatabase({
   force,
   promote = true,
 }: UpdateDatabaseArgs) {
+  // Resolve project and org IDs from context
+  const ids = await smartResolveProjectOrgIds(c.db, c);
+
   // First, ensure the app exists (without deployment-specific data)
-  let { data: app, error: updateError } = await c.db
+  const baseUpdateQuery = c.db
     .from(DECO_CHAT_HOSTING_APPS_TABLE)
     .update({
       updated_at: new Date().toISOString(),
     })
     .eq("slug", scriptSlug)
-    .eq("workspace", workspace)
-    .select("*")
-    .single();
+    .select("*");
+  const updateQuery = createTransitionQuery(baseUpdateQuery, ids, workspace);
+
+  let { data: app, error: updateError } = await updateQuery.single();
 
   if (updateError && updateError.code !== "PGRST116") {
     // PGRST116: Results contain 0 rows
@@ -177,11 +188,13 @@ async function updateDatabase({
   }
 
   if (!app) {
-    // If not updated, insert
+    // If not updated, insert with foreign keys
     const { data: inserted, error: insertError } = await c.db
       .from(DECO_CHAT_HOSTING_APPS_TABLE)
       .upsert({
         workspace,
+        project_id: ids.projectId,
+        org_id: ids.orgId,
         slug: scriptSlug,
         updated_at: new Date().toISOString(),
       })
@@ -922,7 +935,9 @@ export const deleteApp = createTool({
   handler: async ({ appSlug }, c) => {
     await assertWorkspaceResourceAccess(c);
     assertHasWorkspace(c);
-    const workspace = c.workspace.value;
+
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(c.db, c);
     const scriptSlug = appSlug;
 
     const cf = c.cf;
@@ -943,12 +958,18 @@ export const deleteApp = createTool({
       // (idempotency)
     }
 
-    // 2. Delete from DB
-    const { error: dbError } = await c.db
+    // 2. Delete from DB using transition query
+    const baseDeleteQuery = c.db
       .from(DECO_CHAT_HOSTING_APPS_TABLE)
       .delete()
-      .eq("workspace", workspace)
       .eq("slug", scriptSlug);
+    const deleteQuery = createTransitionQuery(
+      baseDeleteQuery,
+      ids,
+      c.workspace?.value,
+    );
+
+    const { error: dbError } = await deleteQuery;
 
     if (dbError) throw dbError;
 
@@ -964,16 +985,19 @@ export const getAppInfo = createTool({
   handler: async ({ appSlug }, c) => {
     await assertWorkspaceResourceAccess(c);
     assertHasWorkspace(c);
-    const workspace = c.workspace.value;
+
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(c.db, c);
     const scriptSlug = appSlug;
 
-    // 1. Fetch from DB
-    const { data, error } = await c.db
+    // 1. Fetch from DB using transition query
+    const baseQuery = c.db
       .from(DECO_CHAT_HOSTING_APPS_TABLE)
       .select("*")
-      .eq("workspace", workspace)
-      .eq("slug", scriptSlug)
-      .single();
+      .eq("slug", scriptSlug);
+    const query = createTransitionQuery(baseQuery, ids, c.workspace?.value);
+
+    const { data, error } = await query.single();
 
     if (error || !data) {
       throw new NotFoundError("App not found");
@@ -1010,16 +1034,23 @@ export const listAppDeployments = createTool({
   handler: async ({ appSlug }, c) => {
     await assertWorkspaceResourceAccess(c);
     assertHasWorkspace(c);
-    const workspace = c.workspace.value;
+
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(c.db, c);
     const scriptSlug = appSlug;
 
-    // 1. First verify the app exists and get app info
-    const { data: app, error: appError } = await c.db
+    // 1. First verify the app exists and get app info using transition query
+    const baseAppQuery = c.db
       .from(DECO_CHAT_HOSTING_APPS_TABLE)
       .select("id, slug, workspace")
-      .eq("workspace", workspace)
-      .eq("slug", scriptSlug)
-      .single();
+      .eq("slug", scriptSlug);
+    const appQuery = createTransitionQuery(
+      baseAppQuery,
+      ids,
+      c.workspace?.value,
+    );
+
+    const { data: app, error: appError } = await appQuery.single();
 
     if (appError || !app) {
       throw new NotFoundError("App not found");
@@ -1184,15 +1215,15 @@ export const listWorkflowRuns = createTool({
     const offset = (page - 1) * per_page;
 
     const sql = `
-      SELECT 
+      SELECT
         workflow_name,
         run_id,
         createdAt,
         updatedAt,
         snapshot
-      FROM mastra_workflow_snapshot 
-      ${whereClause} 
-      ORDER BY createdAt DESC 
+      FROM mastra_workflow_snapshot
+      ${whereClause}
+      ORDER BY createdAt DESC
       LIMIT ? OFFSET ?
     `;
     params.push(per_page.toString(), offset.toString());
@@ -1406,7 +1437,7 @@ export const listWorkflowNames = createTool({
 
     const sql = `
       SELECT DISTINCT workflow_name
-      FROM mastra_workflow_snapshot 
+      FROM mastra_workflow_snapshot
       ORDER BY workflow_name ASC
     `;
 

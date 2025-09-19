@@ -15,6 +15,10 @@ import { createToolGroup } from "../context.ts";
 import { MCPClient } from "../index.ts";
 import { getIntegration } from "../integrations/api.ts";
 import { getRegistryApp } from "../registry/api.ts";
+import {
+  createTransitionQuery,
+  smartResolveProjectOrgIds,
+} from "../workspace-helpers.ts";
 
 const SELECT_API_KEY_QUERY = `
   id,
@@ -58,14 +62,17 @@ export const listApiKeys = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const db = c.db;
-    const workspace = c.workspace.value;
 
-    const query = db
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(db, c);
+
+    // Use transition query for API keys
+    const baseQuery = db
       .from("deco_chat_api_keys")
       .select(SELECT_API_KEY_QUERY)
-      .eq("workspace", workspace)
       .is("deleted_at", null)
       .order("created_at", { ascending: false });
+    const query = createTransitionQuery(baseQuery, ids, c.workspace?.value);
 
     const { data, error } = await query;
 
@@ -129,7 +136,9 @@ export const createApiKey = createTool({
   handler: async ({ name, policies, claims }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
-    const workspace = c.workspace.value;
+
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(c.db, c);
 
     // this code ensures that we always validate stat against the app owner before issuing an JWT.
     if (claims?.appName) {
@@ -167,12 +176,14 @@ export const createApiKey = createTool({
 
     const db = c.db;
 
-    // Insert the API key metadata
+    // Insert the API key metadata with foreign keys
     const { data: apiKey, error } = await db
       .from("deco_chat_api_keys")
       .insert({
         name,
-        workspace,
+        workspace: c.workspace.value, // Keep workspace for backward compatibility
+        project_id: ids.projectId,
+        org_id: ids.orgId,
         enabled: true,
         policies: policies || [],
       })
@@ -187,7 +198,7 @@ export const createApiKey = createTool({
     const value = await issuer.issue({
       ...claims,
       sub: `api-key:${apiKey.id}`,
-      aud: workspace,
+      aud: c.workspace.value,
       iat: new Date().getTime(),
     });
 
@@ -210,16 +221,19 @@ export const reissueApiKey = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const db = c.db;
-    const workspace = c.workspace.value;
 
-    // First, verify the API key exists and is accessible
-    const { data: apiKey, error } = await db
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(db, c);
+
+    // Use transition query to verify the API key exists and is accessible
+    const baseQuery = db
       .from("deco_chat_api_keys")
       .select(SELECT_API_KEY_QUERY)
       .eq("id", id)
-      .eq("workspace", workspace)
-      .is("deleted_at", null)
-      .single();
+      .is("deleted_at", null);
+    const query = createTransitionQuery(baseQuery, ids, c.workspace?.value);
+
+    const { data: apiKey, error } = await query.single();
 
     if (error) {
       throw new InternalServerError(error.message);
@@ -235,7 +249,7 @@ export const reissueApiKey = createTool({
     const value = await issuer.issue({
       ...claims,
       sub: `api-key:${apiKey.id}`,
-      aud: workspace,
+      aud: c.workspace.value,
       iat: new Date().getTime(),
     });
 
@@ -254,15 +268,19 @@ export const getApiKey = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const db = c.db;
-    const workspace = c.workspace.value;
 
-    const { data: apiKey, error } = await db
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(db, c);
+
+    // Use transition query to get API key
+    const baseQuery = db
       .from("deco_chat_api_keys")
       .select(SELECT_API_KEY_QUERY)
       .eq("id", id)
-      .eq("workspace", workspace)
-      .is("deleted_at", null)
-      .maybeSingle();
+      .is("deleted_at", null);
+    const query = createTransitionQuery(baseQuery, ids, c.workspace?.value);
+
+    const { data: apiKey, error } = await query.maybeSingle();
 
     if (error) {
       throw new InternalServerError(error.message);
@@ -290,7 +308,9 @@ export const updateApiKey = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const db = c.db;
-    const workspace = c.workspace.value;
+
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(db, c);
 
     // deno-lint-ignore no-explicit-any
     const updateData: Record<string, any> = {};
@@ -299,14 +319,16 @@ export const updateApiKey = createTool({
     if (policies !== undefined) updateData.policies = policies;
     updateData.updated_at = new Date().toISOString();
 
-    const { data: apiKey, error } = await db
+    // Use transition query for update
+    const baseQuery = db
       .from("deco_chat_api_keys")
       .update(updateData)
       .eq("id", id)
-      .eq("workspace", workspace)
       .is("deleted_at", null)
-      .select(SELECT_API_KEY_QUERY)
-      .single();
+      .select(SELECT_API_KEY_QUERY);
+    const query = createTransitionQuery(baseQuery, ids, c.workspace?.value);
+
+    const { data: apiKey, error } = await query.single();
 
     if (error) {
       throw new InternalServerError(error.message);
@@ -327,17 +349,20 @@ export const deleteApiKey = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const db = c.db;
-    const workspace = c.workspace.value;
 
-    // Soft delete by setting deleted_at timestamp
-    const { data: apiKey, error } = await db
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(db, c);
+
+    // Use transition query for soft delete
+    const baseQuery = db
       .from("deco_chat_api_keys")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", id)
-      .eq("workspace", workspace)
       .is("deleted_at", null)
-      .select("id")
-      .single();
+      .select("id");
+    const query = createTransitionQuery(baseQuery, ids, c.workspace?.value);
+
+    const { data: apiKey, error } = await query.single();
 
     if (error) {
       throw new InternalServerError(error.message);
@@ -361,16 +386,20 @@ export const enableApiKey = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const db = c.db;
-    const workspace = c.workspace.value;
 
-    const { data: apiKey, error } = await db
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(db, c);
+
+    // Use transition query for enable
+    const baseQuery = db
       .from("deco_chat_api_keys")
       .update({ enabled: true, updated_at: new Date().toISOString() })
       .eq("id", id)
-      .eq("workspace", workspace)
       .is("deleted_at", null)
-      .select(SELECT_API_KEY_QUERY)
-      .single();
+      .select(SELECT_API_KEY_QUERY);
+    const query = createTransitionQuery(baseQuery, ids, c.workspace?.value);
+
+    const { data: apiKey, error } = await query.single();
 
     if (error) {
       throw new InternalServerError(error.message);
@@ -391,16 +420,20 @@ export const disableApiKey = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const db = c.db;
-    const workspace = c.workspace.value;
 
-    const { data: apiKey, error } = await db
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(db, c);
+
+    // Use transition query for disable
+    const baseQuery = db
       .from("deco_chat_api_keys")
       .update({ enabled: false, updated_at: new Date().toISOString() })
       .eq("id", id)
-      .eq("workspace", workspace)
       .is("deleted_at", null)
-      .select(SELECT_API_KEY_QUERY)
-      .single();
+      .select(SELECT_API_KEY_QUERY);
+    const query = createTransitionQuery(baseQuery, ids, c.workspace?.value);
+
+    const { data: apiKey, error } = await query.single();
 
     if (error) {
       throw new InternalServerError(error.message);
@@ -470,16 +503,20 @@ export const validateApiKey = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const db = c.db;
-    const workspace = c.workspace.value;
 
-    const { data: apiKey, error } = await db
+    // Resolve project and org IDs from context
+    const ids = await smartResolveProjectOrgIds(db, c);
+
+    // Use transition query for validation
+    const baseQuery = db
       .from("deco_chat_api_keys")
       .select(SELECT_API_KEY_QUERY)
       .eq("id", id)
-      .eq("workspace", workspace)
       .eq("enabled", true)
-      .is("deleted_at", null)
-      .single();
+      .is("deleted_at", null);
+    const query = createTransitionQuery(baseQuery, ids, c.workspace?.value);
+
+    const { data: apiKey, error } = await query.single();
 
     if (error || !apiKey) {
       throw new NotFoundError("API key not found or invalid");
