@@ -420,16 +420,21 @@ function List() {
   }, []);
 
   const agentsByVisibility = useMemo(() => {
-    const initial = Object.fromEntries(
-      VISIBILITIES.map((v) => [v, []] as [string, AgentWithActivity[]]),
+    const initial: Record<"all" | "public" | "workspace", AgentWithActivity[]> = {
+      all: [],
+      public: [],
+      workspace: [],
+    };
+
+    return (
+      (agents as AgentWithActivity[] | undefined)?.reduce((acc, agent) => {
+        acc["all"].push(agent);
+        acc[agent.visibility.toLowerCase() as "public" | "workspace"].push(
+          agent,
+        );
+        return acc;
+      }, initial) ?? initial
     );
-
-    return (agents as AgentWithActivity[] | undefined)?.reduce((acc, agent) => {
-      acc["all"].push(agent);
-      acc[agent.visibility.toLowerCase()]?.push(agent);
-
-      return acc;
-    }, initial);
   }, [agents]);
 
   const sevenDaysAgo = useMemo(() => {
@@ -525,7 +530,7 @@ function List() {
           ) : (
             <EmptyState
               icon={
-                agents.length === 0
+                (agents?.length ?? 0) === 0
                   ? "robot_2"
                   : selectedTab === "public" &&
                       agentsByVisibility["public"].length === 0
@@ -536,7 +541,7 @@ function List() {
                       : "search_off"
               }
               title={
-                agents.length === 0
+                (agents?.length ?? 0) === 0
                   ? "No agents yet"
                   : selectedTab === "public" &&
                       agentsByVisibility["public"].length === 0
@@ -547,7 +552,7 @@ function List() {
                       : "No agents match your filter"
               }
               description={
-                agents.length === 0
+                (agents?.length ?? 0) === 0
                   ? "You haven't created any agents yet. Create one to get started."
                   : selectedTab === "public" &&
                       agentsByVisibility["public"].length === 0
