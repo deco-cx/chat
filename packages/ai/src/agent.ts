@@ -735,6 +735,22 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
       modelId,
       workspace: this.workspace,
     });
+
+    // Fire-and-forget: record last used for this agent
+    try {
+      const accessorId = this.metadata?.user?.id as string | undefined;
+      if (accessorId) {
+        await this.context.db.from("user_activity").insert({
+          user_id: accessorId,
+          resource: "agent",
+          key: "id",
+          value: this.agentId,
+        });
+      }
+    } catch (err) {
+      // Swallow errors to avoid impacting user flow
+      console.warn("Failed to record agent last used activity", err);
+    }
   }
 
   /**

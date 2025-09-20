@@ -54,6 +54,11 @@ export const listAgents = (
     .AGENTS_LIST({}, { signal })
     .then((res) => res.items) as Promise<Agent[]>;
 
+export interface AgentWithActivity extends Agent {
+  lastAccess?: string | null;
+  lastAccessor?: string | null;
+}
+
 /**
  * Delete an agent from the file system
  * @param locator - The locator of the agent

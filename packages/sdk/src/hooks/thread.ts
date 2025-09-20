@@ -132,6 +132,8 @@ export const useThreads = (partialOptions: ThreadFilterOptions = {}) => {
   });
 };
 
+// removed useLatestAgentAccess (moved to AGENTS_LIST enrichment)
+
 export interface UpdateThreadTitleParams {
   threadId: string;
   title: string;

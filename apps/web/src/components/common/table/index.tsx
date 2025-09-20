@@ -16,6 +16,7 @@ export interface TableColumn<T> {
   render?: (row: T) => ReactNode;
   sortable?: boolean;
   cellClassName?: string;
+  wrap?: boolean;
 }
 
 export interface TableProps<T> {
@@ -61,14 +62,14 @@ export function Table<T>({
   }
 
   function getHeaderClass(idx: number, total: number) {
-    let base = "px-4 py-2 text-left font-medium text-foreground text-sm h-8";
+    let base = "px-3 py-2 text-left font-medium text-foreground text-sm h-8";
     if (idx === total - 1) base += " w-8";
     return base;
   }
 
   return (
     <div className="flex flex-1 min-h-0 overflow-y-auto overflow-x-auto w-full border-[1px] border-border rounded-[12px]">
-      <UITable className="w-full min-w-max overflow-hidden">
+      <UITable className="w-full min-w-[640px] overflow-hidden">
         <TableHeader className="sticky top-0 z-10 border-b-[1px] border-border">
           <TableRow className="h-10 hover:!bg-transparent [&:hover]:!bg-transparent">
             {columns.map((col, idx) => {
@@ -110,9 +111,11 @@ export function Table<T>({
                 <TableCell
                   key={col.id}
                   className={
-                    "px-4 py-2 " +
+                    "px-3 py-2 " +
                     (col.cellClassName ? col.cellClassName + " " : "") +
-                    "truncate overflow-hidden whitespace-nowrap"
+                    (col.wrap
+                      ? "whitespace-normal break-words"
+                      : "truncate overflow-hidden whitespace-nowrap")
                   }
                 >
                   {col.render

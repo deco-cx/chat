@@ -57,6 +57,7 @@ interface UserInfoProps {
   className?: string;
   showDetails?: boolean; // If true, show name/email block (for detail view)
   maxWidth?: string; // Custom max-width for name/email text
+  noTooltip?: boolean; // If true, do not wrap with tooltip
 }
 
 function UserInfo({
@@ -64,6 +65,7 @@ function UserInfo({
   className,
   showDetails = false,
   maxWidth = "200px", // Default to 200px, but allow customization
+  noTooltip = false,
 }: UserInfoProps) {
   const user = useUser();
   const params = useParams();
@@ -95,33 +97,35 @@ function UserInfo({
     : member?.profiles?.metadata?.full_name;
   const email = isCurrentUser ? user.email : member?.profiles?.email;
 
+  const content = (
+    <div className={`flex items-center gap-2 min-w-[48px] ${className ?? ""}`}>
+      <UserAvatar url={avatarUrl} fallback={name} size="sm" />
+      <div
+        className={`flex-col items-start text-left leading-tight w-full ${
+          showDetails ? "hidden md:flex" : "flex"
+        }`}
+      >
+        <span
+          className="truncate block text-xs font-medium text-foreground"
+          style={{ maxWidth }}
+        >
+          {name || "Unknown"}
+        </span>
+        <span
+          className="truncate block text-xs font-normal text-muted-foreground"
+          style={{ maxWidth }}
+        >
+          {email || ""}
+        </span>
+      </div>
+    </div>
+  );
+
+  if (noTooltip) return content;
+
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <div
-          className={`flex items-center gap-2 min-w-[48px] ${className ?? ""}`}
-        >
-          <UserAvatar url={avatarUrl} fallback={name} size="sm" />
-          <div
-            className={`flex-col items-start text-left leading-tight w-full ${
-              showDetails ? "hidden md:flex" : "flex"
-            }`}
-          >
-            <span
-              className="truncate block text-xs font-medium text-foreground"
-              style={{ maxWidth }}
-            >
-              {name || "Unknown"}
-            </span>
-            <span
-              className="truncate block text-xs font-normal text-muted-foreground"
-              style={{ maxWidth }}
-            >
-              {email || ""}
-            </span>
-          </div>
-        </div>
-      </TooltipTrigger>
+      <TooltipTrigger asChild>{content}</TooltipTrigger>
       <TooltipContent>
         {name ? (
           <div className="flex flex-col">
