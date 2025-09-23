@@ -10,8 +10,7 @@ import {
   useSandboxWorkflow,
   useSandboxWorkflowByUri,
 } from "./sandbox-workflows.ts";
-import type { WorkflowDefinition } from "../mcp/workflows/workflow-schemas.ts";
-import type { Workflow } from "../mcp/workflows/types.ts";
+import type { WorkflowDefinition, Workflow } from "../mcp/workflows/schemas.ts";
 
 /**
  * Hook to get all unique workflow names in the workspace
@@ -128,8 +127,8 @@ function convertToNewWorkflow(oldWorkflow: WorkflowDefinition): Workflow {
   const now = new Date().toISOString();
 
   return {
-    id: `workflow-${oldWorkflow.name}`,
-    name: oldWorkflow.name,
+    id: `workflow-${oldWorkflow.title}`,
+    name: oldWorkflow.title,
     description: oldWorkflow.description,
     inputSchema: oldWorkflow.inputSchema,
     outputSchema: oldWorkflow.outputSchema,
@@ -228,7 +227,7 @@ export function useWorkflowByUri(workflowUri: string) {
 function createEmptyWorkflow(name: string): WorkflowDefinition {
   const _now = new Date().toISOString();
   return {
-    name,
+    title: name,
     description: `Workflow: ${name}`,
     inputSchema: {
       type: "object",

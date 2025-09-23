@@ -278,10 +278,12 @@ const virtualIntegrationsFor = (
     created_at: new Date().toISOString(),
   };
   const { url: workspaceMcp, projectPath } = projectUrlFromLocator(locator);
+
   const toolsMcp = new URL(
     `${projectPath}/${WellKnownMcpGroups.Tools}/mcp`,
     DECO_CMS_API_URL,
   );
+
   const toolsIntegration = {
     id: formatId("i", WellKnownMcpGroups.Tools),
     name: "Tools Management",

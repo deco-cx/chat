@@ -5,7 +5,7 @@ import type {
   JSONSchema,
   Workflow,
   WorkflowStep,
-} from "../mcp/workflows/types.ts";
+} from "../mcp/workflows/schemas.ts";
 
 /**
  * Hook to create a new workflow with initial state

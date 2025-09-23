@@ -4,7 +4,7 @@ import { InternalServerError } from "../errors.ts";
 import { MCPClient } from "../fetcher.ts";
 import type { ProjectLocator } from "../locator.ts";
 import { WellKnownBindings } from "../mcp/index.ts";
-import { WorkflowDefinitionSchema } from "../mcp/workflows/workflow-schemas.ts";
+import { WorkflowDefinitionSchema } from "../mcp/workflows/schemas.ts";
 import { useSDK } from "./store.tsx";
 
 // Types and interfaces

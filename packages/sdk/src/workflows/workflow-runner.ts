@@ -16,7 +16,7 @@ import {
   createResourceAccess,
   MCPClient,
 } from "../mcp/index.ts";
-import { runCode, runTool } from "../mcp/sandbox/run.ts";
+import { runCode, runTool } from "../mcp/tools/utils.ts";
 import type {
   CodeStepDefinition,
   ToolCallStepDefinition,

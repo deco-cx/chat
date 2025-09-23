@@ -43,10 +43,8 @@ export * from "./hooks/create-workflow.ts";
 export * from "./hooks/workflow-step-executor.ts";
 
 // Schemas for sandbox workflows (exported for consumers like the web app)
-// Export new workflow types
-export * from "./mcp/workflows/types.ts";
-// Legacy export for compatibility (to be removed)
-export { WorkflowDefinitionSchema } from "./mcp/workflows/types.ts";
+// Export workflow types from schemas
+export { WorkflowDefinitionSchema, type WorkflowDefinition } from "./mcp/workflows/schemas.ts";
 
 export * from "./models/agent.ts";
 export * from "./models/mcp.ts";

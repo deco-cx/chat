@@ -25,6 +25,7 @@ export const WellKnownMcpGroups = {
   Wallet: "wallet-management",
   Tools: "tools-management",
   Workflows: "workflows-management",
+  Self: "self",
 };
 
 export type WellKnownMcpGroup = keyof typeof WellKnownMcpGroups;

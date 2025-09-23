@@ -7,7 +7,7 @@ import {
 import type {
   WorkflowStep,
   StepExecutionResult,
-} from "../mcp/workflows/types.ts";
+} from "../mcp/workflows/schemas.ts";
 
 interface ExecuteStepInput {
   step: WorkflowStep;

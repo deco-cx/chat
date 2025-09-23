@@ -4,7 +4,7 @@ import {
   useStartSandboxWorkflow,
   useUpsertSandboxWorkflow,
 } from "./sandbox-workflows.ts";
-import type { Workflow, WorkflowStep } from "../mcp/workflows/types.ts";
+import type { WorkflowDefinition as Workflow, WorkflowStepDefinition as WorkflowStep } from "../mcp/workflows/schemas.ts";
 
 /**
  * Hook for managing workflow builder state and operations

@@ -1,8 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import type {
   ToolReference,
-  WorkflowStep as _WorkflowStep,
-} from "../mcp/workflows/types.ts";
+  WorkflowStep,
+} from "../mcp/workflows/schemas.ts";
 
 interface GenerateStepInput {
   prompt: string;
