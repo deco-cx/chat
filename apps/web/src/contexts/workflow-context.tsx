@@ -1,12 +1,12 @@
 import { createContext, ReactNode, useContext, useReducer } from "react";
-import type { StepExecutionResult, Workflow, WorkflowStep } from "@deco/sdk";
+import type { StepExecutionResult, WorkflowDefinition, WorkflowStep } from "@deco/sdk";
 import { useExecuteWorkflowStep, useUpsertSandboxWorkflow } from "@deco/sdk";
 
 // ============= State Types =============
 
 interface WorkflowState {
   // Core workflow data
-  workflow: Workflow;
+  workflow: WorkflowDefinition;
 
   // UI state
   currentStepIndex: number;
@@ -33,7 +33,7 @@ interface WorkflowState {
 // ============= Action Types =============
 
 type WorkflowAction =
-  | { type: "SET_WORKFLOW"; payload: Workflow }
+  | { type: "SET_WORKFLOW"; payload: WorkflowDefinition }
   | { type: "ADD_STEP"; payload: WorkflowStep }
   | {
       type: "UPDATE_STEP";
@@ -271,7 +271,7 @@ export function WorkflowProvider({
   initialWorkflow,
 }: {
   children: ReactNode;
-  initialWorkflow: Workflow;
+  initialWorkflow: WorkflowDefinition;
 }) {
   const [state, dispatch] = useReducer(workflowReducer, {
     workflow: initialWorkflow,

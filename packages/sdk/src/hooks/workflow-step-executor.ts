@@ -1,9 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useSDK } from "./store.tsx";
-import {
-  startSandboxWorkflow,
-  getSandboxWorkflowStatus,
-} from "./sandbox-workflows.ts";
+import { getWorkflowStatus, startWorkflow } from "./resources-workflow.ts";
+import { formatIntegrationId, WellKnownMcpGroups } from "../crud/groups.ts";
 import type {
   WorkflowStep,
   StepExecutionResult,
@@ -75,10 +73,14 @@ export default async function(ctx) {
         };
 
         // Start the workflow execution
-        const { runId } = (await startSandboxWorkflow(locator, {
-          name: tempWorkflowName,
-          input: workflowInput as Record<string, unknown>,
-        })) as { runId: string };
+        const integrationId = formatIntegrationId(WellKnownMcpGroups.Workflows);
+        const { runId } = (await startWorkflow(
+          locator,
+          {
+            uri: `rsc://${integrationId}/workflow/${tempWorkflowName}`,
+            input: workflowInput as Record<string, unknown>,
+          },
+        )) as { runId: string };
 
         // Poll for completion (max 30 seconds)
         const maxAttempts = 30;
@@ -86,7 +88,7 @@ export default async function(ctx) {
         let status;
 
         while (attempts < maxAttempts) {
-          status = (await getSandboxWorkflowStatus(locator, { runId })) as {
+          status = (await getWorkflowStatus(locator, { runId })) as {
             status?: string;
             finalResult?: unknown;
             stepResults?: unknown;

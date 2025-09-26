@@ -1,14 +1,7 @@
 import { z } from "zod";
-import { impl, type BinderImplementation } from "../bindings/binder.ts";
-import {
-  assertWorkspaceResourceAccess,
-  createTool,
-  type AppContext,
-} from "../index.ts";
-import { createResourceV2Bindings } from "../resources-v2/bindings.ts";
+import { createTool, type AppContext } from "../index.ts";
 import {
   BaseViewRenderInputSchema,
-  ViewDataSchema,
   ViewRenderOutputSchema,
 } from "./schemas.ts";
 
@@ -92,8 +85,7 @@ export function createViewRenderer<
  * View implementation options for creating view implementations
  */
 export interface ViewImplementationOptions {
-  integrationId: string;
-  renderers: ViewRenderer<any>[]; // eslint-disable-line @typescript-eslint/no-explicit-any
+  renderers: ViewRenderer<any>[];
 }
 
 /**
@@ -110,110 +102,26 @@ export interface ViewImplementationOptions {
  *
  */
 export function createViewImplementation(options: ViewImplementationOptions) {
-  const { integrationId, renderers } = options;
+  return options.renderers.map(
+    ({ name, inputSchema, handler, prompt, tools }) =>
+      createTool({
+        name: `DECO_VIEW_RENDER_${name.toUpperCase()}`,
+        description: `Render ${name} view`,
+        inputSchema: inputSchema,
+        outputSchema: ViewRenderOutputSchema,
+        handler: async (input, context) => {
+          context.resourceAccess.grant();
 
-  // Create Resources 2.0 bindings for Views (CRUD operations)
-  const resourceBindings = createResourceV2Bindings("view", ViewDataSchema);
+          const { url } = await handler(input, context);
 
-  // Step 1: Create resources tools from resources bindings
-  const resourceHandlers = [
-    {
-      description: `Search view resources exposed by this integration`,
-      handler: async (
-        input: { page: number; pageSize: number },
-        c: AppContext,
-      ) => {
-        await assertWorkspaceResourceAccess(c);
-
-        const items = renderers.map((renderer) => ({
-          uri: `rsc://${integrationId}/view/${renderer.name}`,
-          data: {
-            name: renderer.name,
-            description: renderer.description,
-            icon: renderer.icon,
-            prompt: renderer.prompt,
-            tools: [
-              `DECO_VIEW_RENDER_${renderer.name.toUpperCase()}`,
-              ...renderer.tools,
-            ],
-          },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }));
-
-        return {
-          items,
-          totalCount: items.length,
-          page: input.page || 1,
-          pageSize: input.pageSize || 20,
-          totalPages: 1,
-          hasNextPage: false,
-          hasPreviousPage: false,
-        };
-      },
-    },
-    {
-      description: `Read a view resource exposed by this integration`,
-      handler: async (input: any, c: AppContext) => {
-        // eslint-disable-line @typescript-eslint/no-explicit-any
-        await assertWorkspaceResourceAccess(c);
-
-        const uriParts = input.uri.split("/");
-        const viewName = uriParts[uriParts.length - 1];
-
-        const renderer = renderers.find((r) => r.name === viewName);
-        if (!renderer) {
-          throw new Error(`View not found: ${input.uri}`);
-        }
-
-        return {
-          uri: input.uri,
-          data: {
-            name: renderer.name,
-            description: renderer.description,
-            icon: renderer.icon,
-            prompt: renderer.prompt,
-            tools: [
-              `DECO_VIEW_RENDER_${renderer.name.toUpperCase()}`,
-              ...renderer.tools,
-            ],
-          },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-      },
-    },
-  ];
-
-  const resourceTools = impl(
-    resourceBindings,
-    resourceHandlers as unknown as BinderImplementation<
-      typeof resourceBindings
-    >,
+          return {
+            url,
+            prompt: prompt,
+            tools: tools,
+          };
+        },
+      }),
   );
-
-  // Step 2: Create view tools directly from renderers
-  const viewTools = renderers.map((renderer) =>
-    createTool({
-      name: `DECO_VIEW_RENDER_${renderer.name.toUpperCase()}`,
-      description: `Render ${renderer.name} view`,
-      inputSchema: renderer.inputSchema,
-      outputSchema: ViewRenderOutputSchema,
-      handler: async (input, context) => {
-        context.resourceAccess.grant();
-
-        const { url } = await renderer.handler(input, context);
-        return {
-          url,
-          prompt: renderer.prompt,
-          tools: renderer.tools,
-        };
-      },
-    }),
-  );
-
-  // Return the merged array of tools
-  return [...resourceTools, ...viewTools];
 }
 
 /**

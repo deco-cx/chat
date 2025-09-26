@@ -13,9 +13,13 @@ export interface MCPToolCall {
   arguments: Record<string, unknown>;
 }
 
-export interface MCPToolCallResult {
-  content: unknown;
-  error?: string;
+export interface MCPToolCallResult<T = unknown> {
+  content: Array<{
+    text: string;
+    type: "text";
+  }>;
+  structuredContent?: T;
+  isError?: boolean;
 }
 
 export type ToolsData = {
@@ -72,8 +76,9 @@ export function useTools(connection: MCPConnection, ignoreCache?: boolean) {
   };
 }
 
-export function useToolCall(connection: MCPConnection) {
-  return useMutation({
-    mutationFn: (toolCall: MCPToolCall) => callTool(connection, toolCall),
+export function useToolCall<T = unknown>(connection: MCPConnection) {
+  return useMutation<MCPToolCallResult<T>, Error, MCPToolCall>({
+    mutationFn: (toolCall: MCPToolCall) =>
+      callTool(connection, toolCall) as Promise<MCPToolCallResult<T>>,
   });
 }

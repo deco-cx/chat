@@ -98,7 +98,6 @@ export function createReadOutputSchema<T extends z.ZodTypeAny>(dataSchema: T) {
       .string()
       .optional()
       .describe("User who last updated the resource"),
-    timestamp: z.string().datetime().optional().describe("Resource timestamp"),
   });
 }
 
@@ -125,8 +124,12 @@ export function createCreateOutputSchema<T extends z.ZodTypeAny>(
     uri: ResourceUriSchema.describe("URI of the created resource"),
     data: dataSchema.describe("Created resource data"),
     created_at: z.string().datetime().optional().describe("Creation timestamp"),
+    updated_at: z
+      .string()
+      .datetime()
+      .optional()
+      .describe("Last update timestamp"),
     created_by: z.string().optional().describe("User who created the resource"),
-    timestamp: z.string().datetime().optional().describe("Resource timestamp"),
   });
 }
 
@@ -171,7 +174,6 @@ export function createUpdateOutputSchema<T extends z.ZodTypeAny>(
       .string()
       .optional()
       .describe("User who last updated the resource"),
-    timestamp: z.string().datetime().optional().describe("Resource timestamp"),
   });
 }
 
@@ -220,7 +222,6 @@ export function createItemSchema<T extends z.ZodTypeAny>(dataSchema: T) {
       .string()
       .optional()
       .describe("User who last updated the resource"),
-    timestamp: z.string().datetime().optional().describe("Resource timestamp"),
   });
 }
 

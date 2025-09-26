@@ -1,6 +1,6 @@
 /**
  * Workflow Prompts for Resources 2.0
- * 
+ *
  * This module contains comprehensive prompts and descriptions for workflow
  * creation, updating, and management using the Resources 2.0 system.
  */
@@ -308,4 +308,3 @@ Example:
 Returns an object with:
 - \`runId\`: Unique identifier for tracking this workflow execution
 - \`error\`: Error message if workflow failed to start (validation errors, missing workflow, etc.)`;
-

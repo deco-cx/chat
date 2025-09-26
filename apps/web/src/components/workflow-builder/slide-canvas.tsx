@@ -1,17 +1,17 @@
+import type { WorkflowDefinition } from "@deco/sdk";
 import { useEffect } from "react";
 import {
   useWorkflowContext,
   WorkflowProvider,
 } from "../../contexts/workflow-context.tsx";
-import { TopBar } from "./components/top-bar.tsx";
-import { StepSlide } from "./components/step-slide.tsx";
-import { NavigationBar } from "./components/navigation-bar.tsx";
 import { DeveloperBar } from "./components/developer-bar.tsx";
-import { StepCreator } from "./step-creator.tsx";
 import { EmptyState } from "./components/empty-state.tsx";
-import type { Workflow } from "@deco/sdk";
+import { NavigationBar } from "./components/navigation-bar.tsx";
+import { StepSlide } from "./components/step-slide.tsx";
+import { TopBar } from "./components/top-bar.tsx";
+import { StepCreator } from "./step-creator.tsx";
 
-export function SlideCanvas({ workflow }: { workflow: Workflow }) {
+export function SlideCanvas({ workflow }: { workflow: WorkflowDefinition }) {
   return (
     <WorkflowProvider initialWorkflow={workflow}>
       <SlideCanvasContent />

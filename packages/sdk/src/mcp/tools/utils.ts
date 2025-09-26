@@ -7,15 +7,15 @@ import {
 } from "@deco/cf-sandbox";
 import { Validator } from "jsonschema";
 import { z } from "zod";
-import { createToolGroup, MCPClientStub } from "../context.ts";
+import { WorkflowState } from "../../workflows/workflow-runner.ts";
+import { MCPClientStub } from "../context.ts";
 import { slugify } from "../deconfig/api.ts";
 import { ProjectTools } from "../index.ts";
-import { ToolDefinitionSchema } from "./schemas.ts";
 import {
   CodeStepDefinition,
   ToolCallStepDefinition,
 } from "../workflows/api.ts";
-import { WorkflowState } from "../../workflows/workflow-runner.ts";
+import { ToolDefinitionSchema } from "./schemas.ts";
 
 // Utility functions for consistent naming
 export const toolNameSlugify = (txt: string) => slugify(txt).toUpperCase();
@@ -269,8 +269,8 @@ export async function runTool(
 ): Promise<Rpc.Serializable<unknown>> {
   // Find the integration by name
   const { items } = await client.INTEGRATIONS_LIST({});
-  const integration = items.find(item => item.name === step.integration);
-  
+  const integration = items.find((item) => item.name === step.integration);
+
   if (!integration) {
     throw new Error(`Integration '${step.integration}' not found`);
   }
@@ -287,5 +287,6 @@ export async function runTool(
     throw new Error(`Tool call failed: ${inspect(response)}`);
   }
 
-  return (response.structuredContent || response.content) as Rpc.Serializable<unknown>;
+  return (response.structuredContent ||
+    response.content) as Rpc.Serializable<unknown>;
 }

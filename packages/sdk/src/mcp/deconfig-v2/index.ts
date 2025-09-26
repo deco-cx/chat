@@ -1,4 +1,3 @@
-import { mimeType } from "@deco/workers-runtime/resources";
 import { NotFoundError, UserInputError } from "../../index.ts";
 import {
   assertHasWorkspace,
@@ -81,6 +80,22 @@ const constructResourceUri = (
 ) => {
   return `rsc://${integrationId}/${resourceName}/${resourceId}`;
 };
+
+function getMetadataValue(metadata: unknown, key: string): unknown {
+  if (!metadata || typeof metadata !== "object") return undefined;
+  const metaObj = metadata as Record<string, unknown>;
+  if (key in metaObj) return metaObj[key];
+  const nested = metaObj.metadata;
+  if (nested && typeof nested === "object" && key in (nested as any)) {
+    return (nested as Record<string, unknown>)[key];
+  }
+  return undefined;
+}
+
+function getMetadataString(metadata: unknown, key: string): string | undefined {
+  const value = getMetadataValue(metadata, key);
+  return typeof value === "string" ? value : undefined;
+}
 
 export const DeconfigResourceV2 = {
   define: <TDataSchema extends BaseResourceDataSchema>(
@@ -167,7 +182,7 @@ export const deconfigResourceV2 = <TDataSchema extends BaseResourceDataSchema>(
             metadata,
           }));
 
-        // Simple search - filter by resource ID, path, title, or description
+        // Simple search - filter by resource ID, path, title, description, created_by, or updated_by
         let filteredFiles = allFiles;
         if (term) {
           filteredFiles = allFiles.filter(({ resourceId, path, metadata }) => {
@@ -175,19 +190,56 @@ export const deconfigResourceV2 = <TDataSchema extends BaseResourceDataSchema>(
             return (
               resourceId.toLowerCase().includes(searchTerm) ||
               path.toLowerCase().includes(searchTerm) ||
-              ((metadata as any).name &&
-                (metadata as any).name.toLowerCase().includes(searchTerm)) ||
-              ((metadata as any).description &&
-                (metadata as any).description
-                  .toLowerCase()
-                  .includes(searchTerm))
+              (
+                getMetadataString(metadata, "name")?.toLowerCase() ?? ""
+              ).includes(searchTerm) ||
+              (
+                getMetadataString(metadata, "description")?.toLowerCase() ?? ""
+              ).includes(searchTerm) ||
+              (
+                getMetadataString(metadata, "createdBy")?.toLowerCase() ?? ""
+              ).includes(searchTerm) ||
+              (
+                getMetadataString(metadata, "updatedBy")?.toLowerCase() ?? ""
+              ).includes(searchTerm)
             );
           });
         }
 
         // Apply additional filters if provided
         if (filters) {
-          // TODO: Implement custom filtering logic based on filters
+          const createdByFilter = (filters as any).created_by as
+            | string
+            | string[]
+            | undefined;
+          const updatedByFilter = (filters as any).updated_by as
+            | string
+            | string[]
+            | undefined;
+
+          if (createdByFilter) {
+            const createdBySet = new Set(
+              Array.isArray(createdByFilter)
+                ? createdByFilter.map((v) => String(v))
+                : [String(createdByFilter)],
+            );
+            filteredFiles = filteredFiles.filter(({ metadata }) => {
+              const value = getMetadataString(metadata, "createdBy");
+              return value ? createdBySet.has(value) : false;
+            });
+          }
+
+          if (updatedByFilter) {
+            const updatedBySet = new Set(
+              Array.isArray(updatedByFilter)
+                ? updatedByFilter.map((v) => String(v))
+                : [String(updatedByFilter)],
+            );
+            filteredFiles = filteredFiles.filter(({ metadata }) => {
+              const value = getMetadataString(metadata, "updatedBy");
+              return value ? updatedBySet.has(value) : false;
+            });
+          }
         }
 
         // Sort if specified
@@ -200,11 +252,11 @@ export const deconfigResourceV2 = <TDataSchema extends BaseResourceDataSchema>(
               aValue = a.resourceId;
               bValue = b.resourceId;
             } else if (sortBy === "name") {
-              aValue = (a.metadata as any).name || a.resourceId;
-              bValue = (b.metadata as any).name || b.resourceId;
+              aValue = getMetadataString(a.metadata, "name") || a.resourceId;
+              bValue = getMetadataString(b.metadata, "name") || b.resourceId;
             } else if (sortBy === "description") {
-              aValue = (a.metadata as any).description || "";
-              bValue = (b.metadata as any).description || "";
+              aValue = getMetadataString(a.metadata, "description") || "";
+              bValue = getMetadataString(b.metadata, "description") || "";
             } else {
               aValue = a.metadata.mtime;
               bValue = b.metadata.mtime;
@@ -235,8 +287,9 @@ export const deconfigResourceV2 = <TDataSchema extends BaseResourceDataSchema>(
             );
 
             // Extract title and description from metadata, with fallbacks
-            const name = (metadata as any).name || resourceId; // Fallback to resourceId (basename)
-            const description = (metadata as any).description || ""; // Fallback to empty string
+            const name = getMetadataString(metadata, "name") || resourceId; // Fallback to resourceId (basename)
+            const description =
+              getMetadataString(metadata, "description") || ""; // Fallback to empty string
 
             // For search operations, we only return title and description
             // The full data structure is available through the read operation
@@ -244,10 +297,19 @@ export const deconfigResourceV2 = <TDataSchema extends BaseResourceDataSchema>(
             return {
               uri,
               data: { name, description },
-              created_at: new Date(metadata.ctime).toISOString(),
-              updated_at: new Date(metadata.mtime).toISOString(),
-              timestamp: new Date(metadata.mtime).toISOString(),
-            } as any;
+              created_at:
+                "ctime" in metadata && typeof metadata.ctime === "number"
+                  ? new Date(metadata.ctime).toISOString()
+                  : undefined,
+              updated_at:
+                "mtime" in metadata && typeof metadata.mtime === "number"
+                  ? new Date(metadata.mtime).toISOString()
+                  : undefined,
+              created_by: getMetadataString(metadata, "createdBy"),
+              updated_by:
+                getMetadataString(metadata, "updatedBy") ||
+                getMetadataString(metadata, "createdBy"),
+            };
           }),
           totalCount,
           page,
@@ -283,7 +345,6 @@ export const deconfigResourceV2 = <TDataSchema extends BaseResourceDataSchema>(
           });
 
           const content = fileData.content as string;
-          const detectedMimeType = mimeType(filePath) || "application/json";
 
           // Parse the JSON content
           let parsedData: Record<string, unknown> = {};
@@ -301,8 +362,19 @@ export const deconfigResourceV2 = <TDataSchema extends BaseResourceDataSchema>(
             data: validatedData,
             created_at: new Date(fileData.ctime).toISOString(),
             updated_at: new Date(fileData.mtime).toISOString(),
-            timestamp: new Date(fileData.mtime).toISOString(),
-          } as any;
+            created_by:
+              parsedData &&
+              "created_by" in parsedData &&
+              typeof parsedData.created_by === "string"
+                ? parsedData.created_by
+                : undefined,
+            updated_by:
+              parsedData &&
+              "updated_by" in parsedData &&
+              typeof parsedData.updated_by === "string"
+                ? parsedData.updated_by
+                : undefined,
+          };
         } catch (error) {
           if (error instanceof Error && error.message.includes("not found")) {
             throw new NotFoundError(`Resource not found: ${uri}`);
@@ -343,6 +415,8 @@ export const deconfigResourceV2 = <TDataSchema extends BaseResourceDataSchema>(
           id: resourceId,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          created_by: c.user?.id ? String(c.user.id) : undefined,
+          updated_by: c.user?.id ? String(c.user.id) : undefined,
         };
 
         const fileContent = JSON.stringify(resourceData, null, 2);
@@ -363,9 +437,10 @@ export const deconfigResourceV2 = <TDataSchema extends BaseResourceDataSchema>(
           uri,
           data: validatedData,
           created_at: resourceData.created_at,
+          updated_at: resourceData.updated_at,
           created_by: c.user?.id ? String(c.user.id) : undefined,
-          timestamp: resourceData.created_at,
-        } as any;
+          updated_by: c.user?.id ? String(c.user.id) : undefined,
+        };
       },
     },
 
@@ -407,7 +482,7 @@ export const deconfigResourceV2 = <TDataSchema extends BaseResourceDataSchema>(
           ...validatedData,
           id: resourceId,
           updated_at: new Date().toISOString(),
-          updated_by: c.user?.id,
+          updated_by: c.user?.id ? String(c.user.id) : undefined,
         };
 
         const fileContent = JSON.stringify(updatedData, null, 2);
@@ -431,8 +506,7 @@ export const deconfigResourceV2 = <TDataSchema extends BaseResourceDataSchema>(
           updated_at: updatedData.updated_at,
           created_by: existingData.created_by as string,
           updated_by: c.user?.id ? String(c.user.id) : undefined,
-          timestamp: updatedData.updated_at,
-        } as any;
+        };
       },
     },
 

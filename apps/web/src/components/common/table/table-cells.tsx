@@ -58,6 +58,7 @@ interface UserInfoProps {
   showDetails?: boolean; // If true, show name/email block (for detail view)
   maxWidth?: string; // Custom max-width for name/email text
   noTooltip?: boolean; // If true, do not wrap with tooltip
+  nameOnly?: boolean; // If true, show only the user name (no avatar or email)
 }
 
 function UserInfo({
@@ -66,6 +67,7 @@ function UserInfo({
   showDetails = false,
   maxWidth = "200px", // Default to 200px, but allow customization
   noTooltip = false,
+  nameOnly = false,
 }: UserInfoProps) {
   const user = useUser();
   const params = useParams();
@@ -97,7 +99,11 @@ function UserInfo({
     : member?.profiles?.metadata?.full_name;
   const email = isCurrentUser ? user.email : member?.profiles?.email;
 
-  const content = (
+  const content = nameOnly ? (
+    <span className={`text-xs text-muted-foreground ${className ?? ""}`}>
+      {name || "Unknown"}
+    </span>
+  ) : (
     <div className={`flex items-center gap-2 min-w-[48px] ${className ?? ""}`}>
       <UserAvatar url={avatarUrl} fallback={name} size="sm" />
       <div
@@ -270,4 +276,57 @@ function ActivityStatusCell({
   );
 }
 
-export { ActivityStatusCell, AgentInfo, IntegrationInfo, UserInfo };
+interface TimeAgoCellProps {
+  value: string | Date | undefined | null;
+  className?: string;
+}
+
+function TimeAgoCell({ value, className = "" }: TimeAgoCellProps) {
+  // Helper function to format relative time
+  function formatRelativeTime(date: Date): string {
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInSeconds = Math.floor(diffInMs / 1000);
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    const diffInWeeks = Math.floor(diffInDays / 7);
+    const diffInMonths = Math.floor(diffInDays / 30);
+    const diffInYears = Math.floor(diffInDays / 365);
+
+    if (diffInSeconds < 60) {
+      return diffInSeconds <= 1 ? "1s ago" : `${diffInSeconds}s ago`;
+    }
+    if (diffInMinutes < 60) {
+      return diffInMinutes === 1 ? "1m ago" : `${diffInMinutes}m ago`;
+    }
+    if (diffInHours < 24) {
+      return diffInHours === 1 ? "1h ago" : `${diffInHours}h ago`;
+    }
+    if (diffInDays < 7) {
+      return diffInDays === 1 ? "1d ago" : `${diffInDays}d ago`;
+    }
+    if (diffInWeeks < 4) {
+      return diffInWeeks === 1 ? "1w ago" : `${diffInWeeks}w ago`;
+    }
+    if (diffInMonths < 12) {
+      return diffInMonths === 1 ? "1mo ago" : `${diffInMonths}mo ago`;
+    }
+    return diffInYears === 1 ? "1y ago" : `${diffInYears}y ago`;
+  }
+
+  if (!value) {
+    return <span className={className}>-</span>;
+  }
+
+  const dateObj = typeof value === "string" ? new Date(value) : value;
+  const relativeTime = formatRelativeTime(dateObj);
+
+  return (
+    <span className={className}>
+      {relativeTime}
+    </span>
+  );
+}
+
+export { ActivityStatusCell, AgentInfo, IntegrationInfo, TimeAgoCell, UserInfo };

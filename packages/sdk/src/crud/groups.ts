@@ -33,3 +33,11 @@ export type WellKnownMcpGroup = keyof typeof WellKnownMcpGroups;
 export const WellKnownMcpGroupIds = Object.values(WellKnownMcpGroups).map(
   (group) => `i:${group}`,
 );
+
+/**
+ * Utility function to format well-known group names as integration IDs
+ * Adds the 'i:' prefix to group names to create proper integration IDs
+ */
+export function formatIntegrationId(wellKnownGroup: string): string {
+  return `i:${wellKnownGroup}`;
+}

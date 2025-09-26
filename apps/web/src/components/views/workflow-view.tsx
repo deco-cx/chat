@@ -1,13 +1,10 @@
-import { useSandboxWorkflowByUri } from "@deco/sdk";
+import { useWorkflowByUriV2 } from "@deco/sdk";
 import { useMemo } from "react";
 import { useSearchParams } from "react-router";
 import { WorkflowErrorState } from "../../pages/workflow-builder/workflow-error-state.tsx";
 import { WorkflowLoadingSkeleton } from "../../pages/workflow-builder/workflow-loading-skeleton.tsx";
-import { WorkflowNotFoundState } from "../../pages/workflow-builder/workflow-not-found-state.tsx";
-import {
-  WorkflowDisplayCanvas,
-  type DisplayWorkflow,
-} from "../workflow-builder/workflow-display-canvas.tsx";
+import { WorkflowDisplayCanvas } from "../workflow-builder/workflow-display-canvas.tsx";
+import { DecopilotProvider } from "../decopilot/context.tsx";
 
 export function WorkflowView() {
   const [searchParams] = useSearchParams();
@@ -31,25 +28,35 @@ export function WorkflowView() {
     );
   }
 
-  const {
-    data: workflow,
-    isLoading,
-    error,
-    refetch,
-  } = useSandboxWorkflowByUri(workflowUri);
+  const { isLoading, error, refetch, data: workflow } = useWorkflowByUriV2(workflowUri);
+
+  // Prepare decopilot context value for workflow view
+  const decopilotContextValue = useMemo(() => {
+    if (!workflowUri) return {};
+    
+    const rules: string[] = [
+      `You are helping with a workflow view. The current workflow URI is "${workflowUri}". Focus on operations related to workflow execution, monitoring, and management.`,
+      `When working with this workflow, prioritize operations that help users understand the workflow structure, monitor execution status, and manage workflow instances. Consider the workflow's current state and execution history when providing assistance.`,
+    ];
+    
+    return {
+      rules,
+    };
+  }, [workflowUri]);
 
   if (isLoading) return <WorkflowLoadingSkeleton />;
   if (error)
     return <WorkflowErrorState error={error?.message || "Unknown error"} />;
-  if (!workflow) return <WorkflowNotFoundState workflowName={workflowUri} />;
+  // If not found, fallback handled by canvas blank state
 
   return (
-    <WorkflowDisplayCanvas
-      workflow={workflow as unknown as DisplayWorkflow} // Type assertion to handle the data structure
-      isLoading={isLoading}
-      onRefresh={async () => {
-        await refetch();
-      }}
-    />
+    <DecopilotProvider value={decopilotContextValue}>
+      <WorkflowDisplayCanvas
+        resourceUri={workflowUri}
+        onRefresh={async () => {
+          await refetch();
+        }}
+      />
+    </DecopilotProvider>
   );
 }

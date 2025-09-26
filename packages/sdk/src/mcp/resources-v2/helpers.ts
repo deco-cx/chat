@@ -28,11 +28,11 @@ import {
 
 /**
  * Resources 2.0 Helper Functions
- * 
+ *
  * This module provides helper functions for creating Resources 2.0 implementations
  * with standardized tool bindings and implementations. These helpers make it easy
  * to create new resource types with consistent CRUD operations.
- * 
+ *
  * Key Features:
  * - Type-safe resource definitions with generic data schemas
  * - Automatic tool binding generation for CRUD operations
@@ -54,33 +54,33 @@ export interface ResourceDefinition<TDataSchema extends z.ZodTypeAny> {
   /** Handler for searching resources (required) */
   searchHandler: (
     input: SearchInput,
-    context: AppContext
+    context: AppContext,
   ) => Promise<SearchOutput<z.infer<TDataSchema>>>;
   /** Handler for reading a single resource (required) */
   readHandler: (
     input: ReadInput,
-    context: AppContext
+    context: AppContext,
   ) => Promise<ReadOutput<z.infer<TDataSchema>>>;
   /** Handler for creating new resources (optional) */
   createHandler?: (
     input: CreateInput<z.infer<TDataSchema>>,
-    context: AppContext
+    context: AppContext,
   ) => Promise<CreateOutput<z.infer<TDataSchema>>>;
   /** Handler for updating existing resources (optional) */
   updateHandler?: (
     input: UpdateInput<z.infer<TDataSchema>>,
-    context: AppContext
+    context: AppContext,
   ) => Promise<UpdateOutput<z.infer<TDataSchema>>>;
   /** Handler for deleting resources (optional) */
   deleteHandler?: (
     input: DeleteInput,
-    context: AppContext
+    context: AppContext,
   ) => Promise<DeleteOutput>;
 }
 
 /**
  * Creates tool bindings for a resource type based on the provided definition
- * 
+ *
  * This function generates the appropriate tool bindings for CRUD operations
  * on a specific resource type. It creates bindings with the naming pattern:
  * - DECO_RESOURCE_{NAME}_SEARCH - Search resources
@@ -88,13 +88,13 @@ export interface ResourceDefinition<TDataSchema extends z.ZodTypeAny> {
  * - DECO_RESOURCE_{NAME}_CREATE - Create new resource (optional)
  * - DECO_RESOURCE_{NAME}_UPDATE - Update existing resource (optional)
  * - DECO_RESOURCE_{NAME}_DELETE - Delete resource (optional)
- * 
+ *
  * @template TDataSchema - The Zod schema for the resource data
  * @param definition - The resource definition containing schemas and handlers
  * @returns Array of tool bindings for the resource type
  */
 export function createResourceTools<TDataSchema extends z.ZodTypeAny>(
-  definition: ResourceDefinition<TDataSchema>
+  definition: ResourceDefinition<TDataSchema>,
 ): ToolBinder[] {
   const itemSchema = createItemSchema(definition.dataSchema);
   const bindings: ToolBinder[] = [];
@@ -145,20 +145,20 @@ export function createResourceTools<TDataSchema extends z.ZodTypeAny>(
 
 /**
  * Creates a complete resource implementation using the existing impl function
- * 
+ *
  * This function generates tool implementations for all the bindings created by
  * createResourceTools. It uses the existing impl function from the binding
  * system to create the actual tool implementations.
- * 
+ *
  * @template TDataSchema - The Zod schema for the resource data
  * @param definition - The resource definition containing schemas and handlers
  * @returns Array of tool implementations ready to be used
  */
 export function createResourceImplementation<TDataSchema extends z.ZodTypeAny>(
-  definition: ResourceDefinition<TDataSchema>
+  definition: ResourceDefinition<TDataSchema>,
 ) {
   const tools = createResourceTools(definition);
-  
+
   // Create implementation handlers array
   const handlers = [
     // Required handlers
@@ -171,18 +171,30 @@ export function createResourceImplementation<TDataSchema extends z.ZodTypeAny>(
       handler: definition.readHandler,
     },
     // Optional handlers
-    ...(definition.createHandler ? [{
-      description: `Create a new ${definition.name} resource`,
-      handler: definition.createHandler,
-    }] : []),
-    ...(definition.updateHandler ? [{
-      description: `Update a ${definition.name} resource`,
-      handler: definition.updateHandler,
-    }] : []),
-    ...(definition.deleteHandler ? [{
-      description: `Delete a ${definition.name} resource`,
-      handler: definition.deleteHandler,
-    }] : []),
+    ...(definition.createHandler
+      ? [
+          {
+            description: `Create a new ${definition.name} resource`,
+            handler: definition.createHandler,
+          },
+        ]
+      : []),
+    ...(definition.updateHandler
+      ? [
+          {
+            description: `Update a ${definition.name} resource`,
+            handler: definition.updateHandler,
+          },
+        ]
+      : []),
+    ...(definition.deleteHandler
+      ? [
+          {
+            description: `Delete a ${definition.name} resource`,
+            handler: definition.deleteHandler,
+          },
+        ]
+      : []),
   ];
 
   // Use existing impl function from packages/sdk/src/mcp/bindings/binder.ts
@@ -191,7 +203,7 @@ export function createResourceImplementation<TDataSchema extends z.ZodTypeAny>(
 
 /**
  * Utility function to validate a resource URI format
- * 
+ *
  * @param uri - The URI to validate
  * @returns True if the URI is valid, false otherwise
  */
@@ -206,7 +218,7 @@ export function validateResourceUri(uri: string): boolean {
 
 /**
  * Utility function to parse a resource URI into its components
- * 
+ *
  * @param uri - The URI to parse
  * @returns Object containing the parsed components or null if invalid
  */
@@ -218,11 +230,11 @@ export function parseResourceUri(uri: string): {
   try {
     const validated = ResourceUriSchema.parse(uri);
     const match = validated.match(/^rsc:\/\/([^\/]+)\/([^\/]+)\/(.+)$/);
-    
+
     if (!match) {
       return null;
     }
-    
+
     return {
       workspace: match[1],
       project: match[2],
@@ -235,7 +247,7 @@ export function parseResourceUri(uri: string): {
 
 /**
  * Utility function to construct a resource URI from components
- * 
+ *
  * @param workspace - The workspace identifier
  * @param project - The project identifier
  * @param resourceId - The resource identifier
@@ -244,12 +256,17 @@ export function parseResourceUri(uri: string): {
 export function constructResourceUri(
   workspace: string,
   project: string,
-  resourceId: string
+  resourceId: string,
 ): string {
   return `rsc://${workspace}/${project}/${resourceId}`;
 }
 
 // Export types for TypeScript usage
-export type ResourceDefinitionType<T extends z.ZodTypeAny> = ResourceDefinition<T>;
-export type ResourceToolsType<T extends z.ZodTypeAny> = ReturnType<typeof createResourceTools<T>>;
-export type ResourceImplementationType<T extends z.ZodTypeAny> = ReturnType<typeof createResourceImplementation<T>>;
+export type ResourceDefinitionType<T extends z.ZodTypeAny> =
+  ResourceDefinition<T>;
+export type ResourceToolsType<T extends z.ZodTypeAny> = ReturnType<
+  typeof createResourceTools<T>
+>;
+export type ResourceImplementationType<T extends z.ZodTypeAny> = ReturnType<
+  typeof createResourceImplementation<T>
+>;

@@ -53,10 +53,12 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { studio } from "outerbase-browsable-do-enforced";
 import {
   createToolBindingImpl,
+  createToolViewsV2,
   ToolBindingImplOptions,
 } from "packages/sdk/src/mcp/tools/api.ts";
 import {
   createWorkflowBindingImpl,
+  createWorkflowViewsV2,
   WorkflowBindingImplOptions,
 } from "packages/sdk/src/mcp/workflows/api.ts";
 import { z } from "zod";
@@ -462,7 +464,7 @@ app.all("/:org/:project/mcp", createMCPHandlerFor(PROJECT_TOOLS));
 
 app.all(
   `/:org/:project/${WellKnownMcpGroups.Workflows}/mcp`,
-  createMCPHandlerFor(async (ctx) => {
+  createMCPHandlerFor((ctx) => {
     const appCtx = honoCtxToAppCtx(ctx);
     const client = createDeconfigClientForContext(appCtx);
 
@@ -485,21 +487,25 @@ app.all(
             await resourcesClient.DECO_RESOURCE_WORKFLOW_READ({ uri }),
         )) as WorkflowBindingImplOptions["resourceWorkflowRead"];
 
-    // Create additional workflow tools using createWorkflowBindingImpl
+    // Create workflow execution tools using createWorkflowBindingImpl
     const workflowBinding = createWorkflowBindingImpl({
       resourceWorkflowRead,
     });
 
-    return [
+    // Create Views 2.0 implementation for workflow views
+    const workflowViewsV2 = createWorkflowViewsV2();
+
+    return Promise.resolve([
       ...workflowResourceV2, // Add new Resources 2.0 implementation
-      ...workflowBinding, // Add workflow binding tools
-    ];
+      ...workflowBinding, // Add workflow execution tools
+      ...workflowViewsV2, // Add Views 2.0 implementation
+    ]);
   }),
 );
 
 app.all(
   `/:org/:project/${WellKnownMcpGroups.Tools}/mcp`,
-  createMCPHandlerFor(async (ctx) => {
+  createMCPHandlerFor((ctx) => {
     const appCtx = honoCtxToAppCtx(ctx);
     const client = createDeconfigClientForContext(appCtx);
 
@@ -522,13 +528,17 @@ app.all(
         async () => await resourcesClient.DECO_RESOURCE_TOOL_READ({ uri }),
       )) as ToolBindingImplOptions["resourceToolRead"];
 
-    // Create additional tools using createToolTools
+    // Create tool execution functionality using createToolBindingImpl
     const runTool = createToolBindingImpl({ resourceToolRead });
 
-    return [
+    // Create Views 2.0 implementation for tool views
+    const toolViewsV2 = createToolViewsV2();
+
+    return Promise.resolve([
       ...toolResourceV2, // Add new Resources 2.0 implementation
-      ...runTool, // Add run tool and individual tools creator
-    ];
+      ...runTool, // Add tool execution functionality
+      ...toolViewsV2, // Add Views 2.0 implementation
+    ]);
   }),
 );
 

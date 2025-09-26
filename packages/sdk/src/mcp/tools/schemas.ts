@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * Tool Definition Schema
- * 
+ *
  * This schema defines the structure for tools using Resources 2.0
  * with standardized JSON Schema validation and inline code execution.
  */

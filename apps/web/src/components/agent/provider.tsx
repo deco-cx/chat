@@ -44,10 +44,10 @@ import { useForm, type UseFormReturn } from "react-hook-form";
 import { useBlocker } from "react-router";
 import { toast } from "sonner";
 import { trackEvent } from "../../hooks/analytics.ts";
+import { onRulesUpdated, dispatchRulesUpdated } from "../../utils/events.ts";
 import { useCreateAgent } from "../../hooks/use-create-agent.ts";
 import { useUserPreferences } from "../../hooks/use-user-preferences.ts";
 import { IMAGE_REGEXP, openPreviewPanel } from "../chat/utils/preview.ts";
-import { onRulesUpdated } from "../../utils/events.ts";
 
 interface UiOptions {
   showThreadTools: boolean;
@@ -71,6 +71,7 @@ interface AgentProviderProps {
   toolsets?: Toolset[];
   autoSend?: boolean;
   onAutoSendComplete?: () => void;
+  initialRules?: string[];
 }
 
 interface AgentContextValue {
@@ -84,6 +85,10 @@ interface AgentContextValue {
 
   // UI configuration
   uiOptions: UiOptions;
+
+  // Current rules
+  rules: string[];
+  setRules: (rules: string[]) => void;
 
   // Chat integration
   chat: ReturnType<typeof useChat> & {
@@ -144,6 +149,7 @@ export function AgentProvider({
   toolsets,
   autoSend,
   onAutoSendComplete,
+  initialRules,
 }: PropsWithChildren<AgentProviderProps>) {
   const { data: serverAgent } = useAgentData(agentId);
   const isPublic = serverAgent.visibility === "PUBLIC";
@@ -157,7 +163,8 @@ export function AgentProvider({
     useState<LanguageModelV1FinishReason | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const correlationIdRef = useRef<string | null>(null);
-  const latestRulesRef = useRef<string[] | null>(null);
+  const latestRulesRef = useRef<string[] | null>(initialRules || null);
+  const [rules, setRulesState] = useState<string[]>(initialRules || []);
 
   const mergedUiOptions = { ...DEFAULT_UI_OPTIONS, ...uiOptions };
   const { data: threads } = useThreads({
@@ -172,10 +179,12 @@ export function AgentProvider({
     WELL_KNOWN_AGENTS[agentId as keyof typeof WELL_KNOWN_AGENTS],
   );
 
-  // Subscribe to rules updates
+  // Subscribe to dynamic rules updates (for rule removal)
   useEffect(() => {
     const off = onRulesUpdated((ev) => {
-      latestRulesRef.current = ev.detail.rules ?? [];
+      const newRules = ev.detail.rules ?? [];
+      latestRulesRef.current = newRules;
+      setRulesState(newRules);
     });
     return () => off();
   }, []);
@@ -432,6 +441,12 @@ export function AgentProvider({
     installedIntegrations:
       installedIntegrations?.filter((i) => !i.id.includes(agentId)) || [],
     uiOptions: mergedUiOptions,
+    rules,
+    setRules: (newRules: string[]) => {
+      latestRulesRef.current = newRules;
+      setRulesState(newRules);
+      dispatchRulesUpdated({ rules: newRules });
+    },
     chat: {
       ...chat,
       finishReason,

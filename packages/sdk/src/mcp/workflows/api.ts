@@ -1,6 +1,6 @@
 import { inspect } from "@deco/cf-sandbox";
 import z from "zod";
-import { VIEW_BINDING_SCHEMA } from "../bindings/views.ts";
+import { formatIntegrationId, WellKnownMcpGroups } from "../../crud/groups.ts";
 import { DeconfigResourceV2 } from "../deconfig-v2/index.ts";
 import { DeconfigResource } from "../deconfig/deconfig-resource.ts";
 import {
@@ -8,10 +8,15 @@ import {
   assertWorkspaceResourceAccess,
   createTool,
   DeconfigClient,
-  impl,
-  WellKnownBindings,
 } from "../index.ts";
 import { validate } from "../tools/utils.ts";
+import {
+  createDetailViewUrl,
+  createListViewUrl,
+  createViewImplementation,
+  createViewRenderer,
+} from "../views-v2/index.ts";
+import { DetailViewRenderInputSchema } from "../views-v2/schemas.ts";
 import {
   WORKFLOW_CREATE_PROMPT,
   WORKFLOW_DELETE_PROMPT,
@@ -134,7 +139,7 @@ export interface WorkflowBindingImplOptions {
 
 /**
  * Creates workflow binding implementation that accepts a resource reader
- * Similar to the tools pattern but for workflows
+ * Returns only the core workflow execution tools (start and get status)
  */
 export function createWorkflowBindingImpl({
   resourceWorkflowRead,
@@ -306,62 +311,72 @@ export function createWorkflowBindingImpl({
     },
   });
 
-  // Create workflow views
-  const workflowViews = impl(VIEW_BINDING_SCHEMA, [
-    // DECO_CHAT_VIEWS_LIST
-    {
-      description: "List views exposed by this MCP",
-      handler: (_, c) => {
-        c.resourceAccess.grant();
+  return [decoWorkflowStart, decoWorkflowGetStatus];
+}
 
-        const org = c.locator?.org;
-        const project = c.locator?.project;
+/**
+ * Creates Views 2.0 implementation for workflow views
+ *
+ * This function creates a complete Views 2.0 implementation that includes:
+ * - Resources 2.0 CRUD operations for views
+ * - View render operations for workflow-specific views
+ * - Resource-centric URL patterns for better organization
+ *
+ * @returns Views 2.0 implementation for workflow views
+ */
+export function createWorkflowViewsV2() {
+  const integrationId = formatIntegrationId(WellKnownMcpGroups.Workflows);
 
-        if (!org || !project) {
-          return { views: [] };
-        }
-
-        return {
-          views: [
-            // Workflow List View
-            {
-              name: "WORKFLOWS_LIST",
-              title: "Workflows",
-              description: "Manage and monitor your workflows",
-              icon: "workflow",
-              url: `internal://resource/list?name=workflow`,
-              tools: WellKnownBindings.Resources.map(
-                (resource) => resource.name,
-              ),
-              rules: [
-                "You are a specialist for crud operations on resources. Use the resource tools to read, search, create, update, or delete items; do not fabricate data.",
-              ],
-            },
-            // Workflow Detail View (for individual workflow management)
-            {
-              name: "WORKFLOW_DETAIL",
-              title: "Workflow Detail",
-              description: "View and manage individual workflow details",
-              icon: "workflow",
-              url: `internal://resource/detail?name=workflow`,
-              mimeTypePattern: "application/json",
-              resourceName: "workflow",
-              tools: [
-                decoWorkflowStart.name,
-                decoWorkflowGetStatus.name,
-                "DECO_RESOURCE_WORKFLOW_READ",
-                "DECO_RESOURCE_WORKFLOW_UPDATE",
-                "DECO_RESOURCE_WORKFLOW_SEARCH",
-              ],
-              rules: [
-                "You are a workflow editing specialist. Use the workflow tools to edit the current workflow. A good strategy is to test each step, one at a time in isolation and check how they affect the overall workflow.",
-              ],
-            },
-          ],
-        };
-      },
+  // Create view renderers for workflow views
+  const workflowListRenderer = createViewRenderer({
+    name: "workflow_list",
+    title: "Workflow List",
+    description: "Browse and manage workflows",
+    icon: "https://example.com/icons/workflow-list.svg",
+    tools: [
+      "DECO_RESOURCE_WORKFLOW_SEARCH",
+      "DECO_RESOURCE_WORKFLOW_CREATE",
+      "DECO_RESOURCE_WORKFLOW_READ",
+      "DECO_RESOURCE_WORKFLOW_UPDATE",
+      "DECO_RESOURCE_WORKFLOW_DELETE",
+    ],
+    prompt:
+      "You are helping the user browse and manage workflows. You can search for workflows, create new ones, and perform bulk operations. Provide clear feedback on all actions.",
+    handler: (_input, _c) => {
+      const url = createListViewUrl("workflow", integrationId);
+      return Promise.resolve({ url });
     },
-  ]);
+  });
 
-  return [decoWorkflowStart, decoWorkflowGetStatus, ...workflowViews];
+  const workflowDetailRenderer = createViewRenderer({
+    name: "workflow_detail",
+    title: "Workflow Detail",
+    description: "View and manage individual workflow details",
+    icon: "https://example.com/icons/workflow-detail.svg",
+    inputSchema: DetailViewRenderInputSchema,
+    tools: [
+      "DECO_RESOURCE_WORKFLOW_READ",
+      "DECO_RESOURCE_WORKFLOW_UPDATE",
+      "DECO_RESOURCE_WORKFLOW_DELETE",
+      "DECO_WORKFLOW_START",
+      "DECO_WORKFLOW_GET_STATUS",
+    ],
+    prompt:
+      "You are helping the user manage a workflow. You can read the workflow details, update its properties, start or stop the workflow, and view its logs. Always confirm actions before executing them.",
+    handler: (input, _c) => {
+      const url = createDetailViewUrl(
+        "workflow",
+        integrationId,
+        input.resource,
+      );
+      return Promise.resolve({ url });
+    },
+  });
+
+  // Create Views 2.0 implementation
+  const viewsV2Implementation = createViewImplementation({
+    renderers: [workflowListRenderer, workflowDetailRenderer],
+  });
+
+  return viewsV2Implementation;
 }

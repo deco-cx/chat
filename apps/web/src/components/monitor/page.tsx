@@ -5,6 +5,7 @@ import ActivitySettings from "../settings/activity.tsx";
 import BillingSettings from "../settings/billing.tsx";
 import { useMemo } from "react";
 import { useParams } from "react-router";
+import { DecopilotProvider } from "../decopilot/context.tsx";
 
 const BASE_TABS: Record<string, Tab> = {
   activity: {
@@ -41,12 +42,26 @@ export default function MonitorPage() {
     ) as Record<string, Tab>;
   }, [activeKey]);
 
+  // Prepare decopilot context value for monitor
+  const decopilotContextValue = useMemo(() => {
+    const rules: string[] = [
+      `You are helping with workspace monitoring and analytics. Focus on operations related to activity tracking, usage monitoring, and billing management.`,
+      `When working with monitoring, prioritize operations that help users understand their workspace activity, track usage patterns, and manage billing. Consider the current active tab (${activeKey}) when providing assistance.`,
+    ];
+    
+    return {
+      rules,
+    };
+  }, [activeKey]);
+
   return (
-    <PageLayout
-      tabs={tabs}
-      breadcrumb={
-        <DefaultBreadcrumb items={[{ label: "Monitor", link: "/monitor" }]} />
-      }
-    />
+    <DecopilotProvider value={decopilotContextValue}>
+      <PageLayout
+        tabs={tabs}
+        breadcrumb={
+          <DefaultBreadcrumb items={[{ label: "Monitor", link: "/monitor" }]} />
+        }
+      />
+    </DecopilotProvider>
   );
 }

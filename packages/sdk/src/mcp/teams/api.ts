@@ -486,15 +486,32 @@ export const getTeam = createTool({
         title: string;
         icon: string;
         type: string;
-        metadata?: { integration?: { id?: string }; viewName?: string } | null;
+        metadata?: { integration?: { id?: string }; viewName?: string; resourceType?: string } | null;
         integration_id?: string | null;
         name?: string | null;
       }>) || [];
-    const mappedViews = rawViews.map((v) => ({
+
+    // Separate views and resources based on type
+    const views = rawViews.filter(v => v.type !== "resource");
+    const resources = rawViews.filter(v => v.type === "resource");
+
+    const mappedViews = views.map((v) => ({
       ...v,
       // New columns with backward-compat
       integrationId: v.integration_id ?? v.metadata?.integration?.id,
       name: v.name ?? v.metadata?.viewName,
+    }));
+
+    const mappedResources = resources.map((r) => ({
+      id: r.id,
+      title: r.title,
+      icon: r.icon,
+      type: r.type as "resource",
+      name: r.name ?? r.metadata?.viewName ?? "",
+      resource_type: r.metadata?.resourceType ?? "unknown",
+      integration_id: r.integration_id ?? r.metadata?.integration?.id ?? "",
+      created_at: new Date().toISOString(), // We don't have this in views table
+      updated_at: new Date().toISOString(), // We don't have this in views table
     }));
 
     const teamWithoutAvatar: Omit<TeamWithViews, "avatar_url"> = {
@@ -504,6 +521,7 @@ export const getTeam = createTool({
       theme: teamData.theme as Theme,
       created_at: teamData.created_at as string,
       views: (mappedViews as View[]) || [],
+      resources: mappedResources || [],
     };
 
     try {
@@ -1058,14 +1076,14 @@ export const getTeamRole = createTool({
 
 export const addView = createTool({
   name: "TEAMS_ADD_VIEW",
-  description: "Add a custom view to a team",
+  description: "Add a custom view or resource to a team",
   inputSchema: z.object({
     view: z
       .object({
         id: z.string().describe("Unique identifier for the view"),
         title: z.string().describe("Display title for the view"),
         icon: z.string().describe("Icon identifier for the view"),
-        type: z.literal("custom").describe("Type of view (must be 'custom')"),
+        type: z.enum(["custom", "resource"]).describe("Type of view (custom for views, resource for resources)"),
         // Integration-specific view machine name
         name: z.string().describe("Integration-specific view name"),
         tools: z
@@ -1079,8 +1097,10 @@ export const addView = createTool({
         integration: z.object({
           id: z.string().describe("Integration ID"),
         }),
+        // Resource-specific fields
+        resourceType: z.string().optional().describe("Type of resource (for resources only)"),
       })
-      .describe("View configuration to add"),
+      .describe("View or resource configuration to add"),
   }),
   handler: async (props, c) => {
     const { view } = props;
@@ -1126,6 +1146,7 @@ export const addView = createTool({
           integration_id: view.integration?.id,
           name: view.name,
           team_id: team.id,
+          metadata: view.resourceType ? { resourceType: view.resourceType } : null,
         },
       ])
       .select()
@@ -1139,9 +1160,9 @@ export const addView = createTool({
 
 export const removeView = createTool({
   name: "TEAMS_REMOVE_VIEW",
-  description: "Remove a custom view from a team",
+  description: "Remove a custom view or resource from a team",
   inputSchema: z.object({
-    viewId: z.string().describe("The ID of the view to remove"),
+    viewId: z.string().describe("The ID of the view or resource to remove"),
   }),
   handler: async (props, c) => {
     const { viewId } = props;
@@ -1188,6 +1209,7 @@ export const removeView = createTool({
     return { success: true };
   },
 });
+
 
 export const listProjects = createTool({
   name: "PROJECTS_LIST",

@@ -56,6 +56,37 @@ export function buildAddViewPayload(args: {
   };
 }
 
+export interface IntegrationResourceSummary {
+  name: string;
+  title: string;
+  icon: string;
+  resourceType: string;
+}
+
+export function buildAddResourcePayload(args: {
+  resource: IntegrationResourceSummary;
+  integrationId: string;
+}): {
+  id: string;
+  title: string;
+  icon: string;
+  type: "custom";
+  name: string;
+  resourceType: string;
+  integration: { id: string };
+} {
+  const { resource, integrationId } = args;
+  return {
+    id: crypto.randomUUID(),
+    title: resource.title,
+    icon: resource.icon,
+    type: "custom" as const,
+    name: resource.name,
+    resourceType: resource.resourceType,
+    integration: { id: integrationId },
+  };
+}
+
 export interface BasicViewLike {
   name?: string;
   url?: string;

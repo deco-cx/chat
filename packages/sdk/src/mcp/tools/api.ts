@@ -1,5 +1,6 @@
 import { callFunction, inspect } from "@deco/cf-sandbox";
 import z from "zod";
+import { formatIntegrationId, WellKnownMcpGroups } from "../../crud/groups.ts";
 import { DeconfigResourceV2 } from "../deconfig-v2/index.ts";
 import {
   assertWorkspaceResourceAccess,
@@ -7,6 +8,13 @@ import {
   DeconfigClient,
   MCPClient,
 } from "../index.ts";
+import {
+  createDetailViewUrl,
+  createListViewUrl,
+  createViewImplementation,
+  createViewRenderer,
+} from "../views-v2/index.ts";
+import { DetailViewRenderInputSchema } from "../views-v2/schemas.ts";
 import {
   TOOL_CREATE_PROMPT,
   TOOL_DELETE_PROMPT,
@@ -16,20 +24,22 @@ import {
 } from "./prompts.ts";
 import { ToolDefinitionSchema } from "./schemas.ts";
 import { asEnv, evalCodeAndReturnDefaultHandle, validate } from "./utils.ts";
-
 export interface ToolBindingImplOptions {
   resourceToolRead: (
     uri: string,
   ) => Promise<{ data: z.infer<typeof ToolDefinitionSchema> }>;
 }
 
-// Function to create tools based on toolResourceV2
+/**
+ * Creates tool binding implementation that accepts a resource reader
+ * Returns only the core tool execution functionality
+ */
 export function createToolBindingImpl({
   resourceToolRead,
 }: ToolBindingImplOptions) {
   const runTool = createTool({
     name: "DECO_TOOL_CALL_TOOL",
-    description: "Tool for running JavaScript code in a sandbox",
+    description: "Invoke a tool created with DECO_RESOURCE_TOOL_CREATE",
     inputSchema: z.object({
       uri: z.string().describe("The URI of the tool to run"),
       input: z.object({}).passthrough().describe("The input of the code"),
@@ -201,4 +211,66 @@ export function createToolResourceV2Implementation(
   integrationId: string,
 ) {
   return ToolResourceV2.create(deconfig, integrationId);
+}
+
+/**
+ * Creates Views 2.0 implementation for tool views
+ *
+ * This function creates a complete Views 2.0 implementation that includes:
+ * - Resources 2.0 CRUD operations for views
+ * - View render operations for tool-specific views
+ * - Resource-centric URL patterns for better organization
+ *
+ * @returns Views 2.0 implementation for tool views
+ */
+export function createToolViewsV2() {
+  const integrationId = formatIntegrationId(WellKnownMcpGroups.Tools);
+
+  // Create view renderers for tool views
+  const toolListRenderer = createViewRenderer({
+    name: "tool_list",
+    title: "Tool List",
+    description: "Browse and manage tools",
+    icon: "https://example.com/icons/tool-list.svg",
+    tools: [
+      "DECO_RESOURCE_TOOL_SEARCH",
+      "DECO_RESOURCE_TOOL_CREATE",
+      "DECO_RESOURCE_TOOL_READ",
+      "DECO_RESOURCE_TOOL_UPDATE",
+      "DECO_RESOURCE_TOOL_DELETE",
+    ],
+    prompt:
+      "You are helping the user browse and manage tools. You can search for tools, create new ones, and perform bulk operations. Provide clear feedback on all actions.",
+    handler: (_input, _c) => {
+      const url = createListViewUrl("tool", integrationId);
+      return Promise.resolve({ url });
+    },
+  });
+
+  const toolDetailRenderer = createViewRenderer({
+    name: "tool_detail",
+    title: "Tool Detail",
+    description: "View and manage individual tool details",
+    icon: "https://example.com/icons/tool-detail.svg",
+    inputSchema: DetailViewRenderInputSchema,
+    tools: [
+      "DECO_RESOURCE_TOOL_READ",
+      "DECO_RESOURCE_TOOL_UPDATE",
+      "DECO_RESOURCE_TOOL_DELETE",
+      "DECO_TOOL_CALL_TOOL",
+    ],
+    prompt:
+      "You are helping the user manage a tool. You can read the tool definition, update its properties, test its execution, and view its usage. Always confirm actions before executing them.",
+    handler: (input, _c) => {
+      const url = createDetailViewUrl("tool", integrationId, input.resource);
+      return Promise.resolve({ url });
+    },
+  });
+
+  // Create Views 2.0 implementation
+  const viewsV2Implementation = createViewImplementation({
+    renderers: [toolListRenderer, toolDetailRenderer],
+  });
+
+  return viewsV2Implementation;
 }

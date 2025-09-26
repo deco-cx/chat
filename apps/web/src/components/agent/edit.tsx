@@ -26,6 +26,7 @@ import Threads from "./threads.tsx";
 import { isFilePath } from "../../utils/path.ts";
 import { useDocumentMetadata } from "../../hooks/use-document-metadata.ts";
 import { AgentProvider, useAgent } from "./provider.tsx";
+import { DecopilotProvider } from "../decopilot/context.tsx";
 
 interface Props {
   agentId?: string;
@@ -200,6 +201,20 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
 
   const tabs = useTabsForAgent(agent, TABS);
 
+  // Prepare decopilot context value for agent edit
+  const decopilotContextValue = useMemo(() => {
+    if (!agent) return {};
+    
+    const rules: string[] = [
+      `You are helping with agent editing and configuration. The current agent is "${agent.name}". Focus on operations related to agent configuration, tool management, knowledge base integration, and agent optimization.`,
+      `When working with this agent (${agent.name}), prioritize operations that help users configure the agent's behavior, manage its tools and integrations, optimize its performance, and understand its capabilities. Consider the agent's current configuration and settings when providing assistance.`,
+    ];
+    
+    return {
+      rules,
+    };
+  }, [agent]);
+
   useDocumentMetadata({
     title: agent ? `${agent.name} | deco CMS` : undefined,
     description: agent
@@ -214,31 +229,33 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
   });
 
   return (
-    <AgentProvider
-      agentId={agentId}
-      threadId={threadId}
-      uiOptions={{
-        showThreadTools: false,
-        showEditAgent: false,
-        showModelSelector: false,
-      }}
-    >
-      <PageLayout
-        tabs={tabs}
-        key={agentId}
-        actionButtons={<ActionButtons />}
-        breadcrumb={
-          <DefaultBreadcrumb
-            items={[
-              { link: "/agents", label: "Agents" },
-              {
-                label: <AgentBreadcrumbSegment variant="summary" />,
-              },
-            ]}
-          />
-        }
-      />
-    </AgentProvider>
+    <DecopilotProvider value={decopilotContextValue}>
+      <AgentProvider
+        agentId={agentId}
+        threadId={threadId}
+        uiOptions={{
+          showThreadTools: false,
+          showEditAgent: false,
+          showModelSelector: false,
+        }}
+      >
+        <PageLayout
+          tabs={tabs}
+          key={agentId}
+          actionButtons={<ActionButtons />}
+          breadcrumb={
+            <DefaultBreadcrumb
+              items={[
+                { link: "/agents", label: "Agents" },
+                {
+                  label: <AgentBreadcrumbSegment variant="summary" />,
+                },
+              ]}
+            />
+          }
+        />
+      </AgentProvider>
+    </DecopilotProvider>
   );
 }
 

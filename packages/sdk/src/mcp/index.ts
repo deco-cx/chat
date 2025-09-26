@@ -29,7 +29,11 @@ import * as teamsAPI from "./teams/api.ts";
 import * as threadsAPI from "./threads/api.ts";
 import * as triggersAPI from "./triggers/api.ts";
 import * as walletAPI from "./wallet/api.ts";
-export { TOOLS_TOOLS, createToolBindingImpl as createToolTools } from "./tools/api.ts";
+export {
+  TOOLS_TOOLS,
+  createToolBindingImpl as createToolTools,
+  createToolViewsV2,
+} from "./tools/api.ts";
 
 export { AuthorizationClient, PolicyClient } from "../auth/policy.ts";
 export * from "../errors.ts";
@@ -359,6 +363,7 @@ export { WorkflowResource } from "./workflows/api.ts";
 export {
   createWorkflowResourceV2Implementation,
   createWorkflowBindingImpl,
+  createWorkflowViewsV2,
   WorkflowResourceV2,
   type WorkflowDataV2,
 } from "./workflows/api.ts";
@@ -371,3 +376,8 @@ export {
 
 // Export Resources 2.0 bindings function
 export { createResourceV2Bindings } from "./resources-v2/bindings.ts";
+export type {
+  ResourceItem,
+  SearchOutput,
+  ReadOutput,
+} from "./resources-v2/schemas.ts";
