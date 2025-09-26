@@ -12,7 +12,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import { ErrorBoundary } from "../../error-boundary";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Avatar } from "../common/avatar";
-import { DecoDayBanner } from "../common/event/deco-day";
+import { BountiesBanner } from "../common/event/bounties-banner";
 import { OrgAvatars, OrgMemberCount } from "./members";
 import { TopbarLayout } from "../layout/home";
 import { Combobox } from "@deco/ui/components/combobox.tsx";
@@ -140,7 +140,7 @@ function OrgProjectListContent() {
   return (
     <div className="flex w-full h-full items-start bg-background">
       <div className="p-8 flex flex-col gap-4 w-full">
-        <DecoDayBanner />
+        <BountiesBanner />
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-medium">Projects</h2>
           <div className="flex items-center gap-2">
