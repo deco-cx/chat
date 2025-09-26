@@ -1,21 +1,21 @@
-import { useCallback, useMemo, useState } from "react";
-import { Button } from "@deco/ui/components/button.tsx";
-import { Textarea } from "@deco/ui/components/textarea.tsx";
+import type { WorkflowDefinition, WorkflowStep } from "@deco/sdk";
+import { useGenerateWorkflowStep, useIntegrations } from "@deco/sdk";
 import { Badge } from "@deco/ui/components/badge.tsx";
-import { Spinner } from "@deco/ui/components/spinner.tsx";
+import { Button } from "@deco/ui/components/button.tsx";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@deco/ui/components/dialog.tsx";
-import { Plus, Sparkles, X, Wand2 } from "lucide-react";
-import type { Workflow, WorkflowStep } from "@deco/sdk";
-import { useGenerateWorkflowStep, useIntegrations } from "@deco/sdk";
+import { Spinner } from "@deco/ui/components/spinner.tsx";
+import { Textarea } from "@deco/ui/components/textarea.tsx";
+import { Plus, Sparkles, Wand2, X } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 
 interface StepCreatorProps {
-  workflow: Workflow;
+  workflow: WorkflowDefinition;
   editingStep?: WorkflowStep | null;
   onStepCreated: (step: WorkflowStep) => void;
   onCancel: () => void;
@@ -31,7 +31,7 @@ export function StepCreator({
   onStepCreated,
   onCancel,
 }: StepCreatorProps) {
-  const [prompt, setPrompt] = useState(editingStep?.prompt || "");
+  const [prompt, setPrompt] = useState("");
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [suggestedTools, setSuggestedTools] = useState<string[]>([]);
   const [showToolDialog, setShowToolDialog] = useState(false);
@@ -93,9 +93,8 @@ export function StepCreator({
     try {
       // Get previous steps for context
       const previousSteps = workflow.steps.map((s: WorkflowStep) => ({
-        id: s.id,
-        title: s.title,
-        outputSchema: s.outputSchema,
+        id: s.def.name,
+        title: s.def.name,
       }));
 
       // Generate step using AI
@@ -137,17 +136,11 @@ export function StepCreator({
       };
 
       const newStep: WorkflowStep = {
-        id: editingStep?.id || `step-${Date.now()}`,
-        title: extractTitle(prompt),
-        description: `Executes: ${prompt.slice(0, 100)}${prompt.length > 100 ? "..." : ""}`,
-        prompt,
-        code: generated.code,
-        inputSchema: generated.inputSchema as Record<string, unknown>,
-        outputSchema: generated.outputSchema as Record<string, unknown>,
-        usedTools: generated.usedTools || [],
-        config: {
-          retry: 3,
-          timeout: 30000,
+        type: "code",
+        def: {
+          name: editingStep?.def.name || `step-${Date.now()}`,
+          description: `Executes: ${prompt.slice(0, 100)}${prompt.length > 100 ? "..." : ""}`,
+          execute: generated.code,
         },
       };
 
@@ -183,10 +176,10 @@ export function StepCreator({
               <span className="text-sm font-medium">Step Generated!</span>
             </div>
             <h1 className="text-4xl font-bold text-foreground">
-              {generatedStep.title}
+              {generatedStep.def.name}
             </h1>
             <p className="text-xl text-muted-foreground">
-              {generatedStep.description}
+              {generatedStep.def.description}
             </p>
           </div>
 
@@ -197,26 +190,24 @@ export function StepCreator({
                 Original Prompt
               </h3>
               <p className="text-lg text-foreground leading-relaxed">
-                {generatedStep.prompt}
+                {prompt}
               </p>
             </div>
 
-            {generatedStep.usedTools && generatedStep.usedTools.length > 0 && (
+            {selectedTools.length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                   Tools Used
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {generatedStep.usedTools.map(
-                    (
-                      tool: { integrationId?: string; toolName?: string },
-                      idx: number,
-                    ) => (
-                      <Badge key={idx} variant="secondary">
-                        {String(tool.integrationId)}.{String(tool.toolName)}
+                  {selectedTools.map((toolId) => {
+                    const tool = availableTools.find((t) => t.id === toolId);
+                    return tool ? (
+                      <Badge key={toolId} variant="secondary">
+                        {tool.name}
                       </Badge>
-                    ),
-                  )}
+                    ) : null;
+                  })}
                 </div>
               </div>
             )}

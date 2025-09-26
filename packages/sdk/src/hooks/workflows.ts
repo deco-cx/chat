@@ -6,12 +6,8 @@ import {
 } from "../crud/workflows.ts";
 import { InternalServerError } from "../errors.ts";
 import { useSDK } from "./store.tsx";
-import {
-  useSandboxWorkflow,
-  useSandboxWorkflowByUri,
-} from "./sandbox-workflows.ts";
-import type { WorkflowDefinition } from "../mcp/workflows/workflow-schemas.ts";
-import type { Workflow } from "../mcp/workflows/types.ts";
+import { useWorkflow as useWorkflowV2 } from "./resources-workflow.ts";
+import type { WorkflowDefinition } from "../mcp/workflows/schemas.ts";
 
 /**
  * Hook to get all unique workflow names in the workspace
@@ -122,85 +118,14 @@ export const useWorkflowStatus = (workflowName: string, instanceId: string) => {
 };
 
 /**
- * Convert old workflow format to new format
- */
-function convertToNewWorkflow(oldWorkflow: WorkflowDefinition): Workflow {
-  const now = new Date().toISOString();
-
-  return {
-    id: `workflow-${oldWorkflow.name}`,
-    name: oldWorkflow.name,
-    description: oldWorkflow.description,
-    inputSchema: oldWorkflow.inputSchema,
-    outputSchema: oldWorkflow.outputSchema,
-    steps: oldWorkflow.steps.map((step, index) => {
-      const stepId = `step-${index}`;
-
-      // Convert old step format to new format
-      if (step.type === "code") {
-        const def = step.def as Record<string, unknown>;
-        return {
-          id: stepId,
-          title: String(def.name || `Step ${index + 1}`),
-          description: String(def.description || ""),
-          prompt: String(def.description || "Legacy code step"),
-          code: String(def.execute || ""),
-          inputSchema: def.inputSchema as Record<string, unknown>,
-          outputSchema: def.outputSchema as Record<string, unknown>,
-          usedTools: [],
-        };
-      } else if (step.type === "tool_call") {
-        const def = step.def as Record<string, unknown>;
-        return {
-          id: stepId,
-          title: String(def.name || `Tool Call ${index + 1}`),
-          description: String(def.description || ""),
-          prompt: `Call ${def.tool_name} from ${def.integration}`,
-          code: `export default async function(ctx) {
-  return await ctx.env.${def.integration}.${def.tool_name}(${JSON.stringify(
-    def.options || {},
-    null,
-    2,
-  )});
-}`,
-          inputSchema: def.inputSchema as Record<string, unknown>,
-          outputSchema: def.outputSchema as Record<string, unknown>,
-          usedTools: [
-            {
-              integrationId: String(def.integration),
-              toolName: String(def.tool_name),
-            },
-          ],
-        };
-      }
-
-      // Fallback for unknown types
-      return {
-        id: stepId,
-        title: `Step ${index + 1}`,
-        description: "",
-        prompt: "Unknown step type",
-        code: "export default async function(ctx) { return {}; }",
-        usedTools: [],
-      };
-    }),
-    executionState: {},
-    createdAt: now,
-    updatedAt: now,
-  };
-}
-
-/**
  * Hook to get a workflow definition with fallback to empty workflow
  * Returns the new Workflow format
  */
-export function useWorkflow(workflowName: string) {
-  const { data, isLoading, error } = useSandboxWorkflow(workflowName);
+export function useWorkflow(workflowUri: string) {
+  const { data, isLoading, error } = useWorkflowV2(workflowUri);
 
-  // Convert to new format or create empty workflow
-  const workflow = data
-    ? convertToNewWorkflow(data)
-    : createEmptyWorkflow(workflowName);
+  // If workflow doesn't exist, create a new one
+  const workflow = data?.data || createEmptyWorkflow(workflowUri);
 
   return {
     workflow,
@@ -213,10 +138,10 @@ export function useWorkflow(workflowName: string) {
  * Hook to get a workflow definition by URI with fallback to empty workflow
  */
 export function useWorkflowByUri(workflowUri: string) {
-  const { data, isLoading, error } = useSandboxWorkflowByUri(workflowUri);
+  const { data, isLoading, error } = useWorkflowV2(workflowUri);
 
   // If workflow doesn't exist, create a new one
-  const workflow = data || createEmptyWorkflow(workflowUri);
+  const workflow = data?.data || createEmptyWorkflow(workflowUri);
 
   return {
     workflow,
@@ -226,20 +151,11 @@ export function useWorkflowByUri(workflowUri: string) {
 }
 
 function createEmptyWorkflow(name: string): WorkflowDefinition {
-  const _now = new Date().toISOString();
   return {
     name,
     description: `Workflow: ${name}`,
-    inputSchema: {
-      type: "object",
-      properties: {},
-      required: [],
-    },
-    outputSchema: {
-      type: "object",
-      properties: {},
-      required: [],
-    },
+    inputSchema: {},
+    outputSchema: {},
     steps: [],
   };
 }

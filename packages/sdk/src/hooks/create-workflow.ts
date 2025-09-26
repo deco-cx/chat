@@ -1,11 +1,11 @@
 import { useMutation } from "@tanstack/react-query";
 import { useSDK } from "./store.tsx";
-import { upsertSandboxWorkflow } from "./sandbox-workflows.ts";
+import { upsertWorkflow } from "./resources-workflow.ts";
 import type {
   JSONSchema,
   Workflow,
   WorkflowStep,
-} from "../mcp/workflows/types.ts";
+} from "../mcp/workflows/schemas.ts";
 
 /**
  * Hook to create a new workflow with initial state
@@ -83,8 +83,8 @@ export function useCreateWorkflow() {
         steps: [backendStep], // Include the initial step
       };
 
-      // Save to backend
-      await upsertSandboxWorkflow(locator, initialWorkflow);
+      // Save to backend (Resources v2)
+      await upsertWorkflow(locator, initialWorkflow);
 
       // Return the new workflow in the new format
       return {

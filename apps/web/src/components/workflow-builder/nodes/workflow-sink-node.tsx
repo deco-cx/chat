@@ -33,7 +33,7 @@ export function WorkflowSinkNode(props: NodeProps) {
         className="w-3 h-3 bg-success border-2 border-white"
       />
 
-      <Card className="w-48 h-48 bg-success/10 border-success/30 shadow-md">
+      <Card className="w-48 h-48 bg-success-foreground border-success/30 shadow-md">
         <CardContent className="flex flex-col items-center justify-center h-full p-4">
           <div className="w-12 h-12 bg-success rounded-full flex items-center justify-center mb-2">
             <span className="text-white font-bold text-lg">OUT</span>

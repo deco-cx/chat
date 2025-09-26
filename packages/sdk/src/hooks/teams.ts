@@ -7,6 +7,8 @@ import {
 import {
   addView,
   type AddViewInput,
+  addResource,
+  type AddResourceInput,
   createTeam,
   type CreateTeamInput,
   deleteTeam,
@@ -16,6 +18,8 @@ import {
   listTeams,
   removeView,
   type RemoveViewInput,
+  removeResource,
+  type RemoveResourceInput,
   updateTeam,
   type UpdateTeamInput,
 } from "../crud/teams.ts";
@@ -168,6 +172,34 @@ export function useRemoveView() {
     onSuccess: () => {
       const { org } = Locator.parse(locator);
       // Invalidate team data to refresh views
+      client.invalidateQueries({ queryKey: KEYS.ORGANIZATION(org) });
+    },
+  });
+}
+
+export function useAddResource() {
+  const client = useQueryClient();
+  const { locator } = useSDK();
+
+  return useMutation({
+    mutationFn: (input: AddResourceInput) => addResource(locator, input),
+    onSuccess: () => {
+      const { org } = Locator.parse(locator);
+      // Invalidate team data to refresh resources
+      client.invalidateQueries({ queryKey: KEYS.ORGANIZATION(org) });
+    },
+  });
+}
+
+export function useRemoveResource() {
+  const client = useQueryClient();
+  const { locator } = useSDK();
+
+  return useMutation({
+    mutationFn: (input: RemoveResourceInput) => removeResource(locator, input),
+    onSuccess: () => {
+      const { org } = Locator.parse(locator);
+      // Invalidate team data to refresh resources
       client.invalidateQueries({ queryKey: KEYS.ORGANIZATION(org) });
     },
   });

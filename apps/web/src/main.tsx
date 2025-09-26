@@ -213,6 +213,15 @@ const Discover = lazy(() =>
   wrapWithUILoadingFallback(import("./components/discover/index.tsx")),
 );
 
+// Resources v2 routes
+const ResourcesV2List = lazy(() =>
+  wrapWithUILoadingFallback(import("./components/resources-v2/list.tsx")),
+);
+
+const ResourcesV2Detail = lazy(() =>
+  wrapWithUILoadingFallback(import("./components/resources-v2/detail.tsx")),
+);
+
 function NotFound(): null {
   throw new NotFoundError("The path was not found");
 }
@@ -382,6 +391,15 @@ const router = createBrowserRouter([
           {
             path: "workflows/:workflowName/instances/:instanceId",
             Component: WorkflowDetailPage,
+          },
+          // Resources v2 list/detail routes
+          {
+            path: "rsc/:integrationId/:resourceName",
+            Component: ResourcesV2List,
+          },
+          {
+            path: "rsc/:integrationId/:resourceName/:resourceUri",
+            Component: ResourcesV2Detail,
           },
         ],
       },

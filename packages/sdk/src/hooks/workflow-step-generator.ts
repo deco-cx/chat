@@ -1,8 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import type {
-  ToolReference,
-  WorkflowStep as _WorkflowStep,
-} from "../mcp/workflows/types.ts";
+import type { ToolReference, WorkflowStep } from "../mcp/workflows/schemas.ts";
 
 interface GenerateStepInput {
   prompt: string;
@@ -10,14 +7,11 @@ interface GenerateStepInput {
   previousSteps?: Array<{
     id: string;
     title: string;
-    outputSchema?: unknown;
   }>;
 }
 
 interface GenerateStepOutput {
   code: string;
-  inputSchema?: unknown;
-  outputSchema?: unknown;
   usedTools: ToolReference[];
 }
 
@@ -207,37 +201,8 @@ export function useGenerateWorkflowStep() {
         };
       });
 
-      // Generate appropriate schemas
-      const outputSchema = {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string" },
-          timestamp: { type: "string", format: "date-time" },
-        },
-        required: ["success", "message", "timestamp"],
-      };
-
-      // Add tool-specific properties to output schema
-      selectedTools.forEach((toolId) => {
-        const cleanId = cleanIntegrationId(toolId);
-        (outputSchema.properties as Record<string, unknown>)[`${cleanId}Data`] =
-          {
-            type: "object",
-            description: `Result from ${toolId} integration`,
-          };
-      });
-
       return {
         code,
-        inputSchema: previousSteps?.length
-          ? undefined
-          : {
-              type: "object",
-              properties: {},
-              additionalProperties: true,
-            },
-        outputSchema,
         usedTools,
       };
     },

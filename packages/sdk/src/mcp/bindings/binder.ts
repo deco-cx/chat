@@ -115,12 +115,18 @@ export const impl = <TBinder extends Binder<any>>(
 ) => {
   const impl = [];
   for (const key in schema) {
-    impl.push(
-      createToolFn({
-        ...schema[key],
-        ...implementation[key],
-      }),
-    );
+    const toolSchema = schema[key];
+    const toolImplementation = implementation[key];
+
+    if (toolSchema.opt && !toolImplementation) {
+      continue;
+    }
+
+    if (!toolImplementation) {
+      throw new Error(`Implementation for ${key} is required`);
+    }
+
+    impl.push(createToolFn({ ...toolSchema, ...toolImplementation }));
   }
   return impl satisfies ToolLike[];
 };

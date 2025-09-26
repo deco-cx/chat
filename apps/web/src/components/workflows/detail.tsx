@@ -5,11 +5,12 @@ import { Button } from "@deco/ui/components/button.tsx";
 import { Card, CardContent } from "@deco/ui/components/card.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams } from "react-router";
 import type { Tab } from "../dock/index.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
 import { WorkflowFlowVisualization } from "./workflow-flow-visualization.tsx";
+import { DecopilotProvider } from "../decopilot/context.tsx";
 
 function tryParseJson(str: unknown): unknown {
   if (typeof str !== "string") {
@@ -592,21 +593,37 @@ const tabs: Record<string, Tab> = {
 function WorkflowDetailPage() {
   const { instanceId } = useParams();
 
+  // Prepare decopilot context value for workflow detail
+  const decopilotContextValue = useMemo(() => {
+    if (!instanceId) return {};
+    
+    const rules: string[] = [
+      `You are helping with a workflow instance detail view. The current workflow instance ID is "${instanceId}". Focus on operations related to workflow instance monitoring, debugging, and management.`,
+      `When working with this workflow instance, prioritize operations that help users understand the instance's execution state, debug issues, monitor progress, and manage the workflow instance lifecycle. Consider the instance's current status and execution history when providing assistance.`,
+    ];
+    
+    return {
+      rules,
+    };
+  }, [instanceId]);
+
   return (
-    <PageLayout
-      hideViewsButton
-      tabs={tabs}
-      breadcrumb={
-        <DefaultBreadcrumb
-          items={[
-            { label: "Workflows", link: "/workflows" },
-            {
-              label: `Instance ${instanceId?.slice(0, 8)}...`,
-            },
-          ]}
-        />
-      }
-    />
+    <DecopilotProvider value={decopilotContextValue}>
+      <PageLayout
+        hideViewsButton
+        tabs={tabs}
+        breadcrumb={
+          <DefaultBreadcrumb
+            items={[
+              { label: "Workflows", link: "/workflows" },
+              {
+                label: `Instance ${instanceId?.slice(0, 8)}...`,
+              },
+            ]}
+          />
+        }
+      />
+    </DecopilotProvider>
   );
 }
 

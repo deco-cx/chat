@@ -47,6 +47,7 @@ import { DateTimeCell, UserInfo } from "../common/table/table-cells.tsx";
 import type { Tab } from "../dock/index.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
 import { useFocusChat } from "./hooks.ts";
+import { DecopilotProvider } from "../decopilot/context.tsx";
 import { useViewMode } from "@deco/ui/hooks/use-view-mode.ts";
 
 export const useDuplicateAgent = (agent: Agent | null) => {
@@ -594,26 +595,40 @@ export default function Page() {
     });
   };
 
+  // Prepare decopilot context value for agents list
+  const decopilotContextValue = useMemo(() => {
+    const rules: string[] = [
+      `You are helping with agent management and organization. Focus on operations related to agent creation, configuration, management, and organization.`,
+      `When working with agents, prioritize operations that help users create new agents, manage existing agents, understand agent capabilities, and organize their agent collection effectively. Consider the current agent list and available agent types when providing assistance.`,
+    ];
+    
+    return {
+      rules,
+    };
+  }, []);
+
   return (
-    <Context.Provider value={{ handleCreate }}>
-      <PageLayout
-        tabs={TABS}
-        hideViewsButton
-        breadcrumb={
-          <DefaultBreadcrumb items={[{ label: "Agents", link: "/agents" }]} />
-        }
-        actionButtons={
-          <Button
-            onClick={handleCreate}
-            variant="special"
-            size="sm"
-            className="gap-2"
-          >
-            <Icon name="add" />
-            <span className="hidden md:inline">New agent</span>
-          </Button>
-        }
-      />
-    </Context.Provider>
+    <DecopilotProvider value={decopilotContextValue}>
+      <Context.Provider value={{ handleCreate }}>
+        <PageLayout
+          tabs={TABS}
+          hideViewsButton
+          breadcrumb={
+            <DefaultBreadcrumb items={[{ label: "Agents", link: "/agents" }]} />
+          }
+          actionButtons={
+            <Button
+              onClick={handleCreate}
+              variant="special"
+              size="sm"
+              className="gap-2"
+            >
+              <Icon name="add" />
+              <span className="hidden md:inline">New agent</span>
+            </Button>
+          }
+        />
+      </Context.Provider>
+    </DecopilotProvider>
   );
 }

@@ -5,6 +5,7 @@ import { MainChat } from "../agent/chat.tsx";
 import { AgentProvider } from "../agent/provider.tsx";
 import { useViewAdditionalTools } from "./use-view-additional-tools.ts";
 import { useAppAdditionalTools } from "./use-app-additional-tools.ts";
+import { useDecopilotContext } from "./context.tsx";
 import { useSearchParams } from "react-router";
 
 export const NO_DROP_TARGET = "no-drop-target";
@@ -59,6 +60,14 @@ export function DecopilotChat() {
   const { initialInput, autoSend, clearAutoSendParams } = useDecopilotParams();
   const viewAdditionalTools = useViewAdditionalTools();
   const appAdditionalTools = useAppAdditionalTools();
+  const { additionalTools: contextTools, rules } = useDecopilotContext();
+
+  // Merge all additional tools
+  const allAdditionalTools = {
+    ...viewAdditionalTools,
+    ...appAdditionalTools,
+    ...contextTools,
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -66,11 +75,8 @@ export function DecopilotChat() {
         key={WELL_KNOWN_AGENTS.decopilotAgent.id}
         agentId={WELL_KNOWN_AGENTS.decopilotAgent.id}
         threadId={threadId}
-        additionalTools={{
-          ...viewAdditionalTools,
-          ...appAdditionalTools,
-        }}
-        chatOverrides={{}}
+        additionalTools={allAdditionalTools}
+        initialRules={rules}
         uiOptions={{
           showThreadTools: false,
           showModelSelector: true,

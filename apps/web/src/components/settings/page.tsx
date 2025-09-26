@@ -5,6 +5,7 @@ import { useParams } from "react-router";
 import GeneralSettings from "./general.tsx";
 import MembersSettings from "./members/index.tsx";
 import ModelsSettings from "./models.tsx";
+import { DecopilotProvider } from "../decopilot/context.tsx";
 
 const BASE_TABS: Record<string, Tab> = {
   general: {
@@ -42,12 +43,26 @@ export default function SettingsPage() {
     ) as Record<string, Tab>;
   }, [activeKey]);
 
+  // Prepare decopilot context value for settings
+  const decopilotContextValue = useMemo(() => {
+    const rules: string[] = [
+      `You are helping with workspace settings and configuration. Focus on operations related to general settings, member management, and model configuration.`,
+      `When working with settings, prioritize operations that help users configure their workspace, manage team members, and set up AI models. Consider the current active tab (${activeKey}) when providing assistance.`,
+    ];
+    
+    return {
+      rules,
+    };
+  }, [activeKey]);
+
   return (
-    <PageLayout
-      tabs={tabs}
-      breadcrumb={
-        <DefaultBreadcrumb items={[{ label: "Settings", link: "/settings" }]} />
-      }
-    />
+    <DecopilotProvider value={decopilotContextValue}>
+      <PageLayout
+        tabs={tabs}
+        breadcrumb={
+          <DefaultBreadcrumb items={[{ label: "Settings", link: "/settings" }]} />
+        }
+      />
+    </DecopilotProvider>
   );
 }

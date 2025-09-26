@@ -7,14 +7,15 @@ import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { createContext, useContext, useMemo } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
-import { dispatchRulesUpdated } from "../../utils/events.ts";
 import Preview from "../agent/preview";
+import { ReactViewRenderer } from "./react-view-registry.tsx";
 import type { Tab } from "../dock/index.tsx";
 import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
 import { InternalResourceListWithIntegration } from "./internal-resource-list.tsx";
 import { ViewRouteProvider } from "./view-route-context.tsx";
 import { WorkflowView } from "./workflow-view.tsx";
 import { EmptyState } from "../common/empty-state.tsx";
+import { DecopilotProvider } from "../decopilot/context.tsx";
 
 interface ViewDetailContextValue {
   integrationId?: string;
@@ -84,6 +85,11 @@ function PreviewTab() {
     );
   }
 
+  // Built-in React views routing
+  if (resolvedUrl.startsWith("react://")) {
+    return <ReactViewRenderer url={resolvedUrl} />;
+  }
+
   const relativeTo =
     integration?.connection?.type === "HTTP"
       ? (integration?.connection?.url ?? "")
@@ -135,66 +141,89 @@ export default function ViewDetail() {
 
   const tabs = TABS;
 
-  // Seed rules for this view when present (no effect outside view routes)
-  const rules = (connectionViewMatch?.rules ?? []) as string[];
-  if (rules.length) {
-    // Single dispatch based on current render; upstream keeps last update
-    dispatchRulesUpdated({ rules });
-  }
+  // Rules are now passed directly to AgentProvider via initialRules parameter
+
+  // Prepare decopilot context value
+  const decopilotContextValue = useMemo(() => {
+    if (!connectionViewMatch || !integrationId) return {};
+
+    const rules: string[] = [];
+
+    // Add prompt as a rule if available
+    if (connectionViewMatch.prompt) {
+      rules.push(connectionViewMatch.prompt);
+    }
+
+    // Add instructions as a rule if available
+    if (connectionViewMatch.instructions) {
+      rules.push(connectionViewMatch.instructions);
+    }
+
+    return {
+      additionalTools: connectionViewMatch.tools
+        ? {
+            [integrationId]: connectionViewMatch.tools,
+          }
+        : undefined,
+      rules: rules.length > 0 ? rules : undefined,
+    };
+  }, [connectionViewMatch, integrationId]);
 
   return (
-    <ViewRouteProvider
-      integrationId={integrationId}
-      viewName={viewName}
-      view={connectionViewMatch}
-    >
-      <ViewDetailContext.Provider
-        value={{
-          integrationId,
-          integration,
-          resolvedUrl,
-          embeddedName,
-          view: connectionViewMatch,
-        }}
+    <DecopilotProvider value={decopilotContextValue}>
+      <ViewRouteProvider
+        integrationId={integrationId}
+        viewName={viewName}
+        view={connectionViewMatch}
       >
-        <PageLayout
-          key={`${integrationId}-${viewName}`}
-          hideViewsButton
-          tabs={tabs}
-          breadcrumb={
-            <DefaultBreadcrumb
-              items={[
-                {
-                  label: (
-                    <div className="flex items-center gap-2">
-                      <Icon
-                        name={connectionViewMatch?.icon || "dashboard"}
-                        className="w-4 h-4"
-                      />
-                      <span>{connectionViewMatch?.title}</span>
-                      <Link to={resolvedUrl ?? "#"} target="_blank">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                          className="text-muted-foreground hover:text-primary-dark"
-                          title="Open view"
-                        >
-                          <Icon name="open_in_new" className="w-4 h-4" />
-                        </Button>
-                      </Link>
-                    </div>
-                  ),
-                },
-              ]}
-            />
-          }
-          actionButtons={undefined}
-        />
-      </ViewDetailContext.Provider>
-    </ViewRouteProvider>
+        <ViewDetailContext.Provider
+          value={{
+            integrationId,
+            integration,
+            resolvedUrl,
+            embeddedName,
+            view: connectionViewMatch,
+          }}
+        >
+          <PageLayout
+            key={`${integrationId}-${viewName}`}
+            hideViewsButton
+            tabs={tabs}
+            breadcrumb={
+              <DefaultBreadcrumb
+                items={[
+                  {
+                    label: (
+                      <div className="flex items-center gap-2">
+                        <Icon
+                          name={connectionViewMatch?.icon || "dashboard"}
+                          className="w-4 h-4"
+                        />
+                        <span>{connectionViewMatch?.title}</span>
+                        <Link to={resolvedUrl ?? "#"} target="_blank">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                            className="text-muted-foreground hover:text-primary-dark"
+                            title="Open view"
+                          >
+                            <Icon name="open_in_new" className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    ),
+                  },
+                ]}
+              />
+            }
+            actionButtons={undefined}
+          />
+        </ViewDetailContext.Provider>
+      </ViewRouteProvider>
+    </DecopilotProvider>
   );
 }
 

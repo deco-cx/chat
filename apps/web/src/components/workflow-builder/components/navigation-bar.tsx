@@ -30,7 +30,7 @@ export function NavigationBar() {
       <div className="flex items-center gap-3 overflow-x-auto max-w-3xl mx-4 py-2">
         {state.workflow.steps.map((step, index) => (
           <button
-            key={step.id}
+            key={step.def.name}
             type="button"
             onClick={() => navigateToStep(index)}
             className={`
@@ -42,7 +42,7 @@ export function NavigationBar() {
               }
             `}
           >
-            {step.title || `Step ${index + 1}`}
+            {step.def.name || `Step ${index + 1}`}
           </button>
         ))}
 

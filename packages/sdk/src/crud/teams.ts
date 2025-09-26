@@ -15,6 +15,23 @@ export interface Team {
 
 export interface TeamWithViews extends Team {
   views: View[];
+  resources: Resource[];
+}
+
+export interface Resource {
+  id: string;
+  title: string;
+  icon: string;
+  type: "resource";
+  name: string;
+  resource_type: string;
+  integration_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TeamWithResources extends Team {
+  resources: Resource[];
 }
 
 export const listTeams = (init?: RequestInit): Promise<Team[]> =>
@@ -102,6 +119,56 @@ export const removeView = (
     success: boolean;
   }>;
 
+export interface AddResourceInput {
+  resource: {
+    id: string;
+    title: string;
+    icon: string;
+    type: "custom";
+    name: string;
+    resourceType: string;
+    integration: {
+      id: string;
+    };
+  };
+}
+
+export const addResource = (
+  locator: ProjectLocator,
+  input: AddResourceInput,
+  init?: RequestInit,
+): Promise<Resource> =>
+  MCPClient.forLocator(locator)
+    .TEAMS_ADD_VIEW({
+      view: {
+        id: input.resource.id,
+        title: input.resource.title,
+        icon: input.resource.icon,
+        type: "resource" as const,
+        name: input.resource.name,
+        integration: input.resource.integration,
+        resourceType: input.resource.resourceType,
+        tools: [],
+        rules: [],
+      },
+    }, init)
+    .then((r) => r as unknown as Resource);
+
+export interface RemoveResourceInput {
+  resourceId: string;
+}
+
+export const removeResource = (
+  locator: ProjectLocator,
+  input: RemoveResourceInput,
+  init?: RequestInit,
+): Promise<{ success: boolean }> =>
+  MCPClient.forLocator(locator).TEAMS_REMOVE_VIEW({
+    viewId: input.resourceId,
+  }, init) as Promise<{
+    success: boolean;
+  }>;
+
 type ViewListItem = {
   name?: string;
   title: string;
@@ -111,6 +178,8 @@ type ViewListItem = {
   resourceName?: string;
   rules?: string[];
   tools?: string[];
+  prompt?: string;
+  instructions?: string;
 };
 
 export const listAvailableViewsForConnection = async (

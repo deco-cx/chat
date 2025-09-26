@@ -17,7 +17,7 @@ import { useWorkspaceLink } from "../../hooks/use-navigate-workspace.ts";
 import { Avatar } from "../common/avatar/index.tsx";
 import { CreateOrganizationDialog } from "./create-team-dialog.tsx";
 import { InviteTeamMembersDialog } from "../common/invite-team-members-dialog.tsx";
-import { type Theme, type View, withDefaultViews } from "@deco/sdk";
+import { type Theme, type View, withDefaultViews, type Resource } from "@deco/sdk";
 import { useDocumentMetadata } from "../../hooks/use-document-metadata.ts";
 
 export interface CurrentTeam {
@@ -28,7 +28,7 @@ export interface CurrentTeam {
   theme: Theme | undefined;
 }
 
-export function useCurrentTeam(): CurrentTeam & { views: View[] } {
+export function useCurrentTeam(): CurrentTeam & { views: View[]; resources: Resource[] } {
   const { org } = useParams();
   const { data: teamData } = useTeam(org);
 
@@ -43,6 +43,7 @@ export function useCurrentTeam(): CurrentTeam & { views: View[] } {
     slug: teamData?.slug ?? org ?? "",
     theme: teamData?.theme,
     views: withDefaultViews(teamData?.views ?? []),
+    resources: (teamData as any)?.resources ?? [],
   };
 }
 

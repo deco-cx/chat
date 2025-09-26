@@ -1,10 +1,11 @@
 import { useCallback } from "react";
 import type { Edge, Node } from "@xyflow/react";
-import {
-  useStartSandboxWorkflow,
-  useUpsertSandboxWorkflow,
-} from "./sandbox-workflows.ts";
-import type { Workflow, WorkflowStep } from "../mcp/workflows/types.ts";
+import { useStartWorkflow, useUpsertWorkflow } from "./resources-workflow.ts";
+import type {
+  WorkflowDefinition as Workflow,
+  WorkflowStep as WorkflowStep,
+} from "../mcp/workflows/schemas.ts";
+import { buildWorkflowUri } from "./resources-workflow.ts";
 
 /**
  * Hook for managing workflow builder state and operations
@@ -21,7 +22,7 @@ export function useWorkflowBuilder(workflow: Workflow) {
 
     // Convert each step to a node
     workflow.steps.forEach((step, index) => {
-      const nodeId = step.id || `step-${index}`;
+      const nodeId = `${step.def.name}-${index}`;
 
       // Create node with properly typed data
       const node: Node = {
@@ -43,7 +44,7 @@ export function useWorkflowBuilder(workflow: Workflow) {
 
       // Create edges between consecutive steps
       if (index > 0) {
-        const prevNodeId = workflow.steps[index - 1].id || `step-${index - 1}`;
+        const prevNodeId = `${workflow.steps[index - 1].def.name}-${index - 1}`;
         edges.push({
           id: `edge-${prevNodeId}-${nodeId}`,
           source: prevNodeId,
@@ -70,26 +71,19 @@ export function useWorkflowBuilder(workflow: Workflow) {
       // Extract steps from sorted nodes
       const steps: WorkflowStep[] = sortedNodes
         .filter((node) => node.type === "workflow-step")
-        .map((node, index) => {
-          const stepData = node.data.step as WorkflowStep;
-          return {
-            ...stepData,
-            id: stepData.id || `step-${index}`,
-          };
-        });
+        .map((node) => node.data.step as WorkflowStep);
 
       return {
         ...workflow,
         steps,
-        updatedAt: new Date().toISOString(),
       };
     },
     [workflow],
   );
 
   // Hooks for API operations
-  const upsertWorkflow = useUpsertSandboxWorkflow();
-  const startWorkflow = useStartSandboxWorkflow();
+  const upsertWorkflow = useUpsertWorkflow();
+  const startWorkflow = useStartWorkflow();
 
   /**
    * Save workflow to backend
@@ -100,33 +94,15 @@ export function useWorkflowBuilder(workflow: Workflow) {
       try {
         // Convert new step format to old format temporarily
         // TODO: Remove this conversion when backend supports new format
-        const legacySteps = workflowToSave.steps.map((step) => ({
-          type: "code" as const, // All steps are now code type
-          def: {
-            name: step.title,
-            description: step.description,
-            execute:
-              step.code ||
-              `export default async function(ctx) {
-              // ${step.prompt}
-              return {};
-            }`,
-            inputSchema: step.inputSchema || {},
-            outputSchema: step.outputSchema || {},
-          },
-        }));
-
-        const sandboxWorkflow = {
+        await upsertWorkflow.mutateAsync({
           name: workflowToSave.name,
           description: workflowToSave.description,
           inputSchema:
             (workflowToSave.inputSchema as Record<string, unknown>) || {},
           outputSchema:
             (workflowToSave.outputSchema as Record<string, unknown>) || {},
-          steps: legacySteps,
-        };
-
-        await upsertWorkflow.mutateAsync(sandboxWorkflow);
+          steps: workflowToSave.steps,
+        });
         console.log("Workflow saved successfully:", workflowToSave.name);
         return true;
       } catch (error) {
@@ -144,7 +120,7 @@ export function useWorkflowBuilder(workflow: Workflow) {
     async (workflowToRun: Workflow, input?: Record<string, unknown>) => {
       try {
         const result = await startWorkflow.mutateAsync({
-          name: workflowToRun.name,
+          uri: buildWorkflowUri(workflowToRun.name),
           input: input || {},
         });
 
@@ -163,15 +139,9 @@ export function useWorkflowBuilder(workflow: Workflow) {
    */
   const addStep = useCallback(
     (step: WorkflowStep, _position?: { x: number; y: number }) => {
-      const newStep: WorkflowStep = {
-        ...step,
-        id: step.id || `step-${Date.now()}`,
-      };
-
       const newWorkflow: Workflow = {
         ...workflow,
-        steps: [...workflow.steps, newStep],
-        updatedAt: new Date().toISOString(),
+        steps: [...workflow.steps, step],
       };
 
       return newWorkflow;
@@ -187,9 +157,8 @@ export function useWorkflowBuilder(workflow: Workflow) {
       const newWorkflow: Workflow = {
         ...workflow,
         steps: workflow.steps.map((step) =>
-          step.id === stepId ? { ...step, ...updates } : step,
+          step.def.name === stepId ? { ...step, ...updates } : step,
         ),
-        updatedAt: new Date().toISOString(),
       };
 
       return newWorkflow;
@@ -204,8 +173,7 @@ export function useWorkflowBuilder(workflow: Workflow) {
     (stepId: string) => {
       const newWorkflow: Workflow = {
         ...workflow,
-        steps: workflow.steps.filter((step) => step.id !== stepId),
-        updatedAt: new Date().toISOString(),
+        steps: workflow.steps.filter((step) => step.def.name !== stepId),
       };
 
       return newWorkflow;

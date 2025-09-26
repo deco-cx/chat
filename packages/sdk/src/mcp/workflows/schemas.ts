@@ -80,7 +80,6 @@ export const WorkflowDefinitionSchema = z.object({
   name: z.string().min(1).describe("The unique name of the workflow"),
   description: z
     .string()
-    .min(1)
     .describe("A comprehensive description of what this workflow accomplishes"),
   inputSchema: z
     .object({})
@@ -103,3 +102,27 @@ export const WorkflowDefinitionSchema = z.object({
 });
 
 export type WorkflowDefinition = z.infer<typeof WorkflowDefinitionSchema>;
+
+// Additional types for compatibility with hooks
+export type Workflow = WorkflowDefinition;
+export type WorkflowStep = z.infer<typeof WorkflowStepDefinitionSchema>;
+
+// Tool reference type for workflow steps
+export interface ToolReference {
+  integrationId: string; // Clean ID without prefix
+  toolName: string;
+  inputSchema?: Record<string, unknown>;
+  outputSchema?: Record<string, unknown>;
+  description?: string;
+}
+
+// Step execution result
+export interface StepExecutionResult {
+  executedAt: string; // ISO date
+  value: unknown; // Result data
+  error?: string; // Error message if failed
+  duration?: number; // Execution time in ms
+}
+
+// JSON Schema type
+export type JSONSchema = Record<string, unknown>;

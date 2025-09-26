@@ -1,4 +1,4 @@
-import { createServerClient, jsonSchemaToModel } from "@deco/ai/mcp";
+import { createServerClient } from "@deco/ai/mcp";
 import { HttpServerTransport } from "@deco/mcp/http";
 import {
   DECO_CMS_WEB_URL,
@@ -15,7 +15,8 @@ import {
   CONTRACTS_TOOLS,
   createDeconfigClientForContext,
   createMCPToolsStub,
-  createTool,
+  createToolResourceV2Implementation,
+  createWorkflowResourceV2Implementation,
   DECONFIG_TOOLS,
   EMAIL_TOOLS,
   getIntegration,
@@ -23,21 +24,18 @@ import {
   getRegistryApp,
   getWorkspaceBucketName,
   GLOBAL_TOOLS,
-  IntegrationSub as ProxySub,
   type IntegrationWithTools,
   ListToolsMiddleware,
-  MCPClient,
   PrincipalExecutionContext,
   PROJECT_TOOLS,
+  IntegrationSub as ProxySub,
   toBindingsContext,
   Tool,
   type ToolLike,
   watchSSE,
   withMCPAuthorization,
   withMCPErrorHandling,
-  WorkflowResource,
   wrapToolFn,
-  WORKFLOWS_TOOLS,
 } from "@deco/sdk/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
@@ -53,6 +51,16 @@ import { logger } from "hono/logger";
 import { endTime, startTime } from "hono/timing";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { studio } from "outerbase-browsable-do-enforced";
+import {
+  createToolBindingImpl,
+  createToolViewsV2,
+  ToolBindingImplOptions,
+} from "packages/sdk/src/mcp/tools/api.ts";
+import {
+  createWorkflowBindingImpl,
+  createWorkflowViewsV2,
+  WorkflowBindingImplOptions,
+} from "packages/sdk/src/mcp/workflows/api.ts";
 import { z } from "zod";
 import { ROUTES as loginRoutes } from "./auth/index.ts";
 import { withActorsStubMiddleware } from "./middlewares/actors-stub.ts";
@@ -460,52 +468,80 @@ app.all(
     const appCtx = honoCtxToAppCtx(ctx);
     const client = createDeconfigClientForContext(appCtx);
 
+    // Create Resources 2.0 workflow resource implementation
+    const workflowResourceV2 = createWorkflowResourceV2Implementation(
+      client,
+      WellKnownMcpGroups.Workflows,
+    );
+
+    const resourcesClient = createMCPToolsStub({
+      tools: workflowResourceV2,
+      context: appCtx,
+    });
+
+    const resourceWorkflowRead: WorkflowBindingImplOptions["resourceWorkflowRead"] =
+      ((uri) =>
+        State.run(
+          appCtx,
+          async () =>
+            await resourcesClient.DECO_RESOURCE_WORKFLOW_READ({ uri }),
+        )) as WorkflowBindingImplOptions["resourceWorkflowRead"];
+
+    // Create workflow execution tools using createWorkflowBindingImpl
+    const workflowBinding = createWorkflowBindingImpl({
+      resourceWorkflowRead,
+    });
+
+    // Create Views 2.0 implementation for workflow views
+    const workflowViewsV2 = createWorkflowViewsV2();
+
     return Promise.resolve([
-      ...WorkflowResource.create(client),
-      ...WORKFLOWS_TOOLS,
+      ...workflowResourceV2, // Add new Resources 2.0 implementation
+      ...workflowBinding, // Add workflow execution tools
+      ...workflowViewsV2, // Add Views 2.0 implementation
     ]);
   }),
 );
 
 app.all(
   `/:org/:project/${WellKnownMcpGroups.Tools}/mcp`,
-  createMCPHandlerFor(async (ctx) => {
+  createMCPHandlerFor((ctx) => {
     const appCtx = honoCtxToAppCtx(ctx);
-    const client = MCPClient.forContext(appCtx);
-    startTime(ctx, "sandbox-list-tools");
+    const client = createDeconfigClientForContext(appCtx);
 
-    using _ = appCtx.resourceAccess.grant();
-    const { tools } = await State.run(
-      appCtx,
-      async () => await client.SANDBOX_LIST_TOOLS({}),
+    // Create Resources 2.0 tool resource implementation
+    const toolResourceV2 = createToolResourceV2Implementation(
+      client,
+      WellKnownMcpGroups.Tools,
     );
 
-    endTime(ctx, "sandbox-list-tools");
-
-    const virtualTools = tools.map((tool) => {
-      return createTool({
-        name: tool.name,
-        group: WellKnownMcpGroups.Tools,
-        description: tool.description,
-        inputSchema: jsonSchemaToModel(tool.inputSchema),
-        outputSchema: jsonSchemaToModel(tool.outputSchema),
-        handler: async (ctx, appCtx) => {
-          const { result } = await State.run(
-            appCtx,
-            async () =>
-              await client.SANDBOX_RUN_TOOL({
-                name: tool.name,
-                input: ctx,
-              }),
-          );
-          return result;
-        },
-      });
+    const resourcesClient = createMCPToolsStub({
+      tools: toolResourceV2,
+      context: appCtx,
     });
 
-    return virtualTools;
+    const resourceToolRead: ToolBindingImplOptions["resourceToolRead"] = ((
+      uri,
+    ) =>
+      State.run(
+        appCtx,
+        async () => await resourcesClient.DECO_RESOURCE_TOOL_READ({ uri }),
+      )) as ToolBindingImplOptions["resourceToolRead"];
+
+    // Create tool execution functionality using createToolBindingImpl
+    const runTool = createToolBindingImpl({ resourceToolRead });
+
+    // Create Views 2.0 implementation for tool views
+    const toolViewsV2 = createToolViewsV2();
+
+    return Promise.resolve([
+      ...toolResourceV2, // Add new Resources 2.0 implementation
+      ...runTool, // Add tool execution functionality
+      ...toolViewsV2, // Add Views 2.0 implementation
+    ]);
   }),
 );
+
 app.all("/:org/:project/agents/:agentId/mcp", createMCPHandlerFor(AGENT_TOOLS));
 
 // Tool call endpoint handlers

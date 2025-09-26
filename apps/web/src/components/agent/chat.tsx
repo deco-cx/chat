@@ -1,4 +1,4 @@
-import { useFile, WELL_KNOWN_AGENT_IDS } from "@deco/sdk";
+import { useFile, WELL_KNOWN_AGENT_IDS, useAgentData } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import {
   DropdownMenu,
@@ -27,6 +27,7 @@ import AgentPreview from "./preview.tsx";
 import ThreadView from "./thread.tsx";
 import { isFilePath } from "../../utils/path.ts";
 import { useDocumentMetadata } from "../../hooks/use-document-metadata.ts";
+import { DecopilotProvider } from "../decopilot/context.tsx";
 
 export type WellKnownAgents =
   (typeof WELL_KNOWN_AGENT_IDS)[keyof typeof WELL_KNOWN_AGENT_IDS];
@@ -219,6 +220,23 @@ function Page(props: Props) {
   // Use AgentProvider for all agents (including team agent)
   const isTeamAgent = agentId === WELL_KNOWN_AGENT_IDS.teamAgent;
 
+  // Get agent data for decopilot context
+  const { data: agent } = useAgentData(agentId);
+
+  // Prepare decopilot context value for agent chat
+  const decopilotContextValue = useMemo(() => {
+    if (!agent) return {};
+    
+    const rules: string[] = [
+      `You are helping with agent chat and conversation. The current agent is "${agent.name}". Focus on operations related to conversation management, message handling, and chat functionality.`,
+      `When working with this agent chat (${agent.name}), prioritize operations that help users manage conversations, understand chat history, and interact effectively with the agent. Consider the agent's capabilities and current conversation context when providing assistance.`,
+    ];
+    
+    return {
+      rules,
+    };
+  }, [agent]);
+
   return (
     <Suspense
       // This make the react render fallback when changin agent+threadid, instead of hang the whole navigation while the subtree isn't changed
@@ -229,26 +247,28 @@ function Page(props: Props) {
         </div>
       }
     >
-      <AgentProvider
-        agentId={agentId}
-        threadId={threadId}
-        uiOptions={{
-          showThreadTools: isTeamAgent,
-          showThreadMessages: props.showThreadMessages ?? true,
-        }}
-      >
-        <AgentMetadataUpdater />
-        <PageLayout
-          tabs={TABS}
-          key={agentId}
-          actionButtons={<ActionsButtons />}
-          breadcrumb={
-            agentId !== WELL_KNOWN_AGENT_IDS.teamAgent && (
-              <Breadcrumb agentId={agentId} />
-            )
-          }
-        />
-      </AgentProvider>
+      <DecopilotProvider value={decopilotContextValue}>
+        <AgentProvider
+          agentId={agentId}
+          threadId={threadId}
+          uiOptions={{
+            showThreadTools: isTeamAgent,
+            showThreadMessages: props.showThreadMessages ?? true,
+          }}
+        >
+          <AgentMetadataUpdater />
+          <PageLayout
+            tabs={TABS}
+            key={agentId}
+            actionButtons={<ActionsButtons />}
+            breadcrumb={
+              agentId !== WELL_KNOWN_AGENT_IDS.teamAgent && (
+                <Breadcrumb agentId={agentId} />
+              )
+            }
+          />
+        </AgentProvider>
+      </DecopilotProvider>
     </Suspense>
   );
 }

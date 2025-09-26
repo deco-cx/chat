@@ -1,16 +1,4 @@
-import {
-  buildAddViewPayload,
-  findPinnedView,
-  type Integration,
-  listTools,
-  type MCPConnection,
-  type MCPTool,
-  useAddView,
-  useConnectionViews,
-  useRemoveView,
-  useToolCall,
-  useTools,
-} from "@deco/sdk";
+import { type Integration, type MCPConnection, useUpdateIntegration, useWriteFile } from "@deco/sdk";
 import { Binding, WellKnownBindings } from "@deco/sdk/mcp/bindings";
 import { Button } from "@deco/ui/components/button.tsx";
 import {
@@ -19,7 +7,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@deco/ui/components/dropdown-menu.tsx";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@deco/ui/components/form.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
+import { Input } from "@deco/ui/components/input.tsx";
+import { Label } from "@deco/ui/components/label.tsx";
+import { PasswordInput } from "@deco/ui/components/password-input.tsx";
+import { ScrollArea, ScrollBar } from "@deco/ui/components/scroll-area.tsx";
 import {
   Select,
   SelectContent,
@@ -27,8 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@deco/ui/components/select.tsx";
-import { Skeleton } from "@deco/ui/components/skeleton.tsx";
 import { toast } from "@deco/ui/components/sonner.tsx";
+import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import {
   type Dispatch,
@@ -38,9 +38,15 @@ import {
   useRef,
   useState,
 } from "react";
+import { useForm } from "react-hook-form";
 import { useParams } from "react-router";
+import { trackEvent } from "../../hooks/analytics.ts";
+import {
+  integrationNeedsApproval,
+  useIntegrationInstallState,
+} from "../../hooks/use-integration-install.tsx";
+import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 import { DefaultBreadcrumb, PageLayout } from "../layout/project.tsx";
-import { useCurrentTeam } from "../sidebar/team-selector.tsx";
 import {
   AppKeys,
   getConnectionAppKey,
@@ -48,36 +54,6 @@ import {
   useGroupedApp,
 } from "./apps.ts";
 import { IntegrationIcon } from "./common.tsx";
-import { Spinner } from "@deco/ui/components/spinner.tsx";
-import { useUpdateIntegration, useWriteFile } from "@deco/sdk";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@deco/ui/components/accordion.tsx";
-import { Card } from "@deco/ui/components/card.tsx";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@deco/ui/components/form.tsx";
-import { Input } from "@deco/ui/components/input.tsx";
-import { PasswordInput } from "@deco/ui/components/password-input.tsx";
-import { ScrollArea, ScrollBar } from "@deco/ui/components/scroll-area.tsx";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@deco/ui/components/tabs.tsx";
-import { useForm } from "react-hook-form";
-import { trackEvent } from "../../hooks/analytics.ts";
-import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
-import { formatToolName } from "../chat/utils/format-tool-name.ts";
 import type { MarketplaceIntegration } from "./marketplace.tsx";
 import { OAuthCompletionDialog } from "./oauth-completion-dialog.tsx";
 import {
@@ -90,14 +66,7 @@ import {
   OauthModalState,
   useUIInstallIntegration,
 } from "./select-connection-dialog.tsx";
-import { ToolCallForm } from "./tool-call-form.tsx";
-import { ToolCallResult } from "./tool-call-result.tsx";
-import type { MCPToolCallResult } from "./types.ts";
-import { Label } from "@deco/ui/components/label.tsx";
-import {
-  integrationNeedsApproval,
-  useIntegrationInstallState,
-} from "../../hooks/use-integration-install.tsx";
+import { ConnectionTabs } from "./tabs/connection-tabs.tsx";
 
 function ConnectionInstanceActions({
   onDelete,
@@ -417,24 +386,36 @@ function ConfigureConnectionInstanceForm({
               )}
             </div>
           </div>
-          {!isWellKnown &&
-          data.info?.provider !== "custom" &&
-          (!data.instances || data.instances?.length === 0) ? (
+          <div className="flex items-center gap-2">
             <Button
-              variant="special"
-              className="w-[250px] hidden md:flex"
-              onClick={handleAddConnection}
-              disabled={integrationState.isLoading || isInstallingLoading}
+              variant="outline"
+              onClick={() => {
+                // Trigger refresh for tools in the current connection
+                globalThis.dispatchEvent(new CustomEvent('refresh-tools'));
+              }}
             >
-              {isInstallingLoading ? (
-                <>
-                  <Spinner /> Connecting...
-                </>
-              ) : (
-                <>{integrationState.isLoading && <Spinner />} Connect app</>
-              )}
+              <Icon name="refresh" size={16} />
+              Refresh
             </Button>
-          ) : null}
+            {!isWellKnown &&
+            data.info?.provider !== "custom" &&
+            (!data.instances || data.instances?.length === 0) ? (
+              <Button
+                variant="special"
+                className="w-[250px] hidden md:flex"
+                onClick={handleAddConnection}
+                disabled={integrationState.isLoading || isInstallingLoading}
+              >
+                {isInstallingLoading ? (
+                  <>
+                    <Spinner /> Connecting...
+                  </>
+                ) : (
+                  <>{integrationState.isLoading && <Spinner />} Connect app</>
+                )}
+              </Button>
+            ) : null}
+          </div>
           <OauthModalContextProvider.Provider
             value={{ onOpenOauthModal: setOauthCompletionDialog }}
           >
@@ -619,7 +600,7 @@ function ConfigureConnectionInstanceForm({
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select a connection type" />
+                                <SelectValue placeholder="Select an integration type" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -757,608 +738,6 @@ function ConfigureConnectionInstanceForm({
 
 const MAX_DESCRIPTION_LENGTH = 180;
 
-function ParametersViewer({ tool }: Pick<ToolProps, "tool">) {
-  const getParameters = (schema: Record<string, unknown>) => {
-    if (!schema || typeof schema !== "object") return [];
-
-    // deno-lint-ignore no-explicit-any
-    const properties = (schema.properties as Record<string, any>) || {};
-    const required = (schema.required as string[]) || [];
-
-    return Object.entries(properties).map(([name, prop]) => ({
-      name,
-      type: prop.type || "string",
-      description: prop.description || "",
-      required: required.includes(name),
-    }));
-  };
-
-  const parameters = getParameters(tool.inputSchema);
-
-  return (
-    <div className="flex flex-col gap-2">
-      {parameters.length > 0 ? (
-        parameters.map((param) => (
-          <div className="flex flex-col gap-2">
-            <div key={param.name} className="flex items-center gap-2">
-              <Icon
-                name={param.type === "string" ? "text_fields" : "category"}
-                size={16}
-              />
-              <span className="text-sm pl-1">{formatToolName(param.name)}</span>
-              <span
-                className={cn(
-                  "text-xs text-muted-foreground",
-                  param.required && "font-medium",
-                )}
-              >
-                {param.required ? "Required" : "Optional"}
-              </span>
-            </div>
-            {param.description && (
-              <span className="px-7 text-sm text-muted-foreground font-normal">
-                {param.description}
-              </span>
-            )}
-          </div>
-        ))
-      ) : (
-        <div className="text-sm text-muted-foreground">
-          No parameters required
-        </div>
-      )}
-    </div>
-  );
-}
-
-interface ToolProps {
-  tool: MCPTool;
-  connection: MCPConnection;
-  readOnly?: boolean;
-}
-
-function Tool({ tool, connection, readOnly }: ToolProps) {
-  const toolCall = useToolCall(connection);
-  const [toolCallResponse, setToolCallResponse] =
-    useState<MCPToolCallResult | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  const handleToolCall = async (payload: Record<string, unknown>) => {
-    setIsLoading(true);
-    abortControllerRef.current = new AbortController();
-    const startTime = performance.now();
-
-    try {
-      const response = await toolCall.mutateAsync({
-        name: tool.name,
-        arguments: payload,
-      });
-
-      const endTime = performance.now();
-
-      if (abortControllerRef.current?.signal.aborted) {
-        return;
-      }
-
-      setToolCallResponse({
-        status: "ok",
-        data: response,
-        latency: endTime - startTime,
-      });
-
-      // Scroll to results automatically
-      setTimeout(() => {
-        const resultElement = document.querySelector("[data-tool-result]");
-        resultElement?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 100);
-    } catch (error) {
-      // Check if this was a cancellation
-      if (error instanceof DOMException && error.name === "AbortError") {
-        return;
-      }
-
-      if (abortControllerRef.current?.signal.aborted) {
-        return;
-      }
-
-      const endTime = performance.now();
-      setToolCallResponse({
-        status: "error",
-        data: error,
-        latency: endTime - startTime,
-      });
-    } finally {
-      setIsLoading(false);
-      abortControllerRef.current = null;
-    }
-  };
-
-  const handleCancelToolCall = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <Accordion type="single" collapsible className="w-full">
-      <AccordionItem
-        value={tool.name}
-        className="border border-border overflow-hidden !border-b rounded-xl p-0"
-      >
-        <AccordionTrigger className="p-4 hover:no-underline cursor-pointer hover:bg-accent rounded-t-xl rounded-b-none">
-          <div className="flex items-start gap-3 w-full text-left">
-            <Icon name="build" filled size={16} />
-            <div className="flex flex-col gap-1 min-w-0 flex-1">
-              <div className="font-medium text-sm truncate">
-                {formatToolName(tool.name)}
-              </div>
-              {tool.description && (
-                <div
-                  className="text-sm font-normal text-muted-foreground line-clamp-2"
-                  title={tool.description}
-                >
-                  {tool.description}
-                </div>
-              )}
-            </div>
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="bg-secondary/50 p-4">
-          <Tabs defaultValue="parameters" className="w-full">
-            <TabsList>
-              <TabsTrigger value="parameters" className="px-4">
-                Parameters
-              </TabsTrigger>
-              <TabsTrigger value="test-form" className="px-4">
-                Test form
-              </TabsTrigger>
-              <TabsTrigger value="test-raw" className="px-4">
-                Test raw
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="parameters" className="mt-4">
-              <ParametersViewer tool={tool} />
-            </TabsContent>
-            <TabsContent value="test-form" className="mt-4">
-              <ToolCallForm
-                tool={tool}
-                onSubmit={handleToolCall}
-                onCancel={handleCancelToolCall}
-                isLoading={isLoading}
-                rawMode={false}
-                readOnly={readOnly}
-              />
-              {toolCallResponse && (
-                <Card className="p-4 mt-4" data-tool-result>
-                  <ToolCallResult response={toolCallResponse} />
-                </Card>
-              )}
-            </TabsContent>
-            <TabsContent value="test-raw" className="mt-4">
-              <ToolCallForm
-                tool={tool}
-                onSubmit={handleToolCall}
-                onCancel={handleCancelToolCall}
-                isLoading={isLoading}
-                rawMode
-                readOnly={readOnly}
-              />
-              {toolCallResponse && (
-                <Card className="p-4 mt-4" data-tool-result>
-                  <ToolCallResult response={toolCallResponse} />
-                </Card>
-              )}
-            </TabsContent>
-          </Tabs>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
-  );
-}
-
-function ToolsInspector({
-  data,
-  selectedConnectionId,
-  startsWith,
-  readOnly,
-}: {
-  data: ReturnType<typeof useGroupedApp>;
-  selectedConnectionId?: string;
-  startsWith?: string;
-  readOnly?: boolean;
-}) {
-  const [search, setSearch] = useState("");
-  const [selectedIntegrationId, setSelectedIntegrationId] = useState<
-    string | null
-  >(data.instances?.[0]?.id ?? null);
-  const toolsRef = useRef<HTMLDivElement>(null);
-  const ignoreCache = useRef(false);
-
-  const selectedIntegration = useMemo(() => {
-    return (
-      data.instances?.find((i) => i.id === selectedIntegrationId) ??
-      data.instances?.[0] ??
-      null
-    );
-  }, [data.instances, selectedIntegrationId]);
-
-  const connection =
-    selectedIntegration?.connection || data?.info?.connection || {};
-
-  const tools = useTools(connection as MCPConnection, ignoreCache.current);
-
-  // Update selected integration when selectedConnectionId changes
-  useEffect(() => {
-    if (selectedConnectionId) {
-      setSelectedIntegrationId(selectedConnectionId);
-      // Scroll to tools section
-      setTimeout(() => {
-        toolsRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }, 100);
-    }
-  }, [selectedConnectionId]);
-
-  const filteredTools = tools.data.tools.filter(
-    (tool) =>
-      (tool.name.toLowerCase().includes(search.toLowerCase()) ||
-        (tool.description &&
-          tool.description.toLowerCase().includes(search.toLowerCase()))) &&
-      (startsWith
-        ? tool.name.toLowerCase().startsWith(startsWith.toLowerCase())
-        : true),
-  );
-
-  return (
-    <ScrollArea className="h-full min-h-0">
-      <div ref={toolsRef} className="w-full flex flex-col items-center gap-4">
-        <div className="w-full flex items-center justify-between">
-          <Input
-            placeholder="Search tools..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-xs"
-          />
-          <Button
-            variant="outline"
-            onClick={() => {
-              ignoreCache.current = true;
-              tools.refetch();
-              ignoreCache.current = false;
-            }}
-          >
-            Refresh
-          </Button>
-        </div>
-
-        <div className="flex flex-col gap-4 w-full pb-4">
-          {tools.isLoading ? (
-            Array.from({ length: 8 }).map((_, idx) => (
-              <Skeleton key={idx} className="rounded-lg w-full h-[76px]" />
-            ))
-          ) : tools.isError ? (
-            "url" in connection && connection.url.includes("example.com") ? (
-              <div className="flex flex-col items-center justify-center p-8 text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center">
-                  <Icon
-                    name="tune"
-                    size={24}
-                    className="text-muted-foreground"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-sm font-medium text-foreground">
-                    Configuration Required
-                  </h3>
-                  <p className="text-sm text-muted-foreground max-w-sm">
-                    This connection needs to be configured before tools can be
-                    tested. Please update the connection details above.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center p-8 text-center">
-                <img
-                  src="/img/error-state-connection-tools.svg"
-                  className="h-64 mb-4"
-                />
-                <h3 className="text-2xl font-semibold text-foreground mb-2">
-                  Unable to list connection tools
-                </h3>
-                <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg text-left mb-4">
-                  <pre className="text-xs text-destructive whitespace-pre-wrap break-words">
-                    Error: {tools.error?.message || "Unknown error occurred"}
-                  </pre>
-                </div>
-                <Button
-                  onClick={() => {
-                    ignoreCache.current = true;
-                    tools.refetch();
-                    ignoreCache.current = false;
-                  }}
-                >
-                  <Icon name="refresh" size={16} />
-                  Refresh
-                </Button>
-              </div>
-            )
-          ) : (
-            filteredTools.map((tool) =>
-              connection ? (
-                <Tool
-                  key={tool.name}
-                  connection={connection}
-                  tool={tool}
-                  readOnly={readOnly}
-                />
-              ) : null,
-            )
-          )}
-        </div>
-      </div>
-      <ScrollBar orientation="vertical" />
-    </ScrollArea>
-  );
-}
-
-function ViewBindingDetector({ integration }: { integration: Integration }) {
-  const [isViewBinding, setIsViewBinding] = useState<boolean | null>(null);
-  const [isChecking, setIsChecking] = useState(false);
-
-  const checkViewBinding = async () => {
-    if (!integration) return;
-
-    setIsChecking(true);
-    try {
-      const toolsData = await listTools(integration.connection);
-      const isViewBindingResult = Binding(
-        WellKnownBindings.View,
-      ).isImplementedBy(toolsData.tools);
-      setIsViewBinding(isViewBindingResult);
-    } catch (error) {
-      console.error("Error checking view binding:", error);
-      setIsViewBinding(false);
-    } finally {
-      setIsChecking(false);
-    }
-  };
-
-  useEffect(() => {
-    checkViewBinding();
-  }, [integration?.id]);
-
-  if (!integration || isChecking) {
-    return (
-      <div className="w-full flex flex-col items-center gap-4">
-        <div className="w-full flex items-center justify-center p-4">
-          <Skeleton className="h-4 w-32" />
-        </div>
-      </div>
-    );
-  }
-
-  if (isViewBinding === null || isViewBinding === false) {
-    return null;
-  }
-
-  return <ViewsList integration={integration} />;
-}
-
-function ViewsList({ integration }: { integration: Integration }) {
-  const currentTeam = useCurrentTeam();
-  const addViewMutation = useAddView();
-  const removeViewMutation = useRemoveView();
-
-  const { data: viewsData, isLoading: isLoadingViews } = useConnectionViews(
-    integration,
-    false,
-  );
-  const views = viewsData?.views || [];
-
-  // Check which views are already added to the team (by integrationId + name)
-  const viewsWithStatus = useMemo(() => {
-    if (!views || views.length === 0 || !currentTeam.views) return [];
-
-    return views.map((view) => {
-      const existingView = findPinnedView(currentTeam.views, integration.id, {
-        name: view.name,
-        url: view.url,
-      });
-
-      return {
-        ...view,
-        isAdded: !!existingView,
-        teamViewId: existingView?.id,
-      } as typeof view & { isAdded: boolean; teamViewId?: string };
-    });
-  }, [views, currentTeam.views, integration.id]);
-
-  const handleAddView = async (view: (typeof views)[0]) => {
-    try {
-      await addViewMutation.mutateAsync({
-        view: buildAddViewPayload({
-          view: {
-            name: view.name,
-            title: view.title,
-            icon: view.icon,
-            url: view.url,
-          },
-          integrationId: integration.id,
-        }),
-      });
-
-      toast.success(`View "${view.title}" added successfully`);
-    } catch (error) {
-      console.error("Error adding view:", error);
-      toast.error(`Failed to add view "${view.title}"`);
-    }
-  };
-
-  const handleRemoveView = async (
-    viewWithStatus: (typeof viewsWithStatus)[0],
-  ) => {
-    if (!viewWithStatus.teamViewId) {
-      toast.error("No view to remove");
-      return;
-    }
-
-    try {
-      await removeViewMutation.mutateAsync({
-        viewId: viewWithStatus.teamViewId,
-      });
-
-      toast.success(`View "${viewWithStatus.title}" removed successfully`);
-    } catch (error) {
-      console.error("Error removing view:", error);
-      toast.error(`Failed to remove view "${viewWithStatus.title}"`);
-    }
-  };
-
-  if (isLoadingViews) {
-    return (
-      <div className="w-full flex flex-col items-center gap-4">
-        <div className="w-full flex items-center justify-center p-4">
-          <Skeleton className="h-4 w-32" />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <ScrollArea className="h-full">
-      <div className="w-full flex flex-col items-center gap-4">
-        <h6 className="text-sm text-muted-foreground font-medium w-full">
-          Views available from this integration
-        </h6>
-        <div className="w-full p-4 border border-border rounded-xl bg-muted/30">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center">
-              <Icon name="layers" size={20} className="text-success" />
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-foreground">
-                {integration.name}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                This integration provides custom views that can be added to your
-                workspace.
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <Icon name="info" size={16} className="text-muted-foreground" />
-              <span className="text-muted-foreground">
-                Available views: {views.length}
-              </span>
-            </div>
-
-            {viewsWithStatus.length === 0 ? (
-              <div className="text-sm text-muted-foreground text-center py-4">
-                No views available from this integration
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {viewsWithStatus.map((view) => (
-                  <div
-                    key={view.name ?? view.url ?? view.title}
-                    className="flex items-center justify-between p-3 border border-border rounded-lg bg-background"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {view.icon && (
-                        <Icon
-                          name={view.icon}
-                          size={24}
-                          className="flex-shrink-0"
-                        />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-sm font-medium truncate">
-                          {view.title}
-                        </h4>
-                        {view.url && (
-                          <p className="text-xs text-muted-foreground ">
-                            {view.url}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {view.isAdded && (
-                        <div className="flex items-center gap-1 text-xs text-success">
-                          <Icon name="check_circle" size={14} />
-                          <span>Added</span>
-                        </div>
-                      )}
-
-                      {view.isAdded ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleRemoveView(view)}
-                          disabled={removeViewMutation.isPending}
-                        >
-                          {removeViewMutation.isPending ? (
-                            <Icon name="hourglass_empty" size={14} />
-                          ) : (
-                            <Icon name="remove" size={14} />
-                          )}
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleAddView(view)}
-                          disabled={addViewMutation.isPending}
-                        >
-                          {addViewMutation.isPending ? (
-                            <Icon name="hourglass_empty" size={14} />
-                          ) : (
-                            <Icon name="add" size={14} />
-                          )}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </ScrollArea>
-  );
-}
-
-function ViewBindingSection({
-  data,
-  selectedConnectionId,
-}: {
-  data: ReturnType<typeof useGroupedApp>;
-  selectedConnectionId?: string;
-}) {
-  const selectedIntegration = useMemo(() => {
-    return (
-      data.instances?.find((i) => i.id === selectedConnectionId) ??
-      data.instances?.[0] ??
-      null
-    );
-  }, [data.instances, selectedConnectionId]);
-
-  if (!selectedIntegration) {
-    return null;
-  }
-
-  return <ViewBindingDetector integration={selectedIntegration} />;
-}
-
 const InstanceSelectItem = ({ instance }: { instance: Integration }) => {
   return (
     <SelectItem key={instance.id} value={instance.id}>
@@ -1429,44 +808,7 @@ function AppDetail() {
         )}
       </div>
       <div className="flex-grow w-full min-h-0">
-        <Tabs
-          defaultValue="tools"
-          orientation="horizontal"
-          className="w-full gap-4 h-[90%]"
-        >
-          <TabsList>
-            <TabsTrigger value="tools" className="px-4">
-              Tools
-            </TabsTrigger>
-            <TabsTrigger value="views" className="px-4">
-              Views
-            </TabsTrigger>
-            <TabsTrigger value="workflows" className="px-4">
-              Workflows
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="tools">
-            <ToolsInspector
-              data={data}
-              readOnly={!data.instances || data.instances?.length === 0}
-              selectedConnectionId={selectedIntegrationId ?? undefined}
-            />
-          </TabsContent>
-          <TabsContent value="views">
-            <ViewBindingSection
-              data={data}
-              selectedConnectionId={selectedIntegrationId ?? undefined}
-            />
-          </TabsContent>
-          <TabsContent value="workflows">
-            <ToolsInspector
-              data={data}
-              selectedConnectionId={selectedIntegrationId ?? undefined}
-              startsWith="DECO_CHAT_WORKFLOWS"
-            />
-          </TabsContent>
-        </Tabs>
+        <ConnectionTabs data={data} selectedIntegrationId={selectedIntegrationId} />
       </div>
     </div>
   );

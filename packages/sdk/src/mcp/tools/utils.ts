@@ -1,4 +1,5 @@
 import {
+  callFunction,
   createSandboxRuntime,
   inspect,
   installConsole,
@@ -6,10 +7,15 @@ import {
 } from "@deco/cf-sandbox";
 import { Validator } from "jsonschema";
 import { z } from "zod";
-import { createToolGroup, MCPClientStub } from "../context.ts";
+import { WorkflowState } from "../../workflows/workflow-runner.ts";
+import { MCPClientStub } from "../context.ts";
 import { slugify } from "../deconfig/api.ts";
 import { ProjectTools } from "../index.ts";
-import { ToolDefinitionSchema } from "./api.ts";
+import {
+  CodeStepDefinition,
+  ToolCallStepDefinition,
+} from "../workflows/api.ts";
+import { ToolDefinitionSchema } from "./schemas.ts";
 
 // Utility functions for consistent naming
 export const toolNameSlugify = (txt: string) => slugify(txt).toUpperCase();
@@ -31,13 +37,6 @@ export function validate(instance: unknown, schema: Record<string, unknown>) {
 
   return validator.validate(instance, schema);
 }
-
-// Common tool group for sandbox
-export const createTool = createToolGroup("Sandbox", {
-  name: "Code Sandbox",
-  description: "Run JavaScript code",
-  icon: "https://assets.decocache.com/mcp/81d602bb-45e2-4361-b52a-23379520a34d/sandbox.png",
-});
 
 // Common function for evaluating code and returning default handle
 export const evalCodeAndReturnDefaultHandle = async (
@@ -150,45 +149,25 @@ export const asEnv = async (client: MCPClientStub<ProjectTools>) => {
   return env;
 };
 
-// Helper function to process execute code (inline or file URL)
+// Helper function to process execute code (inline only)
 export async function processExecuteCode(
   execute: string,
   filePath: string,
   client: MCPClientStub<ProjectTools>,
   branch?: string,
-): Promise<{ functionCode: string; functionPath: string }> {
-  const isFileUrl = execute.startsWith("file://");
+): Promise<{ functionCode: string }> {
+  // Save inline code to a file
+  const functionCode = execute;
 
-  if (isFileUrl) {
-    // It's already a file:// URL, use it as is
-    const functionPath = execute.replace("file://", "");
+  await client.PUT_FILE({
+    branch,
+    path: filePath,
+    content: functionCode,
+  });
 
-    // Read the existing file to validate it
-    const fileResult = await client.READ_FILE({
-      branch,
-      path: functionPath,
-    });
-
-    return {
-      functionCode: fileResult.content,
-      functionPath,
-    };
-  } else {
-    // It's inline code, save it to a file
-    const functionPath = filePath;
-    const functionCode = execute;
-
-    await client.PUT_FILE({
-      branch,
-      path: functionPath,
-      content: functionCode,
-    });
-
-    return {
-      functionCode,
-      functionPath,
-    };
-  }
+  return {
+    functionCode,
+  };
 }
 
 // Helper function to validate execute code
@@ -218,4 +197,96 @@ export async function validateExecuteCode(
       error: `Validation error for ${name}: ${inspect(error)}`,
     };
   }
+}
+
+/**
+ * Run code in a workflow step context
+ */
+export async function runCode(
+  workflowInput: unknown,
+  state: WorkflowState,
+  step: CodeStepDefinition,
+  client: MCPClientStub<ProjectTools>,
+  runtimeId: string = "default",
+): Promise<Rpc.Serializable<unknown>> {
+  // Load and execute the code step function
+  using stepEvaluation = await evalCodeAndReturnDefaultHandle(
+    step.execute,
+    runtimeId,
+  );
+  const {
+    ctx: stepCtx,
+    defaultHandle: stepDefaultHandle,
+    guestConsole: stepConsole,
+  } = stepEvaluation;
+
+  // Create step context with WellKnownOptions
+  const stepContext = {
+    sleep: async (name: string, duration: number) => {
+      await state.sleep(name, duration);
+    },
+    sleepUntil: async (name: string, date: Date | number) => {
+      await state.sleepUntil(name, date);
+    },
+    readWorkflowInput() {
+      return workflowInput;
+    },
+    readStepResult(stepName: string) {
+      if (!state.steps[stepName]) {
+        throw new Error(`Step '${stepName}' has not been executed yet`);
+      }
+      return state.steps[stepName];
+    },
+    env: await asEnv(client),
+  };
+
+  // Call the function
+  const stepCallHandle = await callFunction(
+    stepCtx,
+    stepDefaultHandle,
+    undefined,
+    stepContext,
+    {},
+  );
+
+  const result = stepCtx.dump(stepCtx.unwrapResult(stepCallHandle));
+
+  // Log any console output from the step execution
+  if (stepConsole.logs.length > 0) {
+    console.log(`Code step '${step.name}' logs:`, stepConsole.logs);
+  }
+
+  return result as Rpc.Serializable<unknown>;
+}
+
+/**
+ * Run a tool call step in a workflow
+ */
+export async function runTool(
+  input: unknown,
+  step: ToolCallStepDefinition,
+  client: MCPClientStub<ProjectTools>,
+): Promise<Rpc.Serializable<unknown>> {
+  // Find the integration by name
+  const { items } = await client.INTEGRATIONS_LIST({});
+  const integration = items.find((item) => item.name === step.integration);
+
+  if (!integration) {
+    throw new Error(`Integration '${step.integration}' not found`);
+  }
+
+  const response = await client.INTEGRATIONS_CALL_TOOL({
+    connection: integration.connection,
+    params: {
+      name: step.tool_name,
+      arguments: input as Record<string, unknown>,
+    },
+  });
+
+  if (response.isError) {
+    throw new Error(`Tool call failed: ${inspect(response)}`);
+  }
+
+  return (response.structuredContent ||
+    response.content) as Rpc.Serializable<unknown>;
 }

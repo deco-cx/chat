@@ -77,13 +77,13 @@ export function DeveloperBar() {
                   {/* Visual representation of execution state */}
                   <div className="space-y-2">
                     {state.workflow.steps.map((step, index) => {
-                      const result = state.executionResults[step.id];
+                      const result = state.executionResults[step.def.name];
                       const hasExecuted = !!result;
                       const hasError = result?.error;
 
                       return (
                         <div
-                          key={step.id}
+                          key={step.def.name}
                           className={`
                             p-2 rounded border text-xs
                             ${
@@ -110,7 +110,7 @@ export function DeveloperBar() {
                               `}
                               />
                               <span className="font-semibold">
-                                {step.title || `Step ${index + 1}`}
+                                {step.def.name || `Step ${index + 1}`}
                               </span>
                             </div>
                             {result && (
@@ -191,7 +191,6 @@ export function DeveloperBar() {
                   <pre className="text-xs bg-muted p-3 rounded overflow-x-auto">
                     {JSON.stringify(
                       {
-                        id: state.workflow.id,
                         name: state.workflow.name,
                         description: state.workflow.description,
                         stepsCount: state.workflow.steps.length,
@@ -248,7 +247,7 @@ export function DeveloperBar() {
                     {JSON.stringify(
                       {
                         currentStep:
-                          state.workflow.steps[state.currentStepIndex]?.id,
+                          state.workflow.steps[state.currentStepIndex]?.def.name,
                         isEditing: state.isEditing,
                         editingStepId: state.editingStepId,
                         lastSaved: state.lastSaved,
