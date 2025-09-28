@@ -155,7 +155,7 @@ function UnifiedAvatar({
   const [isError, setIsError] = useState(false);
   const fallbackContent = useMemo(() => {
     if (typeof fallback === "string") {
-      return fallback.substring(0, 1).toUpperCase();
+      return fallback;
     }
     return fallback;
   }, [fallback]);
