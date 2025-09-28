@@ -6,6 +6,7 @@ import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
+  type QueryFilters,
 } from "@tanstack/react-query";
 import type { UIMessage } from "ai";
 import { useCallback, useEffect } from "react";
@@ -147,10 +148,51 @@ export const useUpdateThreadTitle = () => {
       return await updateThreadTitle(locator, threadId, title);
     },
     onMutate: async ({ threadId, title, stream }: UpdateThreadTitleParams) => {
-      // Cancel all threads queries to prevent race conditions
-      await client.cancelQueries({
-        queryKey: KEYS.THREADS(locator),
-      });
+      const threadListFilters: QueryFilters = {
+        predicate: ({ queryKey }) =>
+          Array.isArray(queryKey) &&
+          queryKey[1] === locator &&
+          (queryKey[0] === "threads" || queryKey[0] === "audit"),
+      };
+
+      const applyTitleToCachedLists = (nextTitle: string) => {
+        client.setQueriesData(
+          threadListFilters,
+          (oldData: ThreadList | undefined) => {
+            if (!oldData?.threads) {
+              return oldData;
+            }
+
+            let hasChanges = false;
+            const threads = oldData.threads.map((thread) => {
+              if (thread.id !== threadId) {
+                return thread;
+              }
+              hasChanges = true;
+              return { ...thread, title: nextTitle };
+            });
+
+            if (!hasChanges) {
+              return oldData;
+            }
+
+            return {
+              ...oldData,
+              threads,
+            };
+          },
+        );
+      };
+
+      const applyTitleToThreadDetail = (nextTitle: string) => {
+        client.setQueryData(
+          KEYS.THREAD(locator, threadId),
+          (oldThread: Thread | undefined) =>
+            oldThread ? { ...oldThread, title: nextTitle } : oldThread,
+        );
+      };
+
+      await client.cancelQueries(threadListFilters);
 
       if (stream) {
         // Animate title character by character
@@ -161,21 +203,8 @@ export const useUpdateThreadTitle = () => {
           if (currentIndex <= title.length) {
             const partialTitle = title.slice(0, currentIndex);
 
-            client.setQueriesData(
-              { queryKey: KEYS.THREADS(locator) },
-              (oldData: ThreadList | undefined) => {
-                if (!oldData?.threads) return oldData;
-
-                return {
-                  ...oldData,
-                  threads: oldData.threads.map((thread) =>
-                    thread.id === threadId
-                      ? { ...thread, title: partialTitle }
-                      : thread,
-                  ),
-                };
-              },
-            );
+            applyTitleToCachedLists(partialTitle);
+            applyTitleToThreadDetail(partialTitle);
 
             currentIndex++;
             if (currentIndex <= title.length) {
@@ -194,20 +223,8 @@ export const useUpdateThreadTitle = () => {
           }
         };
       } else {
-        // Optimistically update all threads queries that contain this thread
-        client.setQueriesData(
-          { queryKey: KEYS.THREADS(locator) },
-          (oldData: ThreadList | undefined) => {
-            if (!oldData?.threads) return oldData;
-
-            return {
-              ...oldData,
-              threads: oldData.threads.map((thread) =>
-                thread.id === threadId ? { ...thread, title } : thread,
-              ),
-            };
-          },
-        );
+        applyTitleToCachedLists(title);
+        applyTitleToThreadDetail(title);
       }
     },
     // deno-lint-ignore no-explicit-any
@@ -225,7 +242,10 @@ export const useUpdateThreadTitle = () => {
       // Always refetch after error or success to ensure data is in sync
       client.invalidateQueries({ queryKey: KEYS.THREAD(locator, threadId) });
       client.invalidateQueries({
-        queryKey: KEYS.THREADS(locator),
+        predicate: ({ queryKey }) =>
+          Array.isArray(queryKey) &&
+          queryKey[1] === locator &&
+          (queryKey[0] === "threads" || queryKey[0] === "audit"),
       });
     },
   });

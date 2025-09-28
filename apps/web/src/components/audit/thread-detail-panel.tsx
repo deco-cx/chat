@@ -17,15 +17,19 @@ export function ThreadDetailPanel({ thread, onNavigate }: ThreadDetailPanelProps
   const title = useMemo(() => thread.title || "Untitled conversation", [thread.title]);
 
   return (
-    <div className="flex h-full w-full flex-col">
-      <header className="flex items-center justify-between border-0 border-border px-4 py-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">{title}</p>
+    <div className="flex h-full w-full min-w-0 flex-col overflow-hidden">
+      <header className="flex items-center gap-3 border-0 border-border px-4 py-3">
+        <div className="flex-1 min-w-0">
+          <p className="truncate text-sm font-semibold text-foreground" title={title}>
+            {title}
+          </p>
           {thread.resourceId && (
-            <p className="truncate text-xs text-muted-foreground">{thread.resourceId}</p>
+            <p className="truncate text-xs text-muted-foreground" title={thread.resourceId}>
+              {thread.resourceId}
+            </p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Button
             onClick={() => onNavigate("previous")}
             size="icon"
@@ -59,7 +63,12 @@ export function ThreadDetailPanel({ thread, onNavigate }: ThreadDetailPanelProps
         }}
         readOnly
       >
-        <MainChat showInput={false} initialScrollBehavior="top" />
+        <MainChat
+          showInput={false}
+          initialScrollBehavior="top"
+          className="flex-1 min-w-0"
+          contentClassName="flex flex-col min-w-0"
+        />
       </AgentProvider>
     </div>
   );

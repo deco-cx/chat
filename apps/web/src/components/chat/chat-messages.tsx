@@ -75,6 +75,10 @@ export function ChatMessages({
       }
     }
 
+    if (initialScrollBehavior === "top") {
+      return;
+    }
+
     if (isAutoScrollEnabled(scrollRef.current)) {
       scrollToBottom();
     }
@@ -110,11 +114,11 @@ export function ChatMessages({
   const isEmpty = messages.length === 0;
 
   return (
-    <div className={cn("max-w-2xl mx-auto", className)}>
+    <div className={cn("w-full min-w-0", className)}>
       {isEmpty ? (
         <EmptyState />
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 min-w-0">
           {messages.map((message, index) => (
             <ChatMessage
               key={message.id}

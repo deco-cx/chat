@@ -16,6 +16,7 @@ export type WellKnownAgents =
 type MainChatProps = {
   showInput?: boolean;
   className?: string;
+  contentClassName?: string;
 };
 
 interface Props {
@@ -28,13 +29,14 @@ export const MainChat = ({
   showInput = true,
   className,
   initialScrollBehavior = "bottom",
+  contentClassName,
 }: MainChatProps & { initialScrollBehavior?: "top" | "bottom" } = {}) => {
   return (
     <div className={cn("flex h-full w-full flex-col", className)}>
       <ScrollArea className="flex-1">
         <ChatMessages
           initialScrollBehavior={initialScrollBehavior}
-          className="max-w-full px-4"
+          className={cn("max-w-full px-4", contentClassName)}
         />
       </ScrollArea>
       {showInput ? (

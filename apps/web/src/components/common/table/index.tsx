@@ -7,6 +7,7 @@ import {
   TableRow,
 } from "@deco/ui/components/table.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
+import { cn } from "@deco/ui/lib/utils.ts";
 import type { ReactNode } from "react";
 
 export interface TableColumn<T> {
@@ -70,8 +71,8 @@ export function Table<T extends Record<string, unknown>>({
   }
 
   return (
-    <div className="flex flex-1 min-h-0 overflow-y-auto overflow-x-auto w-full border-[1px] border-border rounded-[12px]">
-      <UITable className="w-full min-w-[640px] overflow-hidden">
+    <div className="flex flex-1 min-h-0 overflow-y-auto overflow-x-auto w-full border border-border rounded-xl bg-background">
+      <UITable className="w-full table-fixed border-collapse">
         <TableHeader className="sticky top-0 z-10 border-b-[1px] border-border">
           <TableRow className="h-10 hover:!bg-transparent [&:hover]:!bg-transparent">
             {columns.map((col, idx) => {
@@ -103,32 +104,41 @@ export function Table<T extends Record<string, unknown>>({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((row, i) => (
-            <TableRow
-              key={i}
-              className={`${onRowClick ? "cursor-pointer" : ""} ${rowClassName?.(row) ?? ""}`.trim()}
-              onClick={onRowClick ? () => onRowClick(row) : undefined}
-            >
-              {columns.map((col, _idx) => (
-                <TableCell
-                  key={col.id}
-                  className={
-                    "px-3 py-2 " +
-                    (col.cellClassName ? col.cellClassName + " " : "") +
-                    (col.wrap
-                      ? "whitespace-normal break-words"
-                      : "truncate overflow-hidden whitespace-nowrap")
-                  }
-                >
-                  {col.render
-                    ? col.render(row)
-                    : col.accessor
-                      ? col.accessor(row)
-                      : null}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
+          {data.map((row, i) => {
+            const extraClasses = rowClassName?.(row);
+
+            return (
+              <TableRow
+                key={i}
+                data-row-index={i}
+                className={cn(
+                  "group/data-row transition-colors border-b border-border/60 last:border-b-0",
+                  onRowClick ? "cursor-pointer" : "",
+                  extraClasses,
+                )}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+              >
+                {columns.map((col) => (
+                  <TableCell
+                    key={col.id}
+                    className={cn(
+                      "px-3 py-2 align-top min-w-0",
+                      col.cellClassName,
+                      col.wrap
+                        ? "whitespace-normal break-words"
+                        : "truncate overflow-hidden whitespace-nowrap",
+                    )}
+                  >
+                    {col.render
+                      ? col.render(row)
+                      : col.accessor
+                        ? col.accessor(row)
+                        : null}
+                  </TableCell>
+                ))}
+              </TableRow>
+            );
+          })}
         </TableBody>
       </UITable>
     </div>

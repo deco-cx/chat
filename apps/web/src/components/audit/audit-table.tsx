@@ -76,10 +76,13 @@ export function AuditTable({
     {
       id: "title",
       header: "Thread name",
+      cellClassName: "max-w-[280px]",
       render: (cell: Thread) => (
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="truncate block max-w-xs">{cell.title}</span>
+            <span className="truncate block w-full" title={cell.title}>
+              {cell.title}
+            </span>
           </TooltipTrigger>
           <TooltipContent className="whitespace-pre-line break-words max-w-xs">
             {cell.title}
@@ -116,7 +119,7 @@ export function AuditTable({
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-x-auto">
+    <div className="flex-1 min-h-0 overflow-hidden">
       <Table
         columns={columns}
         data={threads}
@@ -125,7 +128,9 @@ export function AuditTable({
         onSort={handleSort}
         onRowClick={onRowClick ? (row) => onRowClick(row.id) : undefined}
         rowClassName={(row) =>
-          row.id === activeThreadId ? "bg-sidebar/60 hover:bg-sidebar/80" : undefined
+          row.id === activeThreadId
+            ? "bg-accent/20 hover:bg-accent/30"
+            : "hover:bg-muted/40"
         }
       />
     </div>
