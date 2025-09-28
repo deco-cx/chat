@@ -323,7 +323,7 @@ export function AuditListContent({
           <ResizablePanelGroup direction="horizontal" className="flex">
             <ResizablePanel defaultSize={50} minSize={20} className="min-w-[240px]">
               <div className="flex h-full min-w-0 flex-col bg-background">
-                <div className="flex flex-wrap items-end gap-3 px-4 py-3">
+                <div className="flex flex-wrap items-end gap-3 px-2 pt-2">
                   {showFilters ? (
                     <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
                       <AuditFilters
@@ -338,7 +338,7 @@ export function AuditListContent({
                   ) : null}
                   {rowsPerPageControl}
                 </div>
-                <div className="flex-1 overflow-auto px-2 pb-16 pt-2">
+                <div className="flex-1 overflow-auto px-2 pb-2 pt-2">
                   <AuditTable
                     threads={threads}
                     sort={sort}

@@ -16,6 +16,7 @@ export interface TableColumn<T> {
   accessor?: (row: T) => ReactNode;
   render?: (row: T) => ReactNode;
   sortable?: boolean;
+  rowClassName?: string;
   cellClassName?: string;
   wrap?: boolean;
 }
@@ -82,7 +83,7 @@ export function Table<T extends Record<string, unknown>>({
                   key={col.id}
                   className={
                     getHeaderClass(idx, columns.length) +
-                    " sticky top-0 z-10 group"
+                    " sticky top-0 z-10 group " + col.rowClassName
                   }
                   style={{ cursor: col.sortable ? "pointer" : undefined }}
                   onClick={

@@ -70,24 +70,17 @@ export function AuditTable({
       ? {
           id: "user",
           header: "Used by",
-          accessor: (cell: Thread) => <UserInfo userId={cell.resourceId} />,
+          accessor: (cell: Thread) => <UserInfo userId={cell.resourceId} noTooltip />,
         }
       : null,
     {
       id: "title",
       header: "Thread name",
-      cellClassName: "max-w-[280px]",
+      rowClassName: "w-[240px] md:w-[280px] lg:w-[320px]",
       render: (cell: Thread) => (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="truncate block w-full" title={cell.title}>
-              {cell.title}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent className="whitespace-pre-line break-words max-w-xs">
-            {cell.title}
-          </TooltipContent>
-        </Tooltip>
+        <span className="truncate block w-full" title={cell.title}>
+          {cell.title}
+        </span>
       ),
     },
     {
@@ -129,8 +122,8 @@ export function AuditTable({
         onRowClick={onRowClick ? (row) => onRowClick(row.id) : undefined}
         rowClassName={(row) =>
           row.id === activeThreadId
-            ? "bg-accent/20 hover:bg-accent/30"
-            : "hover:bg-muted/40"
+            ? "bg-accent/25 border border-accent/50"
+            : "hover:bg-muted/40 border border-transparent"
         }
       />
     </div>
