@@ -1,16 +1,28 @@
-import type { Thread } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
+import type { ReactNode } from "react";
 import { useMemo } from "react";
-import { AgentProvider } from "../agent/provider.tsx";
-import { MainChat } from "../agent/chat.tsx";
 
 interface ThreadDetailPanelProps {
-  thread: Thread;
+  thread: {
+    id: string;
+    title?: string;
+    resourceId?: string;
+    metadata?: Record<string, unknown>;
+  };
   onNavigate: (direction: "previous" | "next") => void;
+  canNavigatePrevious: boolean;
+  canNavigateNext: boolean;
+  children: ReactNode;
 }
 
-export function ThreadDetailPanel({ thread, onNavigate }: ThreadDetailPanelProps) {
+export function ThreadDetailPanel({
+  thread,
+  onNavigate,
+  canNavigatePrevious,
+  canNavigateNext,
+  children,
+}: ThreadDetailPanelProps) {
   const metadata = useMemo(() => thread.metadata ?? {}, [thread.metadata]);
   const agentId = metadata.agentId ?? thread.id;
 
@@ -36,6 +48,7 @@ export function ThreadDetailPanel({ thread, onNavigate }: ThreadDetailPanelProps
             variant="ghost"
             aria-label="Previous conversation"
             className="h-8 w-8"
+            disabled={!canNavigatePrevious}
           >
             <Icon name="chevron_left" />
           </Button>
@@ -45,32 +58,14 @@ export function ThreadDetailPanel({ thread, onNavigate }: ThreadDetailPanelProps
             variant="ghost"
             aria-label="Next conversation"
             className="h-8 w-8"
+            disabled={!canNavigateNext}
           >
             <Icon name="chevron_right" />
           </Button>
         </div>
       </header>
       <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-        <AgentProvider
-        agentId={agentId}
-        threadId={thread.id}
-        uiOptions={{
-          showThreadTools: false,
-          showModelSelector: false,
-          showThreadMessages: true,
-          showAgentVisibility: false,
-          showEditAgent: false,
-          showContextResources: false,
-        }}
-        readOnly
-      >
-          <MainChat
-            showInput={false}
-            initialScrollBehavior="top"
-            className="flex-1 min-w-0"
-            contentClassName="flex flex-col min-w-0"
-          />
-        </AgentProvider>
+        {children}
       </div>
     </div>
   );

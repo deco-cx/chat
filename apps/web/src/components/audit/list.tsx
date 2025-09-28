@@ -32,7 +32,6 @@ import {
 } from "@deco/ui/components/resizable.tsx";
 import {
   type KeyboardEvent,
-  Suspense,
   useEffect,
   useMemo,
   useState,
@@ -42,7 +41,7 @@ import { ErrorBoundary } from "../../error-boundary.tsx";
 import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 import { AuditFilters } from "./audit-filters.tsx";
 import { AuditTable } from "./audit-table.tsx";
-import { ThreadConversation } from "./thread-panel-loader.tsx";
+import { ThreadConversation } from "./thread-conversation.tsx";
 
 const CURSOR_PAGINATION_SEARCH_PARAM = "after";
 const AGENT_FILTER_SEARCH_PARAM = "agent";
@@ -54,8 +53,8 @@ const PAGE_SIZE_SEARCH_PARAM = "pageSize";
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const TABLE_ROW_KEY_BINDINGS = {
-  previous: new Set(["ArrowUp", "k", "K"]),
-  next: new Set(["ArrowDown", "j", "J"]),
+  previous: new Set(["ArrowUp", "ArrowLeft", "k", "K"]),
+  next: new Set(["ArrowDown", "ArrowRight", "j", "J"]),
 };
 
 const SORT_OPTIONS = [
@@ -132,11 +131,8 @@ export function AuditListContent({
   const { data: teamMembersData } = useTeamMembersBySlug(resolvedSlug);
   const members = teamMembersData?.members ?? [];
 
-  const {
-    data: auditData,
-    isLoading,
-    error,
-  } = useAuditEvents({
+  // Memoize audit options to prevent unnecessary refetches
+  const auditOptions = useMemo(() => ({
     agentId: filters?.agentId ?? selectedAgent,
     resourceId:
       filters?.resourceId ??
@@ -144,7 +140,24 @@ export function AuditListContent({
     orderBy: filters?.orderBy ?? sort,
     cursor: filters?.cursor ?? currentCursor,
     limit: filters?.limit ?? pageSize,
-  });
+  }), [
+    filters?.agentId,
+    filters?.resourceId,
+    filters?.orderBy,
+    filters?.cursor,
+    filters?.limit,
+    selectedAgent,
+    selectedUser,
+    sort,
+    currentCursor,
+    pageSize,
+  ]);
+
+  const {
+    data: auditData,
+    isLoading,
+    error,
+  } = useAuditEvents(auditOptions);
 
   const threads = auditData?.threads ?? [];
   const pagination = auditData?.pagination;
@@ -174,6 +187,13 @@ export function AuditListContent({
     if (!selectedThreadId) return null;
     return threads.find((thread) => thread.id === selectedThreadId) ?? null;
   }, [threads, selectedThreadId]);
+
+  const activeThreadIndex = useMemo(() => {
+    if (!activeThreadId) {
+      return -1;
+    }
+    return threads.findIndex((thread) => thread.id === activeThreadId);
+  }, [threads, activeThreadId]);
 
   useEffect(() => {
     if (threads.length === 0) {
@@ -213,12 +233,18 @@ export function AuditListContent({
     const currentIndex =
       activeThreadIndex >= 0
         ? activeThreadIndex
-        : Math.max(threads.findIndex((thread) => thread.id === activeThreadId), 0);
+        : Math.max(
+            threads.findIndex((thread) => thread.id === activeThreadId),
+            0,
+          );
 
     const nextIndex = direction === "next" ? currentIndex + 1 : currentIndex - 1;
 
-    if (threads[nextIndex]) {
-      setActiveThreadId(threads[nextIndex].id);
+    const nextThread = threads[nextIndex];
+
+    if (nextThread) {
+      setActiveThreadId(nextThread.id);
+      setSelectedThreadId(nextThread.id);
     }
   }
 
@@ -400,18 +426,14 @@ export function AuditListContent({
             <ResizablePanel defaultSize={50} minSize={30} className="min-w-[360px]">
               <div className="flex h-full min-w-0 flex-col bg-background">
                 {activeThread ? (
-                  <Suspense
-                    fallback={
-                      <div className="flex flex-1 items-center justify-center">
-                        <Spinner />
-                      </div>
+                  <ThreadConversation
+                    thread={activeThread}
+                    onNavigate={handleNavigateThread}
+                    canNavigatePrevious={activeThreadIndex > 0}
+                    canNavigateNext={
+                      activeThreadIndex >= 0 && activeThreadIndex < threads.length - 1
                     }
-                  >
-                    <ThreadConversation
-                      thread={activeThread}
-                      onNavigate={handleNavigateThread}
-                    />
-                  </Suspense>
+                  />
                 ) : (
                   <div className="flex flex-1 items-center justify-center text-muted-foreground">
                     Select a conversation to view
@@ -426,19 +448,24 @@ export function AuditListContent({
   );
 }
 
+function AuditListErrorFallback() {
+  return (
+    <div className="flex justify-center items-center h-64">
+      <Alert variant="destructive" className="max-w-xl">
+        <AlertTitle>Error loading activity</AlertTitle>
+        <AlertDescription>
+          Something went wrong while loading the activity data.
+        </AlertDescription>
+      </Alert>
+    </div>
+  );
+}
+
 function AuditList() {
   return (
     <div className="text-foreground">
       <ErrorBoundary fallback={<AuditListErrorFallback />}>
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center h-64">
-              <Spinner />
-            </div>
-          }
-        >
-          <AuditListContent />
-        </Suspense>
+        <AuditListContent />
       </ErrorBoundary>
     </div>
   );
