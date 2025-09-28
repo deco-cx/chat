@@ -61,6 +61,7 @@ export function AuditTable({
       ? {
           id: "agent",
           header: "Agent",
+          rowClassName: "w-[180px]",
           accessor: (cell: Thread) => (
             <AgentInfo agentId={cell.metadata?.agentId} />
           ),
@@ -70,6 +71,7 @@ export function AuditTable({
       ? {
           id: "user",
           header: "Used by",
+          rowClassName: "w-[180px]",
           accessor: (cell: Thread) => <UserInfo userId={cell.resourceId} noTooltip />,
         }
       : null,
@@ -84,15 +86,17 @@ export function AuditTable({
       ),
     },
     {
-      id: "updatedAt",
-      header: "Last updated",
-      accessor: (cell: Thread) => <DateTimeCell value={cell.updatedAt} />,
+      id: "createdAt",
+      header: "Created at",
+      rowClassName: "w-[125px]",
+      accessor: (cell: Thread) => <DateTimeCell value={cell.createdAt} />,
       sortable: true,
     },
     {
-      id: "createdAt",
-      header: "Created at",
-      accessor: (cell: Thread) => <DateTimeCell value={cell.createdAt} />,
+      id: "updatedAt",
+      header: "Last updated",
+      rowClassName: "w-[125px]",
+      accessor: (cell: Thread) => <DateTimeCell value={cell.updatedAt} />,
       sortable: true,
     },
   ]
@@ -122,8 +126,8 @@ export function AuditTable({
         onRowClick={onRowClick ? (row) => onRowClick(row.id) : undefined}
         rowClassName={(row) =>
           row.id === activeThreadId
-            ? "bg-accent/25 border border-accent/50"
-            : "hover:bg-muted/40 border border-transparent"
+            ? "bg-primary/15 hover:bg-primary/20"
+            : "hover:bg-muted/40"
         }
       />
     </div>

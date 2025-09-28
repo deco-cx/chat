@@ -58,9 +58,29 @@ export function AuditFilters({
     ? selectedUserDisplayName.substring(0, 2).toUpperCase()
     : "UN";
 
+  const userOptions = [
+    { value: "all", label: "All users" },
+    { value: "unknown", label: "Unknown" },
+    ...sortedMembers.map((member) => {
+      const name =
+        member.profiles?.metadata?.full_name ||
+        member.profiles?.email ||
+        member.user_id;
+      return {
+        value: member.user_id,
+        label: name,
+        meta: member,
+      };
+    }),
+  ];
+
+  const selectedUserOption = userOptions.find(
+    (option) => option.value === (selectedUser ?? "all"),
+  );
+
   return (
-    <div className="flex gap-4 items-end overflow-x-auto">
-      <div className="flex flex-col gap-2 min-w-[220px]">
+    <div className="flex gap-2 sm:gap-3 items-end overflow-x-auto w-full">
+      <div className="flex flex-col gap-2 min-w-[150px] max-w-[200px] flex-1">
         <Combobox
           options={[
             { value: "all", label: "All agents" },
@@ -76,7 +96,7 @@ export function AuditFilters({
             <Button
               variant="outline"
               role="combobox"
-              className="w-full justify-between gap-2"
+              className="w-full justify-between gap-2 max-w-full text-sm"
             >
               {selectedAgentData ? (
                 <span className="flex items-center gap-2 truncate">
@@ -95,12 +115,17 @@ export function AuditFilters({
           )}
         />
       </div>
-      {sortedMembers.length > 0 && (
-        <div className="flex flex-col gap-2 min-w-[220px]">
-          <Select value={selectedUser ?? "all"} onValueChange={onUserChange}>
-            <SelectTrigger id="user-select" className="w-full">
-              {selectedUserData ? (
-                <span className="flex items-center gap-2 truncate">
+      <div className="flex flex-col gap-2 min-w-[140px] max-w-[190px] flex-1">
+        <Select value={selectedUser ?? "all"} onValueChange={onUserChange}>
+          <SelectTrigger id="user-select" className="w-full text-sm">
+            {selectedUserOption && selectedUserOption.value !== "all" ? (
+              selectedUserOption.value === "unknown" ? (
+                <span className="flex items-center gap-1.5 truncate">
+                  <UserAvatar fallback="UN" size="xs" muted />
+                  <span className="truncate">Unknown</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 truncate">
                   <UserAvatar
                     url={selectedUserAvatarUrl}
                     fallback={selectedUserFallback}
@@ -108,35 +133,20 @@ export function AuditFilters({
                   />
                   <span className="truncate">{selectedUserDisplayName}</span>
                 </span>
-              ) : (
-                <SelectValue placeholder="All users" />
-              )}
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All users</SelectItem>
-              {sortedMembers.map((member) => {
-                const name =
-                  member.profiles?.metadata?.full_name ||
-                  member.profiles?.email ||
-                  member.user_id;
-                const email = member.profiles?.email;
-                return (
-                  <SelectItem key={member.user_id} value={member.user_id}>
-                    <span>
-                      {name}
-                      {email && email !== name && (
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          {email}
-                        </span>
-                      )}
-                    </span>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+              )
+            ) : (
+              <SelectValue placeholder="All users" />
+            )}
+          </SelectTrigger>
+          <SelectContent className="max-h-[280px]">
+            {userOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }

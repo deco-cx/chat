@@ -30,7 +30,6 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@deco/ui/components/resizable.tsx";
-import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
 import {
   type KeyboardEvent,
   Suspense,
@@ -43,7 +42,6 @@ import { ErrorBoundary } from "../../error-boundary.tsx";
 import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 import { AuditFilters } from "./audit-filters.tsx";
 import { AuditTable } from "./audit-table.tsx";
-import { ThreadDetailPanel } from "./thread-detail-panel.tsx";
 import { ThreadConversation } from "./thread-panel-loader.tsx";
 
 const CURSOR_PAGINATION_SEARCH_PARAM = "after";
@@ -197,6 +195,7 @@ export function AuditListContent({
 
   function handleThreadSelect(threadId: string) {
     setSelectedThreadId(threadId);
+    setActiveThreadId(threadId);
   }
 
   function handleNavigateThread(direction: "previous" | "next") {
@@ -321,9 +320,9 @@ export function AuditListContent({
       ) : (
         <div className="flex h-[calc(100vh-48px)]">
           <ResizablePanelGroup direction="horizontal" className="flex">
-            <ResizablePanel defaultSize={50} minSize={20} className="min-w-[240px]">
+            <ResizablePanel defaultSize={60} minSize={20} className="min-w-[240px]">
               <div className="flex h-full min-w-0 flex-col bg-background">
-                <div className="flex flex-wrap items-end gap-3 px-2 pt-2">
+                <div className="flex flex-wrap items-end gap-2 px-2 pt-2">
                   {showFilters ? (
                     <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
                       <AuditFilters

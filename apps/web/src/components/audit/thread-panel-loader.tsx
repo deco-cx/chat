@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { useThread, useThreadMessages, useUpdateThreadTitle } from "@deco/sdk";
 import { ThreadDetailPanel } from "./thread-detail-panel.tsx";
@@ -11,17 +11,23 @@ export function ThreadConversation({
   onNavigate: (direction: "previous" | "next") => void;
 }) {
   const { data: threadDetail } = useThread(thread.id);
+  const title = useMemo(() => threadDetail?.title ?? "", [threadDetail?.title]);
   const { data: messages } = useThreadMessages(thread.id);
   const updateThreadTitle = useUpdateThreadTitle();
+  const hasTriggeredRef = useRef(false);
 
   useEffect(() => {
-    if (!threadDetail?.title || !messages?.messages?.length) {
+    hasTriggeredRef.current = false;
+  }, [thread.id, title]);
+
+  useEffect(() => {
+    if (!title || !messages?.messages?.length) {
       return;
     }
 
-    const isGeneratedTitle = !/^new thread/i.test(threadDetail.title.trim());
+    const isGeneratedTitle = !/^new thread/i.test(title.trim());
 
-    if (isGeneratedTitle || updateThreadTitle.isPending) {
+    if (isGeneratedTitle || updateThreadTitle.isPending || hasTriggeredRef.current) {
       return;
     }
 
@@ -30,9 +36,9 @@ export function ThreadConversation({
     if (!summaryCandidate) {
       return;
     }
-
+    hasTriggeredRef.current = true;
     updateThreadTitle.mutate({ threadId: thread.id, title: summaryCandidate, stream: true });
-  }, [messages?.messages, thread.id, threadDetail?.title, updateThreadTitle]);
+  }, [messages?.messages, thread.id, title, updateThreadTitle.isPending, updateThreadTitle]);
 
   if (!threadDetail || !messages) {
     return (
