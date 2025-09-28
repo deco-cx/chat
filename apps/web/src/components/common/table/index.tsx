@@ -19,22 +19,24 @@ export interface TableColumn<T> {
   wrap?: boolean;
 }
 
-export interface TableProps<T> {
+export interface TableProps<T extends Record<string, unknown>> {
   columns: TableColumn<T>[];
   data: T[];
   sortKey?: string;
   sortDirection?: "asc" | "desc";
   onSort?: (key: string) => void;
   onRowClick?: (row: T) => void;
+  rowClassName?: (row: T) => string | undefined;
 }
 
-export function Table<T>({
+export function Table<T extends Record<string, unknown>>({
   columns,
   data,
   sortKey,
   sortDirection,
   onSort,
   onRowClick,
+  rowClassName,
 }: TableProps<T>) {
   function renderSortIcon(_key: string, isActive: boolean) {
     // Only show icon if this column is actively sorted
@@ -104,7 +106,7 @@ export function Table<T>({
           {data.map((row, i) => (
             <TableRow
               key={i}
-              className={onRowClick ? "cursor-pointer" : ""}
+              className={`${onRowClick ? "cursor-pointer" : ""} ${rowClassName?.(row) ?? ""}`.trim()}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
             >
               {columns.map((col, _idx) => (

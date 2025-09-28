@@ -32,7 +32,7 @@ export function DecopilotChat() {
   const appAdditionalTools = useAppAdditionalTools();
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full w-full flex-col">
       <AgentProvider
         key={WELL_KNOWN_AGENTS.decopilotAgent.id}
         agentId={WELL_KNOWN_AGENTS.decopilotAgent.id}
@@ -53,9 +53,7 @@ export function DecopilotChat() {
         autoSend={autoSend}
         onAutoSendComplete={clearAutoSendParams}
       >
-        <div className="h-full">
-          <MainChat />
-        </div>
+        <MainChat />
       </AgentProvider>
     </div>
   );

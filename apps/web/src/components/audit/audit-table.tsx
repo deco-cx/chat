@@ -25,6 +25,7 @@ interface AuditTableProps {
   onSortChange: (sort: string) => void;
   onRowClick?: (threadId: string) => void;
   columnsDenyList?: Set<string>;
+  activeThreadId?: string | null;
 }
 
 function getSortKeyAndDirection(sort: string): {
@@ -43,6 +44,7 @@ export function AuditTable({
   onSortChange,
   onRowClick,
   columnsDenyList,
+  activeThreadId,
 }: AuditTableProps) {
   const { key: sortKey, direction: sortDirection } =
     getSortKeyAndDirection(sort);
@@ -109,6 +111,9 @@ export function AuditTable({
         sortDirection={sortDirection}
         onSort={handleSort}
         onRowClick={onRowClick ? (row) => onRowClick(row.id) : undefined}
+        rowClassName={(row) =>
+          row.id === activeThreadId ? "bg-sidebar/60 hover:bg-sidebar/80" : undefined
+        }
       />
     </div>
   );
