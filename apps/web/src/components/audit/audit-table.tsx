@@ -61,7 +61,8 @@ export function AuditTable({
       ? {
           id: "agent",
           header: "Agent",
-          rowClassName: "w-[180px]",
+          rowClassName: "w-[150px]",
+          cellClassName: "w-[150px] max-w-[150px]",
           accessor: (cell: Thread) => (
             <AgentInfo agentId={cell.metadata?.agentId} noTooltip />
           ),
@@ -72,13 +73,15 @@ export function AuditTable({
           id: "user",
           header: "Used by",
           rowClassName: "w-[180px]",
+          cellClassName: "w-[180px] max-w-[180px]",
           accessor: (cell: Thread) => <UserInfo userId={cell.resourceId} noTooltip />,
         }
       : null,
     {
       id: "title",
       header: "Thread name",
-      rowClassName: "w-[240px] md:w-[280px] lg:w-[320px]",
+      rowClassName: "min-w-[180px]",
+      cellClassName: "min-w-[180px] max-w-[320px]",
       render: (cell: Thread) => (
         <span className="truncate block w-full" title={cell.title}>
           {cell.title}
