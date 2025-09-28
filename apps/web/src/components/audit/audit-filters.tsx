@@ -7,6 +7,10 @@ import {
   SelectValue,
 } from "@deco/ui/components/select.tsx";
 import { Combobox } from "@deco/ui/components/combobox.tsx";
+import { Button } from "@deco/ui/components/button.tsx";
+import { ChevronsUpDown } from "lucide-react";
+import { AgentAvatar } from "../common/avatar/agent.tsx";
+import { UserAvatar } from "../common/avatar/user.tsx";
 
 interface AuditFiltersProps {
   agents: Agent[];
@@ -34,9 +38,29 @@ export function AuditFilters({
     return nameA.localeCompare(nameB);
   });
 
+  const selectedAgentData =
+    selectedAgent && selectedAgent !== "all"
+      ? agents.find((agent) => agent.id === selectedAgent)
+      : undefined;
+
+  const selectedUserData =
+    selectedUser && selectedUser !== "all"
+      ? sortedMembers.find((member) => member.user_id === selectedUser)
+      : undefined;
+
+  const selectedUserDisplayName = selectedUserData
+    ? selectedUserData.profiles?.metadata?.full_name ||
+      selectedUserData.profiles?.email ||
+      selectedUserData.user_id
+    : "";
+  const selectedUserAvatarUrl = selectedUserData?.profiles?.metadata?.avatar_url;
+  const selectedUserFallback = selectedUserDisplayName
+    ? selectedUserDisplayName.substring(0, 2).toUpperCase()
+    : "UN";
+
   return (
     <div className="flex gap-4 items-end overflow-x-auto">
-      <div className="flex flex-col gap-2 min-w-[180px]">
+      <div className="flex flex-col gap-2 min-w-[220px]">
         <Combobox
           options={[
             { value: "all", label: "All agents" },
@@ -44,15 +68,49 @@ export function AuditFilters({
           ]}
           value={selectedAgent ?? "all"}
           onChange={(value) => {
-            onAgentChange(value);
+            const nextValue = value === "" ? "all" : value;
+            onAgentChange(nextValue);
           }}
+          triggerClassName="w-full"
+          renderTrigger={() => (
+            <Button
+              variant="outline"
+              role="combobox"
+              className="w-full justify-between gap-2"
+            >
+              {selectedAgentData ? (
+                <span className="flex items-center gap-2 truncate">
+                  <AgentAvatar
+                    url={selectedAgentData.avatar}
+                    fallback={selectedAgentData.name}
+                    size="xs"
+                  />
+                  <span className="truncate">{selectedAgentData.name}</span>
+                </span>
+              ) : (
+                <span className="truncate">All agents</span>
+              )}
+              <ChevronsUpDown className="size-4 opacity-50" />
+            </Button>
+          )}
         />
       </div>
       {sortedMembers.length > 0 && (
-        <div className="flex flex-col gap-2 min-w-[180px]">
+        <div className="flex flex-col gap-2 min-w-[220px]">
           <Select value={selectedUser ?? "all"} onValueChange={onUserChange}>
             <SelectTrigger id="user-select" className="w-full">
-              <SelectValue placeholder="All users" />
+              {selectedUserData ? (
+                <span className="flex items-center gap-2 truncate">
+                  <UserAvatar
+                    url={selectedUserAvatarUrl}
+                    fallback={selectedUserFallback}
+                    size="xs"
+                  />
+                  <span className="truncate">{selectedUserDisplayName}</span>
+                </span>
+              ) : (
+                <SelectValue placeholder="All users" />
+              )}
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All users</SelectItem>

@@ -321,7 +321,7 @@ export function AuditListContent({
       ) : (
         <div className="flex h-[calc(100vh-48px)]">
           <ResizablePanelGroup direction="horizontal" className="flex">
-            <ResizablePanel defaultSize={40} minSize={20} className="min-w-[240px]">
+            <ResizablePanel defaultSize={36} minSize={20} className="min-w-[240px]">
               <div className="flex h-full min-w-0 flex-col bg-background">
                 <div className="flex flex-wrap items-end gap-3 px-4 py-3">
                   {showFilters ? (
@@ -346,6 +346,8 @@ export function AuditListContent({
                     onSortChange={handleSortChange}
                     onRowClick={handleThreadSelect}
                     activeThreadId={activeThreadId}
+                    selectedAgent={selectedAgent}
+                    selectedUser={selectedUser}
                   />
                 </div>
                 <div className="border-t border-border bg-sidebar/40 px-4 py-3">
@@ -389,7 +391,7 @@ export function AuditListContent({
               </div>
             </ResizablePanel>
             <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={68} minSize={30} className="min-w-[360px]">
+            <ResizablePanel defaultSize={64} minSize={30} className="min-w-[360px]">
               <div className="flex h-full min-w-0 flex-col bg-background">
                 {activeThread ? (
                   <Suspense

@@ -26,6 +26,8 @@ interface AuditTableProps {
   onRowClick?: (threadId: string) => void;
   columnsDenyList?: Set<string>;
   activeThreadId?: string | null;
+  selectedAgent?: string | null;
+  selectedUser?: string | null;
 }
 
 function getSortKeyAndDirection(sort: string): {
@@ -45,35 +47,32 @@ export function AuditTable({
   onRowClick,
   columnsDenyList,
   activeThreadId,
+  selectedAgent,
+  selectedUser,
 }: AuditTableProps) {
   const { key: sortKey, direction: sortDirection } =
     getSortKeyAndDirection(sort);
 
+  const shouldShowAgent = !selectedAgent;
+  const shouldShowUser = !selectedUser;
+
   const columns: TableColumn<(typeof threads)[number]>[] = [
-    {
-      id: "updatedAt",
-      header: "Last updated",
-      accessor: (cell: Thread) => <DateTimeCell value={cell.updatedAt} />,
-      sortable: true,
-    },
-    {
-      id: "createdAt",
-      header: "Created at",
-      accessor: (cell: Thread) => <DateTimeCell value={cell.createdAt} />,
-      sortable: true,
-    },
-    {
-      id: "agent",
-      header: "Agent",
-      accessor: (cell: Thread) => (
-        <AgentInfo agentId={cell.metadata?.agentId} />
-      ),
-    },
-    {
-      id: "user",
-      header: "Used by",
-      accessor: (cell: Thread) => <UserInfo userId={cell.resourceId} />,
-    },
+    shouldShowAgent
+      ? {
+          id: "agent",
+          header: "Agent",
+          accessor: (cell: Thread) => (
+            <AgentInfo agentId={cell.metadata?.agentId} />
+          ),
+        }
+      : null,
+    shouldShowUser
+      ? {
+          id: "user",
+          header: "Used by",
+          accessor: (cell: Thread) => <UserInfo userId={cell.resourceId} />,
+        }
+      : null,
     {
       id: "title",
       header: "Thread name",
@@ -88,7 +87,21 @@ export function AuditTable({
         </Tooltip>
       ),
     },
-  ].filter((col) => !columnsDenyList?.has(col.id));
+    {
+      id: "updatedAt",
+      header: "Last updated",
+      accessor: (cell: Thread) => <DateTimeCell value={cell.updatedAt} />,
+      sortable: true,
+    },
+    {
+      id: "createdAt",
+      header: "Created at",
+      accessor: (cell: Thread) => <DateTimeCell value={cell.createdAt} />,
+      sortable: true,
+    },
+  ]
+    .filter((col): col is TableColumn<(typeof threads)[number]> => col !== null)
+    .filter((col) => !columnsDenyList?.has(col.id));
 
   function handleSort(colId: string) {
     if (colId === "updatedAt") {
