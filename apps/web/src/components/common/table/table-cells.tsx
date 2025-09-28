@@ -25,36 +25,41 @@ import { Combobox } from "@deco/ui/components/combobox.tsx";
 interface AgentInfoProps {
   agentId?: string;
   className?: string;
+  noTooltip?: boolean;
 }
 
-function AgentInfo({ agentId, className }: AgentInfoProps) {
+function AgentInfo({ agentId, className, noTooltip = false }: AgentInfoProps) {
   const { data: agents } = useAgents();
   const agent = useMemo(
     () => agents?.find((a) => a.id === agentId),
     [agents, agentId],
   );
 
+  const content = (
+    <div className={`flex items-center gap-2 min-w-[48px] ${className ?? ""}`}>
+      <AgentAvatar
+        url={agent?.avatar}
+        fallback={
+          agentId === WELL_KNOWN_AGENT_IDS.teamAgent ? agentId : agent?.name
+        }
+        size="sm"
+      />
+      <span className="truncate hidden md:inline">
+        {agentId === WELL_KNOWN_AGENT_IDS.teamAgent
+          ? "New chat"
+          : agent
+            ? agent.name
+            : "Deleted agent"}
+      </span>
+    </div>
+  );
+
+  if (noTooltip) return content;
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div
-          className={`flex items-center gap-2 min-w-[48px] ${className ?? ""}`}
-        >
-          <AgentAvatar
-            url={agent?.avatar}
-            fallback={
-              agentId === WELL_KNOWN_AGENT_IDS.teamAgent ? agentId : agent?.name
-            }
-            size="sm"
-          />
-          <span className="truncate hidden md:inline">
-            {agentId === WELL_KNOWN_AGENT_IDS.teamAgent
-              ? "New chat"
-              : agent
-                ? agent.name
-                : "Deleted agent"}
-          </span>
-        </div>
+        {content}
       </TooltipTrigger>
       <TooltipContent>{agent ? agent.name : agentId}</TooltipContent>
     </Tooltip>
@@ -131,9 +136,8 @@ function UserInfo({
         ) : null}
       </div>
       <div
-        className={`flex-col items-start text-left leading-tight w-full ${
-          showDetails ? "hidden md:flex" : "flex"
-        }`}
+        className={`flex-col items-start text-left leading-tight w-full ${showDetails ? "hidden md:flex" : "flex"
+          }`}
       >
         <span
           className="truncate block text-xs font-medium text-foreground"

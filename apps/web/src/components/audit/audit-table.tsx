@@ -54,7 +54,7 @@ export function AuditTable({
     getSortKeyAndDirection(sort);
 
   const shouldShowAgent = !selectedAgent;
-  const shouldShowUser = !selectedUser;
+  const shouldShowUser = !selectedUser || selectedUser === "unknown";
 
   const columns: TableColumn<(typeof threads)[number]>[] = [
     shouldShowAgent
@@ -63,7 +63,7 @@ export function AuditTable({
           header: "Agent",
           rowClassName: "w-[180px]",
           accessor: (cell: Thread) => (
-            <AgentInfo agentId={cell.metadata?.agentId} />
+            <AgentInfo agentId={cell.metadata?.agentId} noTooltip />
           ),
         }
       : null,

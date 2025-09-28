@@ -138,7 +138,9 @@ export function AuditListContent({
     error,
   } = useAuditEvents({
     agentId: filters?.agentId ?? selectedAgent,
-    resourceId: filters?.resourceId ?? selectedUser,
+    resourceId:
+      filters?.resourceId ??
+      (selectedUser === "unknown" ? undefined : selectedUser),
     orderBy: filters?.orderBy ?? sort,
     cursor: filters?.cursor ?? currentCursor,
     limit: filters?.limit ?? pageSize,
@@ -179,8 +181,13 @@ export function AuditListContent({
       return;
     }
 
-    if (!activeThreadId || !threads.some((thread) => thread.id === activeThreadId)) {
-      setActiveThreadId(threads[0]?.id ?? null);
+    if (!activeThreadId) {
+      return;
+    }
+
+    if (!threads.some((thread) => thread.id === activeThreadId)) {
+      setActiveThreadId(null);
+      setSelectedThreadId(null);
     }
   }, [activeThreadId, threads]);
 
