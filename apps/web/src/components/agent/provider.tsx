@@ -284,7 +284,7 @@ export function AgentProvider({
     status: "idle",
     setMessages: () => undefined,
     handleInputChange: () => undefined,
-  handleSubmit: () => undefined,
+    handleSubmit: () => undefined,
     input: "",
     setInput: () => undefined,
     append: async () => undefined,
@@ -375,7 +375,11 @@ export function AgentProvider({
             const isImageLike = content && IMAGE_REGEXP.test(content);
 
             if (!isImageLike) {
-              openPreviewPanel(`preview-${toolCall.toolCallId}`, content, title);
+              openPreviewPanel(
+                `preview-${toolCall.toolCallId}`,
+                content,
+                title,
+              );
             }
 
             return {

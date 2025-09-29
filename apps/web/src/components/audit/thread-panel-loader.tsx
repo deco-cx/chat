@@ -11,7 +11,12 @@ export function ThreadConversation({
   canNavigatePrevious,
   canNavigateNext,
 }: {
-  thread: { id: string; title?: string; resourceId?: string; metadata?: Record<string, unknown> } & Record<string, unknown>;
+  thread: {
+    id: string;
+    title?: string;
+    resourceId?: string;
+    metadata?: Record<string, unknown>;
+  } & Record<string, unknown>;
   onNavigate: (direction: "previous" | "next") => void;
   canNavigatePrevious: boolean;
   canNavigateNext: boolean;
@@ -62,7 +67,11 @@ function ThreadMessages({ threadId }: { threadId: string }) {
 
     const isGeneratedTitle = !/^new thread/i.test(title.trim());
 
-    if (isGeneratedTitle || updateThreadTitle.isPending || hasTriggeredRef.current) {
+    if (
+      isGeneratedTitle ||
+      updateThreadTitle.isPending ||
+      hasTriggeredRef.current
+    ) {
       return;
     }
 
@@ -72,8 +81,18 @@ function ThreadMessages({ threadId }: { threadId: string }) {
       return;
     }
     hasTriggeredRef.current = true;
-    updateThreadTitle.mutate({ threadId, title: summaryCandidate, stream: true });
-  }, [messages?.messages, threadId, title, updateThreadTitle.isPending, updateThreadTitle]);
+    updateThreadTitle.mutate({
+      threadId,
+      title: summaryCandidate,
+      stream: true,
+    });
+  }, [
+    messages?.messages,
+    threadId,
+    title,
+    updateThreadTitle.isPending,
+    updateThreadTitle,
+  ]);
 
   if (!threadDetail || !messages) {
     return (
@@ -107,7 +126,9 @@ function ThreadMessages({ threadId }: { threadId: string }) {
   );
 }
 
-function extractSummaryCandidate(messages: { role: string; content: unknown }[]) {
+function extractSummaryCandidate(
+  messages: { role: string; content: unknown }[],
+) {
   if (!messages.length) {
     return null;
   }
@@ -133,5 +154,7 @@ function extractSummaryCandidate(messages: { role: string; content: unknown }[])
   const truncated = normalized.slice(0, 80);
   const lastSpace = truncated.lastIndexOf(" ");
 
-  return (lastSpace > 40 ? truncated.slice(0, lastSpace) : truncated).concat("…");
+  return (lastSpace > 40 ? truncated.slice(0, lastSpace) : truncated).concat(
+    "…",
+  );
 }

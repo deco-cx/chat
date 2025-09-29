@@ -30,12 +30,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@deco/ui/components/resizable.tsx";
-import {
-  type KeyboardEvent,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { ErrorBoundary } from "../../error-boundary.tsx";
 import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
@@ -91,12 +86,17 @@ export function AuditListContent({
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [pageSize, setPageSize] = useState<number>(() => {
     const fromFilter = filters?.limit;
-    if (typeof fromFilter === "number" && PAGE_SIZE_OPTIONS.includes(fromFilter)) {
+    if (
+      typeof fromFilter === "number" &&
+      PAGE_SIZE_OPTIONS.includes(fromFilter)
+    ) {
       return fromFilter;
     }
 
     const fromSearchParams = searchParams.get(PAGE_SIZE_SEARCH_PARAM);
-    const parsed = fromSearchParams ? Number.parseInt(fromSearchParams, 10) : null;
+    const parsed = fromSearchParams
+      ? Number.parseInt(fromSearchParams, 10)
+      : null;
     if (parsed && PAGE_SIZE_OPTIONS.includes(parsed)) {
       return parsed;
     }
@@ -127,37 +127,37 @@ export function AuditListContent({
     undefined;
   const resolvedOrgSlug = params.org ?? "";
   const { data: teams = [] } = useOrganizations();
-  const resolvedSlug = teams.find((team) => team.slug === resolvedOrgSlug)?.slug ?? null;
+  const resolvedSlug =
+    teams.find((team) => team.slug === resolvedOrgSlug)?.slug ?? null;
   const { data: teamMembersData } = useTeamMembersBySlug(resolvedSlug);
   const members = teamMembersData?.members ?? [];
 
   // Memoize audit options to prevent unnecessary refetches
-  const auditOptions = useMemo(() => ({
-    agentId: filters?.agentId ?? selectedAgent,
-    resourceId:
-      filters?.resourceId ??
-      (selectedUser === "unknown" ? undefined : selectedUser),
-    orderBy: filters?.orderBy ?? sort,
-    cursor: filters?.cursor ?? currentCursor,
-    limit: filters?.limit ?? pageSize,
-  }), [
-    filters?.agentId,
-    filters?.resourceId,
-    filters?.orderBy,
-    filters?.cursor,
-    filters?.limit,
-    selectedAgent,
-    selectedUser,
-    sort,
-    currentCursor,
-    pageSize,
-  ]);
+  const auditOptions = useMemo(
+    () => ({
+      agentId: filters?.agentId ?? selectedAgent,
+      resourceId:
+        filters?.resourceId ??
+        (selectedUser === "unknown" ? undefined : selectedUser),
+      orderBy: filters?.orderBy ?? sort,
+      cursor: filters?.cursor ?? currentCursor,
+      limit: filters?.limit ?? pageSize,
+    }),
+    [
+      filters?.agentId,
+      filters?.resourceId,
+      filters?.orderBy,
+      filters?.cursor,
+      filters?.limit,
+      selectedAgent,
+      selectedUser,
+      sort,
+      currentCursor,
+      pageSize,
+    ],
+  );
 
-  const {
-    data: auditData,
-    isLoading,
-    error,
-  } = useAuditEvents(auditOptions);
+  const { data: auditData, isLoading, error } = useAuditEvents(auditOptions);
 
   const threads = auditData?.threads ?? [];
   const pagination = auditData?.pagination;
@@ -167,7 +167,9 @@ export function AuditListContent({
       <span className="whitespace-nowrap">Rows per page</span>
       <Select
         value={String(pageSize)}
-        onValueChange={(value) => handlePageSizeChange(Number.parseInt(value, 10))}
+        onValueChange={(value) =>
+          handlePageSizeChange(Number.parseInt(value, 10))
+        }
       >
         <SelectTrigger className="w-[96px]">
           <SelectValue />
@@ -238,7 +240,8 @@ export function AuditListContent({
             0,
           );
 
-    const nextIndex = direction === "next" ? currentIndex + 1 : currentIndex - 1;
+    const nextIndex =
+      direction === "next" ? currentIndex + 1 : currentIndex - 1;
 
     const nextThread = threads[nextIndex];
 
@@ -353,7 +356,11 @@ export function AuditListContent({
       ) : (
         <div className="flex h-[calc(100vh-48px)]">
           <ResizablePanelGroup direction="horizontal" className="flex">
-            <ResizablePanel defaultSize={60} minSize={20} className="min-w-[240px]">
+            <ResizablePanel
+              defaultSize={60}
+              minSize={20}
+              className="min-w-[240px]"
+            >
               <div className="flex h-full min-w-0 flex-col bg-background">
                 <div className="flex flex-wrap items-end gap-2 px-2 pt-2">
                   {showFilters ? (
@@ -423,7 +430,11 @@ export function AuditListContent({
               </div>
             </ResizablePanel>
             <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={50} minSize={30} className="min-w-[360px]">
+            <ResizablePanel
+              defaultSize={50}
+              minSize={30}
+              className="min-w-[360px]"
+            >
               <div className="flex h-full min-w-0 flex-col bg-background">
                 {activeThread ? (
                   <ThreadConversation
@@ -431,7 +442,8 @@ export function AuditListContent({
                     onNavigate={handleNavigateThread}
                     canNavigatePrevious={activeThreadIndex > 0}
                     canNavigateNext={
-                      activeThreadIndex >= 0 && activeThreadIndex < threads.length - 1
+                      activeThreadIndex >= 0 &&
+                      activeThreadIndex < threads.length - 1
                     }
                   />
                 ) : (

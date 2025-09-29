@@ -83,7 +83,8 @@ export function Table<T extends Record<string, unknown>>({
                   key={col.id}
                   className={
                     getHeaderClass(idx, columns.length) +
-                    " sticky top-0 z-10 group " + col.rowClassName
+                    " sticky top-0 z-10 group " +
+                    col.rowClassName
                   }
                   style={{ cursor: col.sortable ? "pointer" : undefined }}
                   onClick={

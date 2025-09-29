@@ -12,7 +12,12 @@ export function ThreadConversation({
   canNavigatePrevious,
   canNavigateNext,
 }: {
-  thread: { id: string; title?: string; resourceId?: string; metadata?: Record<string, unknown> } & Record<string, unknown>;
+  thread: {
+    id: string;
+    title?: string;
+    resourceId?: string;
+    metadata?: Record<string, unknown>;
+  } & Record<string, unknown>;
   onNavigate: (direction: "previous" | "next") => void;
   canNavigatePrevious: boolean;
   canNavigateNext: boolean;
@@ -69,10 +74,10 @@ function ThreadMessagesWithCache({ threadId }: { threadId: string }) {
 }
 
 // Renders cached data instantly - NO HOOKS that could trigger Suspense
-function CachedThreadMessages({ 
-  threadId, 
-  cachedData 
-}: { 
+function CachedThreadMessages({
+  threadId,
+  cachedData,
+}: {
   threadId: string;
   cachedData: { threadDetail: any; messages: any };
 }) {
@@ -87,7 +92,10 @@ function CachedThreadMessages({
   return (
     <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
       <AgentProvider
-        agentId={cachedData.threadDetail.metadata?.agentId ?? cachedData.threadDetail.id}
+        agentId={
+          cachedData.threadDetail.metadata?.agentId ??
+          cachedData.threadDetail.id
+        }
         threadId={cachedData.threadDetail.id}
         uiOptions={{
           showThreadTools: false,
@@ -137,7 +145,11 @@ function ThreadMessages({ threadId }: { threadId: string }) {
 
     const isGeneratedTitle = !/^new thread/i.test(title.trim());
 
-    if (isGeneratedTitle || updateThreadTitle.isPending || hasTriggeredRef.current) {
+    if (
+      isGeneratedTitle ||
+      updateThreadTitle.isPending ||
+      hasTriggeredRef.current
+    ) {
       return;
     }
 
@@ -147,8 +159,18 @@ function ThreadMessages({ threadId }: { threadId: string }) {
       return;
     }
     hasTriggeredRef.current = true;
-    updateThreadTitle.mutate({ threadId, title: summaryCandidate, stream: true });
-  }, [messages?.messages, threadId, title, updateThreadTitle.isPending, updateThreadTitle]);
+    updateThreadTitle.mutate({
+      threadId,
+      title: summaryCandidate,
+      stream: true,
+    });
+  }, [
+    messages?.messages,
+    threadId,
+    title,
+    updateThreadTitle.isPending,
+    updateThreadTitle,
+  ]);
 
   if (!threadDetail || !messages) {
     return (
@@ -182,7 +204,9 @@ function ThreadMessages({ threadId }: { threadId: string }) {
   );
 }
 
-function extractSummaryCandidate(messages: { role: string; content: unknown }[]) {
+function extractSummaryCandidate(
+  messages: { role: string; content: unknown }[],
+) {
   if (!messages.length) {
     return null;
   }
@@ -208,5 +232,7 @@ function extractSummaryCandidate(messages: { role: string; content: unknown }[])
   const truncated = normalized.slice(0, 80);
   const lastSpace = truncated.lastIndexOf(" ");
 
-  return (lastSpace > 40 ? truncated.slice(0, lastSpace) : truncated).concat("…");
+  return (lastSpace > 40 ? truncated.slice(0, lastSpace) : truncated).concat(
+    "…",
+  );
 }

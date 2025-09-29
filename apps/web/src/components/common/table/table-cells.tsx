@@ -58,9 +58,7 @@ function AgentInfo({ agentId, className, noTooltip = false }: AgentInfoProps) {
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        {content}
-      </TooltipTrigger>
+      <TooltipTrigger asChild>{content}</TooltipTrigger>
       <TooltipContent>{agent ? agent.name : agentId}</TooltipContent>
     </Tooltip>
   );
@@ -110,9 +108,8 @@ function UserInfo({
     ? user.metadata.full_name
     : member?.profiles?.metadata?.full_name;
   const email = isCurrentUser ? user.email : member?.profiles?.email;
-  const { country, stateCode, formattedNumber, flagEmoji } = getPhoneMetadata(
-    userId,
-  );
+  const { country, stateCode, formattedNumber, flagEmoji } =
+    getPhoneMetadata(userId);
 
   const displayName = name || "Unknown";
   const displayEmail = email || "";
@@ -136,8 +133,9 @@ function UserInfo({
         ) : null}
       </div>
       <div
-        className={`flex-col items-start text-left leading-tight w-full ${showDetails ? "hidden md:flex" : "flex"
-          }`}
+        className={`flex-col items-start text-left leading-tight w-full ${
+          showDetails ? "hidden md:flex" : "flex"
+        }`}
       >
         <span
           className="truncate block text-xs font-medium text-foreground"
@@ -165,7 +163,9 @@ function UserInfo({
           <span>{displayName}</span>
           {displayEmail ? <span>{displayEmail}</span> : null}
           {formattedNumber ? <span>{formattedNumber}</span> : null}
-          {country ? <span className="text-xs text-muted-foreground">{country}</span> : null}
+          {country ? (
+            <span className="text-xs text-muted-foreground">{country}</span>
+          ) : null}
         </div>
       </TooltipContent>
     </Tooltip>

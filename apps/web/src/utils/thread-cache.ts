@@ -9,13 +9,13 @@ interface CachedThreadData {
   expires: number;
 }
 
-const CACHE_PREFIX = 'deco_thread_cache_';
+const CACHE_PREFIX = "deco_thread_cache_";
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
 class ThreadCache {
   private isSupported(): boolean {
     try {
-      const test = '__localStorage_test__';
+      const test = "__localStorage_test__";
       localStorage.setItem(test, test);
       localStorage.removeItem(test);
       return true;
@@ -37,12 +37,12 @@ class ThreadCache {
 
     try {
       const keysToRemove: string[] = [];
-      
+
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key?.startsWith(CACHE_PREFIX)) {
           try {
-            const data = JSON.parse(localStorage.getItem(key) || '{}');
+            const data = JSON.parse(localStorage.getItem(key) || "{}");
             if (this.isExpired(data.expires)) {
               keysToRemove.push(key);
             }
@@ -52,9 +52,9 @@ class ThreadCache {
         }
       }
 
-      keysToRemove.forEach(key => localStorage.removeItem(key));
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
     } catch (error) {
-      console.warn('Failed to cleanup expired thread cache:', error);
+      console.warn("Failed to cleanup expired thread cache:", error);
     }
   }
 
@@ -72,7 +72,7 @@ class ThreadCache {
 
       const cacheKey = this.getCacheKey(threadId);
       localStorage.setItem(cacheKey, JSON.stringify(cacheData));
-      
+
       // Cleanup expired entries occasionally (10% chance)
       if (Math.random() < 0.1) {
         this.cleanupExpired();
@@ -81,14 +81,17 @@ class ThreadCache {
       // Storage might be full, try to cleanup and retry once
       try {
         this.cleanupExpired();
-        localStorage.setItem(this.getCacheKey(threadId), JSON.stringify({
-          threadDetail,
-          messages,
-          timestamp: Date.now(),
-          expires: Date.now() + CACHE_DURATION,
-        }));
+        localStorage.setItem(
+          this.getCacheKey(threadId),
+          JSON.stringify({
+            threadDetail,
+            messages,
+            timestamp: Date.now(),
+            expires: Date.now() + CACHE_DURATION,
+          }),
+        );
       } catch {
-        console.warn('Failed to cache thread data:', error);
+        console.warn("Failed to cache thread data:", error);
       }
     }
   }
@@ -104,7 +107,7 @@ class ThreadCache {
       }
 
       const data: CachedThreadData = JSON.parse(cached);
-      
+
       if (this.isExpired(data.expires)) {
         localStorage.removeItem(cacheKey);
         return null;
@@ -115,7 +118,7 @@ class ThreadCache {
         messages: data.messages,
       };
     } catch (error) {
-      console.warn('Failed to read thread cache:', error);
+      console.warn("Failed to read thread cache:", error);
       return null;
     }
   }
@@ -126,7 +129,7 @@ class ThreadCache {
     try {
       localStorage.removeItem(this.getCacheKey(threadId));
     } catch (error) {
-      console.warn('Failed to remove thread from cache:', error);
+      console.warn("Failed to remove thread from cache:", error);
     }
   }
 
@@ -135,7 +138,7 @@ class ThreadCache {
 
     try {
       const keysToRemove: string[] = [];
-      
+
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key?.startsWith(CACHE_PREFIX)) {
@@ -143,9 +146,9 @@ class ThreadCache {
         }
       }
 
-      keysToRemove.forEach(key => localStorage.removeItem(key));
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
     } catch (error) {
-      console.warn('Failed to clear thread cache:', error);
+      console.warn("Failed to clear thread cache:", error);
     }
   }
 
@@ -158,12 +161,12 @@ class ThreadCache {
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key?.startsWith(CACHE_PREFIX)) {
-          const threadId = key.replace(CACHE_PREFIX, '');
+          const threadId = key.replace(CACHE_PREFIX, "");
           cachedThreads.push(threadId);
         }
       }
     } catch (error) {
-      console.warn('Failed to list cached threads:', error);
+      console.warn("Failed to list cached threads:", error);
     }
     return cachedThreads;
   }

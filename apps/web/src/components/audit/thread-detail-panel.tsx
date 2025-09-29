@@ -26,17 +26,26 @@ export function ThreadDetailPanel({
   const metadata = useMemo(() => thread.metadata ?? {}, [thread.metadata]);
   const agentId = metadata.agentId ?? thread.id;
 
-  const title = useMemo(() => thread.title || "Untitled conversation", [thread.title]);
+  const title = useMemo(
+    () => thread.title || "Untitled conversation",
+    [thread.title],
+  );
 
   return (
     <div className="flex h-full w-full min-w-0 flex-col overflow-hidden">
       <header className="flex items-center gap-3 border-0 border-border px-4 py-3 flex-shrink-0">
         <div className="flex-1 min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground" title={title}>
+          <p
+            className="truncate text-sm font-semibold text-foreground"
+            title={title}
+          >
             {title}
           </p>
           {thread.resourceId && (
-            <p className="truncate text-xs text-muted-foreground" title={thread.resourceId}>
+            <p
+              className="truncate text-xs text-muted-foreground"
+              title={thread.resourceId}
+            >
               {thread.resourceId}
             </p>
           )}

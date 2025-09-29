@@ -74,7 +74,9 @@ export function AuditTable({
           header: "Used by",
           rowClassName: "w-[180px]",
           cellClassName: "w-[180px] max-w-[180px]",
-          accessor: (cell: Thread) => <UserInfo userId={cell.resourceId} noTooltip />,
+          accessor: (cell: Thread) => (
+            <UserInfo userId={cell.resourceId} noTooltip />
+          ),
         }
       : null,
     {

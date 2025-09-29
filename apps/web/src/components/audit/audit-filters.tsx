@@ -53,7 +53,8 @@ export function AuditFilters({
       selectedUserData.profiles?.email ||
       selectedUserData.user_id
     : "";
-  const selectedUserAvatarUrl = selectedUserData?.profiles?.metadata?.avatar_url;
+  const selectedUserAvatarUrl =
+    selectedUserData?.profiles?.metadata?.avatar_url;
   const selectedUserFallback = selectedUserDisplayName
     ? selectedUserDisplayName.substring(0, 2).toUpperCase()
     : "UN";
