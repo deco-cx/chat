@@ -7,6 +7,7 @@ import {
   TableRow,
 } from "@deco/ui/components/table.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
+import { cn } from "@deco/ui/lib/utils.ts";
 import type { ReactNode } from "react";
 
 export interface TableColumn<T> {
@@ -15,26 +16,29 @@ export interface TableColumn<T> {
   accessor?: (row: T) => ReactNode;
   render?: (row: T) => ReactNode;
   sortable?: boolean;
+  rowClassName?: string;
   cellClassName?: string;
   wrap?: boolean;
 }
 
-export interface TableProps<T> {
+export interface TableProps<T = Record<string, unknown>> {
   columns: TableColumn<T>[];
   data: T[];
   sortKey?: string;
   sortDirection?: "asc" | "desc";
   onSort?: (key: string) => void;
   onRowClick?: (row: T) => void;
+  rowClassName?: (row: T) => string | undefined;
 }
 
-export function Table<T>({
+export function Table<T = Record<string, unknown>>({
   columns,
   data,
   sortKey,
   sortDirection,
   onSort,
   onRowClick,
+  rowClassName,
 }: TableProps<T>) {
   function renderSortIcon(_key: string, isActive: boolean) {
     // Only show icon if this column is actively sorted
@@ -68,8 +72,8 @@ export function Table<T>({
   }
 
   return (
-    <div className="flex flex-1 min-h-0 overflow-y-auto overflow-x-auto w-full border-[1px] border-border rounded-[12px]">
-      <UITable className="w-full min-w-[640px] overflow-hidden">
+    <div className="flex flex-1 min-h-0 overflow-y-auto overflow-x-auto w-full border border-border rounded-xl bg-background">
+      <UITable className="w-full border-collapse table-fixed">
         <TableHeader className="sticky top-0 z-10 border-b-[1px] border-border">
           <TableRow className="h-10 hover:!bg-transparent [&:hover]:!bg-transparent">
             {columns.map((col, idx) => {
@@ -79,7 +83,8 @@ export function Table<T>({
                   key={col.id}
                   className={
                     getHeaderClass(idx, columns.length) +
-                    " sticky top-0 z-10 group"
+                    " sticky top-0 z-10 group " +
+                    col.rowClassName
                   }
                   style={{ cursor: col.sortable ? "pointer" : undefined }}
                   onClick={
@@ -101,32 +106,41 @@ export function Table<T>({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((row, i) => (
-            <TableRow
-              key={i}
-              className={onRowClick ? "cursor-pointer" : ""}
-              onClick={onRowClick ? () => onRowClick(row) : undefined}
-            >
-              {columns.map((col, _idx) => (
-                <TableCell
-                  key={col.id}
-                  className={
-                    "px-3 py-2 " +
-                    (col.cellClassName ? col.cellClassName + " " : "") +
-                    (col.wrap
-                      ? "whitespace-normal break-words"
-                      : "truncate overflow-hidden whitespace-nowrap")
-                  }
-                >
-                  {col.render
-                    ? col.render(row)
-                    : col.accessor
-                      ? col.accessor(row)
-                      : null}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
+          {data.map((row, i) => {
+            const extraClasses = rowClassName?.(row);
+
+            return (
+              <TableRow
+                key={i}
+                data-row-index={i}
+                className={cn(
+                  "group/data-row transition-colors border-b border-border/60 last:border-b-0",
+                  onRowClick ? "cursor-pointer" : "",
+                  extraClasses,
+                )}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+              >
+                {columns.map((col) => (
+                  <TableCell
+                    key={col.id}
+                    className={cn(
+                      "px-3 py-2 align-top min-w-0",
+                      col.cellClassName,
+                      col.wrap
+                        ? "whitespace-normal break-words"
+                        : "truncate overflow-hidden whitespace-nowrap",
+                    )}
+                  >
+                    {col.render
+                      ? col.render(row)
+                      : col.accessor
+                        ? col.accessor(row)
+                        : null}
+                  </TableCell>
+                ))}
+              </TableRow>
+            );
+          })}
         </TableBody>
       </UITable>
     </div>

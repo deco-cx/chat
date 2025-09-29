@@ -1,12 +1,17 @@
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
-import { useCallback, useLayoutEffect } from "react";
+import { useCallback, useLayoutEffect, useRef } from "react";
 import { ChatError } from "./chat-error.tsx";
 import { ChatFinishReason } from "./chat-finish-reason.tsx";
 import { ChatMessage } from "./chat-message.tsx";
 
 import { useAgent } from "../agent/provider.tsx";
 import { EmptyState } from "./empty-state.tsx";
+
+interface ChatMessagesProps {
+  initialScrollBehavior?: "top" | "bottom";
+  className?: string;
+}
 
 function Dots() {
   const { chat } = useAgent();
@@ -27,8 +32,14 @@ function Dots() {
   );
 }
 
-export function ChatMessages() {
+export function ChatMessages({
+  initialScrollBehavior = "bottom",
+  className,
+}: ChatMessagesProps = {}) {
   const { scrollRef, chat, isAutoScrollEnabled, setAutoScroll } = useAgent();
+
+  const hasInitializedScrollRef = useRef(false);
+  const isInitialRenderRef = useRef(true);
 
   const isStreaming = chat.status === "streaming";
   const { messages } = chat;
@@ -38,14 +49,40 @@ export function ChatMessages() {
   }, []);
 
   useLayoutEffect(() => {
-    scrollToBottom();
-  }, [scrollToBottom]);
+    if (hasInitializedScrollRef.current) {
+      return;
+    }
+
+    if (initialScrollBehavior === "bottom") {
+      scrollToBottom();
+    } else if (initialScrollBehavior === "top") {
+      const viewport = scrollRef.current?.closest(
+        '[data-slot="scroll-area-viewport"]',
+      );
+      viewport?.scrollTo({ top: 0, behavior: "auto" });
+      setAutoScroll(scrollRef.current, false);
+    }
+
+    hasInitializedScrollRef.current = true;
+  }, [initialScrollBehavior, scrollToBottom, setAutoScroll]);
 
   useLayoutEffect(() => {
+    if (isInitialRenderRef.current) {
+      isInitialRenderRef.current = false;
+
+      if (initialScrollBehavior === "top") {
+        return;
+      }
+    }
+
+    if (initialScrollBehavior === "top") {
+      return;
+    }
+
     if (isAutoScrollEnabled(scrollRef.current)) {
       scrollToBottom();
     }
-  }, [messages, scrollToBottom, isAutoScrollEnabled]);
+  }, [initialScrollBehavior, isAutoScrollEnabled, messages, scrollToBottom]);
 
   useLayoutEffect(() => {
     let cancel = false;
@@ -77,11 +114,11 @@ export function ChatMessages() {
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className={cn("w-full min-w-0", className)}>
       {isEmpty ? (
         <EmptyState />
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 min-w-0">
           {messages.map((message, index) => (
             <ChatMessage
               key={message.id}

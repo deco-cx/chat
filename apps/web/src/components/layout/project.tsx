@@ -136,7 +136,7 @@ export function ProjectLayout() {
                         <ScrollArea className="h-[calc(100vh-48px)]">
                           <Suspense
                             fallback={
-                              <div className="h-[calc(100vh-48px)] w-full grid place-items-center">
+                              <div className="h-[calc(100vh-48px)] grid place-items-center">
                                 <Spinner />
                               </div>
                             }

@@ -4,11 +4,6 @@ import {
   DateTimeCell,
   UserInfo,
 } from "../common/table/table-cells.tsx";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@deco/ui/components/tooltip.tsx";
 
 type Thread = {
   id: string;
@@ -25,6 +20,9 @@ interface AuditTableProps {
   onSortChange: (sort: string) => void;
   onRowClick?: (threadId: string) => void;
   columnsDenyList?: Set<string>;
+  activeThreadId?: string | null;
+  selectedAgent?: string | null;
+  selectedUser?: string | null;
 }
 
 function getSortKeyAndDirection(sort: string): {
@@ -43,50 +41,69 @@ export function AuditTable({
   onSortChange,
   onRowClick,
   columnsDenyList,
+  activeThreadId,
+  selectedAgent,
+  selectedUser,
 }: AuditTableProps) {
   const { key: sortKey, direction: sortDirection } =
     getSortKeyAndDirection(sort);
 
-  const columns: TableColumn<(typeof threads)[number]>[] = [
+  const shouldShowAgent = !selectedAgent;
+  const shouldShowUser = !selectedUser || selectedUser === "unknown";
+
+  const allColumns: (TableColumn<Thread> | null)[] = [
+    shouldShowAgent
+      ? {
+          id: "agent",
+          header: "Agent",
+          rowClassName: "w-[150px]",
+          cellClassName: "w-[150px] max-w-[150px]",
+          accessor: (cell: Thread) => (
+            <AgentInfo agentId={cell.metadata?.agentId} noTooltip />
+          ),
+        }
+      : null,
+    shouldShowUser
+      ? {
+          id: "user",
+          header: "Used by",
+          rowClassName: "w-[180px]",
+          cellClassName: "w-[180px] max-w-[180px]",
+          accessor: (cell: Thread) => (
+            <UserInfo userId={cell.resourceId} noTooltip />
+          ),
+        }
+      : null,
     {
-      id: "updatedAt",
-      header: "Last updated",
-      accessor: (cell: Thread) => <DateTimeCell value={cell.updatedAt} />,
-      sortable: true,
+      id: "title",
+      header: "Thread name",
+      rowClassName: "min-w-[180px]",
+      cellClassName: "min-w-[180px] max-w-[320px]",
+      render: (cell: Thread) => (
+        <span className="truncate block w-full" title={cell.title}>
+          {cell.title}
+        </span>
+      ),
     },
     {
       id: "createdAt",
       header: "Created at",
+      rowClassName: "w-[125px]",
       accessor: (cell: Thread) => <DateTimeCell value={cell.createdAt} />,
       sortable: true,
     },
     {
-      id: "agent",
-      header: "Agent",
-      accessor: (cell: Thread) => (
-        <AgentInfo agentId={cell.metadata?.agentId} />
-      ),
+      id: "updatedAt",
+      header: "Last updated",
+      rowClassName: "w-[125px]",
+      accessor: (cell: Thread) => <DateTimeCell value={cell.updatedAt} />,
+      sortable: true,
     },
-    {
-      id: "user",
-      header: "Used by",
-      accessor: (cell: Thread) => <UserInfo userId={cell.resourceId} />,
-    },
-    {
-      id: "title",
-      header: "Thread name",
-      render: (cell: Thread) => (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="truncate block max-w-xs">{cell.title}</span>
-          </TooltipTrigger>
-          <TooltipContent className="whitespace-pre-line break-words max-w-xs">
-            {cell.title}
-          </TooltipContent>
-        </Tooltip>
-      ),
-    },
-  ].filter((col) => !columnsDenyList?.has(col.id));
+  ];
+
+  const columns: TableColumn<Thread>[] = allColumns
+    .filter((col): col is TableColumn<Thread> => col !== null)
+    .filter((col) => !columnsDenyList?.has(col.id));
 
   function handleSort(colId: string) {
     if (colId === "updatedAt") {
@@ -101,7 +118,7 @@ export function AuditTable({
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-x-auto">
+    <div className="flex-1 min-h-0 overflow-hidden">
       <Table
         columns={columns}
         data={threads}
@@ -109,6 +126,11 @@ export function AuditTable({
         sortDirection={sortDirection}
         onSort={handleSort}
         onRowClick={onRowClick ? (row) => onRowClick(row.id) : undefined}
+        rowClassName={(row) =>
+          row.id === activeThreadId
+            ? "bg-primary/15 hover:bg-primary/20"
+            : "hover:bg-muted/40"
+        }
       />
     </div>
   );

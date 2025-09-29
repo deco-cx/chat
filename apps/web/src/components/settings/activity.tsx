@@ -21,7 +21,7 @@ function ActivityErrorFallback() {
 
 export default function ActivitySettings() {
   return (
-    <div className="h-full text-foreground px-6 py-6 overflow-x-auto w-full">
+    <div className="h-full text-foreground overflow-x-auto w-full">
       <ErrorBoundary fallback={<ActivityErrorFallback />}>
         <Suspense
           fallback={

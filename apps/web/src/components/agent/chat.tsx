@@ -1,5 +1,6 @@
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
+import { cn } from "@deco/ui/lib/utils.ts";
 import { Suspense, useMemo } from "react";
 import { useParams } from "react-router";
 import { useFile, WELL_KNOWN_AGENT_IDS } from "@deco/sdk";
@@ -12,21 +13,37 @@ import { AgentProvider, useAgent } from "./provider.tsx";
 export type WellKnownAgents =
   (typeof WELL_KNOWN_AGENT_IDS)[keyof typeof WELL_KNOWN_AGENT_IDS];
 
+type MainChatProps = {
+  showInput?: boolean;
+  className?: string;
+  contentClassName?: string;
+};
+
 interface Props {
   agentId?: WellKnownAgents;
   threadId?: string;
   showThreadMessages?: boolean;
 }
 
-export const MainChat = () => {
+export const MainChat = ({
+  showInput = true,
+  className,
+  initialScrollBehavior = "bottom",
+  contentClassName,
+}: MainChatProps & { initialScrollBehavior?: "top" | "bottom" } = {}) => {
   return (
-    <div className="h-full w-full flex flex-col">
-      <ScrollArea className="flex-1 min-h-0">
-        <ChatMessages />
+    <div className={cn("flex h-full w-full flex-col", className)}>
+      <ScrollArea className="flex-1">
+        <ChatMessages
+          initialScrollBehavior={initialScrollBehavior}
+          className={cn("max-w-full px-4", contentClassName)}
+        />
       </ScrollArea>
-      <div className="p-2">
-        <ChatInput />
-      </div>
+      {showInput ? (
+        <div className="border-t border-border bg-background p-3">
+          <ChatInput />
+        </div>
+      ) : null}
     </div>
   );
 };
