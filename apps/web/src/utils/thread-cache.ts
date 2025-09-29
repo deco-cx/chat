@@ -2,9 +2,12 @@
  * Simple localStorage cache for thread data with 7-day expiration
  */
 
+import type { ThreadDetails } from "@deco/sdk";
+import type { UIMessage } from "ai";
+
 interface CachedThreadData {
-  threadDetail: any;
-  messages: any;
+  threadDetail: ThreadDetails;
+  messages: { messages: UIMessage[] };
   timestamp: number;
   expires: number;
 }
@@ -58,7 +61,11 @@ class ThreadCache {
     }
   }
 
-  set(threadId: string, threadDetail: any, messages: any): void {
+  set(
+    threadId: string,
+    threadDetail: ThreadDetails,
+    messages: { messages: UIMessage[] },
+  ): void {
     if (!this.isSupported()) return;
 
     try {
@@ -96,7 +103,10 @@ class ThreadCache {
     }
   }
 
-  get(threadId: string): { threadDetail: any; messages: any } | null {
+  get(threadId: string): {
+    threadDetail: ThreadDetails;
+    messages: { messages: UIMessage[] };
+  } | null {
     if (!this.isSupported()) return null;
 
     try {

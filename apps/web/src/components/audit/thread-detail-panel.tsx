@@ -23,9 +23,6 @@ export function ThreadDetailPanel({
   canNavigateNext,
   children,
 }: ThreadDetailPanelProps) {
-  const metadata = useMemo(() => thread.metadata ?? {}, [thread.metadata]);
-  const agentId = metadata.agentId ?? thread.id;
-
   const title = useMemo(
     () => thread.title || "Untitled conversation",
     [thread.title],

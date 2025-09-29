@@ -287,8 +287,8 @@ export function AgentProvider({
     handleSubmit: () => undefined,
     input: "",
     setInput: () => undefined,
-    append: async () => undefined,
-    reload: async () => undefined,
+    append: () => Promise.resolve(undefined),
+    reload: () => Promise.resolve(undefined),
     error: undefined,
     stop: () => undefined,
   };

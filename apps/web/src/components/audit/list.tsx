@@ -33,7 +33,6 @@ import {
 import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { ErrorBoundary } from "../../error-boundary.tsx";
-import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 import { AuditFilters } from "./audit-filters.tsx";
 import { AuditTable } from "./audit-table.tsx";
 import { ThreadConversation } from "./thread-conversation.tsx";
@@ -110,7 +109,6 @@ export function AuditListContent({
   );
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
 
-  const navigate = useNavigateWorkspace();
   const { data: agents = [] } = useAgents();
   const params = useParams();
   const getSafeCursor = (cursor: string | null) => {

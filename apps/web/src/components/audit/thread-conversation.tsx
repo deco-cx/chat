@@ -1,6 +1,12 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
-import { useThread, useThreadMessages, useUpdateThreadTitle } from "@deco/sdk";
+import {
+  useThread,
+  useThreadMessages,
+  useUpdateThreadTitle,
+  type ThreadDetails,
+} from "@deco/sdk";
+import type { UIMessage } from "ai";
 import { ThreadDetailPanel } from "./thread-detail-panel.tsx";
 import { AgentProvider } from "../agent/provider.tsx";
 import { MainChat } from "../agent/chat.tsx";
@@ -27,7 +33,7 @@ export function ThreadConversation({
     id: thread.id,
     title: thread.title || "Untitled conversation",
     resourceId: thread.resourceId,
-    metadata: thread.metadata || {},
+    metadata: (thread.metadata || {}) as Record<string, unknown>,
   };
 
   return (
@@ -75,11 +81,14 @@ function ThreadMessagesWithCache({ threadId }: { threadId: string }) {
 
 // Renders cached data instantly - NO HOOKS that could trigger Suspense
 function CachedThreadMessages({
-  threadId,
+  threadId: _threadId,
   cachedData,
 }: {
   threadId: string;
-  cachedData: { threadDetail: any; messages: any };
+  cachedData: {
+    threadDetail: ThreadDetails;
+    messages: { messages: UIMessage[] };
+  };
 }) {
   if (!cachedData.threadDetail || !cachedData.messages) {
     return (

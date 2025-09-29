@@ -4,11 +4,6 @@ import {
   DateTimeCell,
   UserInfo,
 } from "../common/table/table-cells.tsx";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@deco/ui/components/tooltip.tsx";
 
 type Thread = {
   id: string;
