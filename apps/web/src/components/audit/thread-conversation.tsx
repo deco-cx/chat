@@ -52,21 +52,23 @@ function ThreadMessagesWithCache({ threadId }: { threadId: string }) {
     return <CachedThreadMessages threadId={threadId} cachedData={cachedData} />;
   }
 
-  // No cache, use normal loading WITH Suspense
+  // No cache, use normal loading WITH Suspense (scoped to messages area only)
   return (
-    <Suspense
-      fallback={
-        <div className="flex flex-1 items-center justify-center">
-          <Spinner />
-        </div>
-      }
-    >
-      <ThreadMessages threadId={threadId} />
-    </Suspense>
+    <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+      <Suspense
+        fallback={
+          <div className="flex flex-1 items-center justify-center">
+            <Spinner />
+          </div>
+        }
+      >
+        <ThreadMessages threadId={threadId} />
+      </Suspense>
+    </div>
   );
 }
 
-// Renders cached data instantly
+// Renders cached data instantly - NO HOOKS that could trigger Suspense
 function CachedThreadMessages({ 
   threadId, 
   cachedData 
@@ -74,34 +76,6 @@ function CachedThreadMessages({
   threadId: string;
   cachedData: { threadDetail: any; messages: any };
 }) {
-  const updateThreadTitle = useUpdateThreadTitle();
-  const hasTriggeredRef = useRef(false);
-  const title = cachedData.threadDetail?.title ?? "";
-
-  useEffect(() => {
-    hasTriggeredRef.current = false;
-  }, [threadId, title]);
-
-  useEffect(() => {
-    if (!title || !cachedData.messages?.messages?.length) {
-      return;
-    }
-
-    const isGeneratedTitle = !/^new thread/i.test(title.trim());
-
-    if (isGeneratedTitle || updateThreadTitle.isPending || hasTriggeredRef.current) {
-      return;
-    }
-
-    const summaryCandidate = extractSummaryCandidate(cachedData.messages.messages);
-
-    if (!summaryCandidate) {
-      return;
-    }
-    hasTriggeredRef.current = true;
-    updateThreadTitle.mutate({ threadId, title: summaryCandidate, stream: true });
-  }, [cachedData.messages?.messages, threadId, title, updateThreadTitle.isPending, updateThreadTitle]);
-
   if (!cachedData.threadDetail || !cachedData.messages) {
     return (
       <div className="flex flex-1 items-center justify-center">
@@ -111,27 +85,29 @@ function CachedThreadMessages({
   }
 
   return (
-    <AgentProvider
-      agentId={cachedData.threadDetail.metadata?.agentId ?? cachedData.threadDetail.id}
-      threadId={cachedData.threadDetail.id}
-      uiOptions={{
-        showThreadTools: false,
-        showModelSelector: false,
-        showThreadMessages: false,
-        showAgentVisibility: false,
-        showEditAgent: false,
-        showContextResources: false,
-      }}
-      readOnly
-      initialMessages={cachedData.messages.messages}
-    >
-      <MainChat
-        showInput={false}
-        initialScrollBehavior="top"
-        className="flex-1 min-w-0"
-        contentClassName="flex flex-col min-w-0"
-      />
-    </AgentProvider>
+    <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+      <AgentProvider
+        agentId={cachedData.threadDetail.metadata?.agentId ?? cachedData.threadDetail.id}
+        threadId={cachedData.threadDetail.id}
+        uiOptions={{
+          showThreadTools: false,
+          showModelSelector: false,
+          showThreadMessages: false,
+          showAgentVisibility: false,
+          showEditAgent: false,
+          showContextResources: false,
+        }}
+        readOnly
+        initialMessages={cachedData.messages.messages}
+      >
+        <MainChat
+          showInput={false}
+          initialScrollBehavior="top"
+          className="flex-1 min-w-0"
+          contentClassName="flex flex-col min-w-0"
+        />
+      </AgentProvider>
+    </div>
   );
 }
 
