@@ -233,10 +233,18 @@ export function AuditListContent({
     const currentIndex =
       activeThreadIndex >= 0
         ? activeThreadIndex
-        : Math.max(
-            threads.findIndex((thread) => thread.id === activeThreadId),
-            0,
-          );
+        : threads.findIndex((thread) => thread.id === activeThreadId);
+
+    if (currentIndex < 0) {
+      // No thread currently selected, select first or last based on direction
+      const initialThread =
+        direction === "next" ? threads[0] : threads[threads.length - 1];
+      if (initialThread) {
+        setActiveThreadId(initialThread.id);
+        setSelectedThreadId(initialThread.id);
+      }
+      return;
+    }
 
     const nextIndex =
       direction === "next" ? currentIndex + 1 : currentIndex - 1;
@@ -250,6 +258,16 @@ export function AuditListContent({
   }
 
   function handleKeyboardNavigation(event: KeyboardEvent<HTMLDivElement>) {
+    // Don't intercept arrow keys when focus is inside inputs, selects, comboboxes, etc.
+    if (
+      event.target instanceof HTMLElement &&
+      event.target.closest(
+        "input, textarea, [role='combobox'], [role='listbox'], select, [contenteditable='true'], button, [role='button']",
+      )
+    ) {
+      return;
+    }
+
     if (TABLE_ROW_KEY_BINDINGS.next.has(event.key)) {
       event.preventDefault();
       handleNavigateThread("next");
