@@ -21,7 +21,7 @@ export interface TableColumn<T> {
   wrap?: boolean;
 }
 
-export interface TableProps<T extends Record<string, unknown>> {
+export interface TableProps<T = Record<string, unknown>> {
   columns: TableColumn<T>[];
   data: T[];
   sortKey?: string;
@@ -31,7 +31,7 @@ export interface TableProps<T extends Record<string, unknown>> {
   rowClassName?: (row: T) => string | undefined;
 }
 
-export function Table<T extends Record<string, unknown>>({
+export function Table<T = Record<string, unknown>>({
   columns,
   data,
   sortKey,

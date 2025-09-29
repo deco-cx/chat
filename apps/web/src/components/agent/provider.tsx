@@ -281,7 +281,7 @@ export function AgentProvider({
   const mockChat: MockChat = {
     messages: initialMessages || threadMessages || [],
     isLoading: false,
-    status: "idle",
+    status: "ready",
     setMessages: () => undefined,
     handleInputChange: () => undefined,
     handleSubmit: () => undefined,
@@ -289,7 +289,7 @@ export function AgentProvider({
     setInput: () => undefined,
     append: async () => undefined,
     reload: async () => undefined,
-    error: null,
+    error: undefined,
     stop: () => undefined,
   };
 

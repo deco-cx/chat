@@ -56,7 +56,7 @@ export function AuditTable({
   const shouldShowAgent = !selectedAgent;
   const shouldShowUser = !selectedUser || selectedUser === "unknown";
 
-  const columns: TableColumn<(typeof threads)[number]>[] = [
+  const allColumns: (TableColumn<Thread> | null)[] = [
     shouldShowAgent
       ? {
           id: "agent",
@@ -104,8 +104,10 @@ export function AuditTable({
       accessor: (cell: Thread) => <DateTimeCell value={cell.updatedAt} />,
       sortable: true,
     },
-  ]
-    .filter((col): col is TableColumn<(typeof threads)[number]> => col !== null)
+  ];
+
+  const columns: TableColumn<Thread>[] = allColumns
+    .filter((col): col is TableColumn<Thread> => col !== null)
     .filter((col) => !columnsDenyList?.has(col.id));
 
   function handleSort(colId: string) {
