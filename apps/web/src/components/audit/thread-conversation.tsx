@@ -1,9 +1,10 @@
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { useThread, useThreadMessages, useUpdateThreadTitle } from "@deco/sdk";
 import { ThreadDetailPanel } from "./thread-detail-panel.tsx";
 import { AgentProvider } from "../agent/provider.tsx";
 import { MainChat } from "../agent/chat.tsx";
+import { threadCache } from "../../utils/thread-cache.ts";
 
 export function ThreadConversation({
   thread,
@@ -31,25 +32,123 @@ export function ThreadConversation({
       canNavigatePrevious={canNavigatePrevious}
       canNavigateNext={canNavigateNext}
     >
-      <Suspense
-        fallback={
-          <div className="flex flex-1 items-center justify-center">
-            <Spinner />
-          </div>
-        }
-      >
-        <ThreadMessages threadId={thread.id} />
-      </Suspense>
+      <ThreadMessagesWithCache threadId={thread.id} />
     </ThreadDetailPanel>
   );
 }
 
+// Wrapper that checks cache first
+function ThreadMessagesWithCache({ threadId }: { threadId: string }) {
+  const [cachedData, setCachedData] = useState(() => threadCache.get(threadId));
+
+  // Reset cache check when threadId changes
+  useEffect(() => {
+    const cached = threadCache.get(threadId);
+    setCachedData(cached);
+  }, [threadId]);
+
+  // If we have cached data, render it instantly (NO Suspense)
+  if (cachedData) {
+    return <CachedThreadMessages threadId={threadId} cachedData={cachedData} />;
+  }
+
+  // No cache, use normal loading WITH Suspense
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-1 items-center justify-center">
+          <Spinner />
+        </div>
+      }
+    >
+      <ThreadMessages threadId={threadId} />
+    </Suspense>
+  );
+}
+
+// Renders cached data instantly
+function CachedThreadMessages({ 
+  threadId, 
+  cachedData 
+}: { 
+  threadId: string;
+  cachedData: { threadDetail: any; messages: any };
+}) {
+  const updateThreadTitle = useUpdateThreadTitle();
+  const hasTriggeredRef = useRef(false);
+  const title = cachedData.threadDetail?.title ?? "";
+
+  useEffect(() => {
+    hasTriggeredRef.current = false;
+  }, [threadId, title]);
+
+  useEffect(() => {
+    if (!title || !cachedData.messages?.messages?.length) {
+      return;
+    }
+
+    const isGeneratedTitle = !/^new thread/i.test(title.trim());
+
+    if (isGeneratedTitle || updateThreadTitle.isPending || hasTriggeredRef.current) {
+      return;
+    }
+
+    const summaryCandidate = extractSummaryCandidate(cachedData.messages.messages);
+
+    if (!summaryCandidate) {
+      return;
+    }
+    hasTriggeredRef.current = true;
+    updateThreadTitle.mutate({ threadId, title: summaryCandidate, stream: true });
+  }, [cachedData.messages?.messages, threadId, title, updateThreadTitle.isPending, updateThreadTitle]);
+
+  if (!cachedData.threadDetail || !cachedData.messages) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
+  return (
+    <AgentProvider
+      agentId={cachedData.threadDetail.metadata?.agentId ?? cachedData.threadDetail.id}
+      threadId={cachedData.threadDetail.id}
+      uiOptions={{
+        showThreadTools: false,
+        showModelSelector: false,
+        showThreadMessages: false,
+        showAgentVisibility: false,
+        showEditAgent: false,
+        showContextResources: false,
+      }}
+      readOnly
+      initialMessages={cachedData.messages.messages}
+    >
+      <MainChat
+        showInput={false}
+        initialScrollBehavior="top"
+        className="flex-1 min-w-0"
+        contentClassName="flex flex-col min-w-0"
+      />
+    </AgentProvider>
+  );
+}
+
+// Normal loading path (with caching after load)
 function ThreadMessages({ threadId }: { threadId: string }) {
   const { data: threadDetail } = useThread(threadId);
   const title = useMemo(() => threadDetail?.title ?? "", [threadDetail?.title]);
   const { data: messages } = useThreadMessages(threadId);
   const updateThreadTitle = useUpdateThreadTitle();
   const hasTriggeredRef = useRef(false);
+
+  // Cache the data after it loads
+  useEffect(() => {
+    if (threadDetail && messages) {
+      threadCache.set(threadId, threadDetail, messages);
+    }
+  }, [threadDetail, messages, threadId]);
 
   useEffect(() => {
     hasTriggeredRef.current = false;
