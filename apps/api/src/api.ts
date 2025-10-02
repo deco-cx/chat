@@ -17,7 +17,6 @@ import {
   createMCPToolsStub,
   createToolBindingImpl,
   createToolResourceV2Implementation,
-  createToolRunImpl,
   createToolViewsV2,
   createWorkflowBindingImpl,
   createWorkflowResourceV2Implementation,
@@ -34,6 +33,7 @@ import {
   ListToolsMiddleware,
   PrincipalExecutionContext,
   PROJECT_TOOLS,
+  runTool,
   toBindingsContext,
   Tool,
   ToolBindingImplOptions,
@@ -210,11 +210,21 @@ const createMCPHandlerFor = (
 const createToolCallHandlerFor = <
   TDefinition extends readonly ToolLike[] = readonly ToolLike[],
 >(
-  tools: TDefinition,
+  toolsOrToolsFn: TDefinition | ((ctx: Context) => Promise<TDefinition>),
 ) => {
-  const toolMap = new Map(tools.map((t) => [t.name, t]));
+  const getToolsMap: (
+    ctx: Context,
+  ) => Promise<Map<string, ToolLike>> | Map<string, ToolLike> =
+    typeof toolsOrToolsFn === "function"
+      ? async (c: Context) => {
+          const tools = await toolsOrToolsFn(c);
+          return new Map(tools.map((t) => [t.name, t]));
+        }
+      : () => new Map(toolsOrToolsFn.map((t) => [t.name, t]));
 
   return async (c: Context) => {
+    const toolMap = await getToolsMap(c);
+    const tools = Array.from(toolMap.values());
     const client = createMCPToolsStub({ tools });
     const tool = c.req.param("tool");
     const args = await c.req.json();
@@ -496,6 +506,41 @@ app.get("/mcp/groups", (ctx) => {
   return ctx.json(getApps());
 });
 
+const loadToolsManagementTools = (ctx: Context) => {
+  const appCtx = honoCtxToAppCtx(ctx);
+  const client = createDeconfigClientForContext(appCtx);
+
+  // Create Resources 2.0 tool resource implementation
+  const toolResourceV2 = createToolResourceV2Implementation(
+    client,
+    WellKnownMcpGroups.Tools,
+  );
+
+  const resourcesClient = createMCPToolsStub({
+    tools: toolResourceV2,
+    context: appCtx,
+  });
+
+  const resourceToolRead: ToolBindingImplOptions["resourceToolRead"] = ((uri) =>
+    State.run(
+      appCtx,
+      async () => await resourcesClient.DECO_RESOURCE_TOOL_READ({ uri }),
+    )) as ToolBindingImplOptions["resourceToolRead"];
+
+  // Create tool execution functionality using createToolBindingImpl
+  const callTool = createToolBindingImpl({ resourceToolRead });
+
+  // Create Views 2.0 implementation for tool views
+  const toolViewsV2 = createToolViewsV2();
+
+  return [
+    ...toolResourceV2, // Add new Resources 2.0 implementation
+    ...callTool, // Add tool execution functionality
+    runTool,
+    ...toolViewsV2, // Add Views 2.0 implementation
+  ].map((tool) => ({ ...tool, group: WellKnownMcpGroups.Tools }));
+};
+
 app.all(
   "/mcp/:group",
   createMCPHandlerFor((ctx) => {
@@ -506,7 +551,11 @@ app.all(
   }),
 );
 
-app.all("/:org/:project/mcp", createMCPHandlerFor(PROJECT_TOOLS));
+const projectTools = (ctx: Context) => {
+  return Promise.resolve([...PROJECT_TOOLS, ...loadToolsManagementTools(ctx)]);
+};
+
+app.all("/:org/:project/mcp", createMCPHandlerFor(projectTools));
 
 app.all(
   `/:org/:project/${WellKnownMcpGroups.Workflows}/mcp`,
@@ -553,47 +602,6 @@ app.all(
   }),
 );
 
-app.all(
-  `/:org/:project/${WellKnownMcpGroups.Tools}/mcp`,
-  createMCPHandlerFor((ctx) => {
-    const appCtx = honoCtxToAppCtx(ctx);
-    const client = createDeconfigClientForContext(appCtx);
-
-    // Create Resources 2.0 tool resource implementation
-    const toolResourceV2 = createToolResourceV2Implementation(
-      client,
-      WellKnownMcpGroups.Tools,
-    );
-
-    const resourcesClient = createMCPToolsStub({
-      tools: toolResourceV2,
-      context: appCtx,
-    });
-
-    const resourceToolRead: ToolBindingImplOptions["resourceToolRead"] = ((
-      uri,
-    ) =>
-      State.run(
-        appCtx,
-        async () => await resourcesClient.DECO_RESOURCE_TOOL_READ({ uri }),
-      )) as ToolBindingImplOptions["resourceToolRead"];
-
-    // Create tool execution functionality using createToolBindingImpl
-    const callTool = createToolBindingImpl({ resourceToolRead });
-    const runTool = createToolRunImpl();
-
-    // Create Views 2.0 implementation for tool views
-    const toolViewsV2 = createToolViewsV2();
-
-    return Promise.resolve([
-      ...toolResourceV2, // Add new Resources 2.0 implementation
-      ...callTool, // Add tool execution functionality
-      ...runTool,
-      ...toolViewsV2, // Add Views 2.0 implementation
-    ]);
-  }),
-);
-
 app.all("/:org/:project/agents/:agentId/mcp", createMCPHandlerFor(AGENT_TOOLS));
 
 // Tool call endpoint handlers
@@ -601,7 +609,7 @@ app.post("/tools/call/:tool", createToolCallHandlerFor(GLOBAL_TOOLS));
 
 app.post(
   "/:org/:project/tools/call/:tool",
-  createToolCallHandlerFor(PROJECT_TOOLS),
+  createToolCallHandlerFor(projectTools),
 );
 
 app.post(

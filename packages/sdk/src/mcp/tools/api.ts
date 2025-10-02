@@ -6,6 +6,7 @@ import {
   AppContext,
   assertWorkspaceResourceAccess,
   createTool,
+  createToolGroup,
   DeconfigClient,
   MCPClient,
   WithTool,
@@ -134,42 +135,44 @@ export function createToolBindingImpl({
   return [runTool];
 }
 
+const createToolManagementTool = createToolGroup("Tools", {
+  name: "Tools Management",
+  description: "Manage your tools",
+  icon: "https://assets.decocache.com/mcp/81d602bb-45e2-4361-b52a-23379520a34d/sandbox.png",
+});
+
 /**
  * Creates tool binding implementation that accepts a resource reader
  * Returns only the core tool execution functionality
  */
-export function createToolRunImpl() {
-  const runTool = createTool({
-    name: "DECO_TOOL_RUN_TOOL",
-    description: "Invoke a tool created with DECO_RESOURCE_TOOL_CREATE",
-    inputSchema: z.object({
-      tool: ToolDefinitionSchema,
-      input: z.object({}).passthrough().describe("The input of the code"),
-    }),
-    outputSchema: z.object({
-      result: z.any().optional().describe("The result of the tool execution"),
-      error: z.any().optional().describe("Error if any"),
-      logs: z
-        .array(
-          z.object({
-            type: z.enum(["log", "warn", "error"]),
-            content: z.string(),
-          }),
-        )
-        .optional()
-        .describe("Console logs from the execution"),
-    }),
-    handler: async ({ tool, input }, c) => {
-      try {
-        return await executeToolWithValidation(tool, input, c);
-      } catch (error) {
-        return { error: inspect(error) };
-      }
-    },
-  });
-
-  return [runTool];
-}
+export const runTool = createToolManagementTool({
+  name: "DECO_TOOL_RUN_TOOL",
+  description: "Invoke the tool passed as input",
+  inputSchema: z.object({
+    tool: ToolDefinitionSchema,
+    input: z.object({}).passthrough().describe("The input of the code"),
+  }),
+  outputSchema: z.object({
+    result: z.any().optional().describe("The result of the tool execution"),
+    error: z.any().optional().describe("Error if any"),
+    logs: z
+      .array(
+        z.object({
+          type: z.enum(["log", "warn", "error"]),
+          content: z.string(),
+        }),
+      )
+      .optional()
+      .describe("Console logs from the execution"),
+  }),
+  handler: async ({ tool, input }, c) => {
+    try {
+      return await executeToolWithValidation(tool, input, c);
+    } catch (error) {
+      return { error: inspect(error) };
+    }
+  },
+});
 
 // const { items } = await resourceToolSearch({ page: 1, pageSize: Infinity });
 // const tools = items.map(async ({ uri }: any) => {

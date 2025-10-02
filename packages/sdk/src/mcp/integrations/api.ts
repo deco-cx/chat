@@ -308,25 +308,6 @@ const virtualIntegrationsFor = (
     created_at: new Date().toISOString(),
   };
 
-  const toolsMcp = new URL(
-    `${projectPath}/${WellKnownMcpGroups.Tools}/mcp`,
-    DECO_CMS_API_URL,
-  );
-
-  const toolsIntegration = {
-    id: formatId("i", WellKnownMcpGroups.Tools),
-    name: "Tools Management",
-    description: "Manage your tools",
-    connection: {
-      type: "HTTP",
-      url: toolsMcp.href,
-      token,
-    },
-    icon: "https://assets.decocache.com/mcp/81d602bb-45e2-4361-b52a-23379520a34d/sandbox.png",
-    workspace: Locator.adaptToRootSlug(locator),
-    created_at: new Date().toISOString(),
-  };
-
   const workflowsMcp = new URL(
     `${projectPath}/${WellKnownMcpGroups.Workflows}/mcp`,
     DECO_CMS_API_URL,
@@ -388,7 +369,6 @@ const virtualIntegrationsFor = (
     userManagementIntegration,
     workspaceManagementIntegration,
     ...integrationGroups,
-    toolsIntegration,
     workflowsIntegration,
     contractsIntegration,
     ...knowledgeBases.map((kb) => {

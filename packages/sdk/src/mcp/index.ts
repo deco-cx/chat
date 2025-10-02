@@ -376,7 +376,7 @@ export {
 export {
   createToolBindingImpl,
   createToolResourceV2Implementation,
-  createToolRunImpl,
+  runTool,
   ToolResourceV2,
   type ToolBindingImplOptions,
   type ToolDataV2,
