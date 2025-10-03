@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { LanguageModelV1FinishReason } from "@ai-sdk/provider";
+import { LanguageModelV2FinishReason } from "@ai-sdk/provider";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { useAgent } from "../agent/provider.tsx";
@@ -20,7 +20,7 @@ const REPORTS_BY_FINISH_REASON = {
 type KnownFinishReason = keyof typeof REPORTS_BY_FINISH_REASON;
 
 function getFinishReasonKey(
-  reason: LanguageModelV1FinishReason | null,
+  reason: LanguageModelV2FinishReason | null,
 ): KnownFinishReason | undefined {
   if (!reason || reason === "stop") return undefined;
   if (reason in REPORTS_BY_FINISH_REASON) {
@@ -31,8 +31,8 @@ function getFinishReasonKey(
 
 export function ChatFinishReason() {
   const { chat } = useAgent();
-  const { append, status, finishReason } = chat;
-  const lastLoggedReasonRef = useRef<LanguageModelV1FinishReason | "__NONE__">(
+  const { sendMessage, status, finishReason } = chat;
+  const lastLoggedReasonRef = useRef<LanguageModelV2FinishReason | "__NONE__">(
     "__NONE__",
   );
 
@@ -80,7 +80,7 @@ export function ChatFinishReason() {
         <Button
           variant="secondary"
           onClick={() => {
-            append({ role: "user", content: "Continue" });
+            sendMessage({ text: "Continue" });
           }}
         >
           Continue from here

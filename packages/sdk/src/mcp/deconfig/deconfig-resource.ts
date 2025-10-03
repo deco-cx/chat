@@ -6,7 +6,7 @@ import {
 } from "../assertions.ts";
 import { impl, WellKnownBindings } from "../bindings/binder.ts";
 import { createMCPToolsStub, DeconfigClient, MCPClientStub } from "../index.ts";
-import z from "zod";
+import z from "zod/v3";
 
 export type ResourcesBinding = (typeof WellKnownBindings)["Resources"];
 export type ResourcesTools = ResourcesBinding[number]["name"];

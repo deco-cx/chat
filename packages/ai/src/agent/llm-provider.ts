@@ -1,6 +1,6 @@
 import {
-  type AnthropicProvider,
   createAnthropic as anthropic,
+  type AnthropicProvider,
 } from "@ai-sdk/anthropic";
 import {
   createDeepSeek as deepseek,
@@ -13,7 +13,7 @@ import {
 import { createOpenAI as openai, type OpenAIProvider } from "@ai-sdk/openai";
 import { createXai as xai, type XaiProvider } from "@ai-sdk/xai";
 import { createOpenRouter as openrouter } from "@openrouter/ai-sdk-provider";
-import type { LanguageModelV1 } from "ai";
+import type { LanguageModel } from "ai";
 
 interface AIGatewayOptions {
   accountId: string;
@@ -35,7 +35,7 @@ const aiGatewayForProvider = ({
 
 type ProviderFactory = (
   opts: AIGatewayOptions,
-) => (model: string) => { llm: LanguageModelV1; tokenLimit: number };
+) => (model: string) => { llm: LanguageModel; tokenLimit: number };
 
 type NativeLLMCreator = <
   TOpts extends {
@@ -45,9 +45,9 @@ type NativeLLMCreator = <
   },
 >(
   opts: TOpts,
-) => (model: string) => LanguageModelV1;
+) => (model: string) => LanguageModel;
 
-type ModelsOf<TProvider extends (model: string) => LanguageModelV1> =
+type ModelsOf<TProvider extends (model: string) => LanguageModel> =
   Parameters<TProvider>[0];
 
 type Provider = {

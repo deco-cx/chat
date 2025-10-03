@@ -19,7 +19,7 @@ This guide provides a step-by-step process for adding new APIs to the decocms sy
 ### 1.1 Basic File Structure
 
 ```typescript
-import { z } from "zod";
+import { z } from "zod/v3";
 import { UserInputError } from "../../errors.ts";
 import type { QueryResult } from "../../storage/index.ts";
 import {

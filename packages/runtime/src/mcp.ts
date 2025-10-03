@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { env } from "cloudflare:workers";
-import { z } from "zod";
+import { z } from "zod/v3";
 import type { MCPConnection } from "./connection.ts";
 import type { DefaultEnv } from "./index.ts";
 import { createMCPClientProxy } from "./proxy.ts";

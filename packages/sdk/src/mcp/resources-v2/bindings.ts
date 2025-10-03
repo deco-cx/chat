@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 import type { Binder } from "../bindings/binder.ts";
 import {
   createCreateInputSchema,
@@ -54,14 +54,14 @@ export function createResourceV2Bindings<
   return [
     {
       name: `DECO_RESOURCE_${resourceName.toUpperCase()}_SEARCH` as const,
-      inputSchema: SearchInputSchema,
+      inputSchema: z.lazy(() => SearchInputSchema),
       outputSchema: createSearchOutputSchema(
         createItemSchema(dataSchema.pick({ name: true, description: true })),
       ),
     },
     {
       name: `DECO_RESOURCE_${resourceName.toUpperCase()}_READ` as const,
-      inputSchema: ReadInputSchema,
+      inputSchema: z.lazy(() => ReadInputSchema),
       outputSchema: createReadOutputSchema(dataSchema),
     },
     {
@@ -78,8 +78,8 @@ export function createResourceV2Bindings<
     },
     {
       name: `DECO_RESOURCE_${resourceName.toUpperCase()}_DELETE` as const,
-      inputSchema: DeleteInputSchema,
-      outputSchema: DeleteOutputSchema,
+      inputSchema: z.lazy(() => DeleteInputSchema),
+      outputSchema: z.lazy(() => DeleteOutputSchema),
       opt: true,
     },
   ] as const satisfies Binder;

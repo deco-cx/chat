@@ -1,5 +1,5 @@
 import { MD5 } from "object-hash";
-import z from "zod";
+import z from "zod/v3";
 import { WebCache } from "../../cache/index.ts";
 import { SWRCache } from "../../cache/swr.ts";
 import { AppName } from "../../common/index.ts";
@@ -120,13 +120,17 @@ const totalAmount = (
 export const oauthStart = createTool({
   name: "DECO_CHAT_OAUTH_START",
   description: "Start the OAuth flow for the contract app.",
-  inputSchema: z.object({
-    returnUrl: z.string(),
-  }),
-  outputSchema: z.object({
-    stateSchema: z.any(),
-    scopes: z.array(z.string()).optional(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      returnUrl: z.string(),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      stateSchema: z.any(),
+      scopes: z.array(z.string()).optional(),
+    }),
+  ),
   handler: (_, c) => {
     c.resourceAccess.grant();
     return {
@@ -139,16 +143,20 @@ export const oauthStart = createTool({
 export const contractRegister = createTool({
   name: "CONTRACT_REGISTER",
   description: "Register a contract with the registry.",
-  inputSchema: z.object({
-    contract: ContractStateSchema,
-    author: z.object({
-      scope: z.string(),
-      name: z.string(),
+  inputSchema: z.lazy(() =>
+    z.object({
+      contract: ContractStateSchema,
+      author: z.object({
+        scope: z.string(),
+        name: z.string(),
+      }),
     }),
-  }),
-  outputSchema: z.object({
-    appName: z.string(),
-  }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      appName: z.string(),
+    }),
+  ),
   handler: async (context, c) => {
     await assertWorkspaceResourceAccess(c);
 
@@ -186,19 +194,23 @@ export const contractAuthorize = createContractTool({
   name: "CONTRACT_AUTHORIZE",
   description:
     "Authorize a charge for a contract clause. Creates a single authorization with transactionId.",
-  inputSchema: z.object({
-    clauses: z.array(
-      z.object({
-        clauseId: z.string(),
-        amount: z.number().min(1), // Number of units to charge (multiplied by clause price)
-      }),
-    ),
-  }),
-  outputSchema: z.object({
-    transactionId: z.string(),
-    totalAmount: z.string(),
-    timestamp: z.number(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      clauses: z.array(
+        z.object({
+          clauseId: z.string(),
+          amount: z.number().min(1), // Number of units to charge (multiplied by clause price)
+        }),
+      ),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      transactionId: z.string(),
+      totalAmount: z.string(),
+      timestamp: z.number(),
+    }),
+  ),
   handler: async (context, c) => {
     if (
       !("integrationId" in c.user) ||
@@ -240,11 +252,13 @@ export const contractAuthorize = createContractTool({
 export const contractGet = createContractTool({
   name: "CONTRACT_GET",
   description: "Get the current contract state.",
-  inputSchema: z.object({}),
-  outputSchema: z.object({
-    appName: z.string().optional(),
-    contract: ContractStateSchema,
-  }),
+  inputSchema: z.lazy(() => z.object({})),
+  outputSchema: z.lazy(() =>
+    z.object({
+      appName: z.string().optional(),
+      contract: ContractStateSchema,
+    }),
+  ),
   handler: (_, c) => {
     c.resourceAccess.grant();
     return {
@@ -261,15 +275,19 @@ export const contractSettle = createContractTool({
   name: "CONTRACT_SETTLE",
   description:
     "Settle the current authorized charge. Processes the payment for the current authorization.",
-  inputSchema: z.object({
-    transactionId: z.string(),
-    clauses: z.array(ContractClauseExerciseSchema).optional(),
-    amount: z.number().optional(),
-    vendorId: z.string(),
-  }),
-  outputSchema: z.object({
-    transactionId: z.string(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      transactionId: z.string(),
+      clauses: z.array(ContractClauseExerciseSchema).optional(),
+      amount: z.number().optional(),
+      vendorId: z.string(),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      transactionId: z.string(),
+    }),
+  ),
   handler: async (context, c) => {
     if (
       !("integrationId" in c.user) ||

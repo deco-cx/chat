@@ -1,11 +1,12 @@
-import type { AudioMessage, Message } from "../types.ts";
-import { Buffer } from "node:buffer";
 import type { Agent as MastraAgent } from "@mastra/core/agent";
 import { OpenAIVoice } from "@mastra/voice-openai";
+import { UIMessage } from "ai";
+import { Buffer } from "node:buffer";
+import type { AudioMessage } from "../types.ts";
 
 const MAX_AUDIO_SIZE = 25 * 1024 * 1024; // 25MB
 
-export function isAudioMessage(message: Message): message is AudioMessage {
+export function isAudioMessage(message: UIMessage): message is AudioMessage {
   return "audioBase64" in message && typeof message.audioBase64 === "string";
 }
 

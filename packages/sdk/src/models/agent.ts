@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 import { DEFAULT_MODEL, WELL_KNOWN_MODELS } from "../constants.ts";
 import {
   DecoConnectionSchema,
@@ -187,9 +187,16 @@ export const AgentStreamOptions = AgentGenerateOptions.extend({
       chunking: z.enum(["word", "line"]).optional(),
     })
     .optional(),
+  annotations: z.array(z.any()).optional(),
 });
 
 export type StreamOptions = z.infer<typeof AgentStreamOptions>;
+
+/**
+ * Type for UIMessage metadata containing all stream options
+ * Used with UIMessage<MessageMetadata> for type-safe message passing
+ */
+export type MessageMetadata = Omit<StreamOptions, "threadId" | "resourceId">;
 
 /**
  * Type representing an AI Agent derived from the Zod schema

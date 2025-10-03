@@ -1,8 +1,9 @@
 import { AIAgent } from "../agent.ts";
-import type { Message, StreamOptions } from "../types.ts";
+import type { Message, MessageMetadata, StreamOptions } from "../types.ts";
 
 import type { TriggerData } from "./services.ts";
 
+import { UIMessage } from "ai";
 import type { TriggerHooks } from "./trigger.ts";
 
 export interface WebhookArgs {
@@ -104,21 +105,46 @@ export const hooks: TriggerHooks<TriggerData & { type: "webhook" }> = {
       typeof args === "object" &&
       "messages" in args &&
       isAIMessages(args.messages)
-        ? args.messages
+        ? args.messages.map(
+            (message) =>
+              ({
+                ...message,
+                id: crypto.randomUUID(),
+                parts:
+                  "parts" in message
+                    ? message.parts
+                    : [
+                        {
+                          type: "text" as const,
+                          text: "content" in message ? message.content : "",
+                        },
+                      ],
+              }) as UIMessage<MessageMetadata>,
+          )
         : undefined;
 
     const messages = messagesFromArgs ?? [
       {
         id: crypto.randomUUID(),
         role: "user" as const,
-        content: `the webhook is triggered with the following messages:`,
+        parts: [
+          {
+            type: "text" as const,
+            text: `the webhook is triggered with the following messages:`,
+          },
+        ],
       },
       ...(args
         ? [
             {
               id: crypto.randomUUID(),
               role: "user" as const,
-              content: `\`\`\`json\n${JSON.stringify(args)}\`\`\``,
+              parts: [
+                {
+                  type: "text" as const,
+                  text: `\`\`\`json\n${JSON.stringify(args)}\`\`\``,
+                },
+              ],
             },
           ]
         : []),

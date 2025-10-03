@@ -1,5 +1,5 @@
 import { useSearchParams } from "react-router";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Button } from "@deco/ui/components/button.tsx";
 import { SplitScreenLayout } from "../login/layout.tsx";

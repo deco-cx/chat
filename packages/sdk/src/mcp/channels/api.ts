@@ -1,7 +1,7 @@
 import { Trigger } from "@deco/ai/actors";
 import { Hosts } from "@deco/sdk/hosts";
 
-import { z } from "zod";
+import { z } from "zod/v3";
 import { InternalServerError, NotFoundError } from "../../errors.ts";
 
 import type { QueryResult } from "../../storage/index.ts";
@@ -53,7 +53,7 @@ const createTool = createToolGroup("Channel", {
 export const listChannels = createTool({
   name: "CHANNELS_LIST",
   description: "List all channels",
-  inputSchema: z.object({}),
+  inputSchema: z.lazy(() => z.object({})),
   handler: async (_, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -81,15 +81,17 @@ export const listChannels = createTool({
 export const createChannel = createTool({
   name: "CHANNELS_CREATE",
   description: "Create a channel",
-  inputSchema: z.object({
-    discriminator: z.string().describe("The channel discriminator"),
-    integrationId: z.string().describe("The ID of the integration to use"),
-    agentId: z
-      .string()
-      .optional()
-      .describe("The ID of the agent to join the channel."),
-    name: z.string().optional().describe("The name of the channel"),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      discriminator: z.string().describe("The channel discriminator"),
+      integrationId: z.string().describe("The ID of the integration to use"),
+      agentId: z
+        .string()
+        .optional()
+        .describe("The ID of the agent to join the channel."),
+      name: z.string().optional().describe("The name of the channel"),
+    }),
+  ),
   handler: async ({ discriminator, integrationId, agentId, name }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -192,12 +194,16 @@ const getAgentName = (
 export const channelJoin = createTool({
   name: "CHANNELS_JOIN",
   description: "Invite an agent to a channel",
-  inputSchema: z.object({
-    id: z.string().describe("The ID of the channel to join, use only UUIDs."),
-    agentId: z
-      .string()
-      .describe("The ID of the agent to join the channel to, use only UUIDs."),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      id: z.string().describe("The ID of the channel to join, use only UUIDs."),
+      agentId: z
+        .string()
+        .describe(
+          "The ID of the agent to join the channel to, use only UUIDs.",
+        ),
+    }),
+  ),
   handler: async ({ id, agentId }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -254,12 +260,16 @@ export const channelJoin = createTool({
 export const channelLeave = createTool({
   name: "CHANNELS_LEAVE",
   description: "Remove an agent from a channel",
-  inputSchema: z.object({
-    id: z.string().describe("The ID of the channel to unlink, use only UUIDs."),
-    agentId: z
-      .string()
-      .describe("The ID of the agent to unlink, use only UUIDs."),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      id: z
+        .string()
+        .describe("The ID of the channel to unlink, use only UUIDs."),
+      agentId: z
+        .string()
+        .describe("The ID of the agent to unlink, use only UUIDs."),
+    }),
+  ),
   handler: async ({ id, agentId }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -306,7 +316,7 @@ export const channelLeave = createTool({
 export const getChannel = createTool({
   name: "CHANNELS_GET",
   description: "Get a channel by ID",
-  inputSchema: z.object({ id: z.string() }),
+  inputSchema: z.lazy(() => z.object({ id: z.string() })),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -361,7 +371,7 @@ const createWebhookTrigger = async (
 export const deleteChannel = createTool({
   name: "CHANNELS_DELETE",
   description: "Delete a channel",
-  inputSchema: z.object({ id: z.string() }),
+  inputSchema: z.lazy(() => z.object({ id: z.string() })),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);

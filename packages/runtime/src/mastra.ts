@@ -16,7 +16,7 @@ import {
   type Step as MastraStep,
 } from "@mastra/core/workflows";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { ViewsListOutputSchema } from "./views.ts";
 import {
   ResourceCreateInputSchema,
@@ -60,28 +60,46 @@ const createRuntimeContext = (prev?: RuntimeContext<AppContext>) => {
 export function createPrivateTool<
   TSchemaIn extends z.ZodSchema | undefined = undefined,
   TSchemaOut extends z.ZodSchema | undefined = undefined,
+  TSuspendSchema extends z.ZodSchema = z.ZodSchema,
+  TResumeSchema extends z.ZodSchema = z.ZodSchema,
   TContext extends
     ToolExecutionContext<TSchemaIn> = ToolExecutionContext<TSchemaIn>,
   TExecute extends ToolAction<
     TSchemaIn,
     TSchemaOut,
+    any,
+    any,
     TContext
-  >["execute"] = ToolAction<TSchemaIn, TSchemaOut, TContext>["execute"],
+  >["execute"] = ToolAction<
+    TSchemaIn,
+    TSchemaOut,
+    any,
+    any,
+    TContext
+  >["execute"],
 >(
-  opts: ToolAction<TSchemaIn, TSchemaOut, TContext> & {
+  opts: ToolAction<
+    TSchemaIn,
+    TSchemaOut,
+    TSuspendSchema,
+    TResumeSchema,
+    TContext
+  > & {
     execute?: TExecute;
   },
 ): [TSchemaIn, TSchemaOut, TExecute] extends [
   z.ZodSchema,
   z.ZodSchema,
+  z.ZodSchema,
+  z.ZodSchema,
   Function,
 ]
-  ? Tool<TSchemaIn, TSchemaOut, TContext> & {
+  ? Tool<TSchemaIn, TSchemaOut, TSuspendSchema, TResumeSchema, TContext> & {
       inputSchema: TSchemaIn;
       outputSchema: TSchemaOut;
       execute: (context: TContext) => Promise<any>;
     }
-  : Tool<TSchemaIn, TSchemaOut, TContext> {
+  : Tool<TSchemaIn, TSchemaOut, TSuspendSchema, TResumeSchema, TContext> {
   const execute = opts.execute;
   if (typeof execute === "function") {
     opts.execute = ((input, options) => {
@@ -97,28 +115,49 @@ export function createPrivateTool<
 export function createTool<
   TSchemaIn extends z.ZodSchema | undefined = undefined,
   TSchemaOut extends z.ZodSchema | undefined = undefined,
-  TContext extends
-    ToolExecutionContext<TSchemaIn> = ToolExecutionContext<TSchemaIn>,
+  TSuspendSchema extends z.ZodSchema = z.ZodSchema,
+  TResumeSchema extends z.ZodSchema = z.ZodSchema,
+  TContext extends ToolExecutionContext<
+    TSchemaIn,
+    TSuspendSchema,
+    TResumeSchema
+  > = ToolExecutionContext<TSchemaIn, TSuspendSchema, TResumeSchema>,
   TExecute extends ToolAction<
     TSchemaIn,
     TSchemaOut,
+    TSuspendSchema,
+    TResumeSchema,
     TContext
-  >["execute"] = ToolAction<TSchemaIn, TSchemaOut, TContext>["execute"],
+  >["execute"] = ToolAction<
+    TSchemaIn,
+    TSchemaOut,
+    TSuspendSchema,
+    TResumeSchema,
+    TContext
+  >["execute"],
 >(
-  opts: ToolAction<TSchemaIn, TSchemaOut, TContext> & {
+  opts: ToolAction<
+    TSchemaIn,
+    TSchemaOut,
+    TSuspendSchema,
+    TResumeSchema,
+    TContext
+  > & {
     execute?: TExecute;
   },
 ): [TSchemaIn, TSchemaOut, TExecute] extends [
   z.ZodSchema,
   z.ZodSchema,
+  z.ZodSchema,
+  z.ZodSchema,
   Function,
 ]
-  ? Tool<TSchemaIn, TSchemaOut, TContext> & {
+  ? Tool<TSchemaIn, TSchemaOut, TSuspendSchema, TResumeSchema, TContext> & {
       inputSchema: TSchemaIn;
       outputSchema: TSchemaOut;
       execute: (context: TContext) => Promise<any>;
     }
-  : Tool<TSchemaIn, TSchemaOut, TContext> {
+  : Tool<TSchemaIn, TSchemaOut, TSuspendSchema, TResumeSchema, TContext> {
   return mastraCreateTool({
     ...opts,
     execute:
@@ -170,9 +209,15 @@ export interface Step<
 export function createStepFromTool<
   TSchemaIn extends z.ZodType<any>,
   TSchemaOut extends z.ZodType<any>,
-  TContext extends ToolExecutionContext<TSchemaIn>,
+  TSuspendSchema extends z.ZodType<any>,
+  TResumeSchema extends z.ZodType<any>,
+  TContext extends ToolExecutionContext<
+    TSchemaIn,
+    TSuspendSchema,
+    TResumeSchema
+  >,
 >(
-  tool: Tool<TSchemaIn, TSchemaOut, TContext> & {
+  tool: Tool<TSchemaIn, TSchemaOut, TSuspendSchema, TResumeSchema, TContext> & {
     inputSchema: TSchemaIn;
     outputSchema: TSchemaOut;
     execute: (context: TContext) => Promise<any>;

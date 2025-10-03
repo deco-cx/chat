@@ -4,7 +4,7 @@ import { homedir } from "os";
 import { promises as fs } from "fs";
 import type { User } from "@supabase/supabase-js";
 import { decodeJwt } from "jose";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { createClient } from "./supabase.js";
 import process from "node:process";
 

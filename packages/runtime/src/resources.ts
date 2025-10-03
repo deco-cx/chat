@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 import mimeDb from "./mime-db.ts";
 
 type MimeDb = Record<string, { extensions?: string[] }>;

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 import { InternalServerError, NotFoundError } from "../../errors.ts";
 import { assertHasUser, assertPrincipalIsUser } from "../assertions.ts";
 import { UnauthorizedError } from "../index.ts";
@@ -8,7 +8,7 @@ import { userFromDatabase } from "../user.ts";
 export const getProfile = createTool({
   name: "PROFILES_GET",
   description: "Get the current user's profile",
-  inputSchema: z.object({}),
+  inputSchema: z.lazy(() => z.object({})),
   handler: async (_, c) => {
     assertHasUser(c);
     assertPrincipalIsUser(c);
@@ -46,13 +46,15 @@ export const getProfile = createTool({
 export const updateProfile = createTool({
   name: "PROFILES_UPDATE",
   description: "Update the current user's profile",
-  inputSchema: z.object({
-    name: z.string().nullable().optional(),
-    email: z.string().optional(),
-    deco_user_id: z.number().nullable().optional(),
-    is_new_user: z.boolean().nullable().optional(),
-    phone: z.string().nullable().optional(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      name: z.string().nullable().optional(),
+      email: z.string().optional(),
+      deco_user_id: z.number().nullable().optional(),
+      is_new_user: z.boolean().nullable().optional(),
+      phone: z.string().nullable().optional(),
+    }),
+  ),
   handler: async ({ name, email, deco_user_id, is_new_user, phone }, c) => {
     assertPrincipalIsUser(c);
     assertHasUser(c);

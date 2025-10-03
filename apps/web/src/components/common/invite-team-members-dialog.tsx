@@ -22,7 +22,7 @@ import {
 import { Button } from "@deco/ui/components/button.tsx";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { z } from "zod/v3";
 import {
   Form,
   FormControl,

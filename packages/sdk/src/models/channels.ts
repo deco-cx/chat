@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 import { IntegrationSchema } from "./mcp.ts";
 
 export const ChannelSchema = z.object({

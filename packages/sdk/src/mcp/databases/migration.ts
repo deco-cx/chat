@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import z from "zod";
+import z from "zod/v3";
 import { workspaceDB } from "../context.ts";
 import { assertHasWorkspace, assertWorkspaceResourceAccess } from "../index.ts";
 import { createDatabaseTool } from "./tool.ts";

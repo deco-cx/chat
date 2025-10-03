@@ -10,7 +10,7 @@ import { Icon } from "@deco/ui/components/icon.tsx";
 import Form from "@rjsf/shadcn";
 import validator from "@rjsf/validator-ajv8";
 import { useCallback, useState } from "react";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { EmptyState } from "../common/empty-state.tsx";
 import { ToolCallResultV2 } from "@deco/sdk/hooks";
 

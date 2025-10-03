@@ -1,14 +1,16 @@
-import type { Message } from "@ai-sdk/react";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import { useMemo, useRef, useState } from "react";
-import { Picker } from "./chat-picker.tsx";
 import { useAgent } from "../agent/provider.tsx";
+import { Picker } from "./chat-picker.tsx";
 import { AgentCard } from "./tools/agent-card.tsx";
+import {
+  HostingAppDeploy,
+  HostingAppToolLike,
+} from "./tools/hosting-app-deploy.tsx";
 import { Preview } from "./tools/render-preview.tsx";
-import { HostingAppDeploy } from "./tools/hosting-app-deploy.tsx";
 import { formatToolName } from "./utils/format-tool-name.ts";
 
 interface ConfirmOption {
@@ -16,8 +18,32 @@ interface ConfirmOption {
   label: string;
 }
 
+// Map ToolInvocation state to ToolLike state for custom UI components
+const mapToToolLikeState = (
+  state: ToolInvocation["state"],
+): "call" | "result" | "error" | "partial-call" => {
+  switch (state) {
+    case "input-streaming":
+    case "input-available":
+      return "call";
+    case "output-available":
+      return "result";
+    case "output-error":
+      return "error";
+    default:
+      return "call";
+  }
+};
+
 interface ToolMessageProps {
-  toolInvocations: NonNullable<Message["toolInvocations"]>;
+  part: {
+    type: string;
+    toolCallId: string;
+    state?: string;
+    input?: unknown;
+    output?: unknown;
+    errorText?: string;
+  };
   isLastMessage?: boolean;
 }
 
@@ -35,10 +61,14 @@ type CustomUITool = (typeof CUSTOM_UI_TOOLS)[number];
 interface ToolInvocation {
   toolCallId: string;
   toolName: string;
-  state: "call" | "result" | "error" | "partial-call";
-  args?: Record<string, unknown>;
-  result?: Record<string, unknown>;
-  error?: unknown;
+  state:
+    | "input-streaming"
+    | "input-available"
+    | "output-available"
+    | "output-error";
+  input?: unknown;
+  output?: unknown;
+  errorText?: string;
 }
 
 function isCustomUITool(toolName: string): toolName is CustomUITool {
@@ -60,11 +90,12 @@ function ToolStatus({
 
   const getIcon = (state: string) => {
     switch (state) {
-      case "call":
+      case "input-streaming":
+      case "input-available":
         return <Spinner size="xs" variant="default" />;
-      case "result":
+      case "output-available":
         return <Icon name="check" className="text-muted-foreground" />;
-      case "error":
+      case "output-error":
         return <Icon name="close" className="text-muted-foreground" />;
       default:
         return "•";
@@ -72,6 +103,9 @@ function ToolStatus({
   };
 
   const getToolName = () => {
+    if (!tool.toolName) {
+      return "Unknown tool";
+    }
     if (tool.toolName.startsWith("AGENT_GENERATE_")) {
       return `Delegating to agent`;
     }
@@ -83,9 +117,9 @@ function ToolStatus({
       {
         toolName: tool.toolName,
         state: tool.state,
-        args: tool.args,
-        result: tool.result,
-        error: tool.error,
+        input: tool.input,
+        output: tool.output,
+        errorText: tool.errorText,
       },
       null,
       2,
@@ -203,13 +237,19 @@ function CustomToolUI({
   isLastMessage?: boolean;
 }) {
   const { select } = useAgent();
-  const result = (tool.result ?? {}) as Record<string, unknown>;
+  const result = (tool.output ?? {}) as Record<string, unknown>;
 
   if (tool.toolName === "HOSTING_APP_DEPLOY") {
-    return <HostingAppDeploy tool={tool} />;
+    const toolLike: HostingAppToolLike = {
+      toolCallId: tool.toolCallId,
+      toolName: tool.toolName,
+      state: mapToToolLikeState(tool.state),
+      args: tool.input as HostingAppToolLike["args"],
+    };
+    return <HostingAppDeploy tool={toolLike} />;
   }
 
-  if (tool.state !== "result" || !tool.result) return null;
+  if (tool.state !== "output-available" || !tool.output) return null;
 
   switch (tool.toolName) {
     case "RENDER": {
@@ -257,17 +297,32 @@ function CustomToolUI({
   }
 }
 
-export function ToolMessage({
-  toolInvocations,
-  isLastMessage,
-}: ToolMessageProps) {
+export function ToolMessage({ part, isLastMessage }: ToolMessageProps) {
+  // Extract tool name from part type
+  const toolName = part.type.startsWith("tool-")
+    ? part.type.substring(5)
+    : "UNKNOWN_TOOL";
+
+  // Create tool invocation from part
+  const toolInvocations: ToolInvocation[] = [
+    {
+      toolCallId: part.toolCallId,
+      toolName: toolName,
+      state: (part.state as ToolInvocation["state"]) || "input-available",
+      input: part.input,
+      output: part.output,
+      errorText: part.errorText,
+    },
+  ];
   // Separate tools into timeline tools and custom UI tools using memoization
   const { timelineTools, customUITools } = useMemo(() => {
     const timeline: ToolInvocation[] = [];
     const customUI: ToolInvocation[] = [];
 
     toolInvocations.forEach((tool: ToolInvocation) => {
-      if (isCustomUITool(tool.toolName)) {
+      // Extract tool name from the tool object - it should have a toolName property
+      const toolName = tool.toolName || "Unknown tool";
+      if (isCustomUITool(toolName)) {
         customUI.push(tool);
       } else {
         timeline.push(tool);

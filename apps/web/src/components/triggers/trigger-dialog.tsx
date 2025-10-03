@@ -44,7 +44,7 @@ import { Textarea } from "@deco/ui/components/textarea.tsx";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v3";
 import JsonSchemaForm from "../json-schema/index.tsx";
 import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 import { AgentAvatar } from "../common/avatar/agent.tsx";

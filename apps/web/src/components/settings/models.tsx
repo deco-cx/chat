@@ -47,7 +47,7 @@ import { cn } from "@deco/ui/lib/utils.ts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createContext, Suspense, useContext, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { Avatar } from "../common/avatar/index.tsx";
 import { Table, type TableColumn } from "../common/table/index.tsx";
 

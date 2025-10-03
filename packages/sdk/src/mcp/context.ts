@@ -9,7 +9,7 @@ import { createServerClient } from "@supabase/ssr";
 import type { User as SupaUser } from "@supabase/supabase-js";
 import { Cloudflare } from "cloudflare";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { stubFor } from "../actors/index.ts";
 import { JwtIssuer, JWTPayload } from "../auth/jwt.ts";
 import { AuthorizationClient, Policy, PolicyClient } from "../auth/policy.ts";

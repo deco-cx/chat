@@ -108,7 +108,7 @@ export function email(
         {
           id: crypto.randomUUID(),
           role: "user",
-          content: await readContent(message),
+          parts: [{ type: "text", text: await readContent(message) }],
         },
       ],
       {

@@ -1,5 +1,5 @@
 import { WELL_KNOWN_KNOWLEDGE_BASE_CONNECTION_ID_STARTSWITH } from "../constants.ts";
-import { z } from "zod";
+import { z } from "zod/v3";
 
 export const FileExtSchema = z.enum([".pdf", ".txt", ".md", ".csv", ".json"]);
 export type FileExt = z.infer<typeof FileExtSchema>;

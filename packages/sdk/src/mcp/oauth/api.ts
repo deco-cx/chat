@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 import {
   assertHasWorkspace,
   assertWorkspaceResourceAccess,
@@ -15,14 +15,18 @@ const createTool = createToolGroup("OAuth", {
 export const oauthCodeCreate = createTool({
   name: "OAUTH_CODE_CREATE",
   description: "Create an OAuth code for a given API key",
-  inputSchema: z.object({
-    integrationId: z
-      .string()
-      .describe("The ID of the integration to create an OAuth code for"),
-  }),
-  outputSchema: z.object({
-    code: z.string().describe("The OAuth code"),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      integrationId: z
+        .string()
+        .describe("The ID of the integration to create an OAuth code for"),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      code: z.string().describe("The OAuth code"),
+    }),
+  ),
   handler: async ({ integrationId }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);

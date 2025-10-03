@@ -12,10 +12,7 @@
     "@supabase/ssr": "0.6.1",
     "@supabase/supabase-js": "2.49.4"
   },
-  "devDependencies": {
-    "wrangler": "^4.13.2"
-  },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.0.0"
   }
 }

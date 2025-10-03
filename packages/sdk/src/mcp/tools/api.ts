@@ -1,5 +1,5 @@
 import { callFunction, inspect } from "@deco/cf-sandbox";
-import z from "zod";
+import z from "zod/v3";
 import { formatIntegrationId, WellKnownMcpGroups } from "../../crud/groups.ts";
 import { DeconfigResourceV2 } from "../deconfig-v2/index.ts";
 import {
@@ -100,23 +100,27 @@ export function createToolBindingImpl({
   const runTool = createTool({
     name: "DECO_TOOL_CALL_TOOL",
     description: "Invoke a tool created with DECO_RESOURCE_TOOL_CREATE",
-    inputSchema: z.object({
-      uri: z.string().describe("The URI of the tool to run"),
-      input: z.object({}).passthrough().describe("The input of the code"),
-    }),
-    outputSchema: z.object({
-      result: z.any().optional().describe("The result of the tool execution"),
-      error: z.any().optional().describe("Error if any"),
-      logs: z
-        .array(
-          z.object({
-            type: z.enum(["log", "warn", "error"]),
-            content: z.string(),
-          }),
-        )
-        .optional()
-        .describe("Console logs from the execution"),
-    }),
+    inputSchema: z.lazy(() =>
+      z.object({
+        uri: z.string().describe("The URI of the tool to run"),
+        input: z.object({}).passthrough().describe("The input of the code"),
+      }),
+    ),
+    outputSchema: z.lazy(() =>
+      z.object({
+        result: z.any().optional().describe("The result of the tool execution"),
+        error: z.any().optional().describe("Error if any"),
+        logs: z
+          .array(
+            z.object({
+              type: z.enum(["log", "warn", "error"]),
+              content: z.string(),
+            }),
+          )
+          .optional()
+          .describe("Console logs from the execution"),
+      }),
+    ),
     handler: async ({ uri, input }, c) => {
       try {
         const { data: tool } = await resourceToolRead(uri);
@@ -148,23 +152,27 @@ const createToolManagementTool = createToolGroup("Tools", {
 export const runTool = createToolManagementTool({
   name: "DECO_TOOL_RUN_TOOL",
   description: "Invoke the tool passed as input",
-  inputSchema: z.object({
-    tool: ToolDefinitionSchema,
-    input: z.object({}).passthrough().describe("The input of the code"),
-  }),
-  outputSchema: z.object({
-    result: z.any().optional().describe("The result of the tool execution"),
-    error: z.any().optional().describe("Error if any"),
-    logs: z
-      .array(
-        z.object({
-          type: z.enum(["log", "warn", "error"]),
-          content: z.string(),
-        }),
-      )
-      .optional()
-      .describe("Console logs from the execution"),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      tool: ToolDefinitionSchema,
+      input: z.object({}).passthrough().describe("The input of the code"),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      result: z.any().optional().describe("The result of the tool execution"),
+      error: z.any().optional().describe("Error if any"),
+      logs: z
+        .array(
+          z.object({
+            type: z.enum(["log", "warn", "error"]),
+            content: z.string(),
+          }),
+        )
+        .optional()
+        .describe("Console logs from the execution"),
+    }),
+  ),
   handler: async ({ tool, input }, c) => {
     try {
       return await executeToolWithValidation(tool, input, c);

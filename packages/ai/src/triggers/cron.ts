@@ -38,6 +38,7 @@ export const hooks: TriggerHooks<TriggerData & { type: "cron" }> = {
       const messages = prompt.messages.map((message) => ({
         ...message,
         id: crypto.randomUUID(),
+        parts: [{ type: "text" as const, text: message.content }],
       }));
 
       const agent = trigger.state

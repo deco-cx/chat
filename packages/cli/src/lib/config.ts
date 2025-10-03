@@ -7,7 +7,7 @@ import { parse, stringify } from "smol-toml";
 import { promises as fs, statSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { readSession } from "./session.js";
 import { createHash } from "crypto";
 import process from "node:process";

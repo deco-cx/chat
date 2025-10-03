@@ -34,7 +34,7 @@ Common patterns:
 
 2. Import dependencies directly in your files:
    // main.ts
-   import { z } from "zod";
+   import { z } from "zod/v3";
    import { withRuntime } from "@deco/workers-runtime";
 
 3. Use wrangler.toml to configure your app:
@@ -126,7 +126,7 @@ Example of files deployment:
   {
     "path": "main.ts",
     "content": \`
-      import { z } from "zod";
+      import { z } from "zod/v3";
       import { withRuntime } from "@deco/workers-runtime";
 
       const { Workflow, ...workerAPIs } = withRuntime({

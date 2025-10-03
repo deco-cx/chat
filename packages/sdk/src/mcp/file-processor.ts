@@ -6,7 +6,7 @@ import {
   getExtensionFromContentType,
   isAllowedFileExt,
 } from "../utils/knowledge.ts";
-import { z } from "zod";
+import { z } from "zod/v3";
 
 export { FileExtSchema } from "../utils/knowledge.ts";
 

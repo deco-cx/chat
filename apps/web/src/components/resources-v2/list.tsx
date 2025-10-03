@@ -20,7 +20,7 @@ import { useViewMode } from "@deco/ui/hooks/use-view-mode.ts";
 import { useQuery } from "@tanstack/react-query";
 import { useDeferredValue, useMemo, useState, type ReactNode } from "react";
 import { useParams, useSearchParams } from "react-router";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 import { EmptyState } from "../common/empty-state.tsx";
 import { ListPageHeader } from "../common/list-page-header.tsx";
