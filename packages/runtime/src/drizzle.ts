@@ -66,6 +66,11 @@ export interface MigrationConfig {
     entries: { idx: number; when: number; tag: string; breakpoints: boolean }[];
   };
   migrations: Record<string, string>;
+  /**
+   * Prefix for the migrations table name.
+   * Can be used to support multiple schemas in the same database.
+   */
+  namespace?: string;
   debug?: boolean;
 }
 
@@ -114,7 +119,9 @@ export async function migrateWithoutTransaction(
 
   try {
     if (debug) console.log("Setting up migrations table");
-    const migrationsTable = "__drizzle_migrations";
+    const migrationsTable = config.namespace
+      ? `${config.namespace}__drizzle_migrations`
+      : "__drizzle_migrations";
 
     // Create migrations table if it doesn't exist
     // Note: Changed from SERIAL to INTEGER PRIMARY KEY AUTOINCREMENT for SQLite compatibility
