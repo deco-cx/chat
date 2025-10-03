@@ -1,6 +1,5 @@
 import { MessageList } from "@mastra/core/agent";
-import type { Message as AIMessage } from "ai";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { WorkspaceMemory } from "../../memory/memory.ts";
 import {
   assertHasWorkspace,
@@ -85,21 +84,23 @@ export const listThreads = createTool({
   name: "THREADS_LIST",
   description:
     "List all threads in a workspace with cursor-based pagination and filtering",
-  inputSchema: z.object({
-    limit: z.number().min(1).max(100).default(10).optional(),
-    agentId: z.string().optional(),
-    resourceId: z.string().optional(),
-    orderBy: z
-      .enum([
-        "createdAt_desc",
-        "createdAt_asc",
-        "updatedAt_desc",
-        "updatedAt_asc",
-      ])
-      .default("createdAt_desc")
-      .optional(),
-    cursor: z.string().optional(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      limit: z.number().min(1).max(100).default(10).optional(),
+      agentId: z.string().optional(),
+      resourceId: z.string().optional(),
+      orderBy: z
+        .enum([
+          "createdAt_desc",
+          "createdAt_asc",
+          "updatedAt_desc",
+          "updatedAt_asc",
+        ])
+        .default("createdAt_desc")
+        .optional(),
+      cursor: z.string().optional(),
+    }),
+  ),
   handler: async ({ limit, agentId, orderBy, cursor, resourceId }, c) => {
     assertHasWorkspace(c);
 
@@ -224,7 +225,7 @@ export const listThreads = createTool({
 export const getThreadMessages = createTool({
   name: "THREADS_GET_MESSAGES",
   description: "Get only the messages for a thread by thread id",
-  inputSchema: z.object({ id: z.string() }),
+  inputSchema: z.lazy(() => z.object({ id: z.string() })),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
 
@@ -247,19 +248,22 @@ export const getThreadMessages = createTool({
 
     const list = new MessageList({ threadId: id });
     for (const message of messages) {
-      list.add(message as unknown as AIMessage, "memory");
+      // @ts-expect-error: I guess this is ok
+      list.add(message, "memory");
     }
 
-    const uiMessages = list.get.all.ui();
+    const uiMessages = list.get.all.aiV5.ui();
 
-    return { messages: uiMessages };
+    return {
+      messages: uiMessages,
+    };
   },
 });
 
 export const getThread = createTool({
   name: "THREADS_GET",
   description: "Get a thread by thread id (without messages)",
-  inputSchema: z.object({ id: z.string() }),
+  inputSchema: z.lazy(() => z.object({ id: z.string() })),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
 
@@ -285,7 +289,7 @@ export const getThread = createTool({
 export const getThreadTools = createTool({
   name: "THREADS_GET_TOOLS",
   description: "Get the tools_set for a thread by thread id",
-  inputSchema: z.object({ id: z.string() }),
+  inputSchema: z.lazy(() => z.object({ id: z.string() })),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
 
@@ -311,10 +315,12 @@ export const getThreadTools = createTool({
 export const updateThreadTitle = createTool({
   name: "THREADS_UPDATE_TITLE",
   description: "Update a thread's title",
-  inputSchema: z.object({
-    threadId: z.string(),
-    title: z.string(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      threadId: z.string(),
+      title: z.string(),
+    }),
+  ),
   handler: async ({ threadId, title }, c) => {
     assertHasWorkspace(c);
 
@@ -353,10 +359,12 @@ export const updateThreadTitle = createTool({
 export const updateThreadMetadata = createTool({
   name: "THREADS_UPDATE_METADATA",
   description: "Update a thread's metadata",
-  inputSchema: z.object({
-    threadId: z.string(),
-    metadata: z.record(z.unknown()),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      threadId: z.string(),
+      metadata: z.record(z.unknown()),
+    }),
+  ),
   handler: async ({ threadId, metadata }, c) => {
     assertHasWorkspace(c);
 

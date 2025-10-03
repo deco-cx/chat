@@ -1,5 +1,5 @@
 import type { AIAgent } from "@deco/ai";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { AgentGenerateOptions } from "../../models/index.ts";
 import { stub } from "../../stub.ts";
 import {
@@ -25,15 +25,19 @@ const createAgentTool = createToolFactory<WithTool<AgentContext>>(
 export const agentGenerateText = createAgentTool({
   name: "AGENT_GENERATE_TEXT",
   description: "Generate text output using an agent",
-  inputSchema: z.object({
-    message: z
-      .union([z.string(), baseMessageSchema])
-      .describe("The message to send to the agent"),
-    options: AgentGenerateOptions.optional().nullable(),
-  }),
-  outputSchema: z.object({
-    text: z.string().optional().describe("The text output from the agent"),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      message: z
+        .union([z.string(), baseMessageSchema])
+        .describe("The message to send to the agent"),
+      options: AgentGenerateOptions.optional().nullable(),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      text: z.string().optional().describe("The text output from the agent"),
+    }),
+  ),
   handler: async ({ message }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -66,19 +70,23 @@ export const agentGenerateText = createAgentTool({
 export const agentGenerateObject = createAgentTool({
   name: "AGENT_GENERATE_OBJECT",
   description: "Generate an object using an agent",
-  inputSchema: z.object({
-    message: z
-      .union([z.string(), baseMessageSchema])
-      .describe("The message to send to the agent"),
-    schema: z
-      .any()
-      .describe(
-        "The JSON schema to use for a structured response. If provided, the response will be an object.",
-      ),
-  }),
-  outputSchema: z.object({
-    object: z.any().describe("The object output from the agent"),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      message: z
+        .union([z.string(), baseMessageSchema])
+        .describe("The message to send to the agent"),
+      schema: z
+        .any()
+        .describe(
+          "The JSON schema to use for a structured response. If provided, the response will be an object.",
+        ),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      object: z.any().describe("The object output from the agent"),
+    }),
+  ),
   handler: async ({ message, schema }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -131,8 +139,8 @@ export const agentListen = createAgentTool({
     "Perfect for converting voice messages, audio recordings, or any audio content into readable text. " +
     "Maximum file size is 25MB. Use this when you need to process audio files, transcribe voice messages, " +
     "or convert speech to text for further processing. This tool is only available if the agent has voice transcription capabilities.",
-  inputSchema: TranscribeAudioInputSchema,
-  outputSchema: TranscribeAudioOutputSchema,
+  inputSchema: z.lazy(() => TranscribeAudioInputSchema),
+  outputSchema: z.lazy(() => TranscribeAudioOutputSchema),
   handler: async ({ audioUrl }, c) => {
     try {
       assertHasWorkspace(c);

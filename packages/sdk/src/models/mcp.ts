@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 import type { WellKnownBindingsName } from "../mcp/index.ts";
 import { ToolDefinitionSchema } from "../mcp/tools/schemas.ts";
 

@@ -23,7 +23,7 @@ import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v3";
 
 // Simple slugify function for client-side use
 function slugify(input: string): string {

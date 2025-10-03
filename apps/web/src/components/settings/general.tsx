@@ -28,7 +28,7 @@ import { Textarea } from "@deco/ui/components/textarea.tsx";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { Avatar } from "../common/avatar/index.tsx";
 import { useCurrentTeam } from "../sidebar/team-selector.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";

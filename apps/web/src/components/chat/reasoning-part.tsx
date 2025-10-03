@@ -1,23 +1,21 @@
-import { MemoizedMarkdown } from "./chat-markdown.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
-import { useEffect, useState } from "react";
 import { cn } from "@deco/ui/lib/utils.ts";
+import { useEffect, useState } from "react";
+import { MemoizedMarkdown } from "./chat-markdown.tsx";
 
 interface ReasoningPartProps {
-  reasoning: string;
+  part: {
+    type: "reasoning";
+    text: string;
+    state?: "streaming" | "done";
+  };
   messageId: string;
   index: number;
-  isStreaming?: boolean;
-  isResponseStreaming?: boolean;
 }
 
-export function ReasoningPart({
-  reasoning,
-  messageId,
-  index,
-  isStreaming = false,
-  isResponseStreaming = false,
-}: ReasoningPartProps) {
+export function ReasoningPart({ part, index, messageId }: ReasoningPartProps) {
+  const { state } = part;
+  const isPartStreaming = state === "streaming";
   const [isExpanded, setIsExpanded] = useState(false);
   const [wasManuallyExpanded, setWasManuallyExpanded] = useState(false);
 
@@ -25,12 +23,12 @@ export function ReasoningPart({
   useEffect(() => {
     if (wasManuallyExpanded) return; // Don't auto-collapse if user manually expanded
 
-    if (isStreaming && !isResponseStreaming) {
+    if (isPartStreaming) {
       setIsExpanded(true);
-    } else if (isResponseStreaming) {
+    } else {
       setIsExpanded(false);
     }
-  }, [isStreaming, isResponseStreaming, wasManuallyExpanded]);
+  }, [isPartStreaming, wasManuallyExpanded]);
 
   const handleToggle = () => {
     setIsExpanded(!isExpanded);
@@ -44,7 +42,7 @@ export function ReasoningPart({
         onClick={handleToggle}
         className={cn(
           "flex items-center justify-between p-4 transition-colors",
-          isStreaming ? "bg-muted animate-pulse" : "hover:bg-muted",
+          isPartStreaming ? "bg-muted animate-pulse" : "hover:bg-muted",
         )}
       >
         <div className="flex items-center gap-2">
@@ -64,17 +62,21 @@ export function ReasoningPart({
           isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0",
         )}
       >
-        <div className={cn("p-4 border-t", isStreaming && "bg-muted")}>
+        <div className={cn("p-4 border-t", isPartStreaming && "bg-muted")}>
           <div
             className={cn(
               "prose prose-sm max-w-none text-sm",
-              isStreaming && "text-xs text-muted-foreground",
+              isPartStreaming && "text-xs text-muted-foreground",
             )}
           >
             <MemoizedMarkdown
               key={index}
-              id={`${messageId}-${index}-reasoning`}
-              content={reasoning}
+              messageId={`${messageId}-${index}-reasoning`}
+              part={
+                "details" in part && Array.isArray(part.details)
+                  ? part.details[0]
+                  : { type: "text", text: part.text }
+              }
             />
           </div>
         </div>

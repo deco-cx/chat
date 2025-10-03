@@ -1,6 +1,5 @@
 import type { MCPClientStub, ProjectTools } from "@deco/sdk/mcp";
-import type { Message as AIMessage } from "ai";
-import { extractText } from "unpdf";
+import type { UIMessage } from "ai";
 
 const MIN_PDF_SUMMARIZATION_SIZE_BYTES = 100_000; // 100KB
 
@@ -14,6 +13,9 @@ async function extractPDFText(pdfUrl: string): Promise<string> {
     }
 
     const arrayBuffer = await response.arrayBuffer();
+
+    // Lazy import unpdf only when needed
+    const { extractText } = await import("unpdf");
     const text = await extractText(new Uint8Array(arrayBuffer));
     const extractedText = text.text.join(" ");
 
@@ -93,35 +95,29 @@ async function summarizeChunk(
 }
 
 /**
- * Checks if the messages have PDF attachments and if the total size of the PDF attachments is greater than the minimum size for summarization
- * @param messages - The messages to check
+ * Checks if the message has PDF attachments and if the total size of the PDF attachments is greater than the minimum size for summarization
+ * @param message - The message to check
  * @returns An object with the following properties:
- * - hasPdf: boolean - Whether the messages have PDF attachments
+ * - hasPdf: boolean - Whether the message has PDF attachments
  * - totalPdfAttachmentsBytes: number - The total size of the PDF attachments in bytes
  * - hasMinimumSizeForSummarization: boolean - Whether the total size of the PDF attachments is greater than the minimum size for summarization
  */
-export function shouldSummarizePDFs(messages: AIMessage[]): {
+export function shouldSummarizePDFs(message: UIMessage): {
   hasPdf: boolean;
   totalPdfAttachmentsBytes: number;
   hasMinimumSizeForSummarization: boolean;
 } {
-  const pdfMessages = messages.filter((message) =>
-    message.experimental_attachments?.some(
-      (attachment) => attachment.contentType === "application/pdf",
-    ),
-  );
+  const pdfParts =
+    message.parts?.filter(
+      (part) => part.type === "file" && part.mediaType === "application/pdf",
+    ) ?? [];
 
-  const hasPdf = pdfMessages.length > 0;
-  const totalPdfAttachmentsBytes = pdfMessages.reduce((acc, message) => {
-    return (
-      acc +
-      (message.experimental_attachments ?? []).reduce((acc, attachment) => {
-        if ("size" in attachment && typeof attachment.size === "number") {
-          return acc + attachment.size;
-        }
-        return acc;
-      }, 0)
-    );
+  const hasPdf = pdfParts.length > 0;
+  const totalPdfAttachmentsBytes = pdfParts.reduce((acc, part) => {
+    if ("size" in part && typeof part.size === "number") {
+      return acc + part.size;
+    }
+    return acc;
   }, 0);
 
   const hasMinimumSizeForSummarization =
@@ -135,15 +131,15 @@ export function shouldSummarizePDFs(messages: AIMessage[]): {
 }
 
 /**
- * Summarizes PDF messages to reduce token usage
+ * Summarizes PDF message to reduce token usage
  * Uses AI_GENERATE with a lightweight model and chunked PDF content
- * @param messages - The messages to summarize
+ * @param message - The message to summarize
  * @param mcpClient - The MCP client to use
  * @param options - The options for the summarization
- * @returns The same messages array, but substitutes the PDF attachments with the summarized text
+ * @returns The same message, but substitutes the PDF attachments with the summarized text
  */
 export async function summarizePDFMessages(
-  messages: AIMessage[],
+  message: UIMessage,
   mcpClient: MCPClientStub<ProjectTools>,
   options: {
     model: string;
@@ -151,86 +147,79 @@ export async function summarizePDFMessages(
     maxSummaryTokens: number;
     maxTotalTokens: number;
   },
-): Promise<AIMessage[]> {
+): Promise<UIMessage> {
   const { model, maxChunkSize, maxSummaryTokens, maxTotalTokens } = options;
 
-  const processedMessages: AIMessage[] = [];
+  const pdfAttachments = message.parts?.filter(
+    (part) =>
+      part.type === "file" &&
+      "mediaType" in part &&
+      part.mediaType === "application/pdf",
+  );
 
-  for (let i = 0; i < messages.length; i++) {
-    const message = messages[i];
-
-    const pdfAttachments = message.experimental_attachments?.filter(
-      (attachment) => attachment.contentType === "application/pdf",
-    );
-
-    if (!pdfAttachments || pdfAttachments.length === 0) {
-      processedMessages.push(message);
-      continue;
-    }
-
-    try {
-      let totalTokens = 0;
-
-      for (let j = 0; j < pdfAttachments.length; j++) {
-        const pdfAttachment = pdfAttachments[j];
-
-        const pdfText = await extractPDFText(pdfAttachment.url);
-        const chunks = chunkText(pdfText, maxChunkSize);
-
-        const summarizedChunks: string[] = [];
-        for (let k = 0; k < chunks.length; k++) {
-          const chunk = chunks[k];
-          if (totalTokens >= maxTotalTokens) {
-            break;
-          }
-
-          const summary = await summarizeChunk(
-            chunk,
-            summarizedChunks,
-            mcpClient,
-            model,
-            maxSummaryTokens,
-          );
-          summarizedChunks.push(summary);
-
-          const estimatedTokens = Math.ceil(summary.length / 4);
-          totalTokens += estimatedTokens;
-        }
-
-        const combinedSummary = summarizedChunks.join("\n\n");
-
-        const pdfSummaryAnnotation = {
-          type: "file" as const,
-          url: pdfAttachment.url,
-          name: pdfAttachment.name || "document",
-          contentType: "application/pdf",
-          content: `<pdf_summary original="${
-            pdfAttachment.name || "document"
-          }">\n${combinedSummary}\n</pdf_summary>`,
-        };
-
-        if (!message.annotations) {
-          message.annotations = [];
-        }
-        message.annotations.push(pdfSummaryAnnotation);
-      }
-
-      const summarizedMessage: AIMessage = {
-        ...message,
-        experimental_attachments: message.experimental_attachments?.filter(
-          (attachment) => attachment.contentType !== "application/pdf",
-        ),
-      };
-
-      processedMessages.push(summarizedMessage);
-    } catch (error) {
-      console.error(
-        `[PDF Summarizer] Error processing PDF message ${i + 1}:`,
-        error,
-      );
-      processedMessages.push(message);
-    }
+  if (!pdfAttachments || pdfAttachments.length === 0) {
+    return message;
   }
 
-  return processedMessages;
+  try {
+    let totalTokens = 0;
+    const newParts = [...(message.parts ?? [])];
+
+    for (let j = 0; j < pdfAttachments.length; j++) {
+      const pdfAttachment = pdfAttachments[j];
+
+      // Type guard to ensure it's a file part
+      if (pdfAttachment.type !== "file" || !("url" in pdfAttachment)) {
+        continue;
+      }
+
+      const pdfText = await extractPDFText(pdfAttachment.url);
+      const chunks = chunkText(pdfText, maxChunkSize);
+
+      const summarizedChunks: string[] = [];
+      for (let k = 0; k < chunks.length; k++) {
+        const chunk = chunks[k];
+        if (totalTokens >= maxTotalTokens) {
+          break;
+        }
+
+        const summary = await summarizeChunk(
+          chunk,
+          summarizedChunks,
+          mcpClient,
+          model,
+          maxSummaryTokens,
+        );
+        summarizedChunks.push(summary);
+
+        const estimatedTokens = Math.ceil(summary.length / 4);
+        totalTokens += estimatedTokens;
+      }
+
+      const combinedSummary = summarizedChunks.join("\n\n");
+
+      // Add PDF summary as a text part instead of annotation
+      const pdfSummaryPart = {
+        type: "text" as const,
+        text: `<pdf_summary original="${
+          ("filename" in pdfAttachment ? pdfAttachment.filename : undefined) ||
+          "document"
+        }">\n${combinedSummary}\n</pdf_summary>`,
+      };
+
+      newParts.push(pdfSummaryPart);
+    }
+
+    // Return message with PDF files removed and summaries added
+    return {
+      ...message,
+      parts: newParts.filter(
+        (part) =>
+          !(part.type === "file" && part.mediaType === "application/pdf"),
+      ),
+    };
+  } catch (error) {
+    console.error("[PDF Summarizer] Error processing PDF message:", error);
+    return message;
+  }
 }

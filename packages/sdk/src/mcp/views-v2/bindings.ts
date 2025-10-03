@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 import type { Binder } from "../bindings/binder.ts";
 import { createResourceV2Bindings } from "../resources-v2/bindings.ts";
 import { ViewDataSchema } from "./schemas.ts";

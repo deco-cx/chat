@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 import {
   InternalServerError,
   NotFoundError,
@@ -444,9 +444,11 @@ async function assignRoleToMembers(
 export const getTeam = createTool({
   name: "TEAMS_GET",
   description: "Get a team by slug",
-  inputSchema: z.object({
-    slug: z.string(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      slug: z.string(),
+    }),
+  ),
   handler: async (props, c) => {
     const { slug } = props;
 
@@ -550,10 +552,12 @@ export const getTeam = createTool({
 export const createTeam = createTool({
   name: "TEAMS_CREATE",
   description: "Create a new team",
-  inputSchema: z.object({
-    name: z.string(),
-    slug: z.string().optional(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      name: z.string(),
+      slug: z.string().optional(),
+    }),
+  ),
 
   /**
    * This function handle this steps:
@@ -645,14 +649,16 @@ export const createTeam = createTool({
 export const updateTeam = createTool({
   name: "TEAMS_UPDATE",
   description: "Update an existing team including theme customization",
-  inputSchema: z.object({
-    id: z.number().describe("The id of the team to update"),
-    data: z.object({
-      name: z.string().optional().describe("Team name"),
-      slug: z.string().optional().describe("Team URL slug"),
-      theme: enhancedThemeSchema.optional(),
+  inputSchema: z.lazy(() =>
+    z.object({
+      id: z.number().describe("The id of the team to update"),
+      data: z.object({
+        name: z.string().optional().describe("Team name"),
+        slug: z.string().optional().describe("Team URL slug"),
+        theme: enhancedThemeSchema.optional(),
+      }),
     }),
-  }),
+  ),
   handler: async (props, c) => {
     const { id, data } = props;
 
@@ -713,9 +719,11 @@ export const updateTeam = createTool({
 export const deleteTeam = createTool({
   name: "TEAMS_DELETE",
   description: "Delete a team by id",
-  inputSchema: z.object({
-    teamId: z.number(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      teamId: z.number(),
+    }),
+  ),
   handler: async (props, c) => {
     const { teamId } = props;
 
@@ -750,10 +758,12 @@ export const deleteTeam = createTool({
 export const listTeams = createTool({
   name: "TEAMS_LIST",
   description: "List teams for the current user",
-  inputSchema: z.object({}),
-  outputSchema: z.object({
-    items: z.array(z.any()),
-  }),
+  inputSchema: z.lazy(() => z.object({})),
+  outputSchema: z.lazy(() =>
+    z.object({
+      items: z.array(z.any()),
+    }),
+  ),
   handler: async (_, c) => {
     c.resourceAccess.grant();
 
@@ -807,9 +817,11 @@ export const listTeams = createTool({
 export const getWorkspaceTheme = createTool({
   name: "TEAMS_GET_THEME",
   description: "Get the theme for a workspace",
-  inputSchema: z.object({
-    slug: z.string(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      slug: z.string(),
+    }),
+  ),
   handler: async (props, c) => {
     c.resourceAccess.grant();
     const { slug } = props;
@@ -847,10 +859,12 @@ export const createTeamRole = createTool({
   name: "TEAM_ROLE_CREATE",
   description:
     "Create a new team role with associated policies and permissions",
-  inputSchema: z.object({
-    teamId: z.number(),
-    roleData: RoleFormDataSchema,
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      teamId: z.number(),
+      roleData: RoleFormDataSchema,
+    }),
+  ),
   handler: async (props, c) => {
     const { teamId, roleData } = props;
 
@@ -903,10 +917,12 @@ export const deleteTeamRole = createTool({
   name: "TEAM_ROLE_DELETE",
   description:
     "Delete a team role and its associated policies (only team-specific roles)",
-  inputSchema: z.object({
-    teamId: z.number(),
-    roleId: z.number(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      teamId: z.number(),
+      roleId: z.number(),
+    }),
+  ),
   handler: async (props, c) => {
     const { teamId, roleId } = props;
 
@@ -938,11 +954,13 @@ export const deleteTeamRole = createTool({
 export const updateTeamRole = createTool({
   name: "TEAM_ROLE_UPDATE",
   description: "Update a team role and its associated policies",
-  inputSchema: z.object({
-    teamId: z.number(),
-    roleId: z.number(),
-    roleData: RoleFormDataSchema,
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      teamId: z.number(),
+      roleId: z.number(),
+      roleData: RoleFormDataSchema,
+    }),
+  ),
   handler: async (props, c) => {
     const { teamId, roleId, roleData } = props;
 
@@ -993,10 +1011,12 @@ export const updateTeamRole = createTool({
 export const getTeamRole = createTool({
   name: "TEAM_ROLE_GET",
   description: "Get detailed information about a specific team role",
-  inputSchema: z.object({
-    teamId: z.number(),
-    roleId: z.number(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      teamId: z.number(),
+      roleId: z.number(),
+    }),
+  ),
   handler: async (props, c) => {
     const { teamId, roleId } = props;
 
@@ -1081,36 +1101,40 @@ export const getTeamRole = createTool({
 export const addView = createTool({
   name: "TEAMS_ADD_VIEW",
   description: "Add a custom view or resource to a team",
-  inputSchema: z.object({
-    view: z
-      .object({
-        id: z.string().describe("Unique identifier for the view"),
-        title: z.string().describe("Display title for the view"),
-        icon: z.string().describe("Icon identifier for the view"),
-        type: z
-          .enum(["custom", "resource"])
-          .describe("Type of view (custom for views, resource for resources)"),
-        // Integration-specific view machine name
-        name: z.string().describe("Integration-specific view name"),
-        tools: z
-          .array(z.string())
-          .optional()
-          .describe("Optional list of tool names to enable for this view"),
-        rules: z
-          .array(z.string())
-          .optional()
-          .describe("Optional list of textual rules to persist in context"),
-        integration: z.object({
-          id: z.string().describe("Integration ID"),
-        }),
-        // Resource-specific fields
-        resourceType: z
-          .string()
-          .optional()
-          .describe("Type of resource (for resources only)"),
-      })
-      .describe("View or resource configuration to add"),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      view: z
+        .object({
+          id: z.string().describe("Unique identifier for the view"),
+          title: z.string().describe("Display title for the view"),
+          icon: z.string().describe("Icon identifier for the view"),
+          type: z
+            .enum(["custom", "resource"])
+            .describe(
+              "Type of view (custom for views, resource for resources)",
+            ),
+          // Integration-specific view machine name
+          name: z.string().describe("Integration-specific view name"),
+          tools: z
+            .array(z.string())
+            .optional()
+            .describe("Optional list of tool names to enable for this view"),
+          rules: z
+            .array(z.string())
+            .optional()
+            .describe("Optional list of textual rules to persist in context"),
+          integration: z.object({
+            id: z.string().describe("Integration ID"),
+          }),
+          // Resource-specific fields
+          resourceType: z
+            .string()
+            .optional()
+            .describe("Type of resource (for resources only)"),
+        })
+        .describe("View or resource configuration to add"),
+    }),
+  ),
   handler: async (props, c) => {
     const { view } = props;
 
@@ -1172,9 +1196,11 @@ export const addView = createTool({
 export const removeView = createTool({
   name: "TEAMS_REMOVE_VIEW",
   description: "Remove a custom view or resource from a team",
-  inputSchema: z.object({
-    viewId: z.string().describe("The ID of the view or resource to remove"),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      viewId: z.string().describe("The ID of the view or resource to remove"),
+    }),
+  ),
   handler: async (props, c) => {
     const { viewId } = props;
 
@@ -1224,9 +1250,11 @@ export const removeView = createTool({
 export const listProjects = createTool({
   name: "PROJECTS_LIST",
   description: "List projects for an organization",
-  inputSchema: z.object({
-    org: z.string(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      org: z.string(),
+    }),
+  ),
   handler: async (props, c) => {
     c.resourceAccess.grant();
 
@@ -1271,26 +1299,30 @@ export const listProjects = createTool({
 export const listRecentProjects = createTool({
   name: "PROJECTS_RECENT",
   description: "List recent projects for the current user based on activity",
-  inputSchema: z.object({
-    // Prevent abuse: UI shows 12 by default; allow up to 24
-    limit: z.number().int().min(1).max(24).optional().default(12),
-  }),
-  outputSchema: z.object({
-    items: z.array(
-      z.object({
-        id: z.string(),
-        title: z.string(),
-        slug: z.string(),
-        avatar_url: z.string().nullable(),
-        org: z.object({
-          id: z.number(),
+  inputSchema: z.lazy(() =>
+    z.object({
+      // Prevent abuse: UI shows 12 by default; allow up to 24
+      limit: z.number().int().min(1).max(24).optional().default(12),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      items: z.array(
+        z.object({
+          id: z.string(),
+          title: z.string(),
           slug: z.string(),
-          avatar_url: z.string().nullable().optional(),
+          avatar_url: z.string().nullable(),
+          org: z.object({
+            id: z.number(),
+            slug: z.string(),
+            avatar_url: z.string().nullable().optional(),
+          }),
+          last_accessed_at: z.string().optional(),
         }),
-        last_accessed_at: z.string().optional(),
-      }),
-    ),
-  }),
+      ),
+    }),
+  ),
   handler: async (props, c) => {
     assertPrincipalIsUser(c);
     c.resourceAccess.grant();

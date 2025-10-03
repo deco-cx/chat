@@ -10,7 +10,7 @@
  * and workspace-level isolation. Each branch can contain files managed
  * by the existing Durable Object infrastructure.
  */
-import { z } from "zod";
+import { z } from "zod/v3";
 import { DECO_CHAT_ISSUER } from "../../auth/jwt.ts";
 import { WellKnownMcpGroups } from "../../crud/groups.ts";
 import { doRetryable } from "../../do-commons.ts";
@@ -115,24 +115,28 @@ export const createBranch = createDeconfigTool({
   name: "CREATE_BRANCH",
   description:
     "Create a DECONFIG branch. If sourceBranch is provided, creates a branch from that branch (O(1) operation). Otherwise creates an empty branch.",
-  inputSchema: z.object({
-    branchName: z.string().describe("The name of the branch to create"),
-    sourceBranch: z
-      .string()
-      .optional()
-      .describe(
-        "The source branch to branch from (optional - creates empty branch if not provided)",
-      ),
-    metadata: z
-      .record(z.any())
-      .optional()
-      .describe("Optional metadata for the branch"),
-  }),
-  outputSchema: z.object({
-    branchName: z.string(),
-    sourceBranch: z.string().optional(),
-    createdAt: z.number(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      branchName: z.string().describe("The name of the branch to create"),
+      sourceBranch: z
+        .string()
+        .optional()
+        .describe(
+          "The source branch to branch from (optional - creates empty branch if not provided)",
+        ),
+      metadata: z
+        .record(z.any())
+        .optional()
+        .describe("Optional metadata for the branch"),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      branchName: z.string(),
+      sourceBranch: z.string().optional(),
+      createdAt: z.number(),
+    }),
+  ),
   handler: async ({ branchName, sourceBranch, metadata }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -174,23 +178,27 @@ export const createBranch = createDeconfigTool({
 export const listBranches = createDeconfigTool({
   name: "LIST_BRANCHES",
   description: "List all branches in the current workspace",
-  inputSchema: z.object({
-    prefix: z
-      .string()
-      .optional()
-      .describe("Optional prefix to filter branch names"),
-  }),
-  outputSchema: z.object({
-    branches: z.array(
-      z.object({
-        name: z.string(),
-        createdAt: z.number(),
-        metadata: z.record(z.any()),
-        originBranch: z.string().nullable(),
-      }),
-    ),
-    count: z.number(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      prefix: z
+        .string()
+        .optional()
+        .describe("Optional prefix to filter branch names"),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      branches: z.array(
+        z.object({
+          name: z.string(),
+          createdAt: z.number(),
+          metadata: z.record(z.any()),
+          originBranch: z.string().nullable(),
+        }),
+      ),
+      count: z.number(),
+    }),
+  ),
   handler: async ({ prefix }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -218,14 +226,18 @@ export const deleteBranch = createDeconfigTool({
   name: "DELETE_BRANCH",
   description:
     "Delete a branch and all its files. This operation cannot be undone.",
-  inputSchema: z.object({
-    branchName: z.string().describe("The name of the branch to delete"),
-  }),
-  outputSchema: z.object({
-    deleted: z.boolean(),
-    branchName: z.string(),
-    filesDeleted: z.number().optional(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      branchName: z.string().describe("The name of the branch to delete"),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      deleted: z.boolean(),
+      branchName: z.string(),
+      filesDeleted: z.number().optional(),
+    }),
+  ),
   handler: async ({ branchName }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -263,33 +275,37 @@ export const mergeBranch = createDeconfigTool({
   name: "MERGE_BRANCH",
   description:
     "Merge another branch into the current one with configurable strategy",
-  inputSchema: z.object({
-    targetBranch: z
-      .string()
-      .optional()
-      .default("main")
-      .describe("The branch to merge into (defaults to 'main')"),
-    sourceBranch: z.string().describe("The branch to merge from"),
-    strategy: z
-      .enum(["OVERRIDE", "LAST_WRITE_WINS"])
-      .describe("Merge strategy"),
-  }),
-  outputSchema: z.object({
-    filesMerged: z.number(),
-    added: z.array(z.string()),
-    modified: z.array(z.string()),
-    deleted: z.array(z.string()),
-    conflicts: z
-      .array(
-        z.object({
-          path: z.string(),
-          resolved: z.enum(["local", "remote"]),
-          localMtime: z.number(),
-          remoteMtime: z.number(),
-        }),
-      )
-      .optional(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      targetBranch: z
+        .string()
+        .optional()
+        .default("main")
+        .describe("The branch to merge into (defaults to 'main')"),
+      sourceBranch: z.string().describe("The branch to merge from"),
+      strategy: z
+        .enum(["OVERRIDE", "LAST_WRITE_WINS"])
+        .describe("Merge strategy"),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      filesMerged: z.number(),
+      added: z.array(z.string()),
+      modified: z.array(z.string()),
+      deleted: z.array(z.string()),
+      conflicts: z
+        .array(
+          z.object({
+            path: z.string(),
+            resolved: z.enum(["local", "remote"]),
+            localMtime: z.number(),
+            remoteMtime: z.number(),
+          }),
+        )
+        .optional(),
+    }),
+  ),
   handler: async ({ targetBranch, sourceBranch, strategy }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -323,24 +339,28 @@ export const mergeBranch = createDeconfigTool({
 export const diffBranch = createDeconfigTool({
   name: "DIFF_BRANCH",
   description: "Compare two branches and get the differences",
-  inputSchema: z.object({
-    baseBranch: z
-      .string()
-      .optional()
-      .default("main")
-      .describe("The base branch to compare from (defaults to 'main')"),
-    compareBranch: z.string().describe("The branch to compare against"),
-  }),
-  outputSchema: z.object({
-    differences: z.array(
-      z.object({
-        path: z.string(),
-        type: z.enum(["added", "modified", "deleted"]),
-        baseAddress: z.string().optional(),
-        compareAddress: z.string().optional(),
-      }),
-    ),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      baseBranch: z
+        .string()
+        .optional()
+        .default("main")
+        .describe("The base branch to compare from (defaults to 'main')"),
+      compareBranch: z.string().describe("The branch to compare against"),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      differences: z.array(
+        z.object({
+          path: z.string(),
+          type: z.enum(["added", "modified", "deleted"]),
+          baseAddress: z.string().optional(),
+          compareAddress: z.string().optional(),
+        }),
+      ),
+    }),
+  ),
   handler: async ({ baseBranch, compareBranch }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -382,32 +402,36 @@ export const putFile = createDeconfigTool({
   name: "PUT_FILE",
   description:
     "Put a file in a DECONFIG branch (create or update) with optional conflict detection",
-  inputSchema: z.object({
-    branch: z.string().optional().describe("The branch name"),
-    path: z.string().describe("The file path within the branch"),
-    content: z
-      .union([
-        z.string().describe("Plain text string content"),
-        z.object({
-          base64: z.string().describe("Base64 encoded content"),
-        }),
-        z.array(z.number()).describe("Array of bytes (0-255)"),
-      ])
-      .describe(
-        "The file content as plain string, base64 object, or array of bytes",
-      ),
-    metadata: z
-      .record(z.any())
-      .optional()
-      .describe("Additional metadata key-value pairs"),
-    expectedCtime: z
-      .number()
-      .optional()
-      .describe("Expected change time for conflict detection"),
-  }),
-  outputSchema: z.object({
-    conflict: z.boolean().optional(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      branch: z.string().optional().describe("The branch name"),
+      path: z.string().describe("The file path within the branch"),
+      content: z
+        .union([
+          z.string().describe("Plain text string content"),
+          z.object({
+            base64: z.string().describe("Base64 encoded content"),
+          }),
+          z.array(z.number()).describe("Array of bytes (0-255)"),
+        ])
+        .describe(
+          "The file content as plain string, base64 object, or array of bytes",
+        ),
+      metadata: z
+        .record(z.any())
+        .optional()
+        .describe("Additional metadata key-value pairs"),
+      expectedCtime: z
+        .number()
+        .optional()
+        .describe("Expected change time for conflict detection"),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      conflict: z.boolean().optional(),
+    }),
+  ),
   handler: async ({ branch, path, content, metadata, expectedCtime }, c) => {
     path = withPathPrefix(c, path);
     assertHasWorkspace(c);
@@ -467,24 +491,28 @@ export const WELL_KNOWN_PUBLIC_PATHS = ["/.deco"];
 export const readFile = createDeconfigTool({
   name: "READ_FILE",
   description: "Read a file from a DECONFIG branch",
-  inputSchema: z.object({
-    branch: z.string().optional().describe("The branch name"),
-    path: z.string().describe("The file path within the branch"),
-    format: z
-      .enum(["base64", "byteArray", "plainString", "json"])
-      .optional()
-      .default("base64")
-      .describe(
-        "Return format: 'base64' (default), 'byteArray', 'plainString', or 'json'",
-      ),
-  }),
-  outputSchema: z.object({
-    content: z.any(),
-    address: z.string(),
-    metadata: z.record(z.any()),
-    mtime: z.number(),
-    ctime: z.number(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      branch: z.string().optional().describe("The branch name"),
+      path: z.string().describe("The file path within the branch"),
+      format: z
+        .enum(["base64", "byteArray", "plainString", "json"])
+        .optional()
+        .default("base64")
+        .describe(
+          "Return format: 'base64' (default), 'byteArray', 'plainString', or 'json'",
+        ),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      content: z.any(),
+      address: z.string(),
+      metadata: z.record(z.any()),
+      mtime: z.number(),
+      ctime: z.number(),
+    }),
+  ),
   handler: async ({ branch, path, format }, c) => {
     path = withPathPrefix(c, path);
     assertHasWorkspace(c);
@@ -566,13 +594,17 @@ export const readFile = createDeconfigTool({
 export const deleteFile = createDeconfigTool({
   name: "DELETE_FILE",
   description: "Delete a file from a DECONFIG branch",
-  inputSchema: z.object({
-    branch: z.string().optional().describe("The branch name"),
-    path: z.string().describe("The file path within the branch"),
-  }),
-  outputSchema: z.object({
-    deleted: z.boolean(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      branch: z.string().optional().describe("The branch name"),
+      path: z.string().describe("The file path within the branch"),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      deleted: z.boolean(),
+    }),
+  ),
   handler: async ({ branch, path }, c) => {
     path = withPathPrefix(c, path);
     assertHasWorkspace(c);
@@ -604,23 +636,25 @@ export const listFiles = createDeconfigTool({
   name: "LIST_FILES",
   description:
     "List files in a DECONFIG branch with optional prefix filtering and content inclusion",
-  inputSchema: z.object({
-    branch: z.string().optional().describe("The branch name"),
-    prefix: z
-      .string()
-      .optional()
-      .describe("Optional prefix to filter files (use select instead)"),
-    select: z
-      .array(z.string())
-      .optional()
-      .describe("Optional list of files to select"),
-    includeContent: z
-      .boolean()
-      .optional()
-      .default(false)
-      .describe("Include file content as base64 in the response"),
-  }),
-  outputSchema: listFilesOutputSchema,
+  inputSchema: z.lazy(() =>
+    z.object({
+      branch: z.string().optional().describe("The branch name"),
+      prefix: z
+        .string()
+        .optional()
+        .describe("Optional prefix to filter files (use select instead)"),
+      select: z
+        .array(z.string())
+        .optional()
+        .describe("Optional list of files to select"),
+      includeContent: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe("Include file content as base64 in the response"),
+    }),
+  ),
+  outputSchema: z.lazy(() => listFilesOutputSchema),
   handler: async ({ branch, prefix, select, includeContent }, c) => {
     if (prefix) {
       select = [prefix];
@@ -650,13 +684,17 @@ export const listFiles = createDeconfigTool({
 export const oauthStart = createTool({
   name: "DECO_CHAT_OAUTH_START",
   description: "Start the OAuth flow for the contract app.",
-  inputSchema: z.object({
-    returnUrl: z.string(),
-  }),
-  outputSchema: z.object({
-    stateSchema: z.any(),
-    scopes: z.array(z.string()).optional(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      returnUrl: z.string(),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      stateSchema: z.any(),
+      scopes: z.array(z.string()).optional(),
+    }),
+  ),
   handler: (_, c) => {
     c.resourceAccess.grant();
     return {

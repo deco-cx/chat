@@ -1,5 +1,5 @@
 import { and, eq, or } from "drizzle-orm";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { StatementSchema } from "../../auth/policy.ts";
 import { userFromJWT } from "../../auth/user.ts";
 import {
@@ -74,7 +74,7 @@ export const matchByWorkspaceOrProjectLocatorForApiKeys = (
 export const listApiKeys = createTool({
   name: "API_KEYS_LIST",
   description: "List all API keys",
-  inputSchema: z.object({}),
+  inputSchema: z.lazy(() => z.object({})),
   handler: async (_, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -141,13 +141,15 @@ const ensureStateIsWellFormed = async (state: unknown) => {
 export const createApiKey = createTool({
   name: "API_KEYS_CREATE",
   description: "Create a new API key",
-  inputSchema: z.object({
-    name: z.string().describe("The name of the API key"),
-    policies: policiesSchema,
-    claims: AppClaimsSchema.optional().describe(
-      "App Claims to be added to the API key",
-    ),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      name: z.string().describe("The name of the API key"),
+      policies: policiesSchema,
+      claims: AppClaimsSchema.optional().describe(
+        "App Claims to be added to the API key",
+      ),
+    }),
+  ),
   handler: async ({ name, policies, claims }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -220,13 +222,15 @@ export const createApiKey = createTool({
 export const reissueApiKey = createTool({
   name: "API_KEYS_REISSUE",
   description: "Reissue an existing API key with new claims",
-  inputSchema: z.object({
-    id: z.string().describe("The ID of the API key to reissue"),
-    claims: z
-      .any()
-      .optional()
-      .describe("New claims to be added to the API key"),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      id: z.string().describe("The ID of the API key to reissue"),
+      claims: z
+        .any()
+        .optional()
+        .describe("New claims to be added to the API key"),
+    }),
+  ),
   handler: async ({ id, claims }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -268,9 +272,11 @@ export const reissueApiKey = createTool({
 export const getApiKey = createTool({
   name: "API_KEYS_GET",
   description: "Get an API key by ID",
-  inputSchema: z.object({
-    id: z.string().describe("The ID of the API key"),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      id: z.string().describe("The ID of the API key"),
+    }),
+  ),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -301,12 +307,17 @@ export const getApiKey = createTool({
 export const updateApiKey = createTool({
   name: "API_KEYS_UPDATE",
   description: "Update an API key metadata",
-  inputSchema: z.object({
-    id: z.string().describe("The ID of the API key"),
-    name: z.string().optional().describe("New name for the API key"),
-    enabled: z.boolean().optional().describe("Whether the API key is enabled"),
-    policies: policiesSchema,
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      id: z.string().describe("The ID of the API key"),
+      name: z.string().optional().describe("New name for the API key"),
+      enabled: z
+        .boolean()
+        .optional()
+        .describe("Whether the API key is enabled"),
+      policies: policiesSchema,
+    }),
+  ),
   handler: async ({ id, name, enabled, policies }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -341,9 +352,11 @@ export const updateApiKey = createTool({
 export const deleteApiKey = createTool({
   name: "API_KEYS_DELETE",
   description: "Delete an API key (soft delete)",
-  inputSchema: z.object({
-    id: z.string().describe("The ID of the API key to delete"),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      id: z.string().describe("The ID of the API key to delete"),
+    }),
+  ),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -375,9 +388,11 @@ export const deleteApiKey = createTool({
 export const enableApiKey = createTool({
   name: "API_KEYS_ENABLE",
   description: "Enable an API key",
-  inputSchema: z.object({
-    id: z.string().describe("The ID of the API key to enable"),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      id: z.string().describe("The ID of the API key to enable"),
+    }),
+  ),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -405,9 +420,11 @@ export const enableApiKey = createTool({
 export const disableApiKey = createTool({
   name: "API_KEYS_DISABLE",
   description: "Disable an API key",
-  inputSchema: z.object({
-    id: z.string().describe("The ID of the API key to disable"),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      id: z.string().describe("The ID of the API key to disable"),
+    }),
+  ),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
@@ -435,18 +452,24 @@ export const disableApiKey = createTool({
 export const checkAccess = createTool({
   name: "API_KEYS_CHECK_ACCESS",
   description: "Check if an API key has access to a resource",
-  inputSchema: z.object({
-    key: z
-      .string()
-      .optional()
-      .describe(
-        "The API key to check access for, if not provided, the current key from context will be used",
-      ),
-    tools: z.array(z.string()).describe("All tools that wants to check access"),
-  }),
-  outputSchema: z.object({
-    access: z.record(z.string(), z.boolean()),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      key: z
+        .string()
+        .optional()
+        .describe(
+          "The API key to check access for, if not provided, the current key from context will be used",
+        ),
+      tools: z
+        .array(z.string())
+        .describe("All tools that wants to check access"),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      access: z.record(z.string(), z.boolean()),
+    }),
+  ),
   handler: async ({ key, tools }, c) => {
     assertHasWorkspace(c);
     c.resourceAccess.grant(); // this is public because it uses the current key from context
@@ -484,9 +507,11 @@ export const checkAccess = createTool({
 export const validateApiKey = createTool({
   name: "API_KEYS_VALIDATE",
   description: "Validate an API key by ID",
-  inputSchema: z.object({
-    id: z.string().describe("The ID of the API key to validate"),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      id: z.string().describe("The ID of the API key to validate"),
+    }),
+  ),
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);

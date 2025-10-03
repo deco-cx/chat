@@ -6,7 +6,7 @@ import {
   ListToolsResult,
 } from "@modelcontextprotocol/sdk/types.js";
 import * as api from "@opentelemetry/api";
-import z from "zod";
+import z from "zod/v3";
 import { SpanStatusCode, trace } from "../observability/index.ts";
 import { assertWorkspaceResourceAccess } from "./assertions.ts";
 import { type AppContext, serializeError, State } from "./context.ts";

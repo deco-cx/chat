@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 import type { Binder } from "../index.ts";
 
 const callbacksSchema = z.object({

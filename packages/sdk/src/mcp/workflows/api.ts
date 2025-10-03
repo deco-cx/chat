@@ -1,5 +1,5 @@
 import { inspect } from "@deco/cf-sandbox";
-import z from "zod";
+import z from "zod/v3";
 import { formatIntegrationId, WellKnownMcpGroups } from "../../crud/groups.ts";
 import { impl } from "../bindings/binder.ts";
 import { WellKnownBindings } from "../bindings/index.ts";
@@ -151,40 +151,44 @@ export function createWorkflowBindingImpl({
   const decoWorkflowStart = createTool({
     name: "DECO_WORKFLOW_START",
     description: WORKFLOWS_START_WITH_URI_PROMPT,
-    inputSchema: z.object({
-      uri: z
-        .string()
-        .describe("The Resources 2.0 URI of the workflow to execute"),
-      input: z
-        .object({})
-        .passthrough()
-        .describe(
-          "The input data that will be validated against the workflow's input schema and passed to the first step",
-        ),
-      stopAfter: z
-        .string()
-        .optional()
-        .describe(
-          "Optional step name where execution should halt. The workflow will execute up to and including this step, then stop. Useful for partial execution, debugging, or step-by-step testing.",
-        ),
-      state: z
-        .object({})
-        .passthrough()
-        .optional()
-        .describe(
-          "Optional pre-computed step results to inject into the workflow state. Format: { 'step-name': STEP_RESULT }. Allows skipping steps by providing their expected outputs, useful for resuming workflows or testing with known intermediate results.",
-        ),
-    }),
-    outputSchema: z.object({
-      runId: z
-        .string()
-        .optional()
-        .describe("The unique ID for tracking this workflow run"),
-      error: z
-        .string()
-        .optional()
-        .describe("Error message if workflow start failed"),
-    }),
+    inputSchema: z.lazy(() =>
+      z.object({
+        uri: z
+          .string()
+          .describe("The Resources 2.0 URI of the workflow to execute"),
+        input: z
+          .object({})
+          .passthrough()
+          .describe(
+            "The input data that will be validated against the workflow's input schema and passed to the first step",
+          ),
+        stopAfter: z
+          .string()
+          .optional()
+          .describe(
+            "Optional step name where execution should halt. The workflow will execute up to and including this step, then stop. Useful for partial execution, debugging, or step-by-step testing.",
+          ),
+        state: z
+          .object({})
+          .passthrough()
+          .optional()
+          .describe(
+            "Optional pre-computed step results to inject into the workflow state. Format: { 'step-name': STEP_RESULT }. Allows skipping steps by providing their expected outputs, useful for resuming workflows or testing with known intermediate results.",
+          ),
+      }),
+    ),
+    outputSchema: z.lazy(() =>
+      z.object({
+        runId: z
+          .string()
+          .optional()
+          .describe("The unique ID for tracking this workflow run"),
+        error: z
+          .string()
+          .optional()
+          .describe("Error message if workflow start failed"),
+      }),
+    ),
     handler: async ({ uri, input, stopAfter, state }, c) => {
       assertHasWorkspace(c);
       await assertWorkspaceResourceAccess(c);
@@ -234,44 +238,52 @@ export function createWorkflowBindingImpl({
   const decoWorkflowGetStatus = createTool({
     name: "DECO_WORKFLOW_GET_STATUS",
     description: WORKFLOWS_GET_STATUS_PROMPT,
-    inputSchema: z.object({
-      runId: z.string().describe("The unique ID of the workflow run"),
-    }),
-    outputSchema: z.object({
-      status: z
-        .enum(["pending", "running", "completed", "failed"])
-        .describe("The current status of the workflow run"),
-      currentStep: z
-        .string()
-        .optional()
-        .describe("The name of the step currently being executed (if running)"),
-      stepResults: z.record(z.any()).describe("Results from completed steps"),
-      finalResult: z
-        .any()
-        .optional()
-        .describe("The final workflow result (if completed)"),
-      partialResult: z
-        .any()
-        .optional()
-        .describe("Partial results from completed steps (if pending/running)"),
-      error: z
-        .string()
-        .optional()
-        .describe("Error message if the workflow failed"),
-      logs: z
-        .array(
-          z.object({
-            type: z.enum(["log", "warn", "error"]),
-            content: z.string(),
-          }),
-        )
-        .describe("Console logs from the execution"),
-      startTime: z.number().describe("When the workflow started (timestamp)"),
-      endTime: z
-        .number()
-        .optional()
-        .describe("When the workflow ended (timestamp, if completed/failed)"),
-    }),
+    inputSchema: z.lazy(() =>
+      z.object({
+        runId: z.string().describe("The unique ID of the workflow run"),
+      }),
+    ),
+    outputSchema: z.lazy(() =>
+      z.object({
+        status: z
+          .enum(["pending", "running", "completed", "failed"])
+          .describe("The current status of the workflow run"),
+        currentStep: z
+          .string()
+          .optional()
+          .describe(
+            "The name of the step currently being executed (if running)",
+          ),
+        stepResults: z.record(z.any()).describe("Results from completed steps"),
+        finalResult: z
+          .any()
+          .optional()
+          .describe("The final workflow result (if completed)"),
+        partialResult: z
+          .any()
+          .optional()
+          .describe(
+            "Partial results from completed steps (if pending/running)",
+          ),
+        error: z
+          .string()
+          .optional()
+          .describe("Error message if the workflow failed"),
+        logs: z
+          .array(
+            z.object({
+              type: z.enum(["log", "warn", "error"]),
+              content: z.string(),
+            }),
+          )
+          .describe("Console logs from the execution"),
+        startTime: z.number().describe("When the workflow started (timestamp)"),
+        endTime: z
+          .number()
+          .optional()
+          .describe("When the workflow ended (timestamp, if completed/failed)"),
+      }),
+    ),
     handler: async ({ runId }, c) => {
       await assertWorkspaceResourceAccess(c);
 

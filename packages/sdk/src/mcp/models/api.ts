@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 import { type Model, WELL_KNOWN_MODELS } from "../../constants.ts";
 import {
   assertHasWorkspace,
@@ -58,7 +58,7 @@ const createTool = createToolGroup("Model", {
 export const createModel = createTool({
   name: "MODELS_CREATE",
   description: "Create a new model",
-  inputSchema: createModelSchema,
+  inputSchema: z.lazy(() => createModelSchema),
   handler: async (props, c) => {
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
@@ -129,7 +129,7 @@ const keyMap: Record<string, keyof ModelRow> = {
 export const updateModel = createTool({
   name: "MODELS_UPDATE",
   description: "Update an existing model",
-  inputSchema: updateModelSchema,
+  inputSchema: z.lazy(() => updateModelSchema),
   handler: async (props, c) => {
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
@@ -212,7 +212,7 @@ export type DeleteModelInput = z.infer<typeof deleteModelSchema>;
 export const deleteModel = createTool({
   name: "MODELS_DELETE",
   description: "Delete a model by id",
-  inputSchema: deleteModelSchema,
+  inputSchema: z.lazy(() => deleteModelSchema),
   handler: async (props, c) => {
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
@@ -293,10 +293,12 @@ export const listModelsForWorkspace = async ({
 export const listModels = createTool({
   name: "MODELS_LIST",
   description: "List models for the current user",
-  inputSchema: listModelsSchema,
-  outputSchema: z.object({
-    items: z.array(z.any()),
-  }),
+  inputSchema: z.lazy(() => listModelsSchema),
+  outputSchema: z.lazy(() =>
+    z.object({
+      items: z.array(z.any()),
+    }),
+  ),
   handler: async (props, c) => {
     assertHasWorkspace(c);
     const workspace = c.workspace.value;
@@ -332,7 +334,7 @@ export type GetModelInput = z.infer<typeof getModelSchema>;
 export const getModel = createTool({
   name: "MODELS_GET",
   description: "Get a model by id",
-  inputSchema: getModelSchema,
+  inputSchema: z.lazy(() => getModelSchema),
   handler: async (props, c) => {
     assertHasWorkspace(c);
     const workspace = c.workspace.value;

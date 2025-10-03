@@ -138,7 +138,7 @@ import {
   createTool,
   createWorkflow,
 } from "@deco/workers-runtime/mastra";
-import { z } from "zod";
+import { z } from "zod/v3";
 
 // Definição de uma ferramenta (Tool)
 const createMyTool = (_bindings: Bindings) =>

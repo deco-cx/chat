@@ -9,29 +9,28 @@
   },
   "dependencies": {
     "@ai-sdk/ui-utils": "^1.2.11",
-    "@deco/actors": "npm:@jsr/deco__actors@0.34.1",
+    "@deco/actors": "npm:@jsr/deco__actors@0.34.2",
     "@deco/ai": "^1.0.0",
     "@deco/mcp": "npm:@jsr/deco__mcp@0.5.5",
     "@deco/sdk": "^0.1.1",
     "@libsql/client": "^0.15.4",
-    "@modelcontextprotocol/sdk": "1.17.1",
-    "outerbase-browsable-do-enforced": "0.2.0",
+    "@modelcontextprotocol/sdk": "1.19.1",
     "@supabase/ssr": "0.6.1",
     "@supabase/supabase-js": "2.49.4",
-    "ai": "^4.3.13",
+    "ai": "^5.0.59",
     "cloudflare": "^4.2.0",
     "hono": "^4.7.7",
     "mimetext": "^3.0.27",
+    "outerbase-browsable-do-enforced": "0.2.0",
     "postal-mime": "^2.4.3",
     "unpdf": "^1.0.5",
-    "zod": "^3.24.3"
+    "zod": "4.1.11"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250620.0",
-    "supabase": "^2.22.12",
-    "wrangler": "^4.23.0"
+    "supabase": "^2.22.12"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.0.0"
   }
 }

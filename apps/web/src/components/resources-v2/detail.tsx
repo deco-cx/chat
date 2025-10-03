@@ -4,7 +4,7 @@ import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { useQuery } from "@tanstack/react-query";
 import { createContext, useContext, useMemo } from "react";
 import { useParams } from "react-router";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { EmptyState } from "../common/empty-state.tsx";
 import { type DecopilotContextValue } from "../decopilot/context.tsx";
 import { DecopilotLayout } from "../layout/decopilot-layout.tsx";

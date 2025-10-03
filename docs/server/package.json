@@ -10,10 +10,9 @@
   },
   "dependencies": {
     "@deco/workers-runtime": "npm:@jsr/deco__workers-runtime@0.20.0",
-    "zod": "^3.24.3"
+    "zod": "4.1.11"
   },
   "devDependencies": {
-    "deco-cli": "^0.18.1",
-    "wrangler": "^4.24.3"
+    "deco-cli": "^0.18.1"
   }
 }

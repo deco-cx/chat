@@ -6,14 +6,14 @@
   "dependencies": {
     "@cloudflare/workers-types": "^4.20250617.0",
     "@deco/mcp": "npm:@jsr/deco__mcp@0.5.5",
-    "@mastra/cloudflare-d1": "0.12.4",
-    "@mastra/core": "0.12.1",
-    "@modelcontextprotocol/sdk": "1.17.1",
+    "@mastra/cloudflare-d1": "0.13.3",
+    "@mastra/core": "0.19.1",
+    "@modelcontextprotocol/sdk": "1.19.1",
     "drizzle-orm": "^0.44.3",
     "jose": "^6.0.11",
-    "zod": "^3.25.67",
-    "zod-to-json-schema": "^3.24.4",
-    "zod-from-json-schema": "^0.0.5"
+    "zod": "4.1.11",
+    "zod-from-json-schema": "^0.0.5",
+    "zod-to-json-schema": "^3.24.4"
   },
   "exports": {
     ".": "./src/index.ts",
@@ -27,10 +27,9 @@
     "./mcp-client": "./src/mcp-client.ts"
   },
   "devDependencies": {
-    "ts-json-schema-generator": "^2.4.0",
-    "wrangler": "^4.13.2"
+    "ts-json-schema-generator": "^2.4.0"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.0.0"
   }
 }

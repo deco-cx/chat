@@ -1,4 +1,4 @@
-import z from "zod";
+import z from "zod/v3";
 
 // Code step definition - transforms data between tool calls
 export const CodeStepDefinitionSchema = z.object({

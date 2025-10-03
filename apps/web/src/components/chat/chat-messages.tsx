@@ -30,7 +30,6 @@ function Dots() {
 export function ChatMessages() {
   const { scrollRef, chat, isAutoScrollEnabled, setAutoScroll } = useAgent();
 
-  const isStreaming = chat.status === "streaming";
   const { messages } = chat;
 
   const scrollToBottom = useCallback(() => {
@@ -86,7 +85,6 @@ export function ChatMessages() {
             <ChatMessage
               key={message.id}
               message={message}
-              isStreaming={isStreaming}
               isLastMessage={messages.length === index + 1}
             />
           ))}

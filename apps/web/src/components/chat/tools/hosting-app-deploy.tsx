@@ -18,7 +18,7 @@ interface FileArg {
   content: string;
 }
 
-interface ToolLike {
+export interface HostingAppToolLike {
   toolCallId: string;
   toolName: string;
   state: "call" | "result" | "error" | "partial-call";
@@ -145,12 +145,14 @@ function FileViewer({ files }: { files: FileArg[] }) {
   );
 }
 
-export function HostingAppDeploy({ tool }: { tool: ToolLike }) {
+export function HostingAppDeploy({ tool }: { tool: HostingAppToolLike }) {
   const errorText = useMemo(
     () => (typeof tool.result === "string" ? tool.result : null),
     [tool],
   );
-  const args = (tool.args ?? {}) as Required<NonNullable<ToolLike["args"]>>;
+  const args = (tool.args ?? {}) as Required<
+    NonNullable<HostingAppToolLike["args"]>
+  >;
   const files: FileArg[] = Array.isArray(args?.files)
     ? (args.files as FileArg[])
     : [];

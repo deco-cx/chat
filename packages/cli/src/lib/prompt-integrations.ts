@@ -19,7 +19,7 @@ import inquirerSearchCheckbox from "inquirer-search-checkbox";
 import { createWorkspaceClient } from "./mcp.js";
 import { readSession } from "./session.js";
 import { sanitizeConstantName } from "./slugify.js";
-import { z } from "zod";
+import { z } from "zod/v3";
 
 // Register the search checkbox plugin
 inquirer.registerPrompt("search-checkbox", inquirerSearchCheckbox);

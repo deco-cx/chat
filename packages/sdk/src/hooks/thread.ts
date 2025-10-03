@@ -89,9 +89,9 @@ export const useThreads = (partialOptions: ThreadFilterOptions = {}) => {
           }
 
           const temporaryTitle =
-            typeof messages[0]?.content === "string"
-              ? messages[0].content.slice(0, 20)
-              : "New chat";
+            messages[0]?.parts
+              ?.find((p) => p.type === "text")
+              ?.text?.slice(0, 20) ?? "New chat";
 
           const updated = {
             pagination: {

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 
 // New, richer schema with backward-compat fields kept optional
 export const ViewsListOutputSchema = z.object({

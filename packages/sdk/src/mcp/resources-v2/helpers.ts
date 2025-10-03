@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 import type { BinderImplementation } from "../bindings/binder.ts";
 import { impl, type AppContext, type ToolBinder } from "../index.ts";
 import {
@@ -102,13 +102,13 @@ export function createResourceTools<TDataSchema extends z.ZodTypeAny>(
   // Required tools - search and read
   bindings.push({
     name: `DECO_RESOURCE_${definition.name.toUpperCase()}_SEARCH`,
-    inputSchema: SearchInputSchema,
+    inputSchema: z.lazy(() => SearchInputSchema),
     outputSchema: createSearchOutputSchema(itemSchema),
   });
 
   bindings.push({
     name: `DECO_RESOURCE_${definition.name.toUpperCase()}_READ`,
-    inputSchema: ReadInputSchema,
+    inputSchema: z.lazy(() => ReadInputSchema),
     outputSchema: createReadOutputSchema(definition.dataSchema),
   });
 
@@ -134,8 +134,8 @@ export function createResourceTools<TDataSchema extends z.ZodTypeAny>(
   if (definition.deleteHandler) {
     bindings.push({
       name: `DECO_RESOURCE_${definition.name.toUpperCase()}_DELETE`,
-      inputSchema: DeleteInputSchema,
-      outputSchema: DeleteOutputSchema,
+      inputSchema: z.lazy(() => DeleteInputSchema),
+      outputSchema: z.lazy(() => DeleteOutputSchema),
       opt: true,
     });
   }

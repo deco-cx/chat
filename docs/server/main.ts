@@ -5,7 +5,7 @@ import {
   createTool,
   createWorkflow,
 } from "@deco/workers-runtime/mastra";
-import { z } from "zod";
+import { z } from "zod/v3";
 import type { Env as DecoEnv } from "./deco.gen.ts";
 
 interface Env extends DecoEnv {

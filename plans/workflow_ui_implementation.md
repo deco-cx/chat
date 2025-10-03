@@ -45,7 +45,7 @@ complete workflow steps with all necessary code and tool integrations.
 **File**: `packages/sdk/src/mcp/workflows/types.ts`
 
 ```typescript
-import { z } from "zod";
+import { z } from "zod/v3";
 import type { JSONSchema7 } from "json-schema";
 
 // ============= Core Types =============

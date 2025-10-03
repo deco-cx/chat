@@ -60,7 +60,12 @@ function createAgentUsageTransaction({
   return {
     type: "AgentGeneration" as const,
     usage: {
-      usage,
+      usage: {
+        ...usage,
+        promptTokens: usage.inputTokens ?? 0,
+        completionTokens: usage.outputTokens ?? 0,
+        totalTokens: usage.totalTokens ?? 0,
+      },
       ...usageData,
     },
     generatedBy,

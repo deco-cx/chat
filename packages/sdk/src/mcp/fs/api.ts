@@ -6,7 +6,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { WELL_KNOWN_ORIGINS } from "../../hosts.ts";
 import {
   assertHasWorkspace,
@@ -121,12 +121,16 @@ const createTool = createToolGroup("FS", {
 export const listFiles = createTool({
   name: "FS_LIST",
   description: "List files from a given bucket given a prefix",
-  inputSchema: z.object({
-    prefix: z.string().describe("The root directory to list files from"),
-  }),
-  outputSchema: z.object({
-    items: z.array(z.any()),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      prefix: z.string().describe("The root directory to list files from"),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      items: z.array(z.any()),
+    }),
+  ),
   handler: async ({ prefix }, c) => {
     assertHasWorkspace(c);
     const bucketName = getWorkspaceBucketName(c.workspace.value);
@@ -150,16 +154,20 @@ export const listFiles = createTool({
 export const readFile = createTool({
   name: "FS_READ",
   description: "Get a secure temporary link to read a file",
-  inputSchema: z.object({
-    path: z.string(),
-    expiresIn: z
-      .number()
-      .optional()
-      .describe("Seconds until URL expires (default: 60)"),
-  }),
-  outputSchema: z.object({
-    url: z.string().describe("The URL to read the file from"),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      path: z.string(),
+      expiresIn: z
+        .number()
+        .optional()
+        .describe("Seconds until URL expires (default: 60)"),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      url: z.string().describe("The URL to read the file from"),
+    }),
+  ),
   handler: async ({ path, expiresIn = 180 }, c) => {
     assertHasWorkspace(c);
     const bucketName = getWorkspaceBucketName(c.workspace.value);
@@ -184,9 +192,11 @@ export const readFile = createTool({
 export const readFileMetadata = createTool({
   name: "FS_READ_METADATA",
   description: "Get metadata about a file",
-  inputSchema: z.object({
-    path: z.string(),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      path: z.string(),
+    }),
+  ),
   handler: async ({ path }, c) => {
     assertHasWorkspace(c);
     const bucketName = getWorkspaceBucketName(c.workspace.value);
@@ -213,23 +223,27 @@ export const readFileMetadata = createTool({
 export const writeFile = createTool({
   name: "FS_WRITE",
   description: "Get a secure temporary link to upload a file",
-  inputSchema: z.object({
-    path: z.string(),
-    expiresIn: z
-      .number()
-      .optional()
-      .describe("Seconds until URL expires (default: 60)"),
-    contentType: z
-      .string()
-      .describe("Content-Type for the file. This is required."),
-    metadata: z
-      .record(z.string(), z.any())
-      .optional()
-      .describe("Metadata to be added to the file"),
-  }),
-  outputSchema: z.object({
-    url: z.string().describe("The URL to upload the file to"),
-  }),
+  inputSchema: z.lazy(() =>
+    z.object({
+      path: z.string(),
+      expiresIn: z
+        .number()
+        .optional()
+        .describe("Seconds until URL expires (default: 60)"),
+      contentType: z
+        .string()
+        .describe("Content-Type for the file. This is required."),
+      metadata: z
+        .record(z.string(), z.any())
+        .optional()
+        .describe("Metadata to be added to the file"),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      url: z.string().describe("The URL to upload the file to"),
+    }),
+  ),
   handler: async ({ path, expiresIn = 60, contentType, metadata }, c) => {
     await assertWorkspaceResourceAccess(c);
     assertHasWorkspace(c);
@@ -260,7 +274,7 @@ export const writeFile = createTool({
 export const deleteFile = createTool({
   name: "FS_DELETE",
   description: "Delete a file",
-  inputSchema: z.object({ path: z.string() }),
+  inputSchema: z.lazy(() => z.object({ path: z.string() })),
   handler: async ({ path }, c) => {
     assertHasWorkspace(c);
     const bucketName = getWorkspaceBucketName(c.workspace.value);

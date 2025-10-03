@@ -60,7 +60,7 @@ import { logger } from "hono/logger";
 import { endTime, startTime } from "hono/timing";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { studio } from "outerbase-browsable-do-enforced";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { ROUTES as loginRoutes } from "./auth/index.ts";
 import { withActorsStubMiddleware } from "./middlewares/actors-stub.ts";
 import { withActorsMiddleware } from "./middlewares/actors.ts";
@@ -179,20 +179,28 @@ const createMCPHandlerFor = (
 
       registeredTools.add(tool.name);
 
+      const evalInputSchema =
+        tool.inputSchema instanceof z.ZodLazy
+          ? tool.inputSchema.schema
+          : tool.inputSchema;
+
+      const evalOutputSchema =
+        tool.outputSchema instanceof z.ZodLazy
+          ? tool.outputSchema.schema
+          : tool.outputSchema;
+
       server.registerTool(
         tool.name,
         {
           annotations: tool.annotations,
           description: tool.description,
           inputSchema:
-            "shape" in tool.inputSchema
-              ? (tool.inputSchema.shape as z.ZodRawShape)
+            "shape" in evalInputSchema
+              ? (evalInputSchema.shape as z.ZodRawShape)
               : z.object({}).shape,
           outputSchema:
-            tool.outputSchema &&
-            typeof tool.outputSchema === "object" &&
-            "shape" in tool.outputSchema
-              ? (tool.outputSchema.shape as z.ZodRawShape)
+            evalOutputSchema && "shape" in evalOutputSchema
+              ? (evalOutputSchema.shape as z.ZodRawShape)
               : z.object({}).shape,
         },
         // @ts-expect-error: zod shape is not typed

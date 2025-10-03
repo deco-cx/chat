@@ -2,7 +2,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import type { MastraVector } from "@mastra/core";
 import { basename } from "@std/path";
 import { embedMany } from "ai";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { KNOWLEDGE_BASE_GROUP } from "../../constants.ts";
 import { InternalServerError } from "../../errors.ts";
 import { type AppContext } from "../../mcp/context.ts";

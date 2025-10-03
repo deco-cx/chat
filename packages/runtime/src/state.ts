@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { z } from "zod";
+import { z } from "zod/v3";
 import type { AppContext } from "./mastra.ts";
 import { createTool } from "./mastra.ts";
 
