@@ -95,36 +95,6 @@ export const getUser = async (
   return user as unknown as SupaUser;
 };
 
-export const createMagicLinkEmail = async (ctx: AppContext) => {
-  const formData = (await ctx.req.json()) as { email: string };
-  const email = formData.email;
-  const request = ctx.req.raw;
-
-  try {
-    const { db } = createDbAndHeadersForRequest(ctx);
-
-    const url = new URL(request.url);
-
-    // We do not send the full path to supabase but the email template
-    // includes a condition to insert it (/auth/callback/magiclink)
-    const redirectTo = url.host.includes("localhost")
-      ? "http://localhost:3001/"
-      : url.host.includes("deco.chat")
-        ? "https://api.deco.chat/"
-        : "https://api.decocms.com/";
-
-    await db.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: redirectTo,
-      },
-    });
-    return { email };
-  } catch (_) {
-    return { error: "" };
-  }
-};
-
 appLogin.all("/oauth", async (ctx: AppContext) => {
   let user;
   try {
@@ -191,9 +161,7 @@ appLogin.all("/magiclink", async (ctx: AppContext) => {
       ? AUTH_URL_CLI
       : url.host.includes("localhost")
         ? "http://localhost:3001/"
-        : url.host.includes("deco.chat")
-          ? "https://api.deco.chat/"
-          : "https://api.decocms.com/";
+        : "https://api.decocms.com/";
 
     await db.auth.signInWithOtp({
       email,
