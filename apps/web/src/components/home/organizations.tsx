@@ -7,7 +7,7 @@ import { Link } from "react-router";
 import { ErrorBoundary } from "../../error-boundary";
 import { Avatar } from "../common/avatar";
 import { timeAgo } from "../../utils/time-ago";
-import { CommunityCallBanner } from "../common/event/community-call-banner";
+import { WorkshopOct16Banner } from "../common/event/workshop-oct16";
 import { CreateOrganizationDialog } from "../sidebar/create-team-dialog";
 import { TopbarLayout } from "../layout/home";
 import { OrgAvatars, OrgMemberCount } from "./members";
@@ -186,7 +186,7 @@ function MyOrganizations() {
   return (
     <div className="min-h-full w-full bg-background">
       <div className="p-8 flex flex-col gap-4 w-full max-w-7xl mx-auto min-h-[calc(100vh-48px)]">
-        <CommunityCallBanner />
+        <WorkshopOct16Banner />
         <ErrorBoundary fallback={null}>
           <Suspense fallback={<RecentProjectsSection.Skeleton />}>
             <RecentProjectsSection />

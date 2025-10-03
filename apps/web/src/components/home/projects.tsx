@@ -11,7 +11,7 @@ import { Suspense, useState, useDeferredValue } from "react";
 import { Link, useParams } from "react-router";
 import { ErrorBoundary } from "../../error-boundary";
 import { Avatar } from "../common/avatar";
-import { CommunityCallBanner } from "../common/event/community-call-banner";
+import { WorkshopOct16Banner } from "../common/event/workshop-oct16";
 import { OrgAvatars, OrgMemberCount } from "./members";
 
 function ProjectCard({
@@ -158,7 +158,7 @@ function OrgProjectListContent() {
   return (
     <div className="min-h-full w-full bg-background">
       <div className="p-8 flex flex-col gap-4 w-full max-w-7xl mx-auto min-h-[calc(100vh-48px)]">
-        <CommunityCallBanner />
+        <WorkshopOct16Banner />
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-medium">Projects</h2>
           <div className="flex items-center gap-2">
