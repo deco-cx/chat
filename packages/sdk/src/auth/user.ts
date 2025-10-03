@@ -49,19 +49,25 @@ export async function getUserBySupabaseCookie(
     typeof supabaseServerToken === "string"
       ? createSupabaseSessionClient(request, supabaseServerToken)
       : { supabase: supabaseServerToken };
-  const [{ data: _user }, jwt] = await Promise.all([
-    supabase.auth.getUser(accessToken),
-    jwtIssuer.verify(sessionToken).then((jwt) => {
-      if (!jwt && accessToken) {
-        return jwtIssuer.verify(accessToken);
-      }
-      return jwt;
-    }),
-  ]);
+  // Try local JWT verification first to avoid unnecessary Supabase calls
+  let jwt = null;
+  if (sessionToken) {
+    jwt = await jwtIssuer.verify(sessionToken);
+  }
+  if (!jwt && accessToken) {
+    jwt = await jwtIssuer.verify(accessToken);
+  }
 
+  // If we have a valid JWT, return it immediately without calling Supabase
+  if (jwt) {
+    return jwt;
+  }
+
+  // Only call Supabase if we don't have a valid local JWT
+  const { data: _user } = await supabase.auth.getUser(accessToken);
   const user = _user?.user;
   if (!user) {
-    return jwt;
+    return undefined;
   }
   let cachettl = undefined;
   if (sessionToken) {
