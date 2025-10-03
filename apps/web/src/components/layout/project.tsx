@@ -16,7 +16,7 @@ import {
 import { Toaster } from "@deco/ui/components/sonner.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { useIsMobile } from "@deco/ui/hooks/use-mobile.ts";
-import { Fragment, type ReactNode, Suspense, useState } from "react";
+import { Fragment, Suspense, useState, type ReactNode } from "react";
 import { Link, Outlet, useParams } from "react-router";
 import { useLocalStorage } from "../../hooks/use-local-storage.ts";
 import { useWorkspaceLink } from "../../hooks/use-navigate-workspace.ts";
@@ -29,6 +29,7 @@ import { WithWorkspaceTheme } from "../theme.tsx";
 import { useDecopilotOpen } from "./decopilot-layout.tsx";
 import { TopbarLayout } from "./home.tsx";
 import { BreadcrumbOrgSwitcher } from "./org-project-switcher.tsx";
+import { BreadcrumbProjectSwitcher } from "./project-switcher.tsx";
 
 export function BaseRouteLayout({ children }: { children: ReactNode }) {
   // remove?
@@ -92,7 +93,16 @@ export function ProjectLayout() {
                           <BreadcrumbOrgSwitcher />
                         </Suspense>
                       ),
-                      link: `/${org}`,
+                    },
+                    {
+                      label: (
+                        <Suspense
+                          fallback={<BreadcrumbProjectSwitcher.Skeleton />}
+                        >
+                          <BreadcrumbProjectSwitcher />
+                        </Suspense>
+                      ),
+                      link: `/${org}/${project}`,
                     },
                   ]}
                 >
@@ -164,7 +174,6 @@ export function DefaultBreadcrumb({
 }) {
   const isMobile = useIsMobile();
   const withWorkspace = useWorkspaceLink();
-
   return (
     <div className="flex items-center gap-3">
       <Breadcrumb>
@@ -216,7 +225,7 @@ export function DefaultBreadcrumb({
                       <Link to={link}>{item.label}</Link>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
-                  <BreadcrumbSeparator className="flex-shrink-0" />
+                  <BreadcrumbSeparator className="flex-shrink-0 " />
                 </Fragment>
               );
             })
