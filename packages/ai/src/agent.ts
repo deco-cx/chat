@@ -1193,7 +1193,16 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
       usage: result.usage,
     });
 
-    return result;
+    return {
+      ...result,
+      response: {
+        ...result.response,
+        headers: {
+          ...result.response.headers,
+          "x-thread-id": this.thread.threadId,
+        },
+      },
+    };
   }
 
   async generateThreadTitle(content: string) {
