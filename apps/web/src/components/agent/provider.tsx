@@ -312,19 +312,6 @@ export function AgentProvider({
       dispatchMessages({ messages, threadId, agentId });
       const lastMessage = messages.at(-1);
 
-      /** Add annotation so we can use the file URL as a parameter to a tool call */
-      if (lastMessage) {
-        lastMessage.annotations =
-          lastMessage?.["experimental_attachments"]?.map((attachment) => ({
-            type: "file",
-            url: attachment.url,
-            name: attachment.name ?? "unknown file",
-            contentType: attachment.contentType ?? "unknown content type",
-            content:
-              "This message refers to a file uploaded by the user. You might use the file URL as a parameter to a tool call.",
-          })) || lastMessage?.annotations;
-      }
-
       const bypassOpenRouter = !preferences.useOpenRouter;
 
       // Collect persisted rules from latest state provided via events

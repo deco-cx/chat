@@ -123,6 +123,37 @@ export function useFileUpload(options: UseFileUploadOptions = {}) {
     setUploadedFiles([]);
   }
 
+  function handlePaste(e: ClipboardEvent) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const files: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.kind === "file") {
+        const file = item.getAsFile();
+        if (file) {
+          files.push(file);
+        }
+      }
+    }
+
+    if (files.length > 0) {
+      // Create a FileList-like object
+      const fileList = {
+        length: files.length,
+        item: (index: number) => files[index] || null,
+        [Symbol.iterator]: function* () {
+          for (const file of files) {
+            yield file;
+          }
+        },
+      } as FileList;
+
+      uploadFileList(fileList);
+    }
+  }
+
   // Global file drop handler
   useEffect(() => {
     /**
@@ -241,6 +272,7 @@ export function useFileUpload(options: UseFileUploadOptions = {}) {
     isDragging,
     fileInputRef,
     handleFileChange,
+    handlePaste,
     removeFile,
     openFileDialog,
     clearFiles,

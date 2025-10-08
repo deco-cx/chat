@@ -25,6 +25,13 @@ const WELL_KNOWN_ERROR_MESSAGES = {
   InsufficientFunds: "Insufficient funds",
 };
 
+const clearErrorMessage = (description: string) => {
+  if (description.includes("Prompt is too long")) {
+    return "Prompt is too long";
+  }
+  return "An error occurred while generating the response.";
+};
+
 export function ChatError() {
   const workspaceLink = useWorkspaceLink();
   const { chat, retry, correlationIdRef } = useAgent();
@@ -84,7 +91,7 @@ export function ChatError() {
       <div className="flex items-center gap-4 p-4 bg-destructive/5 text-destructive rounded-xl text-sm">
         <Icon name="info" size={20} />
         <div className="flex flex-col">
-          <p>An error occurred while generating the response.</p>
+          <p>{clearErrorMessage(getErrorMessage(error))}</p>
           {error && (
             <ExpandableDescription
               description={`${error.name}: ${getErrorMessage(error)}`}

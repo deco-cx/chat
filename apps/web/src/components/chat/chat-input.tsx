@@ -29,13 +29,13 @@ export function ChatInput({ disabled }: { disabled?: boolean } = {}) {
     isDragging,
     fileInputRef,
     handleFileChange,
+    handlePaste,
     removeFile,
     openFileDialog,
     clearFiles,
   } = useFileUpload({ maxFiles: 5 });
 
-  // TODO(@viktormarinho): Bring this back
-  const enableFileUpload = false;
+  const enableFileUpload = true;
 
   const canSubmit =
     !isLoading &&
@@ -58,6 +58,27 @@ export function ChatInput({ disabled }: { disabled?: boolean } = {}) {
     }
   }, [isLoading]);
 
+  // Add paste event listener for clipboard image support
+  useEffect(() => {
+    const handleDocumentPaste = (e: ClipboardEvent) => {
+      // Only handle paste if the chat input area is focused
+      const activeElement = document.activeElement;
+      const isInputFocused =
+        activeElement?.closest(".ProseMirror") ||
+        activeElement?.closest("form") === document.querySelector("form");
+
+      if (isInputFocused && enableFileUpload) {
+        handlePaste(e);
+      }
+    };
+
+    document.addEventListener("paste", handleDocumentPaste);
+
+    return () => {
+      document.removeEventListener("paste", handleDocumentPaste);
+    };
+  }, [handlePaste, enableFileUpload]);
+
   const isMobile =
     typeof window !== "undefined" &&
     ("ontouchstart" in window ||
@@ -76,7 +97,7 @@ export function ChatInput({ disabled }: { disabled?: boolean } = {}) {
     }
   };
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const doneFiles = uploadedFiles.filter((uf) => uf.status === "done");
@@ -84,20 +105,54 @@ export function ChatInput({ disabled }: { disabled?: boolean } = {}) {
       handleSubmit(e);
       return;
     }
-    const experimentalAttachments = doneFiles.map((uf) => ({
-      name: uf.file.name,
-      type: uf.file.type,
-      contentType: uf.file.type,
-      size: uf.file.size,
-      url: uf.url || URL.createObjectURL(uf.file),
-    }));
+
+    // Convert files to base64 for AI models to access without authentication
+    const experimentalAttachments = await Promise.all(
+      doneFiles.map((uf) => {
+        // For images and PDFs, convert to base64 data URL to avoid authentication issues
+        if (
+          uf.file.type.startsWith("image/") ||
+          uf.file.type === "application/pdf"
+        ) {
+          return new Promise<{
+            name: string;
+            type: string;
+            contentType: string;
+            size: number;
+            url: string;
+          }>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              resolve({
+                name: uf.file.name,
+                type: uf.file.type,
+                contentType: uf.file.type,
+                size: uf.file.size,
+                url: reader.result as string, // This will be a data:... base64 URL
+              });
+            };
+            reader.readAsDataURL(uf.file);
+          });
+        }
+
+        // For other file types, use the uploaded URL or object URL
+        return {
+          name: uf.file.name,
+          type: uf.file.type,
+          contentType: uf.file.type,
+          size: uf.file.size,
+          url: uf.url || URL.createObjectURL(uf.file),
+        };
+      }),
+    );
+
     handleSubmit(e, {
       experimental_attachments: experimentalAttachments as unknown as FileList,
       // @ts-expect-error not yet on typings
-      fileData: doneFiles.map((uf) => ({
-        name: uf.file.name,
-        contentType: uf.file.type,
-        url: uf.url,
+      fileData: experimentalAttachments.map((attachment) => ({
+        name: attachment.name,
+        contentType: attachment.contentType,
+        url: attachment.url,
       })),
     });
     clearFiles();
