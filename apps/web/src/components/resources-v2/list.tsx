@@ -286,7 +286,9 @@ function ResourcesV2ListTab({
                       );
                     } catch (error) {
                       console.error("Failed to create document:", error);
-                      toast.error("Failed to create document. Please try again.");
+                      toast.error(
+                        "Failed to create document. Please try again.",
+                      );
                     }
                   } else {
                     // For other resources, open Decopilot
