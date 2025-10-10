@@ -230,8 +230,9 @@ const ResourcesV2List = lazy(() =>
   wrapWithUILoadingFallback(import("./components/resources-v2/list.tsx")),
 );
 
-const ResourcesV2Detail = lazy(() =>
-  wrapWithUILoadingFallback(import("./components/resources-v2/detail.tsx")),
+// Detail component has its own loading state, no additional Suspense needed
+const ResourcesV2Detail = lazy(
+  () => import("./components/resources-v2/detail.tsx"),
 );
 
 // Workflows resource list

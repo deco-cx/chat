@@ -1,18 +1,18 @@
-import {
-  callTool,
-  useIntegration,
-  useTools,
-  useUpsertDocument,
-} from "@deco/sdk";
+import { callTool, useIntegration, useTools } from "@deco/sdk";
 import type { ResourceItem } from "@deco/sdk/mcp";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Card, CardContent } from "@deco/ui/components/card.tsx";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@deco/ui/components/dropdown-menu.tsx";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@deco/ui/components/alert-dialog.tsx";
+import { Checkbox } from "@deco/ui/components/checkbox.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { toast } from "@deco/ui/components/sonner.tsx";
@@ -23,7 +23,7 @@ import {
   TooltipTrigger,
 } from "@deco/ui/components/tooltip.tsx";
 import { useViewMode } from "@deco/ui/hooks/use-view-mode.ts";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDeferredValue, useMemo, useState, type ReactNode } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { z } from "zod";
@@ -32,15 +32,11 @@ import { EmptyState } from "../common/empty-state.tsx";
 import { ListPageHeader } from "../common/list-page-header.tsx";
 import { Table, type TableColumn } from "../common/table/index.tsx";
 import { TimeAgoCell, UserInfo } from "../common/table/table-cells.tsx";
-import { useDecopilotThread } from "../decopilot/thread-context.tsx";
 import {
   DecopilotLayout,
   useDecopilotOpen,
 } from "../layout/decopilot-layout.tsx";
 import { ResourceRouteProvider } from "./route-context.tsx";
-
-// Constants
-const DOCUMENTS_INTEGRATION_ID = "i:documents-management";
 
 // Base resource data schema that all resources extend
 const BaseResourceDataSchema = z.object({
@@ -63,11 +59,19 @@ function ResourcesV2ListTab({
   const [searchParams, setSearchParams] = useSearchParams();
   const integration = useIntegration(integrationId ?? "").data;
   const navigateWorkspace = useNavigateWorkspace();
+  const queryClient = useQueryClient();
   const [mutating, setMutating] = useState(false);
   const [viewMode, setViewMode] = useViewMode();
-  const { setOpen: setDecopilotOpen } = useDecopilotOpen();
-  const { setThreadState } = useDecopilotThread();
-  const upsertDocument = useUpsertDocument();
+  const [deleteUri, setDeleteUri] = useState<string | null>(null);
+  const [dontAskAgain, setDontAskAgain] = useState(false);
+
+  // Session storage key for skip confirmation preference
+  const skipConfirmationKey = `skip-delete-confirmation-${integrationId}-${resourceName}`;
+
+  // Check if user has set "don't ask again" in this session
+  const shouldSkipConfirmation = () => {
+    return sessionStorage.getItem(skipConfirmationKey) === "true";
+  };
 
   const q = searchParams.get("q") ?? "";
   const deferredQ = useDeferredValue(q);
@@ -95,98 +99,68 @@ function ResourcesV2ListTab({
       {
         id: "title",
         header: "Title",
-        accessor: (row) => row.data?.name || "",
-        cellClassName: "max-w-md",
+        render: (row) => (
+          <div className="truncate" style={{ maxWidth: "200px" }}>
+            {row.data?.name || ""}
+          </div>
+        ),
         sortable: false,
+        cellClassName: "w-[20%]",
       },
       {
         id: "description",
         header: "Description",
-        accessor: (row) => row.data?.description || "",
-        cellClassName: "max-w-2xl",
+        render: (row) => (
+          <div className="truncate" style={{ maxWidth: "300px" }}>
+            {row.data?.description || ""}
+          </div>
+        ),
+        cellClassName: "w-[40%]",
       },
       {
         id: "updated_at",
         header: "Updated",
-        render: (row) => <TimeAgoCell value={row.updated_at} />, // falls back to "-" if undefined
-        cellClassName: "whitespace-nowrap",
+        render: (row) => <TimeAgoCell value={row.updated_at} />,
+        cellClassName: "whitespace-nowrap w-[15%]",
       },
       {
         id: "updated_by",
         header: "Updated by",
-        render: (row) => <UserInfo userId={row.updated_by} noTooltip />, // avatar + short text
-        cellClassName: "min-w-[160px]",
+        render: (row) => <UserInfo userId={row.updated_by} noTooltip />,
+        cellClassName: "w-[20%]",
       },
       {
         id: "actions",
         header: "",
-        render: (row) => (
-          <div className="flex items-center justify-end">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
-                >
-                  <Icon name="more_horiz" className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    navigateWorkspace(
-                      `rsc/${integrationId}/${resourceName}/${encodeURIComponent(row.uri)}`,
-                    );
-                  }}
-                >
-                  Open
-                </DropdownMenuItem>
-                {capabilities.hasUpdate && (
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      navigateWorkspace(
-                        `rsc/${integrationId}/${resourceName}/${encodeURIComponent(row.uri)}`,
-                      );
-                    }}
-                  >
-                    Edit
-                  </DropdownMenuItem>
-                )}
-                {capabilities.hasDelete && (
-                  <DropdownMenuItem
-                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (!integration) return;
-                      try {
-                        setMutating(true);
-                        await callTool(integration.connection, {
-                          name: `DECO_RESOURCE_${(resourceName ?? "").toUpperCase()}_DELETE`,
-                          arguments: { uri: row.uri },
-                        });
-                        await listQuery.refetch();
-                      } finally {
-                        setMutating(false);
-                      }
-                    }}
-                  >
-                    Delete
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        ),
+        render: (row) =>
+          capabilities.hasDelete ? (
+            <div className="flex items-center justify-end">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteClick(row.uri);
+                      }}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <Icon name="delete" className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Delete</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          ) : null,
+        cellClassName: "w-[5%]",
       },
     ],
-    [integrationId, navigateWorkspace, resourceName, capabilities],
+    [capabilities.hasDelete],
   );
 
   const listQuery = useQuery({
@@ -210,8 +184,38 @@ function ResourcesV2ListTab({
   });
 
   const items = listQuery.data ?? [];
-  const loading = listQuery.isLoading || listQuery.isFetching || mutating;
+  // Only show loading spinner on initial load, not during mutations or background refetches
+  // Mutations show loading on the button itself, not full-page
+  const loading = listQuery.isLoading;
   const error = listQuery.isError ? (listQuery.error as Error).message : null;
+
+  // Delete handler
+  const handleDelete = async (uri: string) => {
+    if (!integration) return;
+    try {
+      setMutating(true);
+      await callTool(integration.connection, {
+        name: `DECO_RESOURCE_${(resourceName ?? "").toUpperCase()}_DELETE`,
+        arguments: { uri },
+      });
+      toast.success(`${resourceName || "Resource"} deleted successfully`);
+      await listQuery.refetch();
+    } catch (error) {
+      console.error(`Failed to delete ${resourceName}:`, error);
+      toast.error(`Failed to delete ${resourceName}. Please try again.`);
+    } finally {
+      setMutating(false);
+    }
+  };
+
+  // Handle delete button click
+  const onDeleteClick = (uri: string) => {
+    if (shouldSkipConfirmation()) {
+      handleDelete(uri);
+    } else {
+      setDeleteUri(uri);
+    }
+  };
 
   // Removed effects in favor of TanStack Query hooks
 
@@ -257,9 +261,12 @@ function ResourcesV2ListTab({
                     onClick={() => listQuery.refetch()}
                     variant="outline"
                     size="icon"
-                    disabled={loading}
+                    disabled={listQuery.isFetching}
                   >
-                    <Icon name="refresh" />
+                    <Icon
+                      name="refresh"
+                      className={listQuery.isFetching ? "animate-spin" : ""}
+                    />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -270,43 +277,86 @@ function ResourcesV2ListTab({
             {capabilities.hasCreate ? (
               <Button
                 onClick={async () => {
-                  // For documents, create directly and navigate to detail page
-                  if (integrationId === DOCUMENTS_INTEGRATION_ID) {
-                    try {
-                      const result = await upsertDocument.mutateAsync({
-                        params: {
-                          name: "Untitled",
-                          description: "",
-                          content: "",
-                        },
-                      });
-                      // Navigate to the document detail using the URI
-                      navigateWorkspace(
-                        `rsc/${integrationId}/${resourceName}/${encodeURIComponent(result.uri)}`,
-                      );
-                    } catch (error) {
-                      console.error("Failed to create document:", error);
-                      toast.error(
-                        "Failed to create document. Please try again.",
-                      );
+                  if (!integration) return;
+                  try {
+                    setMutating(true);
+
+                    // Generate unique name with timestamp
+                    const timestamp = new Date()
+                      .toISOString()
+                      .replace(/[:.]/g, "-");
+                    const uniqueName = `Untitled-${timestamp}`;
+
+                    // Build data payload based on resource type
+                    const data: Record<string, unknown> = {
+                      name: uniqueName,
+                      description: "",
+                    };
+
+                    // Add resource-specific required fields
+                    if (resourceName === "document") {
+                      data.content = "";
                     }
-                  } else {
-                    // For other resources, open Decopilot
-                    setDecopilotOpen(true);
-                    setThreadState({
-                      threadId: crypto.randomUUID(),
-                      initialMessage: `Please help me create a new ${resourceName || "item"}`,
-                      autoSend: true,
+
+                    const result = await callTool(integration.connection, {
+                      name: `DECO_RESOURCE_${(resourceName ?? "").toUpperCase()}_CREATE`,
+                      arguments: { data },
                     });
+
+                    // Extract URI from response (can be at different levels)
+                    const uri =
+                      (result as { uri?: string })?.uri ||
+                      (result as { data?: { uri?: string } })?.data?.uri ||
+                      (
+                        result as {
+                          structuredContent?: { uri?: string };
+                        }
+                      )?.structuredContent?.uri ||
+                      (
+                        result as {
+                          content?: Array<{ text?: string }>;
+                        }
+                      )?.content?.[0]?.text;
+
+                    if (!uri) {
+                      console.error("Create result:", result);
+                      throw new Error("No URI returned from create operation");
+                    }
+
+                    // Invalidate list query so it refreshes when user navigates back
+                    queryClient.invalidateQueries({
+                      queryKey: [
+                        "resources-v2-list",
+                        integrationId,
+                        resourceName,
+                      ],
+                    });
+
+                    // Navigate immediately - the route change will unmount this component
+                    navigateWorkspace(
+                      `rsc/${integrationId}/${resourceName}/${encodeURIComponent(uri)}`,
+                    );
+                  } catch (error) {
+                    console.error(
+                      `Failed to create ${resourceName || "resource"}:`,
+                      error,
+                    );
+                    toast.error(
+                      `Failed to create ${resourceName || "resource"}. Please try again.`,
+                    );
+                    setMutating(false);
                   }
                 }}
                 variant="special"
-                disabled={
-                  integrationId === DOCUMENTS_INTEGRATION_ID &&
-                  upsertDocument.isPending
-                }
+                disabled={mutating}
               >
-                <Icon name="add" />
+                {mutating ? (
+                  <div className="w-4 h-4">
+                    <Spinner />
+                  </div>
+                ) : (
+                  <Icon name="add" />
+                )}
                 Create
               </Button>
             ) : null}
@@ -376,61 +426,30 @@ function ResourcesV2ListTab({
                     <UserInfo userId={it.updated_by} nameOnly />
                   </div>
                 </div>
-                <div
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
-                >
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <Icon name="more_horiz" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          navigateWorkspace(
-                            `rsc/${integrationId}/${resourceName}/${encodeURIComponent(it.uri)}`,
-                          )
-                        }
-                      >
-                        Open
-                      </DropdownMenuItem>
-                      {capabilities.hasUpdate ? (
-                        <DropdownMenuItem
-                          onClick={() =>
-                            navigateWorkspace(
-                              `rsc/${integrationId}/${resourceName}/${encodeURIComponent(it.uri)}`,
-                            )
-                          }
-                        >
-                          Edit
-                        </DropdownMenuItem>
-                      ) : null}
-                      {capabilities.hasDelete ? (
-                        <DropdownMenuItem
-                          className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                          onClick={async () => {
-                            if (!integration) return;
-                            try {
-                              setMutating(true);
-                              await callTool(integration.connection, {
-                                name: `DECO_RESOURCE_${(resourceName ?? "").toUpperCase()}_DELETE`,
-                                arguments: { uri: it.uri },
-                              });
-                              await listQuery.refetch();
-                            } finally {
-                              setMutating(false);
-                            }
-                          }}
-                        >
-                          Delete
-                        </DropdownMenuItem>
-                      ) : null}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                {capabilities.hasDelete && (
+                  <div
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onDeleteClick(it.uri)}
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <Icon name="delete" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Delete</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -446,6 +465,67 @@ function ResourcesV2ListTab({
           }
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!deleteUri}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteUri(null);
+            setDontAskAgain(false);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {resourceName}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this{" "}
+              {resourceName || "resource"}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex items-center space-x-2 px-6 py-2">
+            <Checkbox
+              id="dont-ask-again"
+              checked={dontAskAgain}
+              onCheckedChange={(checked) => setDontAskAgain(checked === true)}
+            />
+            <label
+              htmlFor="dont-ask-again"
+              className="text-sm text-muted-foreground cursor-pointer select-none"
+            >
+              Don't ask again for this session
+            </label>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (!deleteUri) return;
+
+                const uriToDelete = deleteUri;
+
+                // Save preference to sessionStorage (persists across navigations)
+                if (dontAskAgain) {
+                  sessionStorage.setItem(skipConfirmationKey, "true");
+                }
+
+                // Close modal
+                setDeleteUri(null);
+                setDontAskAgain(false);
+
+                // Perform delete after state updates
+                setTimeout(() => {
+                  handleDelete(uriToDelete);
+                }, 0);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

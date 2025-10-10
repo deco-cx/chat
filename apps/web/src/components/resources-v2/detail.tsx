@@ -48,7 +48,7 @@ function ResourcesV2DetailTab({
 
   if (viewIsLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="h-[calc(100vh-12rem)] flex items-center justify-center">
         <Spinner />
       </div>
     );
@@ -168,8 +168,15 @@ function ResourcesV2Detail() {
     },
   });
 
+  // Show loading if ANY query is in initial load state (no cached data)
+  // This creates a single, stable loading state instead of multiple flashing states
+  const hasResourceData = Boolean(resourceReadQuery.data);
+  const hasToolsData = Boolean(toolsQuery.data);
+  const hasViewData = Boolean(viewQuery.data || !viewRenderTool);
+
   const isLoading =
-    resourceReadQuery.isLoading || toolsQuery.isLoading || viewQuery.isLoading;
+    !hasResourceData || !hasToolsData || (!hasViewData && viewQuery.isLoading);
+
   const readError = resourceReadQuery.isError
     ? (resourceReadQuery.error as Error).message
     : null;
@@ -207,32 +214,7 @@ function ResourcesV2Detail() {
     decodedUri,
   ]);
 
-  if (isLoading) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center gap-4 py-12">
-        <Spinner />
-        <div className="text-center">
-          <div className="text-sm font-medium text-foreground">
-            Loading resource
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            Fetching {resourceName} details...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (readError) {
-    return (
-      <EmptyState
-        icon="error"
-        title="Failed to load resource"
-        description="An error occurred while loading the resource"
-      />
-    );
-  }
-
+  // Always render the layout to keep chat panel visible
   return (
     <DecopilotLayout value={decopilotContextValue}>
       <ResourceRouteProvider
@@ -242,7 +224,17 @@ function ResourcesV2Detail() {
         connection={integration?.connection}
       >
         <ResourceDetailContext.Provider value={readResponse}>
-          {!viewRenderTool ? (
+          {isLoading ? (
+            <div className="h-[calc(100vh-12rem)] flex items-center justify-center">
+              <Spinner />
+            </div>
+          ) : readError ? (
+            <EmptyState
+              icon="error"
+              title="Failed to load resource"
+              description="An error occurred while loading the resource"
+            />
+          ) : !viewRenderTool ? (
             <EmptyState
               icon="view_carousel"
               title="No view render tool available"

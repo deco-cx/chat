@@ -8,6 +8,7 @@ import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Badge } from "@deco/ui/components/badge.tsx";
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
+import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import { useCallback, useState, useEffect, useRef, useMemo } from "react";
 import { z } from "zod";
@@ -205,15 +206,8 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
 
   if (isLoading) {
     return (
-      <div className="h-full w-full flex items-center justify-center">
-        <div className="text-center">
-          <Icon
-            name="refresh"
-            size={24}
-            className="animate-spin mx-auto mb-2"
-          />
-          <p className="text-muted-foreground">Loading document...</p>
-        </div>
+      <div className="h-[calc(100vh-12rem)] flex items-center justify-center">
+        <Spinner />
       </div>
     );
   }
