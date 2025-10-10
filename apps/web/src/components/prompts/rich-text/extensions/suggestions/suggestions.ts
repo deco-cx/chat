@@ -2,11 +2,13 @@ import type { Prompt } from "@deco/sdk";
 import { ReactRenderer } from "@tiptap/react";
 import type { SuggestionOptions } from "@tiptap/suggestion";
 import tippy, { type Instance, type Props } from "tippy.js";
-import MentionDropdown, { type Option } from "./dropdown.tsx";
+import SlashCommandsDropdown, {
+  type SlashCommandOption,
+} from "../../../../editor/slash-commands-dropdown.tsx";
 
 export const suggestion: (
   items: Prompt[],
-) => Partial<SuggestionOptions<Option>> = (items) => {
+) => Partial<SuggestionOptions<SlashCommandOption>> = (items) => {
   return {
     char: "/",
     items: (props) => {
@@ -17,42 +19,22 @@ export const suggestion: (
           id: "references",
           type: "category",
           label: "References",
-          children: [
-            {
-              id: "prompts",
-              type: "category",
-              label: "Documents",
-              icon: "text_snippet",
-              children: items
-                .filter((prompt) =>
-                  prompt.name.toLowerCase().includes(query?.toLowerCase()),
-                )
-                .map(
-                  (prompt): Option => ({
-                    id: prompt.id,
-                    type: "option",
-                    label: prompt.name,
-                    icon: "text_snippet",
-                    tooltip: prompt.content,
-                    handle: ({ command }) =>
-                      command({ id: prompt.id, label: prompt.name }),
-                  }),
-                )
-                .slice(0, 10),
-            },
-            // {
-            //   id: "tools",
-            //   type: "category",
-            //   label: "Tools",
-            //   icon: "build",
-            // },
-            // {
-            //   id: "tool_placeholder",
-            //   type: "category",
-            //   label: "Tool placeholder",
-            //   icon: "build",
-            // },
-          ],
+          children: items
+            .filter((prompt) =>
+              prompt.name.toLowerCase().includes(query?.toLowerCase()),
+            )
+            .map(
+              (prompt): SlashCommandOption => ({
+                id: prompt.id,
+                type: "option",
+                label: prompt.name,
+                icon: "text_snippet",
+                tooltip: prompt.content,
+                handle: ({ command }: { command: (props: any) => void }) =>
+                  command({ id: prompt.id, label: prompt.name }),
+              }),
+            )
+            .slice(0, 10),
         },
       ];
     },
@@ -66,7 +48,7 @@ export const suggestion: (
             component.destroy();
           }
 
-          component = new ReactRenderer(MentionDropdown, {
+          component = new ReactRenderer(SlashCommandsDropdown, {
             props,
             editor: props.editor,
           });

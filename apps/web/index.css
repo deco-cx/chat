@@ -14,55 +14,201 @@
 
   * {
     .prose {
-      @apply whitespace-pre-wrap break-words;
+      @apply text-foreground/80 leading-relaxed whitespace-pre-wrap break-words;
       overflow-wrap: anywhere;
     }
 
+    /* Paragraphs and text */
     .prose p {
-      @apply mb-2;
+      @apply mb-4 leading-relaxed;
     }
 
-    .prose ul {
-      @apply list-disc pl-6 mb-2;
+    .prose strong {
+      @apply font-semibold text-foreground;
     }
 
-    .prose ol {
-      @apply list-decimal pl-6 mb-2;
+    .prose em {
+      @apply italic;
     }
 
+    /* Headings - hierarchy with medium weights */
     .prose h1 {
-      @apply text-2xl font-bold mb-2;
+      @apply text-3xl font-semibold text-foreground mb-3 mt-8 leading-tight;
     }
 
     .prose h2 {
-      @apply text-xl font-bold mb-2;
+      @apply text-2xl font-semibold text-foreground mb-3 mt-8 leading-tight;
     }
 
     .prose h3 {
-      @apply text-lg font-bold mb-2;
+      @apply text-xl font-medium text-foreground mb-2 mt-5;
     }
 
     .prose h4 {
-      @apply text-base font-bold mb-2;
+      @apply text-lg text-foreground mb-2 mt-4;
     }
 
     .prose h5 {
-      @apply text-sm font-bold mb-2;
+      @apply text-base text-foreground mb-2 mt-3;
     }
 
     .prose h6 {
-      @apply text-xs font-bold mb-2;
+      @apply text-base mb-2 mt-3;
     }
 
+    /* First heading removes top margin */
+    .prose > h1:first-child,
+    .prose > h2:first-child,
+    .prose > h3:first-child,
+    .prose > h4:first-child,
+    .prose > h5:first-child,
+    .prose > h6:first-child {
+      @apply mt-0;
+    }
+
+    /* Links */
     .prose a {
-      @apply text-primary-light underline;
+      @apply text-blue-500 hover:underline underline-offset-2 transition-colors cursor-pointer;
     }
 
+    /* Lists */
+    .prose ul {
+      @apply list-disc pl-6 mb-4;
+    }
+
+    .prose ol {
+      @apply list-decimal pl-6 mb-4;
+    }
+
+    .prose li {
+      @apply leading-relaxed mb-1;
+    }
+
+    .prose li > p {
+      @apply mb-0;
+    }
+
+    .prose li > ul,
+    .prose li > ol {
+      @apply mt-2 mb-1;
+    }
+
+    /* Task Lists */
+    .prose ul[data-type="taskList"] {
+      @apply list-none pl-0;
+    }
+
+    .prose ul[data-type="taskList"] > li {
+      @apply flex items-start gap-2 mb-2;
+    }
+
+    .prose ul[data-type="taskList"] > li > label {
+      @apply flex items-center shrink-0 cursor-pointer;
+    }
+
+    .prose ul[data-type="taskList"] > li > label > input[type="checkbox"] {
+      @apply appearance-none size-4 shrink-0 rounded-[4px] border border-foreground 
+        bg-background shadow-sm transition-all cursor-pointer
+        checked:bg-primary checked:border-primary checked:text-primary-foreground
+        focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50
+        disabled:cursor-not-allowed disabled:opacity-50;
+      
+      /* Checkmark using background image */
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 75%;
+    }
+
+    .prose ul[data-type="taskList"] > li > label > input[type="checkbox"]:checked {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    }
+
+    .prose ul[data-type="taskList"] > li > label > span {
+      @apply hidden;
+    }
+
+    .prose ul[data-type="taskList"] > li > div {
+      @apply flex-1 flex items-center min-h-[1rem];
+    }
+
+    .prose ul[data-type="taskList"] > li > div > p {
+      @apply mb-0 leading-4;
+    }
+
+    .prose ul[data-type="taskList"] ul[data-type="taskList"],
+    .prose ul[data-type="taskList"] ol {
+      @apply mt-2;
+    }
+
+    /* Code blocks - matching inline code styling */
     .prose pre {
-      @apply whitespace-pre-wrap break-words;
-      overflow-wrap: anywhere;
+      @apply my-4 rounded-lg overflow-hidden border border-border bg-muted;
+      tab-size: 2;
     }
 
+    .prose pre code {
+      @apply block p-6 text-sm leading-relaxed font-mono whitespace-pre overflow-x-auto bg-transparent text-violet-600;
+      font-family: "CommitMono", "Fira Code", "Consolas", "Monaco", "Andale Mono", monospace;
+      overflow-wrap: normal;
+      word-break: normal;
+    }
+
+    /* Inline code */
+    .prose code {
+      @apply px-1.5 py-0.5 rounded text-sm font-mono bg-muted/80 text-violet-600 border-0;
+      font-family: "CommitMono", "Fira Code", "Consolas", "Monaco", "Andale Mono", monospace;
+    }
+    
+    /* Pre tag hover behavior for long lines */
+    .prose pre:hover {
+      @apply overflow-x-auto;
+    }
+
+    /* Blockquotes */
+    .prose blockquote {
+      @apply border-l-2 border-foreground pl-4 pr-4 py-3 my-4 italic;
+    }
+
+    .prose blockquote > *:first-child {
+      @apply mt-0;
+    }
+
+    .prose blockquote > *:last-child {
+      @apply mb-0;
+    }
+
+    /* Horizontal rules */
+    .prose hr {
+      @apply my-8 border-border;
+    }
+
+    /* Tables */
+    .prose table {
+      @apply w-full my-4 border-collapse overflow-hidden rounded-lg;
+    }
+
+    .prose thead {
+      @apply bg-muted;
+    }
+
+    .prose th {
+      @apply px-4 py-2 text-left font-semibold border-b border-border;
+    }
+
+    .prose td {
+      @apply px-4 py-2 border-b border-border;
+    }
+
+    .prose tr:last-child td {
+      @apply border-b-0;
+    }
+
+    /* Images */
+    .prose img {
+      @apply rounded-lg my-4;
+    }
+
+    /* Comments (tiptap specific) */
     .prose span[data-type="comment"] {
       @apply rounded bg-muted-foreground/10 border border-muted-foreground/20
         whitespace-pre-wrap px-1 leading-normal block break-words pl-6 relative
@@ -70,26 +216,6 @@
         text-muted-foreground italic before:text-muted-foreground
         before:opacity-60 before:text-xs/tight before:font-mono my-1;
       overflow-wrap: anywhere;
-    }
-
-    .prose blockquote {
-      @apply border-l-2 border-muted-foreground/20 pl-4;
-    }
-
-    .prose pre code {
-      @apply my-2 rounded-lg bg-primary-light/10 border border-primary-light
-        block whitespace-pre-wrap !p-2 break-words;
-      overflow-wrap: anywhere;
-    }
-
-    .prose code {
-      @apply rounded bg-muted-foreground/10 border border-muted-foreground/20
-        whitespace-pre-wrap px-1 leading-normal inline break-words;
-      overflow-wrap: anywhere;
-    }
-
-    .prose hr {
-      @apply my-4 border-border;
     }
   }
 }

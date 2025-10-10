@@ -6,17 +6,14 @@ import {
 } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
-import { Input } from "@deco/ui/components/input.tsx";
 import { Badge } from "@deco/ui/components/badge.tsx";
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
-import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
-import { useCallback, useState, useEffect, useRef } from "react";
+import { useCallback, useState, useEffect, useRef, useMemo } from "react";
 import { z } from "zod";
 import { EmptyState } from "../common/empty-state.tsx";
-import { toast } from "@deco/ui/components/sonner.tsx";
 import { DocumentEditor } from "./document-editor.tsx";
-import { useDebouncedCallback } from "use-debounce";
+import { toast } from "@deco/ui/components/sonner.tsx";
 
 // Document type inferred from the Zod schema
 export type DocumentDefinition = z.infer<typeof DocumentDefinitionSchema>;
@@ -35,7 +32,6 @@ interface DocumentDetailProps {
 
 /**
  * Document detail view with inline editing and markdown editor
- * Supports auto-save on changes with Figma-style UX
  */
 export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
   const { locator } = useSDK();
@@ -56,63 +52,55 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const descriptionRef = useRef<HTMLDivElement>(null);
+  const shouldSyncRef = useRef(true); // Control when to sync from server
 
   // Update mutation
   const updateMutation = useUpdateDocument();
 
-  // Sync local state with fetched document
+  // Track if there are unsaved changes
+  const hasChanges = useMemo(() => {
+    if (!effectiveDocument) return false;
+    return (
+      title !== effectiveDocument.name ||
+      description !== (effectiveDocument.description || "") ||
+      content !== effectiveDocument.content ||
+      JSON.stringify(tags) !== JSON.stringify(effectiveDocument.tags || [])
+    );
+  }, [title, description, content, tags, effectiveDocument]);
+
+  // Sync local state with fetched document (controlled by shouldSyncRef)
   useEffect(() => {
-    if (effectiveDocument) {
+    if (effectiveDocument && shouldSyncRef.current) {
       setTitle(effectiveDocument.name);
       setDescription(effectiveDocument.description || "");
       setContent(effectiveDocument.content);
       setTags(effectiveDocument.tags || []);
+      
+      // Sync contentEditable divs
+      if (titleRef.current) {
+        titleRef.current.textContent = effectiveDocument.name;
+      }
+      if (descriptionRef.current) {
+        descriptionRef.current.textContent = effectiveDocument.description || "";
+      }
+      
+      // After syncing, don't sync again until explicitly requested
+      shouldSyncRef.current = false;
     }
   }, [effectiveDocument]);
 
-  // Auto-save function with debounce - sends all fields to avoid validation errors
-  const saveChanges = useDebouncedCallback(
-    async (updatedFields: Partial<{ name: string; description: string; content: string; tags: string[] }>) => {
-      if (!resourceUri) return;
-
-      setIsSaving(true);
-      try {
-        // Always send all required fields to the API
-        await updateMutation.mutateAsync({
-          uri: resourceUri,
-          params: {
-            name: title,
-            description: description,
-            content: content,
-            tags: tags,
-            ...updatedFields, // Override with the specific changed fields
-          },
-        });
-      } catch (error) {
-        console.error("Failed to auto-save:", error);
-        toast.error("Failed to save changes");
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    500,
-  );
-
   const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle);
-    if (newTitle.trim()) {
-      saveChanges({ name: newTitle });
-    }
   };
 
   const handleDescriptionChange = (newDescription: string) => {
     setDescription(newDescription);
-    saveChanges({ description: newDescription });
   };
 
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
-    saveChanges({ content: newContent });
   };
 
   const handleAddTag = () => {
@@ -121,7 +109,6 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
       setTags(newTags);
       setNewTagInput("");
       setIsAddingTag(false);
-      saveChanges({ tags: newTags });
     }
   };
 
@@ -133,7 +120,6 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
   const handleRemoveTag = (tagToRemove: string) => {
     const newTags = tags.filter((tag) => tag !== tagToRemove);
     setTags(newTags);
-    saveChanges({ tags: newTags });
   };
 
   // Auto-focus input when starting to add a tag
@@ -143,14 +129,56 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
     }
   }, [isAddingTag]);
 
-  const handleRefresh = useCallback(async () => {
-    if (isRefreshing) return;
+  const handleSave = useCallback(async () => {
+    if (!resourceUri || isSaving) return;
+
+    setIsSaving(true);
     try {
-      setIsRefreshing(true);
+      await updateMutation.mutateAsync({
+        uri: resourceUri,
+        params: {
+          name: title,
+          description: description,
+          content: content,
+          tags: tags,
+        },
+      });
+      toast.success("Document saved successfully");
+      // Allow sync after save to get the updated document from server
+      shouldSyncRef.current = true;
       await refetch();
+    } catch (error) {
+      console.error("Failed to save document:", error);
+      toast.error("Failed to save document");
     } finally {
-      setIsRefreshing(false);
+      setIsSaving(false);
     }
+  }, [resourceUri, title, description, content, tags, isSaving, updateMutation, refetch]);
+
+  const handleDiscard = useCallback(() => {
+    if (effectiveDocument) {
+      setTitle(effectiveDocument.name);
+      setDescription(effectiveDocument.description || "");
+      setContent(effectiveDocument.content);
+      setTags(effectiveDocument.tags || []);
+      
+      // Sync contentEditable divs
+      if (titleRef.current) {
+        titleRef.current.textContent = effectiveDocument.name;
+      }
+      if (descriptionRef.current) {
+        descriptionRef.current.textContent = effectiveDocument.description || "";
+      }
+      toast.success("Changes discarded");
+    }
+  }, [effectiveDocument]);
+
+  const handleRefresh = useCallback(() => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    refetch().finally(() => {
+      setIsRefreshing(false);
+    });
   }, [isRefreshing, refetch]);
 
   if (isLoading) {
@@ -193,127 +221,169 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
   }
 
   return (
-    <div className="h-full w-full flex flex-col relative">
-      {/* Header with refresh and save status */}
-      <div className="border-b border-border bg-background px-8 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <h2 className="text-sm font-medium text-muted-foreground">Document</h2>
-          {isSaving && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Spinner size="xs" />
-              <span>Saving...</span>
-            </div>
-          )}
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleRefresh}
-          disabled={isRefreshing || isLoading}
-        >
-          <Icon
-            name="refresh"
-            size={20}
-            className={cn(isRefreshing && "animate-spin")}
-          />
-        </Button>
-      </div>
-
+    <div className="h-full w-full">
       {/* Main content */}
-      <ScrollArea className="flex-1 w-full">
-        <div className="max-w-4xl mx-auto">
-          {/* Metadata section - Figma-style inline editing */}
-          <div className="px-8 py-6 space-y-4 border-b border-border">
-            {/* Title - inline editable */}
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              placeholder="Untitled document"
-              className="w-full text-4xl font-bold outline-none bg-transparent border-none px-0 py-2 placeholder:text-muted-foreground focus:ring-0"
-            />
+      <ScrollArea className="h-full w-full [&_[data-radix-scroll-area-viewport]>div]:!block [&_[data-radix-scroll-area-viewport]>div]:!min-w-0 [&_[data-radix-scroll-area-viewport]>div]:!w-full">
+        <div className="w-full max-w-3xl mx-auto pt-12">
+          {/* Header section with title, description, and action buttons */}
+          <div className="p-4 sm:px-6 md:px-8 border-b border-border">
+            <div className="flex items-start justify-between gap-4">
+              {/* Title and description */}
+              <div className="flex-1 min-w-0 space-y-2.5">
+                {/* Title - inline editable */}
+                <div
+                  ref={titleRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={(e) => handleTitleChange(e.currentTarget.textContent || '')}
+                  onBlur={(e) => {
+                    if (!e.currentTarget.textContent?.trim()) {
+                      e.currentTarget.textContent = '';
+                    }
+                  }}
+                  className="text-3xl font-semibold text-foreground leading-tight outline-none bg-transparent break-words overflow-wrap-anywhere empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:opacity-50"
+                  data-placeholder="Untitled document"
+                />
 
-            {/* Description - inline editable */}
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => handleDescriptionChange(e.target.value)}
-              placeholder="Add a description..."
-              className="w-full text-base text-muted-foreground outline-none bg-transparent border-none px-0 placeholder:text-muted-foreground/50 focus:ring-0"
-            />
+                {/* Description - inline editable */}
+                <div
+                  ref={descriptionRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={(e) => handleDescriptionChange(e.currentTarget.textContent || '')}
+                  onBlur={(e) => {
+                    if (!e.currentTarget.textContent?.trim()) {
+                      e.currentTarget.textContent = '';
+                    }
+                  }}
+                  className="text-base text-muted-foreground outline-none bg-transparent break-words overflow-wrap-anywhere empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:opacity-50"
+                  data-placeholder="Add a description..."
+                />
+              </div>
 
-            {/* Tags - inline editable with hover states */}
-            <div className="flex gap-2 flex-wrap items-center">
-              {tags.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant="secondary"
-                  className="group cursor-default transition-colors inline-flex items-center"
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTag(tag)}
-                    className="hidden group-hover:inline-flex items-center ml-1 hover:text-destructive transition-colors"
-                  >
-                    <Icon name="close" size={12} />
-                  </button>
-                </Badge>
-              ))}
-              
-              {/* Add tag button or input */}
-              {isAddingTag ? (
-                <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border border-border transition-colors">
-                  <input
-                    ref={tagInputRef}
-                    type="text"
-                    value={newTagInput}
-                    onChange={(e) => setNewTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddTag();
-                      } else if (e.key === "Escape") {
-                        handleCancelAddTag();
-                      }
-                    }}
-                    onBlur={(e) => {
-                      // Check if the blur is caused by clicking the check button
-                      if (!e.relatedTarget || !e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) {
-                        handleCancelAddTag();
-                      }
-                    }}
-                    placeholder="Tag name..."
-                    className="bg-transparent outline-none border-none text-sm w-24 placeholder:text-muted-foreground"
-                  />
-                  <button
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      handleAddTag();
-                    }}
-                    disabled={!newTagInput.trim()}
-                    className="inline-flex items-center hover:text-primary transition-colors disabled:opacity-50"
-                  >
-                    <Icon name="check" size={12} />
-                  </button>
-                </div>
-              ) : (
+              {/* Action buttons */}
+              <div className="flex items-center gap-1 shrink-0">
+                {/* Reload button - always visible */}
                 <Button
                   type="button"
                   size="sm"
-                  variant="ghost"
-                  onClick={() => setIsAddingTag(true)}
-                  className="h-7 w-7 p-0 rounded-full"
+                  variant="secondary"
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="h-8 w-8 p-0 rounded-xl"
                 >
-                  <Icon name="add" size={16} />
+                  <Icon
+                    name="refresh"
+                    size={16}
+                    className={cn(isRefreshing && "animate-spin")}
+                  />
                 </Button>
-              )}
+
+                {/* Discard button - only visible when there are changes */}
+                {hasChanges && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={handleDiscard}
+                    disabled={isSaving}
+                    className="h-8 px-3 rounded-xl"
+                  >
+                    Discard
+                  </Button>
+                )}
+
+                {/* Save button - only visible when there are changes */}
+                {hasChanges && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="special"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="h-8 px-3 rounded-xl"
+                  >
+                    {isSaving ? "Saving..." : "Save"}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Tags section */}
+            <div className="py-6">
+              <div className="flex gap-2.5 flex-wrap items-center">
+                {tags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="group cursor-default transition-colors text-sm inline-flex items-center"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag)}
+                      className="hidden group-hover:inline-flex items-center ml-1 hover:text-destructive transition-colors"
+                    >
+                      <Icon name="close" size={12} />
+                    </button>
+                  </Badge>
+                ))}
+                
+                {/* Add tag button or input */}
+                {isAddingTag ? (
+                    <div className="inline-flex items-center gap-1 px-2.5 py-0.5 w-fit rounded-full border border-border transition-colors">
+                      <input
+                        ref={tagInputRef}
+                        type="text"
+                        value={newTagInput}
+                        onChange={(e) => setNewTagInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddTag();
+                          } else if (e.key === "Escape") {
+                            handleCancelAddTag();
+                          }
+                        }}
+                        onBlur={(e) => {
+                          // Check if the blur is caused by clicking the check button
+                          if (!e.relatedTarget || !e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) {
+                            handleCancelAddTag();
+                          }
+                        }}
+                        placeholder="Tag..."
+                        size={newTagInput.length || 6}
+                        className="bg-transparent outline-none border-none text-sm placeholder:text-muted-foreground placeholder:opacity-50"
+                      />
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleAddTag();
+                      }}
+                      disabled={!newTagInput.trim()}
+                      className="inline-flex items-center hover:text-primary transition-colors disabled:opacity-50"
+                    >
+                      <Icon name="check" size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setIsAddingTag(true)}
+                    className="size-6 text-muted-foreground p-0 rounded-full"
+                  >
+                    <Icon name="add" size={16} />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Document editor */}
-          <div className="py-4">
+          <div className="px-4 sm:px-6 md:px-8 pt-10 pb-20">
             <DocumentEditor
               value={content}
               onChange={handleContentChange}

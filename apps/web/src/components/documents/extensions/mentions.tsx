@@ -241,7 +241,7 @@ function MentionNode({ node }: ReactNodeViewProps<HTMLSpanElement>) {
   );
 }
 
-export function createCombinedMentions() {
+export function createCombinedMentions(tools: Tool[] = []) {
   return Mention.extend({
     name: "combinedMention",
 
@@ -292,66 +292,23 @@ export function createCombinedMentions() {
           editor: this.editor!,
           pluginKey: new PluginKey('combinedMentions'),
           char: "@",
-          items: async ({ query }: { query: string }) => {
+          items: ({ query }: { query: string }) => {
             const items: MentionItem[] = [];
+            const ql = query?.toLowerCase() || "";
 
-            // Get tools from integrations
-            const locator = (this.editor.storage as any).locator;
-            if (!locator) return items;
-
-            try {
-              const client = MCPClient.forLocator(locator);
-
-              // Fetch integrations to get tools
-              const integrationsResponse = await (client as any).DECO_RESOURCE_INTEGRATIONS_SEARCH({});
-
-              const integrations = integrationsResponse?.items || [];
-              
-              // Flatten tools from integrations
-              for (const integration of integrations) {
-                if (integration.tools && Array.isArray(integration.tools)) {
-                  for (const tool of integration.tools) {
-                    if (
-                      !query ||
-                      tool.name?.toLowerCase().includes(query.toLowerCase())
-                    ) {
-                      items.push({
-                        type: "tool",
-                        tool: {
-                          id: `${integration.id}-${tool.name}`,
-                          name: tool.name,
-                          description: tool.description,
-                          integration: {
-                            id: integration.id,
-                            name: integration.name,
-                            icon: integration.icon,
-                          },
-                        },
-                      });
-                    }
-                  }
-                }
+            // Filter tools synchronously
+            for (const tool of tools) {
+              if (
+                !query ||
+                tool.name.toLowerCase().includes(ql) ||
+                tool.description?.toLowerCase().includes(ql) ||
+                tool.integration.name.toLowerCase().includes(ql)
+              ) {
+                items.push({
+                  type: "tool",
+                  tool,
+                });
               }
-
-              // Search documents if query is long enough
-              if (query && query.length >= 2) {
-                const documentsResponse = await (client as any).DECO_RESOURCE_DOCUMENT_SEARCH({ query });
-
-                const documents = documentsResponse?.items || [];
-                for (const doc of documents) {
-                  items.push({
-                    type: "document",
-                    document: {
-                      id: doc.id,
-                      name: doc.name,
-                      uri: doc.uri,
-                      description: doc.description,
-                    },
-                  });
-                }
-              }
-            } catch (error) {
-              console.error("Failed to fetch mentions:", error);
             }
 
             return items.slice(0, 20);
