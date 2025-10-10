@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, or } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import {
   AgentSchema,
@@ -20,7 +20,7 @@ import {
 import { getProjectIdFromContext } from "../projects/util.ts";
 import { agents, organizations, projects, userActivity } from "../schema.ts";
 import { deleteTrigger, listTriggers } from "../triggers/api.ts";
-import { PgSelect } from "drizzle-orm/pg-core";
+import { withOwnershipChecking } from "../ownership.ts";
 
 const createTool = createToolGroup("Agent", {
   name: "Agent Management",
@@ -76,37 +76,6 @@ export const getAgentsByIds = async (ids: string[], c: AppContext) => {
 
 export const IMPORTANT_ROLES = ["owner", "admin"];
 
-/**
- * Adds ownership checking to an agent query.
- * Curently filters by workspace or project locator.
- * also adds a join to projects and organizations.
- * expected to be used in a query that selects the agents table.
- */
-export function withOwnershipChecking<T extends PgSelect>({
-  query,
-  ctx,
-}: {
-  query: T;
-  ctx: AppContext;
-}) {
-  assertHasWorkspace(ctx);
-  assertHasLocator(ctx);
-  const { workspace, locator } = ctx;
-
-  return query
-    .innerJoin(projects, eq(agents.project_id, projects.id))
-    .innerJoin(organizations, eq(projects.org_id, organizations.id))
-    .where(
-      or(
-        eq(agents.workspace, workspace.value),
-        and(
-          eq(projects.slug, locator.project),
-          eq(organizations.slug, locator.org),
-        ),
-      ),
-    );
-}
-
 const AGENT_FIELDS_SELECT = {
   id: agents.id,
   name: agents.name,
@@ -159,6 +128,7 @@ export const listAgents = createTool({
 
     const data = await withOwnershipChecking({
       query,
+      table: agents,
       ctx: c,
     });
 
@@ -269,6 +239,7 @@ export const getAgent = createTool({
             WELL_KNOWN_AGENTS[id as keyof typeof WELL_KNOWN_AGENTS],
           )
         : withOwnershipChecking({
+            table: agents,
             query: c.drizzle
               .select(AGENT_FIELDS_SELECT)
               .from(agents)
@@ -342,6 +313,7 @@ export const updateAgent = createAgentSetupTool({
     await assertWorkspaceResourceAccess(c);
 
     const existing = await withOwnershipChecking({
+      table: agents,
       query: c.drizzle
         .select({
           id: agents.id,
@@ -391,6 +363,7 @@ export const deleteAgent = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const agentExists = await withOwnershipChecking({
+      table: agents,
       query: c.drizzle
         .select({ id: agents.id })
         .from(agents)

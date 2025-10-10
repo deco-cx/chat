@@ -39,10 +39,7 @@ import type { Workspace } from "../../path.ts";
 import { Json } from "../../storage/index.ts";
 import type { QueryResult } from "../../storage/supabase/client.ts";
 import { KnowledgeBaseID } from "../../utils/index.ts";
-import {
-  IMPORTANT_ROLES,
-  withOwnershipChecking as withAgentsOwnershipChecking,
-} from "../agents/api.ts";
+import { IMPORTANT_ROLES } from "../agents/api.ts";
 import {
   assertHasLocator,
   assertHasWorkspace,
@@ -77,6 +74,7 @@ import {
   registryTools,
 } from "../schema.ts";
 import { createServerClient } from "../utils.ts";
+import { withOwnershipChecking } from "../ownership.ts";
 
 const SELECT_INTEGRATION_QUERY = `
           *,
@@ -522,7 +520,8 @@ export const listIntegrations = createIntegrationManagementTool({
           return Array.from(byIntegration.values());
         }),
       // Query agents
-      withAgentsOwnershipChecking({
+      withOwnershipChecking({
+        table: agents,
         query: c.drizzle
           .select({
             ...getTableColumns(agents),
@@ -755,7 +754,8 @@ export const getIntegration = createIntegrationManagementTool({
                   : null,
               };
             })
-        : withAgentsOwnershipChecking({
+        : withOwnershipChecking({
+            table: agents,
             query: c.drizzle
               .select({
                 ...getTableColumns(agents),
