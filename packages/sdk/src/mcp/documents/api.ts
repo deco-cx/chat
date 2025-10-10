@@ -111,6 +111,9 @@ export function createDocumentViewsV2() {
     ],
     prompt:
       "You are helping the user manage a document. You can read the document content, update its text and metadata, and delete it. Always confirm destructive actions before executing them.",
+    rules: [
+      "You are a document editing specialist. Use the document tools to edit the current document. Help the user manage content, tags, and metadata effectively.",
+    ],
     handler: (input, _c) => {
       // Return a custom react:// URL that the frontend will handle
       // The frontend will render a custom React component for this view

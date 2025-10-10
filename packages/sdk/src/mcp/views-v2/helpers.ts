@@ -33,6 +33,7 @@ export interface ViewRenderer<
   inputSchema: TInputSchema;
   tools: string[];
   prompt: string;
+  rules?: string[];
   handler: (
     input: z.infer<TInputSchema>,
     context: AppContext,
@@ -52,6 +53,7 @@ export interface ViewRendererOptions<
   inputSchema?: TInputSchema;
   tools: string[];
   prompt: string;
+  rules?: string[];
   handler: (
     input: z.infer<TInputSchema>,
     context: AppContext,
@@ -77,6 +79,7 @@ export function createViewRenderer<
       BaseViewRenderInputSchema) as TInputSchema,
     tools: options.tools,
     prompt: options.prompt,
+    rules: options.rules,
     handler: options.handler,
   };
 }
@@ -104,7 +107,7 @@ export interface ViewImplementationOptions {
  */
 export function createViewImplementation(options: ViewImplementationOptions) {
   return options.renderers.map(
-    ({ name, inputSchema, handler, prompt, tools }) =>
+    ({ name, inputSchema, handler, prompt, tools, rules }) =>
       createTool({
         name: `DECO_VIEW_RENDER_${name.toUpperCase()}`,
         description: `Render ${name} view`,
@@ -119,6 +122,7 @@ export function createViewImplementation(options: ViewImplementationOptions) {
             url,
             prompt: prompt,
             tools: tools,
+            rules: rules,
           };
         },
       }),

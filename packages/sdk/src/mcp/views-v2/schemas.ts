@@ -52,7 +52,7 @@ export const DetailViewRenderInputSchema = z.object({
 
 /**
  * View render output schema
- * All view render operations return a URL and optional prompt/tools
+ * All view render operations return a URL and optional prompt/tools/rules
  */
 export const ViewRenderOutputSchema = z.object({
   url: z.string().describe("URL to render the view"),
@@ -64,6 +64,10 @@ export const ViewRenderOutputSchema = z.object({
     .array(z.string())
     .optional()
     .describe("Optional array of tool names for this view context"),
+  rules: z
+    .array(z.string())
+    .optional()
+    .describe("Optional array of rules for the AI assistant in this view context"),
 });
 
 // Export types for TypeScript usage

@@ -22,6 +22,7 @@ interface ViewResponse {
   url: string;
   prompt?: string;
   tools?: string[];
+  rules?: string[];
 }
 
 const ResourceDetailContext = createContext<
@@ -191,6 +192,7 @@ function ResourcesV2Detail() {
       `The current resource URI is: ${decodedUri ?? ""}. You can use resource tools to read, search, and work on this resource.`,
       `The current resource data is: ${JSON.stringify(readResponse?.data, null, 2)}. This contains the actual resource information that you can reference when helping the user.`,
       ...(viewResponse?.prompt ? [viewResponse.prompt] : []),
+      ...(viewResponse?.rules ?? []),
     ];
 
     // Combine base tools with view-specific tools
