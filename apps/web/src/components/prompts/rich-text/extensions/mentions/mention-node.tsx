@@ -8,7 +8,7 @@ import {
 } from "@deco/ui/components/tooltip.tsx";
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import { mentionToTag } from "../../common.ts";
-import type { Option } from "../suggestions/dropdown.tsx";
+import type { SlashCommandOption } from "../../../../editor/slash-commands-dropdown.tsx";
 
 export default function MentionNode({
   node,
@@ -23,10 +23,11 @@ export default function MentionNode({
   const items =
     extension.options.suggestion
       ?.items?.({ query: label })
-      ?.find((option: Option) => option.id === "references")
-      ?.children?.flatMap((options: Option) => options.children) || [];
+      ?.find((option: SlashCommandOption) => option.id === "references")
+      ?.children?.flatMap((options: SlashCommandOption) => options.children) ||
+    [];
 
-  const prompt = items?.find((option: Option) => option?.id === id);
+  const prompt = items?.find((option: SlashCommandOption) => option?.id === id);
 
   const handleDetach = () => {
     const pos = getPos();

@@ -387,7 +387,6 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
                 type="button"
                 key={color.value}
                 onClick={() => {
-                  // @ts-expect-error - setColor exists but not in base types
                   editor.chain().focus().setColor(color.value).run();
                   setOpenPopover(null);
                 }}
@@ -405,7 +404,6 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
           <button
             type="button"
             onClick={() => {
-              // @ts-expect-error - unsetColor exists but not in base types
               editor.chain().focus().unsetColor().run();
               setOpenPopover(null);
             }}

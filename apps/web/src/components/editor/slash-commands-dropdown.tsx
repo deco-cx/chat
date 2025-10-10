@@ -14,6 +14,7 @@ export interface SlashCommandOption {
   type: "category" | "option";
   label: string;
   icon?: string;
+  tooltip?: string;
   handle?: (props: {
     editor: Editor;
     command: (props: Record<string, unknown>) => void;
