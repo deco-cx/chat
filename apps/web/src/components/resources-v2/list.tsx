@@ -32,10 +32,7 @@ import { EmptyState } from "../common/empty-state.tsx";
 import { ListPageHeader } from "../common/list-page-header.tsx";
 import { Table, type TableColumn } from "../common/table/index.tsx";
 import { TimeAgoCell, UserInfo } from "../common/table/table-cells.tsx";
-import {
-  DecopilotLayout,
-  useDecopilotOpen,
-} from "../layout/decopilot-layout.tsx";
+import { DecopilotLayout } from "../layout/decopilot-layout.tsx";
 import { ResourceRouteProvider } from "./route-context.tsx";
 
 // Base resource data schema that all resources extend
