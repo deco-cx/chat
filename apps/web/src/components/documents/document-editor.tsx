@@ -70,20 +70,21 @@ export function DocumentEditor({
       }),
       Placeholder.configure({
         placeholder,
-        emptyNodeClass: 'is-empty',
+        emptyNodeClass: "is-empty",
         showOnlyWhenEditable: true,
       }),
       TaskList,
       TaskItem.configure({
         nested: true,
         HTMLAttributes: {
-          class: 'task-item',
+          class: "task-item",
         },
       }),
       Link.configure({
         openOnClick: true,
         HTMLAttributes: {
-          class: "text-blue-500 hover:underline underline-offset-2 cursor-pointer transition-colors",
+          class:
+            "text-blue-500 hover:underline underline-offset-2 cursor-pointer transition-colors",
           target: "_blank",
           rel: "noopener noreferrer",
         },
@@ -121,7 +122,7 @@ export function DocumentEditor({
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
-      
+
       updateTimeoutRef.current = setTimeout(() => {
         const markdown = editor.storage.markdown.getMarkdown();
         onChange(markdown);
@@ -132,7 +133,7 @@ export function DocumentEditor({
   // Store locator in editor storage for extensions
   useEffect(() => {
     if (editor) {
-      (editor.storage as any).locator = locator;
+      (editor.storage as Record<string, unknown>).locator = locator;
     }
   }, [editor, locator]);
 
@@ -271,4 +272,3 @@ export function DocumentEditor({
     </div>
   );
 }
-

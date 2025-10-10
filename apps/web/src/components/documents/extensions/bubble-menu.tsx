@@ -26,21 +26,24 @@ const FORMATTING_OPTIONS = [
     id: "heading-1",
     label: "Heading 1",
     icon: "format_h1",
-    action: (editor: Editor) => editor.chain().focus().setHeading({ level: 1 }).run(),
+    action: (editor: Editor) =>
+      editor.chain().focus().setHeading({ level: 1 }).run(),
     isActive: (editor: Editor) => editor.isActive("heading", { level: 1 }),
   },
   {
     id: "heading-2",
     label: "Heading 2",
     icon: "format_h2",
-    action: (editor: Editor) => editor.chain().focus().setHeading({ level: 2 }).run(),
+    action: (editor: Editor) =>
+      editor.chain().focus().setHeading({ level: 2 }).run(),
     isActive: (editor: Editor) => editor.isActive("heading", { level: 2 }),
   },
   {
     id: "heading-3",
     label: "Heading 3",
     icon: "format_h3",
-    action: (editor: Editor) => editor.chain().focus().setHeading({ level: 3 }).run(),
+    action: (editor: Editor) =>
+      editor.chain().focus().setHeading({ level: 3 }).run(),
     isActive: (editor: Editor) => editor.isActive("heading", { level: 3 }),
   },
   {
@@ -54,7 +57,8 @@ const FORMATTING_OPTIONS = [
     id: "numbered-list",
     label: "Numbered List",
     icon: "format_list_numbered",
-    action: (editor: Editor) => editor.chain().focus().toggleOrderedList().run(),
+    action: (editor: Editor) =>
+      editor.chain().focus().toggleOrderedList().run(),
     isActive: (editor: Editor) => editor.isActive("orderedList"),
   },
   {
@@ -85,21 +89,24 @@ const ALIGNMENT_OPTIONS = [
     id: "left",
     label: "Align Left",
     icon: "format_align_left",
-    action: (editor: Editor) => editor.chain().focus().setTextAlign("left").run(),
+    action: (editor: Editor) =>
+      editor.chain().focus().setTextAlign("left").run(),
     isActive: (editor: Editor) => editor.isActive({ textAlign: "left" }),
   },
   {
     id: "center",
     label: "Align Center",
     icon: "format_align_center",
-    action: (editor: Editor) => editor.chain().focus().setTextAlign("center").run(),
+    action: (editor: Editor) =>
+      editor.chain().focus().setTextAlign("center").run(),
     isActive: (editor: Editor) => editor.isActive({ textAlign: "center" }),
   },
   {
     id: "right",
     label: "Align Right",
     icon: "format_align_right",
-    action: (editor: Editor) => editor.chain().focus().setTextAlign("right").run(),
+    action: (editor: Editor) =>
+      editor.chain().focus().setTextAlign("right").run(),
     isActive: (editor: Editor) => editor.isActive({ textAlign: "right" }),
   },
 ];
@@ -122,12 +129,12 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
   if (!editor) return null;
 
   const getCurrentFormat = () => {
-    const active = FORMATTING_OPTIONS.find(opt => opt.isActive(editor));
+    const active = FORMATTING_OPTIONS.find((opt) => opt.isActive(editor));
     return active || FORMATTING_OPTIONS[0];
   };
 
   const getCurrentAlignment = () => {
-    const active = ALIGNMENT_OPTIONS.find(opt => opt.isActive(editor));
+    const active = ALIGNMENT_OPTIONS.find((opt) => opt.isActive(editor));
     return active || ALIGNMENT_OPTIONS[0];
   };
 
@@ -136,12 +143,14 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
     if (!color) return null;
     const normalizeColor = (c: string) => c.replace(/\s+/g, " ");
     const normalizedCurrent = normalizeColor(color);
-    return TEXT_COLORS.find(tc => normalizeColor(tc.value) === normalizedCurrent);
+    return TEXT_COLORS.find(
+      (tc) => normalizeColor(tc.value) === normalizedCurrent,
+    );
   };
 
   const setLink = () => {
     const previousUrl = editor.getAttributes("link").href;
-    const url = window.prompt("URL", previousUrl);
+    const url = globalThis.prompt("URL", previousUrl);
 
     if (url === null) return;
 
@@ -168,7 +177,7 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
       className="flex items-center gap-px rounded-lg border bg-background shadow-lg p-1 w-fit z-40"
     >
       {/* Formatting Popover */}
-      <Popover 
+      <Popover
         open={openPopover === "formatting"}
         onOpenChange={(open) => setOpenPopover(open ? "formatting" : null)}
       >
@@ -179,13 +188,24 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
             className="gap-1 h-7 px-1.5 whitespace-nowrap"
             onMouseDown={(e) => e.preventDefault()}
           >
-            <span className="text-sm text-foreground">{currentFormat.label}</span>
-            <Icon name="expand_more" size={16} className="text-muted-foreground" />
+            <span className="text-sm text-foreground">
+              {currentFormat.label}
+            </span>
+            <Icon
+              name="expand_more"
+              size={16}
+              className="text-muted-foreground"
+            />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-48 p-1" style={{ zIndex: 99 }}>
+        <PopoverContent
+          align="start"
+          className="w-48 p-1"
+          style={{ zIndex: 99 }}
+        >
           {FORMATTING_OPTIONS.map((option) => (
             <button
+              type="button"
               key={option.id}
               onClick={() => {
                 option.action(editor);
@@ -193,7 +213,7 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
               }}
               className={cn(
                 "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-muted transition-colors text-left",
-                option.isActive(editor) && "bg-muted"
+                option.isActive(editor) && "bg-muted",
               )}
             >
               <Icon name={option.icon} size={16} />
@@ -228,20 +248,36 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
           editor.isActive("italic") && "bg-muted",
         )}
       >
-        <Icon name="format_italic" size={16} className="text-muted-foreground" />
+        <Icon
+          name="format_italic"
+          size={16}
+          className="text-muted-foreground"
+        />
       </Button>
 
       {/* Underline */}
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => (editor.chain().focus() as any).toggleUnderline().run()}
+        onClick={() =>
+          (
+            editor.chain().focus() as {
+              toggleUnderline: () => { run: () => void };
+            }
+          )
+            .toggleUnderline()
+            .run()
+        }
         className={cn(
           "h-7 w-7 p-0 shrink-0",
           editor.isActive("underline") && "bg-muted",
         )}
       >
-        <Icon name="format_underlined" size={16} className="text-muted-foreground" />
+        <Icon
+          name="format_underlined"
+          size={16}
+          className="text-muted-foreground"
+        />
       </Button>
 
       {/* Strikethrough */}
@@ -254,7 +290,11 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
           editor.isActive("strike") && "bg-muted",
         )}
       >
-        <Icon name="strikethrough_s" size={16} className="text-muted-foreground" />
+        <Icon
+          name="strikethrough_s"
+          size={16}
+          className="text-muted-foreground"
+        />
       </Button>
 
       {/* Code */}
@@ -286,7 +326,7 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
       <div className="h-6 w-px bg-border mx-0.5" />
 
       {/* Alignment Popover */}
-      <Popover 
+      <Popover
         open={openPopover === "alignment"}
         onOpenChange={(open) => setOpenPopover(open ? "alignment" : null)}
       >
@@ -297,13 +337,26 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
             className="gap-0.5 h-7 px-1.5 shrink-0"
             onMouseDown={(e) => e.preventDefault()}
           >
-            <Icon name={currentAlignment.icon} size={16} className="text-muted-foreground" />
-            <Icon name="expand_more" size={16} className="text-muted-foreground" />
+            <Icon
+              name={currentAlignment.icon}
+              size={16}
+              className="text-muted-foreground"
+            />
+            <Icon
+              name="expand_more"
+              size={16}
+              className="text-muted-foreground"
+            />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-40 p-1" style={{ zIndex: 99 }}>
+        <PopoverContent
+          align="start"
+          className="w-40 p-1"
+          style={{ zIndex: 99 }}
+        >
           {ALIGNMENT_OPTIONS.map((option) => (
             <button
+              type="button"
               key={option.id}
               onClick={() => {
                 option.action(editor);
@@ -311,7 +364,7 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
               }}
               className={cn(
                 "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-muted transition-colors text-left",
-                option.isActive(editor) && "bg-muted"
+                option.isActive(editor) && "bg-muted",
               )}
             >
               <Icon name={option.icon} size={16} />
@@ -324,7 +377,7 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
       <div className="h-6 w-px bg-border mx-0.5" />
 
       {/* Color Picker Popover */}
-      <Popover 
+      <Popover
         open={openPopover === "color"}
         onOpenChange={(open) => setOpenPopover(open ? "color" : null)}
       >
@@ -335,28 +388,44 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
             className="gap-0.5 h-7 px-1.5 shrink-0"
             onMouseDown={(e) => e.preventDefault()}
           >
-            <div 
+            <div
               className={cn(
                 "w-4 h-4 rounded",
-                currentColor ? currentColor.class : "bg-foreground"
+                currentColor ? currentColor.class : "bg-foreground",
               )}
             />
-            <Icon name="expand_more" size={16} className="text-muted-foreground" />
+            <Icon
+              name="expand_more"
+              size={16}
+              className="text-muted-foreground"
+            />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-40 p-2" style={{ zIndex: 99 }}>
+        <PopoverContent
+          align="start"
+          className="w-40 p-2"
+          style={{ zIndex: 99 }}
+        >
           <div className="grid grid-cols-3 gap-2">
             {TEXT_COLORS.map((color) => (
               <button
+                type="button"
                 key={color.value}
                 onClick={() => {
-                  (editor.chain().focus() as any).setColor(color.value).run();
+                  (
+                    editor.chain().focus() as {
+                      setColor: (color: string) => { run: () => void };
+                    }
+                  )
+                    .setColor(color.value)
+                    .run();
                   setOpenPopover(null);
                 }}
                 className={cn(
                   "w-9 h-9 rounded transition-transform hover:scale-110",
                   color.class,
-                  currentColor?.value === color.value && "ring-2 ring-offset-2 ring-neutral-400"
+                  currentColor?.value === color.value &&
+                    "ring-2 ring-offset-2 ring-neutral-400",
                 )}
                 title={color.name}
               />
@@ -364,8 +433,15 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
           </div>
           <Separator className="my-2" />
           <button
+            type="button"
             onClick={() => {
-              (editor.chain().focus() as any).unsetColor().run();
+              (
+                editor.chain().focus() as {
+                  unsetColor: () => { run: () => void };
+                }
+              )
+                .unsetColor()
+                .run();
               setOpenPopover(null);
             }}
             className="w-full text-sm text-left px-2 py-1.5 rounded hover:bg-muted"

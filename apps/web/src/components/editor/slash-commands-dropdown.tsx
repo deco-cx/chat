@@ -1,23 +1,31 @@
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import type { Editor, Range } from "@tiptap/react";
-import { useEffect, useImperativeHandle, useMemo, useState, type Ref } from "react";
+import {
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useState,
+  type Ref,
+} from "react";
 
 export interface SlashCommandOption {
   id: string;
   type: "category" | "option";
   label: string;
   icon?: string;
-  // deno-lint-ignore no-explicit-any
-  handle?: (props: { editor: Editor; command: (props: any) => void; range: Range }) => void;
+  handle?: (props: {
+    editor: Editor;
+    command: (props: Record<string, unknown>) => void;
+    range: Range;
+  }) => void;
   children?: SlashCommandOption[];
 }
 
 interface Props {
   items: SlashCommandOption[];
   editor: Editor;
-  // deno-lint-ignore no-explicit-any
-  command: (props: any) => void;
+  command: (props: Record<string, unknown>) => void;
   range: Range;
   ref: Ref<unknown>;
   query: string;
@@ -54,15 +62,17 @@ export default function SlashCommandsDropdown({
   }, [selectedCategory, defaultOptions]);
 
   const items = useMemo(() => {
-    const allItems = currentCategory.flatMap((category) => category.children ?? []);
-    
+    const allItems = currentCategory.flatMap(
+      (category) => category.children ?? [],
+    );
+
     if (!query) {
       return allItems;
     }
-    
+
     const lowerQuery = query.toLowerCase();
     return allItems.filter((item) =>
-      item.label.toLowerCase().includes(lowerQuery)
+      item.label.toLowerCase().includes(lowerQuery),
     );
   }, [currentCategory, query]);
 
@@ -143,11 +153,7 @@ export default function SlashCommandsDropdown({
                   )}
                 >
                   {item.icon && (
-                    <Icon
-                      name={item.icon}
-                      size={16}
-                      className="shrink-0"
-                    />
+                    <Icon name={item.icon} size={16} className="shrink-0" />
                   )}
                   <span className="text-sm leading-5 font-normal overflow-hidden text-ellipsis whitespace-nowrap">
                     {item.label}
@@ -166,4 +172,3 @@ export default function SlashCommandsDropdown({
     </div>
   );
 }
-

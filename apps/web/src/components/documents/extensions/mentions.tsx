@@ -3,14 +3,28 @@ import { ScrollArea, ScrollBar } from "@deco/ui/components/scroll-area.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import Mention from "@tiptap/extension-mention";
-import { NodeViewWrapper, type ReactNodeViewProps, ReactRenderer, ReactNodeViewRenderer } from "@tiptap/react";
+import {
+  NodeViewWrapper,
+  type ReactNodeViewProps,
+  ReactRenderer,
+  ReactNodeViewRenderer,
+} from "@tiptap/react";
 import { PluginKey } from "@tiptap/pm/state";
-import { type SuggestionKeyDownProps, type SuggestionOptions, type SuggestionProps } from "@tiptap/suggestion";
+import {
+  type SuggestionKeyDownProps,
+  type SuggestionProps,
+} from "@tiptap/suggestion";
 import Suggestion from "@tiptap/suggestion";
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import tippy, { type Instance, type Props } from "tippy.js";
-import { MCPClient, useIntegrations } from "@deco/sdk";
 import { IntegrationAvatar } from "../../common/avatar/integration.tsx";
+import type { Editor } from "@tiptap/react";
 
 export interface Tool {
   id: string;
@@ -30,14 +44,14 @@ export interface DocumentItem {
   description?: string;
 }
 
-export type MentionItem = 
+export type MentionItem =
   | { type: "tool"; tool: Tool }
   | { type: "document"; document: DocumentItem };
 
 interface MentionDropdownProps {
   items: MentionItem[];
   command: (item: MentionItem) => void;
-  editor: any;
+  editor: Editor;
   isLoading?: boolean;
 }
 
@@ -116,8 +130,13 @@ const MentionDropdown = forwardRef<
   }
 
   // Group items by type
-  const toolItems = items.filter((item) => item.type === "tool") as Extract<MentionItem, { type: "tool" }>[];
-  const documentItems = items.filter((item) => item.type === "document") as Extract<MentionItem, { type: "document" }>[];
+  const toolItems = items.filter((item) => item.type === "tool") as Extract<
+    MentionItem,
+    { type: "tool" }
+  >[];
+  const documentItems = items.filter(
+    (item) => item.type === "document",
+  ) as Extract<MentionItem, { type: "document" }>[];
 
   return (
     <div className="bg-background border border-border rounded-lg shadow-lg min-w-[300px] max-w-[400px] overflow-hidden">
@@ -135,7 +154,7 @@ const MentionDropdown = forwardRef<
               <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">
                 Tools
               </div>
-              {toolItems.map((item, index) => {
+              {toolItems.map((item) => {
                 const globalIndex = items.indexOf(item);
                 return (
                   <button
@@ -158,7 +177,9 @@ const MentionDropdown = forwardRef<
                       className="w-4 h-4"
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium">{item.tool.name}</div>
+                      <div className="text-sm font-medium">
+                        {item.tool.name}
+                      </div>
                       {item.tool.description && (
                         <div className="text-xs text-muted-foreground truncate">
                           {item.tool.description}
@@ -176,7 +197,7 @@ const MentionDropdown = forwardRef<
               <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">
                 Documents
               </div>
-              {documentItems.map((item, index) => {
+              {documentItems.map((item) => {
                 const globalIndex = items.indexOf(item);
                 return (
                   <button
@@ -193,7 +214,9 @@ const MentionDropdown = forwardRef<
                     onClick={() => selectItem(globalIndex)}
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium">{item.document.name}</div>
+                      <div className="text-sm font-medium">
+                        {item.document.name}
+                      </div>
                       {item.document.description && (
                         <div className="text-xs text-muted-foreground truncate">
                           {item.document.description}
@@ -290,7 +313,7 @@ export function createCombinedMentions(tools: Tool[] = []) {
       return [
         Suggestion<MentionItem>({
           editor: this.editor!,
-          pluginKey: new PluginKey('combinedMentions'),
+          pluginKey: new PluginKey("combinedMentions"),
           char: "@",
           items: ({ query }: { query: string }) => {
             const items: MentionItem[] = [];
@@ -313,21 +336,30 @@ export function createCombinedMentions(tools: Tool[] = []) {
 
             return items.slice(0, 20);
           },
-          command: ({ editor, range, props }: any) => {
-            const item = props as MentionItem;
-            const attrs = item.type === "tool"
-              ? {
-                  id: item.tool.id,
-                  label: item.tool.name,
-                  mentionType: "tool",
-                  icon: item.tool.integration.icon,
-                }
-              : {
-                  id: item.document.id,
-                  label: item.document.name,
-                  mentionType: "document",
-                  icon: null,
-                };
+          command: ({
+            editor,
+            range,
+            props,
+          }: {
+            editor: Editor;
+            range: { from: number; to: number };
+            props: MentionItem;
+          }) => {
+            const item = props;
+            const attrs =
+              item.type === "tool"
+                ? {
+                    id: item.tool.id,
+                    label: item.tool.name,
+                    mentionType: "tool",
+                    icon: item.tool.integration.icon,
+                  }
+                : {
+                    id: item.document.id,
+                    label: item.document.name,
+                    mentionType: "document",
+                    icon: null,
+                  };
 
             editor
               .chain()
@@ -362,7 +394,9 @@ export function createCombinedMentions(tools: Tool[] = []) {
                 if (!props.clientRect) return;
 
                 popup = tippy("body", {
-                  getReferenceClientRect: props.clientRect as any,
+                  getReferenceClientRect: props.clientRect as
+                    | (() => DOMRect)
+                    | null,
                   appendTo: () => document.body,
                   content: component.element,
                   showOnCreate: true,
@@ -377,7 +411,9 @@ export function createCombinedMentions(tools: Tool[] = []) {
                 component?.updateProps({ ...props, isLoading: false });
 
                 popup?.[0]?.setProps({
-                  getReferenceClientRect: props.clientRect as any,
+                  getReferenceClientRect: props.clientRect as
+                    | (() => DOMRect)
+                    | null,
                 });
               },
 
@@ -387,7 +423,13 @@ export function createCombinedMentions(tools: Tool[] = []) {
                   return true;
                 }
 
-                return (component?.ref as any)?.onKeyDown?.(props) || false;
+                return (
+                  (
+                    component?.ref as {
+                      onKeyDown?: (props: SuggestionKeyDownProps) => boolean;
+                    }
+                  )?.onKeyDown?.(props) || false
+                );
               },
 
               onExit() {
@@ -403,4 +445,3 @@ export function createCombinedMentions(tools: Tool[] = []) {
     },
   });
 }
-

@@ -77,15 +77,16 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
       setDescription(effectiveDocument.description || "");
       setContent(effectiveDocument.content);
       setTags(effectiveDocument.tags || []);
-      
+
       // Sync contentEditable divs
       if (titleRef.current) {
         titleRef.current.textContent = effectiveDocument.name;
       }
       if (descriptionRef.current) {
-        descriptionRef.current.textContent = effectiveDocument.description || "";
+        descriptionRef.current.textContent =
+          effectiveDocument.description || "";
       }
-      
+
       // After syncing, don't sync again until explicitly requested
       shouldSyncRef.current = false;
     }
@@ -153,7 +154,16 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
     } finally {
       setIsSaving(false);
     }
-  }, [resourceUri, title, description, content, tags, isSaving, updateMutation, refetch]);
+  }, [
+    resourceUri,
+    title,
+    description,
+    content,
+    tags,
+    isSaving,
+    updateMutation,
+    refetch,
+  ]);
 
   const handleDiscard = useCallback(() => {
     if (effectiveDocument) {
@@ -161,13 +171,14 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
       setDescription(effectiveDocument.description || "");
       setContent(effectiveDocument.content);
       setTags(effectiveDocument.tags || []);
-      
+
       // Sync contentEditable divs
       if (titleRef.current) {
         titleRef.current.textContent = effectiveDocument.name;
       }
       if (descriptionRef.current) {
-        descriptionRef.current.textContent = effectiveDocument.description || "";
+        descriptionRef.current.textContent =
+          effectiveDocument.description || "";
       }
       toast.success("Changes discarded");
     }
@@ -235,10 +246,12 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
                   ref={titleRef}
                   contentEditable
                   suppressContentEditableWarning
-                  onInput={(e) => handleTitleChange(e.currentTarget.textContent || '')}
+                  onInput={(e) =>
+                    handleTitleChange(e.currentTarget.textContent || "")
+                  }
                   onBlur={(e) => {
                     if (!e.currentTarget.textContent?.trim()) {
-                      e.currentTarget.textContent = '';
+                      e.currentTarget.textContent = "";
                     }
                   }}
                   className="text-3xl font-semibold text-foreground leading-tight outline-none bg-transparent break-words overflow-wrap-anywhere empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:opacity-50"
@@ -250,10 +263,12 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
                   ref={descriptionRef}
                   contentEditable
                   suppressContentEditableWarning
-                  onInput={(e) => handleDescriptionChange(e.currentTarget.textContent || '')}
+                  onInput={(e) =>
+                    handleDescriptionChange(e.currentTarget.textContent || "")
+                  }
                   onBlur={(e) => {
                     if (!e.currentTarget.textContent?.trim()) {
-                      e.currentTarget.textContent = '';
+                      e.currentTarget.textContent = "";
                     }
                   }}
                   className="text-base text-muted-foreground outline-none bg-transparent break-words overflow-wrap-anywhere empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:opacity-50"
@@ -328,33 +343,38 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
                     </button>
                   </Badge>
                 ))}
-                
+
                 {/* Add tag button or input */}
                 {isAddingTag ? (
-                    <div className="inline-flex items-center gap-1 px-2.5 py-0.5 w-fit rounded-full border border-border transition-colors">
-                      <input
-                        ref={tagInputRef}
-                        type="text"
-                        value={newTagInput}
-                        onChange={(e) => setNewTagInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleAddTag();
-                          } else if (e.key === "Escape") {
-                            handleCancelAddTag();
-                          }
-                        }}
-                        onBlur={(e) => {
-                          // Check if the blur is caused by clicking the check button
-                          if (!e.relatedTarget || !e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) {
-                            handleCancelAddTag();
-                          }
-                        }}
-                        placeholder="Tag..."
-                        size={newTagInput.length || 6}
-                        className="bg-transparent outline-none border-none text-sm placeholder:text-muted-foreground placeholder:opacity-50"
-                      />
+                  <div className="inline-flex items-center gap-1 px-2.5 py-0.5 w-fit rounded-full border border-border transition-colors">
+                    <input
+                      ref={tagInputRef}
+                      type="text"
+                      value={newTagInput}
+                      onChange={(e) => setNewTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddTag();
+                        } else if (e.key === "Escape") {
+                          handleCancelAddTag();
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // Check if the blur is caused by clicking the check button
+                        if (
+                          !e.relatedTarget ||
+                          !e.currentTarget.parentElement?.contains(
+                            e.relatedTarget as Node,
+                          )
+                        ) {
+                          handleCancelAddTag();
+                        }
+                      }}
+                      placeholder="Tag..."
+                      size={newTagInput.length || 6}
+                      className="bg-transparent outline-none border-none text-sm placeholder:text-muted-foreground placeholder:opacity-50"
+                    />
                     <button
                       type="button"
                       onMouseDown={(e) => {

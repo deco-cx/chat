@@ -30,8 +30,11 @@ export const suggestion: (
                 label: prompt.name,
                 icon: "text_snippet",
                 tooltip: prompt.content,
-                handle: ({ command }: { command: (props: any) => void }) =>
-                  command({ id: prompt.id, label: prompt.name }),
+                handle: ({
+                  command,
+                }: {
+                  command: (props: Record<string, unknown>) => void;
+                }) => command({ id: prompt.id, label: prompt.name }),
               }),
             )
             .slice(0, 10),

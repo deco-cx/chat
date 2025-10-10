@@ -12,9 +12,7 @@ export interface SlashCommandsConfig {
 }
 
 export function createSlashCommands(config: SlashCommandsConfig = {}) {
-  const {
-    includeFormatting = true,
-  } = config;
+  const { includeFormatting = true } = config;
 
   return Extension.create({
     name: "slashCommands",
@@ -29,12 +27,21 @@ export function createSlashCommands(config: SlashCommandsConfig = {}) {
           allow: ({ state, range }) => {
             const $from = state.doc.resolve(range.from);
             const type = state.schema.nodes.paragraph;
-            
+
             // Only allow slash commands at the start of a line or after whitespace
-            const isAtStart = $from.parent.type === type && $from.parent.textContent.charAt(range.from - $from.start() - 1) === '';
-            return isAtStart || $from.parent.textContent.charAt(range.from - $from.start() - 1) === ' ';
+            const isAtStart =
+              $from.parent.type === type &&
+              $from.parent.textContent.charAt(
+                range.from - $from.start() - 1,
+              ) === "";
+            return (
+              isAtStart ||
+              $from.parent.textContent.charAt(
+                range.from - $from.start() - 1,
+              ) === " "
+            );
           },
-          items: ({ query }) => {
+          items: ({ query: _query }) => {
             const categories: SlashCommandOption[] = [];
 
             // Formatting category
@@ -237,4 +244,3 @@ export function createSlashCommands(config: SlashCommandsConfig = {}) {
     },
   });
 }
-
