@@ -264,7 +264,7 @@ function MentionNode({ node }: ReactNodeViewProps<HTMLSpanElement>) {
   );
 }
 
-export function createCombinedMentions(tools: Tool[] = []) {
+export function createCombinedMentions(getTools: () => Tool[]) {
   return Mention.extend({
     name: "combinedMention",
 
@@ -319,8 +319,11 @@ export function createCombinedMentions(tools: Tool[] = []) {
             const items: MentionItem[] = [];
             const ql = query?.toLowerCase() || "";
 
+            // Get fresh tools each time
+            const currentTools = getTools();
+
             // Filter tools synchronously
-            for (const tool of tools) {
+            for (const tool of currentTools) {
               if (
                 !query ||
                 tool.name.toLowerCase().includes(ql) ||

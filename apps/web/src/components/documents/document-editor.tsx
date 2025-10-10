@@ -7,7 +7,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import TextAlign from "@tiptap/extension-text-align";
 import TextStyle from "@tiptap/extension-text-style";
-import Underline from "@tiptap/extension-underline";
+// import Underline from "@tiptap/extension-underline"; // TODO: Package hangs on install, add back later
 import { EditorContent, type Extensions, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect, useMemo, useRef } from "react";
@@ -94,14 +94,14 @@ export function DocumentEditor({
       }),
       TextStyle,
       Color,
-      Underline,
+      // Underline, // TODO: Package hangs on install, add back later
       Highlight.configure({
         multicolor: true,
       }),
       createSlashCommands({
         includeFormatting: true,
       }),
-      createCombinedMentions(tools),
+      createCombinedMentions(() => tools),
     ];
   }, [placeholder, locator, tools]);
 

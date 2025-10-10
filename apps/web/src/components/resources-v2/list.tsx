@@ -1,4 +1,9 @@
-import { callTool, useIntegration, useTools, useUpsertDocument } from "@deco/sdk";
+import {
+  callTool,
+  useIntegration,
+  useTools,
+  useUpsertDocument,
+} from "@deco/sdk";
 import type { ResourceItem } from "@deco/sdk/mcp";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Card, CardContent } from "@deco/ui/components/card.tsx";
@@ -271,7 +276,9 @@ function ResourcesV2ListTab({
                       },
                     });
                     // Navigate to the document detail using the URI
-                    navigateWorkspace(`rsc/${integrationId}/${resourceName}/${encodeURIComponent(result.uri)}`);
+                    navigateWorkspace(
+                      `rsc/${integrationId}/${resourceName}/${encodeURIComponent(result.uri)}`,
+                    );
                   } else {
                     // For other resources, open Decopilot
                     setDecopilotOpen(true);
@@ -283,7 +290,10 @@ function ResourcesV2ListTab({
                   }
                 }}
                 variant="special"
-                disabled={integrationId === "i:documents-management" && upsertDocument.isPending}
+                disabled={
+                  integrationId === "i:documents-management" &&
+                  upsertDocument.isPending
+                }
               >
                 <Icon name="add" />
                 Create

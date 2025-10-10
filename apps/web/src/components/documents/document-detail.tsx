@@ -62,11 +62,15 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
   // Track if there are unsaved changes
   const hasChanges = useMemo(() => {
     if (!effectiveDocument) return false;
+    const docTags = effectiveDocument.tags || [];
+    const tagsChanged =
+      tags.length !== docTags.length ||
+      tags.some((tag, idx) => tag !== docTags[idx]);
     return (
       title !== effectiveDocument.name ||
       description !== (effectiveDocument.description || "") ||
       content !== effectiveDocument.content ||
-      JSON.stringify(tags) !== JSON.stringify(effectiveDocument.tags || [])
+      tagsChanged
     );
   }, [title, description, content, tags, effectiveDocument]);
 
@@ -91,6 +95,11 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
       shouldSyncRef.current = false;
     }
   }, [effectiveDocument]);
+
+  // Reset sync flag when navigating to a different document
+  useEffect(() => {
+    shouldSyncRef.current = true;
+  }, [resourceUri]);
 
   const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle);

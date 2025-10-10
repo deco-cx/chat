@@ -255,31 +255,6 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
         />
       </Button>
 
-      {/* Underline */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() =>
-          (
-            editor.chain().focus() as {
-              toggleUnderline: () => { run: () => void };
-            }
-          )
-            .toggleUnderline()
-            .run()
-        }
-        className={cn(
-          "h-7 w-7 p-0 shrink-0",
-          editor.isActive("underline") && "bg-muted",
-        )}
-      >
-        <Icon
-          name="format_underlined"
-          size={16}
-          className="text-muted-foreground"
-        />
-      </Button>
-
       {/* Strikethrough */}
       <Button
         variant="ghost"
@@ -412,13 +387,8 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
                 type="button"
                 key={color.value}
                 onClick={() => {
-                  (
-                    editor.chain().focus() as {
-                      setColor: (color: string) => { run: () => void };
-                    }
-                  )
-                    .setColor(color.value)
-                    .run();
+                  // @ts-expect-error - setColor exists but not in base types
+                  editor.chain().focus().setColor(color.value).run();
                   setOpenPopover(null);
                 }}
                 className={cn(
@@ -435,13 +405,8 @@ export function DocumentBubbleMenu({ editor }: BubbleMenuProps) {
           <button
             type="button"
             onClick={() => {
-              (
-                editor.chain().focus() as {
-                  unsetColor: () => { run: () => void };
-                }
-              )
-                .unsetColor()
-                .run();
+              // @ts-expect-error - unsetColor exists but not in base types
+              editor.chain().focus().unsetColor().run();
               setOpenPopover(null);
             }}
             className="w-full text-sm text-left px-2 py-1.5 rounded hover:bg-muted"
