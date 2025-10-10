@@ -187,6 +187,8 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
   const handleRefresh = useCallback(() => {
     if (isRefreshing) return;
     setIsRefreshing(true);
+    // Allow sync to update local state with fresh data from server
+    shouldSyncRef.current = true;
     refetch().finally(() => {
       setIsRefreshing(false);
     });

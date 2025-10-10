@@ -1,4 +1,4 @@
-import { callTool, useIntegration, useTools } from "@deco/sdk";
+import { callTool, useIntegration, useTools, useUpsertDocument } from "@deco/sdk";
 import type { ResourceItem } from "@deco/sdk/mcp";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Card, CardContent } from "@deco/ui/components/card.tsx";
@@ -58,6 +58,7 @@ function ResourcesV2ListTab({
   const [viewMode, setViewMode] = useViewMode();
   const { setOpen: setDecopilotOpen } = useDecopilotOpen();
   const { setThreadState } = useDecopilotThread();
+  const upsertDocument = useUpsertDocument();
 
   const q = searchParams.get("q") ?? "";
   const deferredQ = useDeferredValue(q);
@@ -259,15 +260,30 @@ function ResourcesV2ListTab({
             </TooltipProvider>
             {capabilities.hasCreate ? (
               <Button
-                onClick={() => {
-                  setDecopilotOpen(true);
-                  setThreadState({
-                    threadId: crypto.randomUUID(),
-                    initialMessage: `Please help me create a new ${resourceName || "item"}`,
-                    autoSend: true,
-                  });
+                onClick={async () => {
+                  // For documents, create directly and navigate to detail page
+                  if (integrationId === "i:documents-management") {
+                    const result = await upsertDocument.mutateAsync({
+                      params: {
+                        name: "Untitled",
+                        description: "",
+                        content: "",
+                      },
+                    });
+                    // Navigate to the document detail using the URI
+                    navigateWorkspace(`rsc/${integrationId}/${resourceName}/${encodeURIComponent(result.uri)}`);
+                  } else {
+                    // For other resources, open Decopilot
+                    setDecopilotOpen(true);
+                    setThreadState({
+                      threadId: crypto.randomUUID(),
+                      initialMessage: `Please help me create a new ${resourceName || "item"}`,
+                      autoSend: true,
+                    });
+                  }
                 }}
                 variant="special"
+                disabled={integrationId === "i:documents-management" && upsertDocument.isPending}
               >
                 <Icon name="add" />
                 Create
