@@ -67,7 +67,9 @@ export const ViewRenderOutputSchema = z.object({
   rules: z
     .array(z.string())
     .optional()
-    .describe("Optional array of rules for the AI assistant in this view context"),
+    .describe(
+      "Optional array of rules for the AI assistant in this view context",
+    ),
 });
 
 // Export types for TypeScript usage
