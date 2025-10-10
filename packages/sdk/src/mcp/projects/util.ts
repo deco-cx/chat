@@ -15,7 +15,12 @@ export async function getProjectIdFromContext(
     })
     .from(projects)
     .leftJoin(organizations, eq(projects.org_id, organizations.id))
-    .where(and(eq(projects.slug, c.locator.project), eq(organizations.slug, c.locator.org)))
+    .where(
+      and(
+        eq(projects.slug, c.locator.project),
+        eq(organizations.slug, c.locator.org),
+      ),
+    )
     .limit(1)
     .then((r) => r[0]);
   return project?.id ?? null;

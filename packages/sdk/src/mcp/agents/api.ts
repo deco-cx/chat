@@ -5,7 +5,6 @@ import {
   NEW_AGENT_TEMPLATE,
   WELL_KNOWN_AGENTS,
 } from "../../index.ts";
-import { LocatorStructured } from "../../locator.ts";
 import {
   assertHasLocator,
   assertHasWorkspace,
@@ -21,6 +20,7 @@ import {
 import { getProjectIdFromContext } from "../projects/util.ts";
 import { agents, organizations, projects, userActivity } from "../schema.ts";
 import { deleteTrigger, listTriggers } from "../triggers/api.ts";
+import { PgSelect } from "drizzle-orm/pg-core";
 
 const createTool = createToolGroup("Agent", {
   name: "Agent Management",
@@ -77,22 +77,35 @@ export const getAgentsByIds = async (ids: string[], c: AppContext) => {
 export const IMPORTANT_ROLES = ["owner", "admin"];
 
 /**
- * Returns a Drizzle OR condition that filters agents by workspace or project locator.
- * Used temporarily for the migration to the new schema. Soon will be removed in favor of
- * always using the project locator.
+ * Adds ownership checking to an agent query.
+ * Curently filters by workspace or project locator.
+ * also adds a join to projects and organizations.
+ * expected to be used in a query that selects the agents table.
  */
-export const matchByWorkspaceOrProjectLocatorForAgents = (
-  workspace: string,
-  locator: LocatorStructured,
-) => {
-  return or(
-    eq(agents.workspace, workspace),
-    and(
-      eq(projects.slug, locator.project),
-      eq(organizations.slug, locator.org),
-    ),
-  );
-};
+export function withOwnershipChecking<T extends PgSelect>({
+  query,
+  ctx,
+}: {
+  query: T;
+  ctx: AppContext;
+}) {
+  assertHasWorkspace(ctx);
+  assertHasLocator(ctx);
+  const { workspace, locator } = ctx;
+
+  return query
+    .innerJoin(projects, eq(agents.project_id, projects.id))
+    .innerJoin(organizations, eq(projects.org_id, organizations.id))
+    .where(
+      or(
+        eq(agents.workspace, workspace.value),
+        and(
+          eq(projects.slug, locator.project),
+          eq(organizations.slug, locator.org),
+        ),
+      ),
+    );
+}
 
 const AGENT_FIELDS_SELECT = {
   id: agents.id,
@@ -138,13 +151,16 @@ export const listAgents = createTool({
 
     await assertWorkspaceResourceAccess(c);
 
-    const data = await c.drizzle
+    const query = c.drizzle
       .select(AGENT_FIELDS_SELECT)
       .from(agents)
-      .leftJoin(projects, eq(agents.project_id, projects.id))
-      .leftJoin(organizations, eq(projects.org_id, organizations.id))
-      .where(matchByWorkspaceOrProjectLocatorForAgents(c.workspace.value, c.locator))
-      .orderBy(desc(agents.created_at));
+      .orderBy(desc(agents.created_at))
+      .$dynamic();
+
+    const data = await withOwnershipChecking({
+      query,
+      ctx: c,
+    });
 
     const roles =
       c.workspace.root === "users"
@@ -252,22 +268,15 @@ export const getAgent = createTool({
         ? Promise.resolve(
             WELL_KNOWN_AGENTS[id as keyof typeof WELL_KNOWN_AGENTS],
           )
-        : c.drizzle
-            .select(AGENT_FIELDS_SELECT)
-            .from(agents)
-            .leftJoin(projects, eq(agents.project_id, projects.id))
-            .leftJoin(organizations, eq(projects.org_id, organizations.id))
-            .where(
-              and(
-                matchByWorkspaceOrProjectLocatorForAgents(
-                  c.workspace.value,
-                  c.locator,
-                ),
-                eq(agents.id, id),
-              ),
-            )
-            .limit(1)
-            .then((r) => r[0]),
+        : withOwnershipChecking({
+            query: c.drizzle
+              .select(AGENT_FIELDS_SELECT)
+              .from(agents)
+              .where(eq(agents.id, id))
+              .limit(1)
+              .$dynamic(),
+            ctx: c,
+          }).then((r) => r[0]),
     ]);
 
     if (!data) {
@@ -295,7 +304,7 @@ export const createAgent = createTool({
     await assertWorkspaceResourceAccess(c);
 
     const projectId = await getProjectIdFromContext(c);
-    
+
     const [data] = await c.drizzle
       .insert(agents)
       .values({
@@ -332,12 +341,27 @@ export const updateAgent = createAgentSetupTool({
 
     await assertWorkspaceResourceAccess(c);
 
+    const existing = await withOwnershipChecking({
+      query: c.drizzle
+        .select({
+          id: agents.id,
+          workspace: agents.workspace,
+          projectId: agents.project_id,
+        })
+        .from(agents)
+        .where(eq(agents.id, id))
+        .limit(1)
+        .$dynamic(),
+      ctx: c,
+    }).then((r) => r[0]);
+
     const updateData = {
       ...agent,
-      // enforce workspace and remove
-      // project_id from the update data
-      workspace: c.workspace.value,
-      project_id: undefined,
+      // If agent have workspace set as null, keep it as null
+      // Soon this column will be removed
+      workspace: existing?.workspace ?? null,
+      // enforce project_id to be set
+      project_id: existing?.projectId ?? (await getProjectIdFromContext(c)),
     };
 
     const [data] = await c.drizzle
@@ -364,27 +388,17 @@ export const deleteAgent = createTool({
   inputSchema: DeleteAgentInputSchema,
   outputSchema: DeleteAgentOutputSchema,
   handler: async ({ id }, c) => {
-    assertHasWorkspace(c);
-    assertHasLocator(c);
-
     await assertWorkspaceResourceAccess(c);
 
-    // this could be a cte
-    const agentExists = await c.drizzle
-      .select({ id: agents.id })
-      .from(agents)
-      .leftJoin(projects, eq(agents.project_id, projects.id))
-      .leftJoin(organizations, eq(projects.org_id, organizations.id))
-      .where(
-        and(
-          eq(agents.id, id),
-          matchByWorkspaceOrProjectLocatorForAgents(
-            c.workspace.value,
-            c.locator,
-          ),
-        ),
-      )
-      .limit(1);
+    const agentExists = await withOwnershipChecking({
+      query: c.drizzle
+        .select({ id: agents.id })
+        .from(agents)
+        .where(eq(agents.id, id))
+        .limit(1)
+        .$dynamic(),
+      ctx: c,
+    });
 
     if (!agentExists.length) {
       throw new NotFoundError("Agent not found");

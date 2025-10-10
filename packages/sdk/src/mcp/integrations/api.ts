@@ -10,7 +10,7 @@ import {
   SELECT_API_KEY_QUERY,
 } from "../api-keys/api.ts";
 import { CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, getTableColumns, or } from "drizzle-orm";
 import { z } from "zod";
 import { AppName } from "../../common/index.ts";
 import {
@@ -41,7 +41,7 @@ import type { QueryResult } from "../../storage/supabase/client.ts";
 import { KnowledgeBaseID } from "../../utils/index.ts";
 import {
   IMPORTANT_ROLES,
-  matchByWorkspaceOrProjectLocatorForAgents,
+  withOwnershipChecking as withAgentsOwnershipChecking,
 } from "../agents/api.ts";
 import {
   assertHasLocator,
@@ -522,33 +522,16 @@ export const listIntegrations = createIntegrationManagementTool({
           return Array.from(byIntegration.values());
         }),
       // Query agents
-      c.drizzle
-        .select({
-          id: agents.id,
-          name: agents.name,
-          avatar: agents.avatar,
-          instructions: agents.instructions,
-          description: agents.description,
-          tools_set: agents.tools_set,
-          max_steps: agents.max_steps,
-          max_tokens: agents.max_tokens,
-          model: agents.model,
-          memory: agents.memory,
-          views: agents.views,
-          created_at: agents.created_at,
-          workspace: agents.workspace,
-          temperature: agents.temperature,
-          visibility: agents.visibility,
-          access: agents.access,
-          access_id: agents.access_id,
-          project_id: projects.id,
-          org_id: organizations.id,
-        })
-        .from(agents)
-        .leftJoin(projects, eq(agents.project_id, projects.id))
-        .leftJoin(organizations, eq(projects.org_id, organizations.id))
-        .where(matchByWorkspaceOrProjectLocatorForAgents(workspace, c.locator))
-        .then((result) => ({ data: result })),
+      withAgentsOwnershipChecking({
+        query: c.drizzle
+          .select({
+            ...getTableColumns(agents),
+            org_id: organizations.id,
+          })
+          .from(agents)
+          .$dynamic(),
+        ctx: c,
+      }).then((result) => ({ data: result })),
       listKnowledgeBases.handler({}),
     ]);
     const roles =
@@ -772,33 +755,18 @@ export const getIntegration = createIntegrationManagementTool({
                   : null,
               };
             })
-        : c.drizzle
-            .select({
-              id: agents.id,
-              name: agents.name,
-              description: agents.description,
-              avatar: agents.avatar,
-              created_at: agents.created_at,
-              workspace: agents.workspace,
-              access: agents.access,
-              access_id: agents.access_id,
-              project_id: projects.id,
-              org_id: organizations.id,
-            })
-            .from(agents)
-            .leftJoin(projects, eq(agents.project_id, projects.id))
-            .leftJoin(organizations, eq(projects.org_id, organizations.id))
-            .where(
-              and(
-                eq(agents.id, uuid),
-                matchByWorkspaceOrProjectLocatorForAgents(
-                  c.workspace.value,
-                  c.locator,
-                ),
-              ),
-            )
-            .limit(1)
-            .then((r) => r[0]);
+        : withAgentsOwnershipChecking({
+            query: c.drizzle
+              .select({
+                ...getTableColumns(agents),
+                org_id: organizations.id,
+              })
+              .from(agents)
+              .where(eq(agents.id, uuid))
+              .limit(1)
+              .$dynamic(),
+            ctx: c,
+          }).then((r) => r[0]);
 
     const virtualIntegrations = virtualIntegrationsFor(
       c.locator.value,
