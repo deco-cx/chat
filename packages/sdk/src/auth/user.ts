@@ -2,7 +2,11 @@ import type { AuthUser, SupabaseClient } from "@supabase/supabase-js";
 import { decodeJwt } from "jose";
 import { LRUCache } from "lru-cache";
 import type { Principal } from "../mcp/context.ts";
-import { JwtIssuer, type JwtIssuerKeyPair } from "./jwt.ts";
+import {
+  JwtIssuer,
+  JwtPayloadWithClaims,
+  type JwtIssuerKeyPair,
+} from "./jwt.ts";
 import {
   createSupabaseSessionClient,
   getSessionToken,
@@ -11,7 +15,7 @@ import {
 
 export type { AuthUser };
 const ONE_MINUTE_MS = 60e3;
-const cache = new LRUCache<string, AuthUser>({
+const cache = new LRUCache<string, Principal>({
   max: 1000,
   ttl: ONE_MINUTE_MS,
 });
@@ -49,18 +53,23 @@ export async function getUserBySupabaseCookie(
     typeof supabaseServerToken === "string"
       ? createSupabaseSessionClient(request, supabaseServerToken)
       : { supabase: supabaseServerToken };
-  const [{ data: _user }, jwt] = await Promise.all([
+  const [{ data: _user }, [jwt, key]] = await Promise.all([
     supabase.auth.getUser(accessToken),
     jwtIssuer.verify(sessionToken).then((jwt) => {
       if (!jwt && accessToken) {
-        return jwtIssuer.verify(accessToken);
+        return jwtIssuer
+          .verify(accessToken)
+          .then((jwt) => [jwt, accessToken] as [JwtPayloadWithClaims, string]);
       }
-      return jwt;
+      return [jwt, sessionToken] as [JwtPayloadWithClaims, string];
     }),
   ]);
 
   const user = _user?.user;
   if (!user) {
+    if (jwt && key) {
+      cache.set(key, jwt);
+    }
     return jwt;
   }
   let cachettl = undefined;
