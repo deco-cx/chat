@@ -15,6 +15,7 @@ import {
 } from "@deco/ui/components/dropdown-menu.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
+import { toast } from "@deco/ui/components/sonner.tsx";
 import {
   Tooltip,
   TooltipContent,
@@ -37,6 +38,9 @@ import {
   useDecopilotOpen,
 } from "../layout/decopilot-layout.tsx";
 import { ResourceRouteProvider } from "./route-context.tsx";
+
+// Constants
+const DOCUMENTS_INTEGRATION_ID = "i:documents-management";
 
 // Base resource data schema that all resources extend
 const BaseResourceDataSchema = z.object({
@@ -267,18 +271,23 @@ function ResourcesV2ListTab({
               <Button
                 onClick={async () => {
                   // For documents, create directly and navigate to detail page
-                  if (integrationId === "i:documents-management") {
-                    const result = await upsertDocument.mutateAsync({
-                      params: {
-                        name: "Untitled",
-                        description: "",
-                        content: "",
-                      },
-                    });
-                    // Navigate to the document detail using the URI
-                    navigateWorkspace(
-                      `rsc/${integrationId}/${resourceName}/${encodeURIComponent(result.uri)}`,
-                    );
+                  if (integrationId === DOCUMENTS_INTEGRATION_ID) {
+                    try {
+                      const result = await upsertDocument.mutateAsync({
+                        params: {
+                          name: "Untitled",
+                          description: "",
+                          content: "",
+                        },
+                      });
+                      // Navigate to the document detail using the URI
+                      navigateWorkspace(
+                        `rsc/${integrationId}/${resourceName}/${encodeURIComponent(result.uri)}`,
+                      );
+                    } catch (error) {
+                      console.error("Failed to create document:", error);
+                      toast.error("Failed to create document. Please try again.");
+                    }
                   } else {
                     // For other resources, open Decopilot
                     setDecopilotOpen(true);
@@ -291,7 +300,7 @@ function ResourcesV2ListTab({
                 }}
                 variant="special"
                 disabled={
-                  integrationId === "i:documents-management" &&
+                  integrationId === DOCUMENTS_INTEGRATION_ID &&
                   upsertDocument.isPending
                 }
               >

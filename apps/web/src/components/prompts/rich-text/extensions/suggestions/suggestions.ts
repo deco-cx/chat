@@ -20,9 +20,10 @@ export const suggestion: (
           type: "category",
           label: "References",
           children: items
-            .filter((prompt) =>
-              prompt.name.toLowerCase().includes(query?.toLowerCase()),
-            )
+            .filter((prompt) => {
+              if (!query) return true;
+              return prompt.name.toLowerCase().includes(query.toLowerCase());
+            })
             .map(
               (prompt): SlashCommandOption => ({
                 id: prompt.id,

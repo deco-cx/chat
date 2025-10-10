@@ -257,6 +257,10 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
                   ref={titleRef}
                   contentEditable
                   suppressContentEditableWarning
+                  role="textbox"
+                  aria-label="Document title"
+                  aria-multiline="false"
+                  tabIndex={0}
                   onInput={(e) =>
                     handleTitleChange(e.currentTarget.textContent || "")
                   }
@@ -274,6 +278,10 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
                   ref={descriptionRef}
                   contentEditable
                   suppressContentEditableWarning
+                  role="textbox"
+                  aria-label="Document description"
+                  aria-multiline="true"
+                  tabIndex={0}
                   onInput={(e) =>
                     handleDescriptionChange(e.currentTarget.textContent || "")
                   }
@@ -383,6 +391,7 @@ export function DocumentDetail({ resourceUri }: DocumentDetailProps) {
                         }
                       }}
                       placeholder="Tag..."
+                      aria-label="Add new tag"
                       size={newTagInput.length || 6}
                       className="bg-transparent outline-none border-none text-sm placeholder:text-muted-foreground placeholder:opacity-50"
                     />

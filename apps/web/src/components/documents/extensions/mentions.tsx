@@ -1,4 +1,5 @@
 import { Badge } from "@deco/ui/components/badge.tsx";
+import { Icon } from "@deco/ui/components/icon.tsx";
 import { ScrollArea, ScrollBar } from "@deco/ui/components/scroll-area.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
@@ -213,6 +214,10 @@ const MentionDropdown = forwardRef<
                     )}
                     onClick={() => selectItem(globalIndex)}
                   >
+                    <Icon
+                      name="description"
+                      className="w-4 h-4 text-muted-foreground"
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium">
                         {item.document.name}
@@ -250,7 +255,7 @@ function MentionNode({ node }: ReactNodeViewProps<HTMLSpanElement>) {
           "bg-accent text-accent-foreground border-border hover:bg-accent/80",
         )}
       >
-        {icon && mentionType === "tool" && (
+        {mentionType === "tool" && icon && (
           <IntegrationAvatar
             url={icon}
             fallback={label}
@@ -258,13 +263,19 @@ function MentionNode({ node }: ReactNodeViewProps<HTMLSpanElement>) {
             className="w-3 h-3"
           />
         )}
+        {mentionType === "document" && (
+          <Icon name="description" className="w-3 h-3" />
+        )}
         <span className="leading-none">@{label}</span>
       </Badge>
     </NodeViewWrapper>
   );
 }
 
-export function createCombinedMentions(getTools: () => Tool[]) {
+export function createCombinedMentions(
+  getTools: () => Tool[],
+  getDocuments?: () => DocumentItem[],
+) {
   return Mention.extend({
     name: "combinedMention",
 
@@ -334,6 +345,23 @@ export function createCombinedMentions(getTools: () => Tool[]) {
                   type: "tool",
                   tool,
                 });
+              }
+            }
+
+            // Get and filter documents if available
+            if (getDocuments) {
+              const currentDocuments = getDocuments();
+              for (const document of currentDocuments) {
+                if (
+                  !query ||
+                  document.name.toLowerCase().includes(ql) ||
+                  document.description?.toLowerCase().includes(ql)
+                ) {
+                  items.push({
+                    type: "document",
+                    document,
+                  });
+                }
               }
             }
 

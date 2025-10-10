@@ -13,10 +13,15 @@ import StarterKit from "@tiptap/starter-kit";
 import { useEffect, useMemo, useRef } from "react";
 import { Markdown } from "tiptap-markdown";
 import { DocumentBubbleMenu } from "./extensions/bubble-menu.tsx";
-import { createCombinedMentions, type Tool } from "./extensions/mentions.tsx";
+import {
+  createCombinedMentions,
+  type Tool,
+  type DocumentItem,
+} from "./extensions/mentions.tsx";
 import { createSlashCommands } from "../editor/slash-commands.tsx";
 import type { ProjectLocator } from "@deco/sdk";
-import { useIntegrations } from "@deco/sdk";
+import { useIntegrations, callTool, useIntegration } from "@deco/sdk";
+import { useQuery } from "@tanstack/react-query";
 
 interface DocumentEditorProps {
   value: string;
@@ -26,6 +31,8 @@ interface DocumentEditorProps {
   disabled?: boolean;
   locator: ProjectLocator;
 }
+
+const DOCUMENTS_INTEGRATION_ID = "i:documents-management";
 
 export function DocumentEditor({
   value,
@@ -37,6 +44,40 @@ export function DocumentEditor({
 }: DocumentEditorProps) {
   const { data: integrations = [] } = useIntegrations();
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Get documents integration for fetching documents
+  const documentsIntegration = useIntegration(DOCUMENTS_INTEGRATION_ID).data;
+
+  // Fetch all documents for mentions
+  const { data: documentsData = [] } = useQuery({
+    queryKey: ["documents-for-mentions", locator],
+    queryFn: async () => {
+      if (!documentsIntegration?.connection) return [];
+      try {
+        const result = (await callTool(documentsIntegration.connection, {
+          name: "DECO_RESOURCE_DOCUMENT_SEARCH",
+          arguments: {
+            term: "",
+            page: 1,
+            pageSize: 100,
+          },
+        })) as {
+          structuredContent?: {
+            items?: Array<{
+              uri: string;
+              data?: { name: string; description?: string };
+            }>;
+          };
+        };
+        return result?.structuredContent?.items ?? [];
+      } catch (error) {
+        console.error("Failed to fetch documents for mentions:", error);
+        return [];
+      }
+    },
+    enabled: Boolean(documentsIntegration?.connection),
+    staleTime: 30000, // Cache for 30 seconds
+  });
 
   // Build tools array from integrations (like chat does)
   const tools: Tool[] = useMemo(() => {
@@ -55,6 +96,30 @@ export function DocumentEditor({
       ),
     );
   }, [integrations]);
+
+  // Build documents array for mentions
+  const documents: DocumentItem[] = useMemo(() => {
+    return documentsData
+      .filter((doc) => doc.data?.name)
+      .map((doc) => ({
+        id: doc.uri,
+        uri: doc.uri,
+        name: doc.data!.name,
+        description: doc.data?.description,
+      }));
+  }, [documentsData]);
+
+  // Use refs to always get the latest tools and documents
+  const toolsRef = useRef<Tool[]>(tools);
+  const documentsRef = useRef<DocumentItem[]>(documents);
+
+  useEffect(() => {
+    toolsRef.current = tools;
+  }, [tools]);
+
+  useEffect(() => {
+    documentsRef.current = documents;
+  }, [documents]);
 
   const extensions: Extensions = useMemo(() => {
     return [
@@ -101,9 +166,12 @@ export function DocumentEditor({
       createSlashCommands({
         includeFormatting: true,
       }),
-      createCombinedMentions(() => tools),
+      createCombinedMentions(
+        () => toolsRef.current,
+        () => documentsRef.current,
+      ),
     ];
-  }, [placeholder, locator, tools]);
+  }, [placeholder, locator]);
 
   const editor = useEditor({
     extensions,
