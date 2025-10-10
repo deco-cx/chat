@@ -1457,6 +1457,100 @@ export const listRecentProjects = createTool({
   },
 });
 
+export const createProject = createTool({
+  name: "PROJECTS_CREATE",
+  description: "Create a new project in an organization",
+  inputSchema: z.lazy(() =>
+    z.object({
+      org: z.string().describe("The organization slug"),
+      slug: z.string().describe("The project slug (URL-friendly identifier)"),
+      title: z.string().describe("The project title"),
+      description: z.string().optional().describe("The project description"),
+      icon: z.string().optional().describe("The project icon URL or path"),
+    }),
+  ),
+  outputSchema: z.lazy(() =>
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      slug: z.string(),
+      avatar_url: z.string().nullable(),
+      org: z.object({
+        id: z.number(),
+        slug: z.string(),
+        avatar_url: z.string().nullable().optional(),
+      }),
+    }),
+  ),
+  handler: async (props, c) => {
+    assertPrincipalIsUser(c);
+    c.resourceAccess.grant();
+
+    const user = c.user;
+    const { org, slug, title, description, icon } = props;
+
+    // First, verify the user has access to this organization
+    const { data: orgData, error: orgError } = await c.db
+      .from("teams")
+      .select("id, slug, theme, members!inner(user_id, deleted_at)")
+      .eq("slug", org)
+      .eq("members.user_id", user.id)
+      .is("members.deleted_at", null)
+      .single();
+
+    if (orgError || !orgData) {
+      throw new Error("Organization not found or access denied");
+    }
+
+    // Check if project with this slug already exists in the org
+    const { data: existingProject } = await c.db
+      .from("deco_chat_projects")
+      .select("id")
+      .eq("org_id", orgData.id)
+      .eq("slug", slug)
+      .single();
+
+    if (existingProject) {
+      throw new Error(
+        `A project with slug "${slug}" already exists in this organization`,
+      );
+    }
+
+    // Create the new project
+    const { data: newProject, error: createError } = await c.db
+      .from("deco_chat_projects")
+      .insert({
+        org_id: orgData.id,
+        slug,
+        title,
+        description: description || null,
+        icon: icon || null,
+      })
+      .select("*, teams!inner(id, slug, theme)")
+      .single();
+
+    if (createError || !newProject) {
+      throw new Error("Failed to create project");
+    }
+
+    if (typeof newProject.teams.slug !== "string") {
+      throw new InternalServerError("Team slug is not a string");
+    }
+
+    return {
+      id: newProject.id,
+      title: newProject.title,
+      slug: newProject.slug,
+      avatar_url: newProject.icon,
+      org: {
+        id: newProject.teams.id,
+        slug: newProject.teams.slug,
+        avatar_url: ((newProject.teams.theme as Theme) || null)?.picture,
+      },
+    };
+  },
+});
+
 export const updateProject = createTool({
   name: "PROJECTS_UPDATE",
   description: "Update an existing project's properties",

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { organizations, projects } from "../schema";
 import { AppContext } from "../context";
 import { assertHasWorkspace } from "../assertions";
@@ -10,9 +10,12 @@ export async function getProjectIdFromContext(
     return null;
   }
   const project = await c.drizzle
-    .select()
+    .select({
+      id: projects.id,
+    })
     .from(projects)
-    .where(eq(projects.slug, c.locator?.project))
+    .leftJoin(organizations, eq(projects.org_id, organizations.id))
+    .where(and(eq(projects.slug, c.locator.project), eq(organizations.slug, c.locator.org)))
     .limit(1)
     .then((r) => r[0]);
   return project?.id ?? null;

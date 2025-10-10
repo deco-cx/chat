@@ -7,6 +7,7 @@ import {
 } from "../../index.ts";
 import { LocatorStructured } from "../../locator.ts";
 import {
+  assertHasLocator,
   assertHasWorkspace,
   assertWorkspaceResourceAccess,
   type WithTool,
@@ -82,16 +83,14 @@ export const IMPORTANT_ROLES = ["owner", "admin"];
  */
 export const matchByWorkspaceOrProjectLocatorForAgents = (
   workspace: string,
-  locator?: LocatorStructured,
+  locator: LocatorStructured,
 ) => {
   return or(
     eq(agents.workspace, workspace),
-    locator
-      ? and(
-          eq(projects.slug, locator.project),
-          eq(organizations.slug, locator.org),
-        )
-      : undefined,
+    and(
+      eq(projects.slug, locator.project),
+      eq(organizations.slug, locator.org),
+    ),
   );
 };
 
@@ -135,6 +134,7 @@ export const listAgents = createTool({
   outputSchema: ListAgentsOutputSchema,
   handler: async (_, c: WithTool<AppContext>) => {
     assertHasWorkspace(c);
+    assertHasLocator(c);
 
     await assertWorkspaceResourceAccess(c);
 
@@ -143,9 +143,7 @@ export const listAgents = createTool({
       .from(agents)
       .leftJoin(projects, eq(agents.project_id, projects.id))
       .leftJoin(organizations, eq(projects.org_id, organizations.id))
-      .where(
-        matchByWorkspaceOrProjectLocatorForAgents(c.workspace.value, c.locator),
-      )
+      .where(matchByWorkspaceOrProjectLocatorForAgents(c.workspace.value, c.locator))
       .orderBy(desc(agents.created_at));
 
     const roles =
@@ -244,6 +242,7 @@ export const getAgent = createTool({
   outputSchema: AgentSchema,
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
+    assertHasLocator(c);
 
     const [canAccess, data] = await Promise.all([
       assertWorkspaceResourceAccess(c)
@@ -293,17 +292,17 @@ export const createAgent = createTool({
   inputSchema: CreateAgentInputSchema,
   outputSchema: AgentSchema,
   handler: async (agent, c) => {
-    assertHasWorkspace(c);
-
     await assertWorkspaceResourceAccess(c);
 
+    const projectId = await getProjectIdFromContext(c);
+    
     const [data] = await c.drizzle
       .insert(agents)
       .values({
         ...NEW_AGENT_TEMPLATE,
         ...agent,
-        workspace: c.workspace.value,
-        project_id: await getProjectIdFromContext(c),
+        workspace: null,
+        project_id: projectId,
       })
       .returning(AGENT_FIELDS_SELECT);
 
@@ -366,6 +365,7 @@ export const deleteAgent = createTool({
   outputSchema: DeleteAgentOutputSchema,
   handler: async ({ id }, c) => {
     assertHasWorkspace(c);
+    assertHasLocator(c);
 
     await assertWorkspaceResourceAccess(c);
 

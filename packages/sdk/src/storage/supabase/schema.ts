@@ -373,7 +373,7 @@ export type Database = {
           tools_set: Json;
           views: Json;
           visibility: Database["public"]["Enums"]["visibility_type"];
-          workspace: string;
+          workspace: string | null;
         };
         Insert: {
           access?: string | null;
@@ -393,7 +393,7 @@ export type Database = {
           tools_set: Json;
           views: Json;
           visibility?: Database["public"]["Enums"]["visibility_type"];
-          workspace: string;
+          workspace?: string | null;
         };
         Update: {
           access?: string | null;
@@ -413,7 +413,7 @@ export type Database = {
           tools_set?: Json;
           views?: Json;
           visibility?: Database["public"]["Enums"]["visibility_type"];
-          workspace?: string;
+          workspace?: string | null;
         };
         Relationships: [
           {
@@ -442,7 +442,7 @@ export type Database = {
           policies: Json | null;
           project_id: string | null;
           updated_at: string;
-          workspace: string;
+          workspace: string | null;
         };
         Insert: {
           created_at?: string;
@@ -453,7 +453,7 @@ export type Database = {
           policies?: Json | null;
           project_id?: string | null;
           updated_at?: string;
-          workspace: string;
+          workspace?: string | null;
         };
         Update: {
           created_at?: string;
@@ -464,7 +464,7 @@ export type Database = {
           policies?: Json | null;
           project_id?: string | null;
           updated_at?: string;
-          workspace?: string;
+          workspace?: string | null;
         };
         Relationships: [
           {
@@ -491,7 +491,7 @@ export type Database = {
           unlisted: boolean;
           updated_at: string;
           verified: boolean | null;
-          workspace: string;
+          workspace: string | null;
         };
         Insert: {
           connection: Json;
@@ -507,7 +507,7 @@ export type Database = {
           unlisted?: boolean;
           updated_at?: string;
           verified?: boolean | null;
-          workspace: string;
+          workspace?: string | null;
         };
         Update: {
           connection?: Json;
@@ -523,7 +523,7 @@ export type Database = {
           unlisted?: boolean;
           updated_at?: string;
           verified?: boolean | null;
-          workspace?: string;
+          workspace?: string | null;
         };
         Relationships: [
           {
@@ -674,7 +674,7 @@ export type Database = {
           name: string | null;
           project_id: string | null;
           updated_at: string;
-          workspace: string;
+          workspace: string | null;
         };
         Insert: {
           active?: boolean;
@@ -686,7 +686,7 @@ export type Database = {
           name?: string | null;
           project_id?: string | null;
           updated_at?: string;
-          workspace: string;
+          workspace?: string | null;
         };
         Update: {
           active?: boolean;
@@ -698,7 +698,7 @@ export type Database = {
           name?: string | null;
           project_id?: string | null;
           updated_at?: string;
-          workspace?: string;
+          workspace?: string | null;
         };
         Relationships: [
           {
@@ -722,19 +722,19 @@ export type Database = {
           created_at: string;
           customer_id: string;
           org_id: number | null;
-          workspace: string;
+          workspace: string | null;
         };
         Insert: {
           created_at?: string;
           customer_id: string;
           org_id?: number | null;
-          workspace: string;
+          workspace?: string | null;
         };
         Update: {
           created_at?: string;
           customer_id?: string;
           org_id?: number | null;
-          workspace?: string;
+          workspace?: string | null;
         };
         Relationships: [
           {
@@ -758,7 +758,7 @@ export type Database = {
           project_id: string | null;
           slug: string;
           updated_at: string;
-          workspace: string;
+          workspace: string | null;
         };
         Insert: {
           cloudflare_script_hash?: string | null;
@@ -771,7 +771,7 @@ export type Database = {
           project_id?: string | null;
           slug: string;
           updated_at?: string;
-          workspace: string;
+          workspace?: string | null;
         };
         Update: {
           cloudflare_script_hash?: string | null;
@@ -784,7 +784,7 @@ export type Database = {
           project_id?: string | null;
           slug?: string;
           updated_at?: string;
-          workspace?: string;
+          workspace?: string | null;
         };
         Relationships: [
           {
@@ -887,7 +887,7 @@ export type Database = {
           id: string;
           name: string;
           project_id: string | null;
-          workspace: string;
+          workspace: string | null;
         };
         Insert: {
           access?: string | null;
@@ -900,7 +900,7 @@ export type Database = {
           id?: string;
           name: string;
           project_id?: string | null;
-          workspace: string;
+          workspace?: string | null;
         };
         Update: {
           access?: string | null;
@@ -913,7 +913,7 @@ export type Database = {
           id?: string;
           name?: string;
           project_id?: string | null;
-          workspace?: string;
+          workspace?: string | null;
         };
         Relationships: [
           {
@@ -939,27 +939,85 @@ export type Database = {
           },
         ];
       };
+      deco_chat_issues: {
+        Row: {
+          content: string;
+          created_at: string;
+          id: string;
+          org_id: number | null;
+          path: string | null;
+          project_id: string | null;
+          reporter_user_id: string;
+          type: string;
+          url: string | null;
+        };
+        Insert: {
+          content: string;
+          created_at?: string;
+          id?: string;
+          org_id?: number | null;
+          path?: string | null;
+          project_id?: string | null;
+          reporter_user_id: string;
+          type: string;
+          url?: string | null;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          id?: string;
+          org_id?: number | null;
+          path?: string | null;
+          project_id?: string | null;
+          reporter_user_id?: string;
+          type?: string;
+          url?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "deco_chat_issues_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "deco_chat_issues_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "deco_chat_projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "deco_chat_issues_reporter_user_id_fkey";
+            columns: ["reporter_user_id"];
+            isOneToOne: false;
+            referencedRelation: "users_meta_data_view";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       deco_chat_oauth_codes: {
         Row: {
           claims: Json;
           code: string;
           created_at: string;
           project_id: string | null;
-          workspace: string;
+          workspace: string | null;
         };
         Insert: {
           claims: Json;
           code: string;
           created_at?: string;
           project_id?: string | null;
-          workspace: string;
+          workspace?: string | null;
         };
         Update: {
           claims?: Json;
           code?: string;
           created_at?: string;
           project_id?: string | null;
-          workspace?: string;
+          workspace?: string | null;
         };
         Relationships: [
           {
@@ -1048,7 +1106,7 @@ export type Database = {
           name: string;
           project_id: string | null;
           updated_at: string | null;
-          workspace: string;
+          workspace: string | null;
         };
         Insert: {
           content: string;
@@ -1058,7 +1116,7 @@ export type Database = {
           name: string;
           project_id?: string | null;
           updated_at?: string | null;
-          workspace: string;
+          workspace?: string | null;
         };
         Update: {
           content?: string;
@@ -1068,7 +1126,7 @@ export type Database = {
           name?: string;
           project_id?: string | null;
           updated_at?: string | null;
-          workspace?: string;
+          workspace?: string | null;
         };
         Relationships: [
           {
@@ -1117,7 +1175,7 @@ export type Database = {
           project_id: string | null;
           scope_name: string;
           updated_at: string;
-          workspace: string;
+          workspace: string | null;
         };
         Insert: {
           created_at?: string;
@@ -1125,7 +1183,7 @@ export type Database = {
           project_id?: string | null;
           scope_name: string;
           updated_at?: string;
-          workspace: string;
+          workspace?: string | null;
         };
         Update: {
           created_at?: string;
@@ -1133,7 +1191,7 @@ export type Database = {
           project_id?: string | null;
           scope_name?: string;
           updated_at?: string;
-          workspace?: string;
+          workspace?: string | null;
         };
         Relationships: [
           {
@@ -1192,7 +1250,7 @@ export type Database = {
           project_id: string | null;
           updated_at: string;
           user_id: string | null;
-          workspace: string;
+          workspace: string | null;
         };
         Insert: {
           access_id?: string | null;
@@ -1205,7 +1263,7 @@ export type Database = {
           project_id?: string | null;
           updated_at?: string;
           user_id?: string | null;
-          workspace: string;
+          workspace?: string | null;
         };
         Update: {
           access_id?: string | null;
@@ -1218,7 +1276,7 @@ export type Database = {
           project_id?: string | null;
           updated_at?: string;
           user_id?: string | null;
-          workspace?: string;
+          workspace?: string | null;
         };
         Relationships: [
           {
@@ -2285,7 +2343,7 @@ export type Database = {
           name: string;
           project_id: string | null;
           updated_at: string;
-          workspace: string;
+          workspace: string | null;
         };
         Insert: {
           api_key_hash?: string | null;
@@ -2298,7 +2356,7 @@ export type Database = {
           name: string;
           project_id?: string | null;
           updated_at?: string;
-          workspace: string;
+          workspace?: string | null;
         };
         Update: {
           api_key_hash?: string | null;
@@ -2311,7 +2369,7 @@ export type Database = {
           name?: string;
           project_id?: string | null;
           updated_at?: string;
-          workspace?: string;
+          workspace?: string | null;
         };
         Relationships: [
           {
@@ -4530,6 +4588,10 @@ export type Database = {
     Functions: {
       create_team_and_member: {
         Args: { name: string };
+        Returns: number;
+      };
+      create_team_with_slug_and_member: {
+        Args: { name: string; slug: string };
         Returns: number;
       };
       deduct_app_use_balance: {
