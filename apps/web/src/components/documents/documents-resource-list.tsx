@@ -1,5 +1,6 @@
-import { type ReactNode, useEffect } from "react";
-import { useSearchParams } from "react-router";
+import { type ReactNode, useEffect, useMemo } from "react";
+import { useLocation, useSearchParams } from "react-router";
+import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 import { useDecopilotOpen } from "../layout/decopilot-layout.tsx";
 import { ResourcesV2List } from "../resources-v2/list.tsx";
 
@@ -13,6 +14,8 @@ export function DocumentsResourceList({
   headerSlot?: ReactNode;
 } = {}) {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigateWorkspace = useNavigateWorkspace();
   const { setOpen: setDecopilotOpen } = useDecopilotOpen();
 
   // Automatically open Decopilot if openDecopilot query param is present
@@ -23,11 +26,31 @@ export function DocumentsResourceList({
     }
   }, [searchParams, setDecopilotOpen]);
 
+  // Determine active tab based on current route
+  const activeTab = useMemo(() => {
+    const pathname = location.pathname;
+    if (pathname.includes("/documents/prompts")) return "prompts";
+    return "all";
+  }, [location.pathname]);
+
   return (
     <ResourcesV2List
       integrationId="i:documents-management"
       resourceName="document"
       headerSlot={headerSlot}
+      tabs={[
+        {
+          id: "all",
+          label: "All",
+          onClick: () => navigateWorkspace("/documents"),
+        },
+        {
+          id: "prompts",
+          label: "Prompts (Legacy)",
+          onClick: () => navigateWorkspace("/documents/prompts"),
+        },
+      ]}
+      activeTab={activeTab}
     />
   );
 }
