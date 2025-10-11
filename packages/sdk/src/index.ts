@@ -90,3 +90,4 @@ export * from "./theme.ts";
 export * from "./utils/index.ts";
 export * from "./views-pinning.ts";
 export * from "./views.ts";
+export { MCPClient } from "./fetcher.ts";
