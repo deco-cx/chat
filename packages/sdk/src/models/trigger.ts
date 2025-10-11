@@ -181,7 +181,7 @@ export const TriggerOutputSchema = z.object({
     }),
   }),
   active: z.boolean().optional().describe("The trigger status"),
-  workspace: z.string().describe("The workspace ID"),
+  workspace: z.string().nullable().describe("The workspace ID"),
 });
 
 export const CreateTriggerOutputSchema = TriggerOutputSchema.describe(

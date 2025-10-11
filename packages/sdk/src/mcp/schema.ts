@@ -175,7 +175,7 @@ export const agents = pgTable("deco_chat_agents", {
   memory: jsonb("memory"),
   views: jsonb("views").notNull(),
   created_at: timestamp("created_at").defaultNow(),
-  workspace: text("workspace").notNull(),
+  workspace: text("workspace"),
   temperature: real("temperature"),
   visibility: visibilityType("visibility").notNull().default("WORKSPACE"),
   access: text("access"),

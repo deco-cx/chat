@@ -23,7 +23,12 @@ import {
   updateTeam,
   type UpdateTeamInput,
 } from "../crud/teams.ts";
-import { updateProject, type UpdateProjectInput } from "../crud/projects.ts";
+import {
+  createProject,
+  type CreateProjectInput,
+  updateProject,
+  type UpdateProjectInput,
+} from "../crud/projects.ts";
 import { KEYS } from "./api.ts";
 import { InternalServerError } from "../errors.ts";
 import { DEFAULT_THEME } from "../theme.ts";
@@ -85,6 +90,23 @@ export const useRecentProjects = (): Project[] => {
   });
   return query.data;
 };
+
+export function useCreateProject() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateProjectInput) => createProject(input),
+    onSuccess: (result, variables) => {
+      // Add the new project to the projects list cache
+      client.setQueryData<Project[]>(KEYS.PROJECTS(variables.org), (old) => {
+        if (!old) return [result];
+        return [...old, result];
+      });
+
+      // Invalidate recent projects to refresh
+      client.invalidateQueries({ queryKey: KEYS.RECENT_PROJECTS() });
+    },
+  });
+}
 
 export function useUpdateProject() {
   const client = useQueryClient();

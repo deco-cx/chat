@@ -1,4 +1,9 @@
-import { useProjects, useUpdateProject, type Project } from "@deco/sdk";
+import {
+  useProjects,
+  useUpdateProject,
+  useCreateProject,
+  type Project,
+} from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import {
   Dialog,
@@ -10,11 +15,7 @@ import {
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Input } from "@deco/ui/components/input.tsx";
 import { Label } from "@deco/ui/components/label.tsx";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@deco/ui/components/tooltip.tsx";
+import { Textarea } from "@deco/ui/components/textarea.tsx";
 import { Suspense, useState, useDeferredValue } from "react";
 import { Link, useParams } from "react-router";
 import { ErrorBoundary } from "../../error-boundary";
@@ -222,6 +223,139 @@ Projects.Empty = () => (
   </div>
 );
 
+function CreateProjectDialog({ org }: { org: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [slug, setSlug] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const createProjectMutation = useCreateProject();
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!slug.trim() || !title.trim()) {
+      return;
+    }
+
+    try {
+      await createProjectMutation.mutateAsync({
+        org,
+        slug: slug.trim(),
+        title: title.trim(),
+        description: description.trim() || undefined,
+      });
+      // Reset form and close dialog on success
+      setSlug("");
+      setTitle("");
+      setDescription("");
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Failed to create project:", error);
+      // Error state is handled by the mutation hook
+    }
+  };
+
+  const handleSlugChange = (value: string) => {
+    // Convert to URL-friendly slug
+    const slugified = value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    setSlug(slugified);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="special">
+          <Icon name="add" size={16} />
+          <span>New project</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Create New Project</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleCreate} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="project-title">
+              Project Title <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="project-title"
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                // Auto-generate slug from title if slug is empty
+                if (!slug) {
+                  handleSlugChange(e.target.value);
+                }
+              }}
+              placeholder="My Awesome Project"
+              disabled={createProjectMutation.isPending}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="project-slug">
+              Project Slug <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="project-slug"
+              value={slug}
+              onChange={(e) => handleSlugChange(e.target.value)}
+              placeholder="my-awesome-project"
+              disabled={createProjectMutation.isPending}
+            />
+            <p className="text-xs text-muted-foreground">
+              URL-friendly identifier (lowercase, no spaces)
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="project-description">Description</Label>
+            <Textarea
+              id="project-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="What is this project about?"
+              disabled={createProjectMutation.isPending}
+              rows={3}
+            />
+          </div>
+
+          {createProjectMutation.error && (
+            <p className="text-sm text-destructive">
+              Failed to create project.{" "}
+              {createProjectMutation.error instanceof Error
+                ? createProjectMutation.error.message
+                : "Please try again."}
+            </p>
+          )}
+
+          <div className="flex justify-end space-x-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              disabled={createProjectMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={
+                createProjectMutation.isPending || !slug.trim() || !title.trim()
+              }
+            >
+              {createProjectMutation.isPending ? "Creating..." : "Create"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function OrgProjectListContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const deferredQuery = useDeferredValue(searchQuery);
@@ -240,17 +374,7 @@ function OrgProjectListContent() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Tooltip>
-              <TooltipTrigger>
-                <Button variant="special" disabled>
-                  <Icon name="add" size={16} />
-                  <span>New project</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Multiple projects in a single organization is coming soon</p>
-              </TooltipContent>
-            </Tooltip>
+            <CreateProjectDialog org={org ?? ""} />
           </div>
         </div>
         <div className="@container overflow-y-auto flex-1 pb-28">

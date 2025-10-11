@@ -94,7 +94,7 @@ const AppClaimsSchema = z.object({
 export const ApiKeySchema = z.object({
   id: z.string().describe("The unique identifier of the API key"),
   name: z.string().describe("The name of the API key"),
-  workspace: z.string().describe("The workspace ID"),
+  workspace: z.string().nullable().describe("The workspace ID"),
   enabled: z.boolean().describe("Whether the API key is enabled"),
   policies: z
     .array(StatementSchema)
