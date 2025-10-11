@@ -1,4 +1,4 @@
-import { type Integration, useMarketplaceIntegrations } from "@deco/sdk";
+import { useMarketplaceIntegrations, type Integration } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Card, CardContent } from "@deco/ui/components/card.tsx";
 import {
@@ -97,12 +97,12 @@ export function VerifiedBadge() {
           <Icon
             name="verified"
             size={16}
-            className="absolute z-10 text-primary-light"
+            className="absolute z-5 text-primary-light"
             filled
           />
         </TooltipTrigger>
         <TooltipContent>
-          <p>Made by Deco</p>
+          <p>Verified by Deco</p>
         </TooltipContent>
       </Tooltip>
     </div>

@@ -2,16 +2,16 @@
 import {
   buildAddViewPayload,
   findPinnedView,
-  type Integration,
   listTools,
-  type MCPConnection,
-  type MCPTool,
   useAddView,
   useConnectionViews,
   useRemoveView,
   useSDK,
   useToolCall,
   useTools,
+  type Integration,
+  type MCPConnection,
+  type MCPTool,
 } from "@deco/sdk";
 import { Binding, WellKnownBindings } from "@deco/sdk/mcp/bindings";
 import { Button } from "@deco/ui/components/button.tsx";
@@ -36,6 +36,7 @@ import type { JSONSchema7 } from "json-schema";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { formatToolName } from "../../chat/utils/format-tool-name.ts";
+import { EmptyState } from "../../common/empty-state.tsx";
 import JSONSchemaForm from "../../json-schema/index.tsx";
 import { generateDefaultValues } from "../../json-schema/utils/generate-default-values.ts";
 import { useCurrentTeam } from "../../sidebar/team-selector.tsx";
@@ -698,6 +699,7 @@ function V2Section({
   checker,
   uiComponent,
   featureName,
+  emptyStateConfig,
 }: {
   selectedIntegration: Integration;
   checker: (
@@ -710,6 +712,11 @@ function V2Section({
   ) => { compliant: boolean; missing?: string | null };
   uiComponent: React.ComponentType<{ integration: Integration }>;
   featureName: string;
+  emptyStateConfig: {
+    icon: string;
+    title: string;
+    description: string;
+  };
 }) {
   const { isLoading, isCompliant, missingMessage } = useCompliance(
     selectedIntegration.connection,
@@ -726,20 +733,15 @@ function V2Section({
     );
   }
 
-  if (!isCompliant)
+  if (!isCompliant) {
     return (
-      <div className="w-full p-4 border border-border rounded-xl bg-muted/30">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Icon name="info" size={16} className="text-muted-foreground" />
-          <span>
-            {" "}
-            This integration does not implement {featureName}. {
-              missingMessage
-            }{" "}
-          </span>
-        </div>
-      </div>
+      <EmptyState
+        icon={emptyStateConfig.icon}
+        title={emptyStateConfig.title}
+        description={emptyStateConfig.description}
+      />
     );
+  }
 
   const UIComponent = uiComponent;
   return <UIComponent integration={selectedIntegration} />;
@@ -812,80 +814,123 @@ export function ConnectionTabs({
         />
       </TabsContent>
 
-      <TabsContent value="views">
-        <ScrollArea className="h-full">
-          <div className="flex flex-col gap-4">
-            {hasLegacyViews ? (
-              <>
-                <div className="text-xs text-muted-foreground font-medium">
-                  Legacy
-                </div>
-                <ViewBindingSection
-                  data={data}
-                  selectedConnectionId={selectedIntegrationId ?? undefined}
-                />
-              </>
-            ) : null}
-            {selectedIntegration ? (
-              <>
-                {hasLegacyViews ? (
+      <TabsContent value="views" className="h-full">
+        {hasLegacyViews || selectedIntegration ? (
+          <ScrollArea className="h-full">
+            <div className="flex flex-col gap-4 pb-4">
+              {hasLegacyViews ? (
+                <>
                   <div className="text-xs text-muted-foreground font-medium">
-                    View
+                    Legacy
                   </div>
-                ) : null}
-                <V2Section
-                  selectedIntegration={selectedIntegration}
-                  checker={viewsV2Checker}
-                  uiComponent={ViewsV2UI}
-                  featureName="View"
-                />
-              </>
-            ) : null}
-          </div>
-        </ScrollArea>
-      </TabsContent>
-
-      <TabsContent value="workflows">
-        <div className="flex flex-col gap-4">
-          {hasLegacyWorkflows ? (
-            <>
-              <div className="text-xs text-muted-foreground font-medium">
-                Legacy
-              </div>
-              <ToolsInspector
-                data={data}
-                selectedConnectionId={selectedIntegrationId ?? undefined}
-                startsWith="DECO_CHAT_WORKFLOWS"
-              />
-            </>
-          ) : null}
-          {selectedIntegration ? (
-            <>
-              {hasLegacyWorkflows ? (
-                <div className="text-xs text-muted-foreground font-medium">
-                  Workflow
-                </div>
+                  <ViewBindingSection
+                    data={data}
+                    selectedConnectionId={selectedIntegrationId ?? undefined}
+                  />
+                </>
               ) : null}
-              <V2Section
-                selectedIntegration={selectedIntegration}
-                checker={workflowsV2Checker}
-                uiComponent={WorkflowsV2UI}
-                featureName="Workflow"
-              />
-            </>
-          ) : null}
-        </div>
+              {selectedIntegration ? (
+                <>
+                  {hasLegacyViews ? (
+                    <div className="text-xs text-muted-foreground font-medium">
+                      View
+                    </div>
+                  ) : null}
+                  <V2Section
+                    selectedIntegration={selectedIntegration}
+                    checker={viewsV2Checker}
+                    uiComponent={ViewsV2UI}
+                    featureName="View"
+                    emptyStateConfig={{
+                      icon: "visibility",
+                      title: "No Views Available",
+                      description:
+                        "This integration doesn't implement any view.",
+                    }}
+                  />
+                </>
+              ) : null}
+            </div>
+            <ScrollBar orientation="vertical" />
+          </ScrollArea>
+        ) : (
+          <EmptyState
+            icon="visibility"
+            title="No Views Available"
+            description="This integration doesn't implement any view."
+          />
+        )}
       </TabsContent>
 
-      <TabsContent value="resources-v2">
+      <TabsContent value="workflows" className="h-full">
+        {hasLegacyWorkflows || selectedIntegration ? (
+          <ScrollArea className="h-full">
+            <div className="flex flex-col gap-4 pb-4">
+              {hasLegacyWorkflows ? (
+                <>
+                  <div className="text-xs text-muted-foreground font-medium">
+                    Legacy
+                  </div>
+                  <ToolsInspector
+                    data={data}
+                    selectedConnectionId={selectedIntegrationId ?? undefined}
+                    startsWith="DECO_CHAT_WORKFLOWS"
+                  />
+                </>
+              ) : null}
+              {selectedIntegration ? (
+                <>
+                  {hasLegacyWorkflows ? (
+                    <div className="text-xs text-muted-foreground font-medium">
+                      Workflow
+                    </div>
+                  ) : null}
+                  <V2Section
+                    selectedIntegration={selectedIntegration}
+                    checker={workflowsV2Checker}
+                    uiComponent={WorkflowsV2UI}
+                    featureName="Workflow"
+                    emptyStateConfig={{
+                      icon: "flowchart",
+                      title: "No Workflows Available",
+                      description:
+                        "This integration doesn't implement any workflow.",
+                    }}
+                  />
+                </>
+              ) : null}
+            </div>
+            <ScrollBar orientation="vertical" />
+          </ScrollArea>
+        ) : (
+          <EmptyState
+            icon="flowchart"
+            title="No Workflows Available"
+            description="This integration doesn't implement any workflow."
+          />
+        )}
+      </TabsContent>
+
+      <TabsContent value="resources-v2" className="h-full">
         {selectedIntegration ? (
           <V2Section
             selectedIntegration={selectedIntegration}
             checker={resourcesV2Checker}
             uiComponent={ResourcesV2UI}
             featureName="Resources v2"
+            emptyStateConfig={{
+              icon: "folder",
+              title: "No Resources Available",
+              description: "This integration doesn't implement any resource.",
+            }}
           />
-        ) : null}
+        ) : (
+          <EmptyState
+            icon="folder"
+            title="No Resources Available"
+            description="This integration doesn't implement any resource."
+          />
+        )}
       </TabsContent>
     </Tabs>
   );
