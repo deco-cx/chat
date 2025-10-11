@@ -10,12 +10,6 @@ import {
 } from "@deco/ui/components/dropdown-menu.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@deco/ui/components/tooltip.tsx";
 import { useViewMode } from "@deco/ui/hooks/use-view-mode.ts";
 import { useQuery } from "@tanstack/react-query";
 import { useDeferredValue, useMemo, useState, type ReactNode } from "react";
@@ -23,14 +17,15 @@ import { useParams, useSearchParams } from "react-router";
 import { z } from "zod";
 import { useNavigateWorkspace } from "../../hooks/use-navigate-workspace.ts";
 import { EmptyState } from "../common/empty-state.tsx";
-import { ListPageHeader } from "../common/list-page-header.tsx";
 import { Table, type TableColumn } from "../common/table/index.tsx";
 import { TimeAgoCell, UserInfo } from "../common/table/table-cells.tsx";
+import type { TabItem } from "../common/tabs-underline.tsx";
 import { useDecopilotThread } from "../decopilot/thread-context.tsx";
 import {
   DecopilotLayout,
   useDecopilotOpen,
 } from "../layout/decopilot-layout.tsx";
+import { ResourceHeader } from "./resource-header.tsx";
 import { ResourceRouteProvider } from "./route-context.tsx";
 
 // Base resource data schema that all resources extend
@@ -46,16 +41,23 @@ function ResourcesV2ListTab({
   integrationId,
   resourceName,
   headerSlot,
+  tabs,
+  activeTab,
+  onTabChange,
 }: {
   integrationId?: string;
   resourceName?: string;
   headerSlot?: ReactNode;
+  tabs?: TabItem[];
+  activeTab?: string;
+  onTabChange?: (tabId: string) => void;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const integration = useIntegration(integrationId ?? "").data;
   const navigateWorkspace = useNavigateWorkspace();
   const [mutating, setMutating] = useState(false);
   const [viewMode, setViewMode] = useViewMode();
+  const [searchOpen, setSearchOpen] = useState(false);
   const { setOpen: setDecopilotOpen } = useDecopilotOpen();
   const { setThreadState } = useDecopilotThread();
 
@@ -215,49 +217,61 @@ function ResourcesV2ListTab({
     );
   }
 
+  // Capitalize resource name for title
+  const title = resourceName
+    ? resourceName.charAt(0).toUpperCase() + resourceName.slice(1) + "s"
+    : "Resources";
+
+  // Always ensure there's at least an "All" tab
+  const finalTabs = useMemo(() => {
+    if (!tabs || tabs.length === 0) {
+      return [{ id: "all", label: "All" }];
+    }
+    return tabs;
+  }, [tabs]);
+
   return (
-    <div className="p-4 space-y-3 h-full">
-      {headerSlot}
-      <ListPageHeader
-        input={{
-          placeholder: `Search ${resourceName}...`,
-          value: q,
-          onChange: (e) =>
+    <div className="pt-10 px-10 pb-0 space-y-8 h-full">
+      <div className="max-w-7xl mx-auto w-full space-y-8">
+        {headerSlot}
+        <ResourceHeader
+          title={title}
+          tabs={finalTabs}
+          activeTab={activeTab || "all"}
+          onTabChange={onTabChange}
+          searchOpen={searchOpen}
+          searchValue={q}
+          onSearchToggle={() => setSearchOpen(!searchOpen)}
+          onSearchChange={(value: string) => {
             setSearchParams((prev) => {
               const next = new URLSearchParams(prev);
-              const v = (e.target as HTMLInputElement).value;
-              if (v) next.set("q", v);
+              if (value) next.set("q", value);
               else next.delete("q");
               return next;
-            }),
-          onKeyDown: (e) => {
+            });
+          }}
+          onSearchBlur={() => {
+            if (!q) {
+              setSearchOpen(false);
+            }
+          }}
+          onSearchKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
             if (e.key === "Enter") {
               listQuery.refetch();
             }
-          },
-        }}
-        view={{ viewMode, onChange: setViewMode }}
-        controlsAlign="start"
-        actionsRight={
-          <div className="pl-3 ml-2 border-l border-border flex items-center gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => listQuery.refetch()}
-                    variant="outline"
-                    size="icon"
-                    disabled={loading}
-                  >
-                    <Icon name="refresh" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Refresh</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            {capabilities.hasCreate ? (
+            if (e.key === "Escape") {
+              setSearchOpen(false);
+            }
+          }}
+          onFilterClick={() => {
+            // TODO: Implement filter UI
+          }}
+          onMenuClick={() => {
+            // TODO: Implement menu dropdown
+            setViewMode(viewMode === "table" ? "cards" : "table");
+          }}
+          ctaButton={
+            capabilities.hasCreate ? (
               <Button
                 onClick={() => {
                   setDecopilotOpen(true);
@@ -268,99 +282,89 @@ function ResourcesV2ListTab({
                   });
                 }}
                 variant="special"
+                className="h-9 rounded-xl"
               >
                 <Icon name="add" />
-                Create
+                New {resourceName}
               </Button>
-            ) : null}
-          </div>
-        }
-      />
-
-      {error && (
-        <Card>
-          <CardContent className="p-4 text-destructive text-sm">
-            {error}
-          </CardContent>
-        </Card>
-      )}
-
-      {loading ? (
-        <div className="flex justify-center items-center h-full py-8">
-          <Spinner />
-        </div>
-      ) : items.length === 0 ? (
-        <EmptyState
-          icon="list"
-          title="No resources found"
-          description={`No ${resourceName} found for this integration.`}
+            ) : undefined
+          }
         />
-      ) : viewMode === "cards" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {items.map((it) => (
-            <Card key={it.uri} className="cursor-pointer group relative">
-              <CardContent
-                className="p-3 flex flex-col gap-2"
-                onClick={() =>
-                  navigateWorkspace(
-                    `rsc/${integrationId}/${resourceName}/${encodeURIComponent(it.uri)}`,
-                  )
-                }
-              >
-                <div className="flex items-start gap-3">
-                  {it.data?.icon && (
-                    <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
-                      <img
-                        src={it.data.icon}
-                        alt={it.data?.name || ""}
-                        className="w-8 h-8 rounded object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                        }}
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">
-                      {it.data?.name ?? ""}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {it.data?.description ?? ""}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <span className="hidden sm:inline">Updated</span>
-                    <TimeAgoCell value={it.updated_at} />
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span>by</span>
-                    <UserInfo userId={it.updated_by} nameOnly />
-                  </div>
-                </div>
-                <div
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
+
+        {error && (
+          <Card>
+            <CardContent className="p-4 text-destructive text-sm">
+              {error}
+            </CardContent>
+          </Card>
+        )}
+
+        {loading ? (
+          <div className="flex justify-center items-center h-full py-8">
+            <Spinner />
+          </div>
+        ) : items.length === 0 ? (
+          <EmptyState
+            icon="list"
+            title="No resources found"
+            description={`No ${resourceName} found for this integration.`}
+          />
+        ) : viewMode === "cards" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {items.map((it) => (
+              <Card key={it.uri} className="cursor-pointer group relative">
+                <CardContent
+                  className="p-3 flex flex-col gap-2"
+                  onClick={() =>
+                    navigateWorkspace(
+                      `rsc/${integrationId}/${resourceName}/${encodeURIComponent(it.uri)}`,
+                    )
+                  }
                 >
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <Icon name="more_horiz" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          navigateWorkspace(
-                            `rsc/${integrationId}/${resourceName}/${encodeURIComponent(it.uri)}`,
-                          )
-                        }
-                      >
-                        Open
-                      </DropdownMenuItem>
-                      {capabilities.hasUpdate ? (
+                  <div className="flex items-start gap-3">
+                    {it.data?.icon && (
+                      <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                        <img
+                          src={it.data.icon}
+                          alt={it.data?.name || ""}
+                          className="w-8 h-8 rounded object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">
+                        {it.data?.name ?? ""}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {it.data?.description ?? ""}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <span className="hidden sm:inline">Updated</span>
+                      <TimeAgoCell value={it.updated_at} />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span>by</span>
+                      <UserInfo userId={it.updated_by} nameOnly />
+                    </div>
+                  </div>
+                  <div
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Icon name="more_horiz" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
                         <DropdownMenuItem
                           onClick={() =>
                             navigateWorkspace(
@@ -368,47 +372,58 @@ function ResourcesV2ListTab({
                             )
                           }
                         >
-                          Edit
+                          Open
                         </DropdownMenuItem>
-                      ) : null}
-                      {capabilities.hasDelete ? (
-                        <DropdownMenuItem
-                          className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                          onClick={async () => {
-                            if (!integration) return;
-                            try {
-                              setMutating(true);
-                              await callTool(integration.connection, {
-                                name: `DECO_RESOURCE_${(resourceName ?? "").toUpperCase()}_DELETE`,
-                                arguments: { uri: it.uri },
-                              });
-                              await listQuery.refetch();
-                            } finally {
-                              setMutating(false);
+                        {capabilities.hasUpdate ? (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              navigateWorkspace(
+                                `rsc/${integrationId}/${resourceName}/${encodeURIComponent(it.uri)}`,
+                              )
                             }
-                          }}
-                        >
-                          Delete
-                        </DropdownMenuItem>
-                      ) : null}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Table
-          columns={columns}
-          data={items}
-          onRowClick={(row) =>
-            navigateWorkspace(
-              `rsc/${integrationId}/${resourceName}/${encodeURIComponent(row.uri)}`,
-            )
-          }
-        />
-      )}
+                          >
+                            Edit
+                          </DropdownMenuItem>
+                        ) : null}
+                        {capabilities.hasDelete ? (
+                          <DropdownMenuItem
+                            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                            onClick={async () => {
+                              if (!integration) return;
+                              try {
+                                setMutating(true);
+                                await callTool(integration.connection, {
+                                  name: `DECO_RESOURCE_${(resourceName ?? "").toUpperCase()}_DELETE`,
+                                  arguments: { uri: it.uri },
+                                });
+                                await listQuery.refetch();
+                              } finally {
+                                setMutating(false);
+                              }
+                            }}
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        ) : null}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Table
+            columns={columns}
+            data={items}
+            onRowClick={(row) =>
+              navigateWorkspace(
+                `rsc/${integrationId}/${resourceName}/${encodeURIComponent(row.uri)}`,
+              )
+            }
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -417,10 +432,16 @@ export function ResourcesV2List({
   integrationId,
   resourceName,
   headerSlot,
+  tabs,
+  activeTab,
+  onTabChange,
 }: {
   integrationId?: string;
   resourceName?: string;
   headerSlot?: ReactNode;
+  tabs?: TabItem[];
+  activeTab?: string;
+  onTabChange?: (tabId: string) => void;
 }) {
   const integration = useIntegration(integrationId ?? "").data;
 
@@ -458,6 +479,9 @@ export function ResourcesV2List({
           integrationId={integrationId}
           resourceName={resourceName}
           headerSlot={headerSlot}
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={onTabChange}
         />
       </ResourceRouteProvider>
     </DecopilotLayout>
