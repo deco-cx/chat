@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deco Tool Tester</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #1a1a1a;
+      color: #ffffff;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 11px;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 32px;
+    }
+
+    .card {
+      background-color: #242424;
+      border: 1px solid #3a3a3a;
+      border-radius: 6px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #9ca3af;
+      margin-bottom: 8px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    select, textarea {
+      width: 100%;
+      background-color: #1a1a1a;
+      border: 1px solid #3a3a3a;
+      color: #ffffff;
+      padding: 12px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      transition: border-color 0.2s;
+    }
+
+    select:focus, textarea:focus {
+      outline: none;
+      border-color: #ff6b4a;
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    button {
+      padding: 12px 24px;
+      border: 1px solid #ff6b4a;
+      background-color: #ff6b4a;
+      color: #ffffff;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background-color: #ff8566;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      background-color: #242424;
+      border-color: #3a3a3a;
+    }
+
+    button.secondary:hover {
+      background-color: #2a2a2a;
+    }
+
+    .output {
+      background-color: #0d0d0d;
+      border: 1px solid #3a3a3a;
+      border-radius: 4px;
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .success { color: #4ade80; }
+    .error { color: #ef4444; }
+    .comment { color: #9ca3af; }
+
+    .history {
+      list-style: none;
+    }
+
+    .history-item {
+      background-color: #1a1a1a;
+      border: 1px solid #3a3a3a;
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-item:hover {
+      border-color: #ff6b4a;
+    }
+
+    .history-tool {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #ffffff;
+    }
+
+    .history-time {
+      font-size: 10px;
+      color: #9ca3af;
+    }
+
+    .status-badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      margin-left: 8px;
+    }
+
+    .status-success {
+      background-color: rgba(74, 222, 128, 0.2);
+      color: #4ade80;
+    }
+
+    .status-error {
+      background-color: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+
+    .loader {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #3a3a3a;
+      border-top-color: #ff6b4a;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 DECO TOOL TESTER</h1>
+    <div class="subtitle">Test MCP tools instantly via HTTP</div>
+
+    <div class="card">
+      <div class="label">// SELECT TOOL</div>
+      <select id="toolSelect">
+        <option value="">Loading tools...</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <div class="label">// INPUT (JSON)</div>
+      <textarea id="inputJson" placeholder='{"key": "value"}'>{}</textarea>
+      <div class="buttons">
+        <button id="executeBtn" onclick="executeTool()">
+          <span id="executeText">Execute Tool</span>
+        </button>
+        <button class="secondary" onclick="clearInput()">Clear</button>
+        <button class="secondary" onclick="formatJson()">Format JSON</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label">// OUTPUT</div>
+      <div id="output" class="output comment">// No output yet. Execute a tool to see results.</div>
+    </div>
+
+    <div class="card">
+      <div class="label">// HISTORY (Last 10)</div>
+      <ul id="history" class="history comment">
+        <li>// No history yet</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    let tools = [];
+    let history = JSON.parse(localStorage.getItem('toolHistory') || '[]');
+
+    // Load available tools
+    async function loadTools() {
+      try {
+        const response = await fetch('/mcp/call-tool/DISCOVER_WORKSPACE_TOOLS', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Deco-MCP-Client': 'true',
+          },
+          body: '{"includeSchemas": false}',
+          credentials: 'include',
+        });
+
+        const data = await response.json();
+        
+        // Extract all tools from all integrations
+        tools = [];
+        if (data.integrations) {
+          data.integrations.forEach(integration => {
+            integration.tools.forEach(tool => {
+              tools.push({
+                name: tool.name,
+                description: tool.description,
+                integration: integration.name,
+              });
+            });
+          });
+        }
+
+        // Populate select
+        const select = document.getElementById('toolSelect');
+        select.innerHTML = '<option value="">Select a tool...</option>';
+        tools.forEach(tool => {
+          const option = document.createElement('option');
+          option.value = tool.name;
+          option.textContent = `${tool.name} (${tool.integration})`;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        document.getElementById('toolSelect').innerHTML = '<option value="">Error loading tools</option>';
+        console.error('Failed to load tools:', error);
+      }
+    }
+
+    // Execute tool
+    async function executeTool() {
+      const toolName = document.getElementById('toolSelect').value;
+      if (!toolName) {
+        alert('Please select a tool');
+        return;
+      }
+
+      const inputJson = document.getElementById('inputJson').value;
+      let input;
+      try {
+        input = JSON.parse(inputJson);
+      } catch (e) {
+        showOutput('// ERROR: Invalid JSON input\n' + e.message, 'error');
+        return;
+      }
+
+      const btn = document.getElementById('executeBtn');
+      const btnText = document.getElementById('executeText');
+      btn.disabled = true;
+      btnText.innerHTML = '<span class="loader"></span> Executing...';
+
+      const startTime = Date.now();
+
+      try {
+        const response = await fetch(`/mcp/call-tool/${toolName}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Deco-MCP-Client': 'true',
+          },
+          body: JSON.stringify(input),
+          credentials: 'include',
+        });
+
+        const duration = Date.now() - startTime;
+        const data = await response.json();
+
+        if (data.error) {
+          showOutput(`// ERROR: ${toolName}\n─────────────────────────────\n${JSON.stringify(data, null, 2)}\n\nExecuted in ${duration}ms`, 'error');
+          addToHistory(toolName, false, duration);
+        } else {
+          showOutput(`// SUCCESS: ${toolName}\n─────────────────────────────\n${JSON.stringify(data, null, 2)}\n\nExecuted in ${duration}ms`, 'success');
+          addToHistory(toolName, true, duration);
+        }
+      } catch (error) {
+        showOutput(`// ERROR: Request failed\n─────────────────────────────\n${error.message}`, 'error');
+        addToHistory(toolName, false, 0);
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Execute Tool';
+      }
+    }
+
+    function showOutput(text, type) {
+      const output = document.getElementById('output');
+      output.textContent = text;
+      output.className = 'output ' + type;
+    }
+
+    function clearInput() {
+      document.getElementById('inputJson').value = '{}';
+    }
+
+    function formatJson() {
+      try {
+        const input = document.getElementById('inputJson').value;
+        const parsed = JSON.parse(input);
+        document.getElementById('inputJson').value = JSON.stringify(parsed, null, 2);
+      } catch (e) {
+        alert('Invalid JSON: ' + e.message);
+      }
+    }
+
+    function addToHistory(toolName, success, duration) {
+      history.unshift({
+        tool: toolName,
+        success,
+        duration,
+        timestamp: Date.now(),
+      });
+      history = history.slice(0, 10);
+      localStorage.setItem('toolHistory', JSON.stringify(history));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const historyEl = document.getElementById('history');
+      if (history.length === 0) {
+        historyEl.innerHTML = '<li class="comment">// No history yet</li>';
+        return;
+      }
+
+      historyEl.innerHTML = history.map(item => {
+        const timeAgo = formatTimeAgo(item.timestamp);
+        const statusClass = item.success ? 'status-success' : 'status-error';
+        const statusText = item.success ? '✓' : '✗';
+        return `
+          <li class="history-item" onclick="loadFromHistory('${item.tool}')">
+            <span class="history-tool">${item.tool}<span class="${statusClass} status-badge">${statusText}</span></span>
+            <span class="history-time">${timeAgo} (${item.duration}ms)</span>
+          </li>
+        `;
+      }).join('');
+    }
+
+    function loadFromHistory(toolName) {
+      document.getElementById('toolSelect').value = toolName;
+    }
+
+    function formatTimeAgo(timestamp) {
+      const seconds = Math.floor((Date.now() - timestamp) / 1000);
+      if (seconds < 60) return `${seconds}s ago`;
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      return `${hours}h ago`;
+    }
+
+    // Keyboard shortcuts
+    document.getElementById('inputJson').addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        executeTool();
+      }
+    });
+
+    // Initialize
+    loadTools();
+    renderHistory();
+  </script>
+</body>
+</html>
+
+
