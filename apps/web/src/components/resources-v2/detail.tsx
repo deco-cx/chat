@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createContext, useContext, useMemo } from "react";
 import { useParams } from "react-router";
 import { z } from "zod";
+import Preview from "../agent/preview.tsx";
 import { EmptyState } from "../common/empty-state.tsx";
 import { type DecopilotContextValue } from "../decopilot/context.tsx";
 import { DecopilotLayout } from "../layout/decopilot-layout.tsx";
@@ -75,7 +76,7 @@ function ResourcesV2DetailTab({
 
   return (
     <div className="h-full">
-      <iframe src={viewData.url} className="w-full h-full border-0" />
+      <Preview src={viewData.url} />
     </div>
   );
 }

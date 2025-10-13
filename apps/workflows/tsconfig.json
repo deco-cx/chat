@@ -1,0 +1,21 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    },
+    {
+      "path": "./tsconfig.worker.json"
+    }
+  ],
+  "compilerOptions": {
+    "composite": true
+    // todo: check wrangler typegen
+    // "types": [
+    // 	"./worker-configuration.d.ts"
+    // ]
+  }
+}

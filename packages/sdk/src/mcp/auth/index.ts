@@ -4,7 +4,7 @@
  * This is used to control access to MCP tools.
  */
 export const createResourceAccess = () => {
-  let canAccess = false;
+  let canAccess = true;
 
   return {
     /**
