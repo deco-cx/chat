@@ -97,7 +97,7 @@ export function ChatMessage({
     >
       <div
         className={cn(
-          "flex flex-col gap-1 min-w-0",
+          "flex flex-col gap-2 min-w-0",
           isUser ? "items-end max-w-[70%]" : "w-full items-start",
         )}
       >
@@ -107,12 +107,12 @@ export function ChatMessage({
 
         <div
           className={cn(
-            "w-full min-w-0 not-only:rounded-2xl text-base break-words overflow-wrap-anywhere",
-            isUser ? "bg-muted p-3" : "bg-transparent",
+            "w-full min-w-0 not-only:rounded-2xl text-[15px] break-words overflow-wrap-anywhere",
+            isUser ? "bg-muted px-4 py-3" : "bg-transparent",
           )}
         >
           {message.parts ? (
-            <div className="space-y-2 w-full">
+            <div className="space-y-3 w-full">
               {message.parts.map((part, index) => {
                 if (part.type === "reasoning") {
                   return (
