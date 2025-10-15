@@ -1,13 +1,13 @@
-import type { AIAgent } from "@deco/ai";
+import { Agent } from "@deco/ai";
 import { z } from "zod";
-import { stub } from "../../stub.ts";
+import { doRetryable } from "../../do-commons.ts";
+import { baseMessageSchema } from "../ai/api.ts";
 import {
   assertHasWorkspace,
   assertWorkspaceResourceAccess,
   type WithTool,
 } from "../assertions.ts";
 import { type AppContext, createToolFactory } from "../context.ts";
-import { baseMessageSchema } from "../ai/api.ts";
 
 export interface AgentContext extends AppContext {
   agent: string;
@@ -19,6 +19,9 @@ const createAgentTool = createToolFactory<WithTool<AgentContext>>(
       ...c,
       agent: c.params.agentId ?? "teamAgent",
     }) as unknown as WithTool<AgentContext>,
+  undefined,
+  undefined,
+  doRetryable,
 );
 
 // Zod schema for agent generation options (used for runtime validation in API)
@@ -53,9 +56,9 @@ export const agentGenerateText = createAgentTool({
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
 
-    const agentStub = stub<AIAgent>("AIAgent").new(
-      `${c.workspace.value}/Agents/${c.agent}`,
-    );
+    const agentStub = c
+      .stub(Agent)
+      .new(`${c.workspace.value}/Agents/${c.agent}`);
 
     const asMessageArray = Array.isArray(message)
       ? message
@@ -112,9 +115,9 @@ export const agentGenerateObject = createAgentTool({
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
 
-    const agentStub = stub<AIAgent>("AIAgent").new(
-      `${c.workspace.value}/Agents/${c.agent}`,
-    );
+    const agentStub = c
+      .stub(Agent)
+      .new(`${c.workspace.value}/Agents/${c.agent}`);
 
     const asMessageArray = Array.isArray(message)
       ? message
@@ -228,9 +231,9 @@ export const agentListen = createAgentTool({
       const audioBuffer = await response.arrayBuffer();
       const audioBufferUint8Array = new Uint8Array(audioBuffer);
 
-      const agentStub = stub<AIAgent>("AIAgent").new(
-        `${c.workspace.value}/Agents/${c.agent}`,
-      );
+      const agentStub = c
+        .stub(Agent)
+        .new(`${c.workspace.value}/Agents/${c.agent}`);
 
       const transcription = await agentStub.listen(audioBufferUint8Array);
 
