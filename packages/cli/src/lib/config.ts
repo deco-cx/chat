@@ -127,11 +127,6 @@ const readConfigFile = async (cwd?: string) => {
   return decoConfig;
 };
 
-const DECO_CHAT_WORKFLOW_BINDING = {
-  name: "DECO_WORKFLOW_DO",
-  class_name: "Workflow",
-};
-
 const addSchemaNotation = (stringified: string) => {
   return `#:schema node_modules/@deco/workers-runtime/config-schema.json\n${stringified}`;
 };
@@ -155,41 +150,6 @@ export const writeWranglerConfig = async (
 
   await fs.writeFile(configPath, addSchemaNotation(stringify(mergedConfig)));
   console.log(`✅ Wrangler configuration written to: ${configPath}`);
-};
-
-export const addWorkflowDO = async () => {
-  const wranglerConfig = await readWranglerConfig(process.cwd());
-  const currentDOs = (wranglerConfig.durable_objects?.bindings ?? []).filter(
-    (b) => b.name !== "DECO_CHAT_WORKFLOW_DO",
-  );
-  const isWorkflowMigration = (m: { new_classes?: string[] }) =>
-    m.new_classes?.includes(DECO_CHAT_WORKFLOW_BINDING.class_name);
-
-  const workflowMigration = (wranglerConfig.migrations ?? []).find(
-    isWorkflowMigration,
-  );
-  const workflowsBindings = {
-    migrations: [
-      ...(wranglerConfig.migrations ?? []).filter(
-        (migration) => !isWorkflowMigration(migration),
-      ),
-      {
-        ...workflowMigration,
-        tag: workflowMigration?.tag ?? "v1",
-        new_classes: [DECO_CHAT_WORKFLOW_BINDING.class_name],
-      },
-    ],
-    durable_objects: {
-      bindings: [
-        ...currentDOs.filter((b) => b.name !== DECO_CHAT_WORKFLOW_BINDING.name),
-        DECO_CHAT_WORKFLOW_BINDING,
-      ],
-    },
-  };
-
-  await writeWranglerConfig(
-    wranglerConfig.deco?.enable_workflows ? workflowsBindings : {},
-  );
 };
 
 /**

@@ -1,7 +1,6 @@
 import { dirname, join } from "path";
 import { promises as fs } from "fs";
 import {
-  addWorkflowDO,
   getConfig,
   getConfigFilePath,
   readWranglerConfig,
@@ -175,6 +174,5 @@ export async function ensureDevEnvironment(opts: StartDevServerOptions) {
   await ensureEnvVarsGitIgnore(projectRoot);
   const env = await getEnvVars(projectRoot);
   await writeEnvVars(projectRoot, env);
-  await addWorkflowDO();
   await addZodDependency(projectRoot);
 }
