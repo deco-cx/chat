@@ -39,6 +39,13 @@ describe("MicroDollar - fromMicrodollarString and toMicrodollarString", () => {
     expect(largeValue.toMicrodollarString()).toBe("123456789_123456");
     expect(largeValue.toDollars()).toBe(123456789.123456);
   });
+
+  test("should handle multiple underscores in input", () => {
+    const value =
+      MicroDollar.fromMicrodollarString("1_234_567_890_123456");
+    expect(value.toMicrodollarString()).toBe("1234567890_123456");
+    expect(value.toDollars()).toBe(1234567890.123456);
+  });
 });
 
 describe("MicroDollar - negative values", () => {

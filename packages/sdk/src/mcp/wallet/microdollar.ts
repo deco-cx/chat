@@ -13,8 +13,8 @@ export class MicroDollar {
   }
 
   public static fromMicrodollarString(microdollars: string): MicroDollar {
-    // Remove the underscore and parse as BigInt
-    const cleanedStr = microdollars.replace("_", "");
+    // Remove any underscores and parse as BigInt
+    const cleanedStr = microdollars.replace(/_/g, "");
     const parsed = BigInt(cleanedStr);
     return new MicroDollar(parsed);
   }
