@@ -7,11 +7,11 @@ import {
 } from "@deco/cf-sandbox";
 import { proxyConnectionForId } from "@deco/workers-runtime";
 import { Validator } from "jsonschema";
-import { MCPConnection } from "../../models/mcp.ts";
-import { WorkflowState } from "../../workflows/workflow-runner.ts";
 import { MCPClientStub } from "../context.ts";
 import { slugify } from "../deconfig/api.ts";
 import { ProjectTools } from "../index.ts";
+import { MCPConnection } from "../../models/mcp.ts";
+import { WorkflowState } from "../../workflows/workflow-runner.ts";
 import {
   CodeStepDefinition,
   ToolCallStepDefinition,
@@ -221,7 +221,7 @@ export async function runCode(
 ): Promise<Rpc.Serializable<unknown>> {
   // Load and execute the code step function
   using stepEvaluation = await evalCodeAndReturnDefaultHandle(
-    step.execute,
+    step.execute ?? "",
     runtimeId,
   );
   const {
@@ -318,7 +318,7 @@ export async function runTool(
   const response = await client.INTEGRATIONS_CALL_TOOL({
     connection: integration.connection,
     params: {
-      name: step.tool_name,
+      name: step.tool_name ?? "",
       arguments: input as Record<string, unknown>,
     },
   });

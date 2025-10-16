@@ -21,6 +21,7 @@
     ".": "./src/index.ts",
     "./proxy": "./src/proxy.ts",
     "./client": "./src/client.ts",
+    "./admin": "./src/admin.ts",
     "./mastra": "./src/mastra.ts",
     "./drizzle": "./src/drizzle.ts",
     "./d1": "./src/d1-store.ts",

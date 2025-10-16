@@ -738,29 +738,20 @@ function ResourcesV2ListTab({
                           description: "",
                         };
 
-                        // Add resource-specific required fields
-                        if (resourceName === "workflow") {
-                          data.inputSchema = {};
-                          data.outputSchema = {};
-                          data.steps = [
-                            {
-                              id: "step-1",
-                              type: "code",
-                              name: "Start",
-                              def: {
-                                name: "Start",
-                                description: "Initial step",
-                                execute: "// Add your code here\nreturn {};",
-                              },
-                            },
-                          ];
-                          data.triggers = [];
-                        } else if (resourceName === "tool") {
-                          data.inputSchema = {};
-                          data.outputSchema = {};
-                          data.execute =
-                            "// Add your tool code here\nexport default function(input) {\n  return {};\n}";
-                        }
+                      // Add resource-specific required fields
+                      if (resourceName === "document") {
+                        data.content = "";
+                      } else if (resourceName === "workflow") {
+                        data.inputSchema = {};
+                        data.outputSchema = {};
+                        data.steps = [];
+                        data.triggers = [];
+                      } else if (resourceName === "tool") {
+                        data.inputSchema = {};
+                        data.outputSchema = {};
+                        data.execute =
+                          "// Add your tool code here\nexport default function(input) {\n  return {};\n}";
+                      }
 
                         const result = await callTool(integration.connection, {
                           name: `DECO_RESOURCE_${(resourceName ?? "").toUpperCase()}_CREATE`,

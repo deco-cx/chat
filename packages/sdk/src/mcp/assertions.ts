@@ -221,7 +221,6 @@ export const assertWorkspaceResourceAccess = async (
       ? { resource: toolOrResourceContext }
       : toolOrResourceContext;
   });
-
   for (const { resource, ...authContext } of resources) {
     try {
       // agent tokens
@@ -280,6 +279,7 @@ export const assertWorkspaceResourceAccess = async (
           user.id as string,
           slug,
           resource,
+          authContext,
         );
 
         if (canAccess) {

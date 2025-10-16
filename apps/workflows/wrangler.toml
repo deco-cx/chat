@@ -1,0 +1,53 @@
+#:schema node_modules/@deco/workers-runtime/config-schema.json
+name = "default-workflows"
+main = "server/main.ts"
+compatibility_date = "2025-06-17"
+compatibility_flags = [ "nodejs_compat" ]
+scope = "deco-team"
+
+[assets]
+directory = "./dist/client"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = true
+
+[deco]
+workspace = "deco-team"
+enable_workflows = true
+local = false
+
+[deco.integration]
+description = "Workflowz é seu assistente de automação com IA. Crie workflows complexos apenas descrevendo o que você quer, execute steps individuais ou em sequência, e visualize resultados com interfaces customizadas. Ideal para automação, processamento de dados, e orquestração de APIs."
+friendlyName = "Workflowz - Workflow Builder com IA"
+icon = "https://assets.decocache.com/mcp/workflowz/icon.png"
+source = "https://github.com/deco-cx/workflowz"
+public = true
+
+[[deco.bindings]]
+name = "TOOLS"
+type = "mcp"
+integration_name = "@deco/tools"
+
+[[deco.bindings]]
+name = "WORKFLOWS_MANAGEMENT"
+type = "mcp"
+integration_name = "@deco/workflows"
+
+[[deco.bindings]]
+name = "AI_GATEWAY"
+type = "mcp"
+integration_name = "@deco/ai-gateway"
+
+[[deco.bindings]]
+name = "INTEGRATIONS"
+type = "mcp"
+integration_name = "@deco/integrations"
+
+[[migrations]]
+tag = "v1"
+new_classes = [ "Workflow" ]
+
+[durable_objects]
+[[durable_objects.bindings]]
+name = "DECO_WORKFLOW_DO"
+class_name = "Workflow"

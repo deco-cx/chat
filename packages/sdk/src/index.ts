@@ -71,7 +71,6 @@ export {
   WorkflowDefinitionSchema,
   WorkflowStepDefinitionSchema,
   WorkflowRunDataSchema,
-  type StepExecutionResult,
   type WorkflowDefinition,
   type WorkflowStep,
   type WorkflowRunData,

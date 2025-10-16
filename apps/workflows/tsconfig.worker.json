@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.worker.tsbuildinfo",
+    "types": ["vite/client"],
+    "lib": ["ES2023"],
+    "allowJs": true
+  },
+  "include": [
+    "./server",
+    "./shared",
+    "./drizzle",
+    "../../packages/sdk/src/**/*.ts"
+  ]
+}

@@ -70,6 +70,7 @@
     "**/build",
     "**/.wrangler",
     "apps/web/public/**",
+    "apps/workflows/**",
     "packages/runtime/scripts/generate-cf-imports.ts",
     "packages/runtime/scripts/generate-json-schema.ts",
     "docs/server/**",

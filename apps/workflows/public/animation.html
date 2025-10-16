@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workflowz - Crie workflows com IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0e1a;
+      color: white;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .scene {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      padding: 60px;
+    }
+
+    .scene.active {
+      opacity: 1;
+    }
+
+    /* Intro Scene - COPY DO /ABOUT */
+    .intro {
+      text-align: center;
+    }
+
+    .intro-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 30px;
+      animation: fadeInUp 1s ease;
+    }
+
+    .intro-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+      animation: pulse 2s infinite;
+    }
+
+    .intro h1 {
+      font-size: 56px;
+      font-weight: bold;
+      color: white;
+      margin: 0;
+    }
+
+    .intro p {
+      font-size: 28px;
+      color: #d1d5db;
+      max-width: 900px;
+      margin: 20px auto 0;
+      line-height: 1.5;
+      animation: fadeInUp 1s ease 0.3s backwards;
+    }
+
+    .intro .highlight-green {
+      color: #4ade80;
+      font-weight: 700;
+    }
+
+    .intro .highlight-cyan {
+      color: #22d3ee;
+      font-weight: 700;
+    }
+
+    .intro .highlight-purple {
+      color: #a855f7;
+      font-weight: 700;
+    }
+
+    /* Editor Scene */
+    .editor {
+      width: 100%;
+      max-width: 1400px;
+    }
+
+    .editor-header {
+      font-size: 28px;
+      font-weight: bold;
+      color: #4ade80;
+      margin-bottom: 30px;
+      animation: fadeInDown 0.5s ease;
+    }
+
+    .prompt-box {
+      background: #0f1419;
+      border: 3px solid #1f2937;
+      border-radius: 16px;
+      padding: 40px;
+      animation: scaleIn 0.5s ease;
+    }
+
+    .prompt-text {
+      font-size: 32px;
+      font-weight: 700;
+      color: white;
+      line-height: 1.6;
+    }
+
+    .typing-cursor {
+      display: inline-block;
+      width: 4px;
+      height: 40px;
+      background: #4ade80;
+      margin-left: 8px;
+      animation: blink 0.8s infinite;
+    }
+
+    /* AI Generating Scene */
+    .ai-generating {
+      text-align: center;
+    }
+
+    .ai-icon {
+      font-size: 120px;
+      margin-bottom: 40px;
+      animation: float 2s ease-in-out infinite;
+    }
+
+    .ai-text {
+      font-size: 40px;
+      font-weight: bold;
+      color: #4ade80;
+      margin-bottom: 20px;
+    }
+
+    .ai-subtext {
+      font-size: 24px;
+      font-weight: normal;
+      color: #9ca3af;
+      line-height: 1.7;
+    }
+
+    /* Code Generated Scene */
+    .code-generated {
+      width: 100%;
+      max-width: 1400px;
+    }
+
+    .code-header {
+      font-size: 28px;
+      font-weight: bold;
+      color: #4ade80;
+      margin-bottom: 30px;
+      animation: fadeInDown 0.5s ease;
+    }
+
+    .code-box {
+      background: #0f1419;
+      border: 3px solid #4ade80;
+      border-radius: 16px;
+      padding: 40px;
+      animation: glowPulse 2s infinite;
+      font-family: 'JetBrains Mono', 'Monaco', 'Courier New', monospace;
+    }
+
+    .code-line {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      margin: 8px 0;
+      opacity: 0;
+      animation: fadeInLeft 0.3s ease forwards;
+      line-height: 1.8;
+      letter-spacing: 0.5px;
+    }
+
+    .code-line:nth-child(1) { animation-delay: 0.1s; }
+    .code-line:nth-child(2) { animation-delay: 0.2s; }
+    .code-line:nth-child(3) { animation-delay: 0.3s; }
+    .code-line:nth-child(4) { animation-delay: 0.4s; }
+    .code-line:nth-child(5) { animation-delay: 0.5s; }
+    .code-line:nth-child(6) { animation-delay: 0.6s; }
+    .code-line:nth-child(7) { animation-delay: 0.7s; }
+    .code-line:nth-child(8) { animation-delay: 0.8s; }
+    .code-line:nth-child(9) { animation-delay: 0.9s; }
+    .code-line:nth-child(10) { animation-delay: 1.0s; }
+
+    /* Syntax Highlighting */
+    .keyword { color: #c678dd; font-weight: 700; }
+    .function { color: #61afef; font-weight: 700; }
+    .string { color: #98c379; }
+    .property { color: #e06c75; }
+    .constant { color: #d19a66; }
+    .comment { color: #5c6370; font-style: italic; }
+    .punctuation { color: #abb2bf; }
+
+    /* Tools Available Scene */
+    .tools-scene {
+      width: 100%;
+      max-width: 1400px;
+    }
+
+    .tools-header {
+      font-size: 40px;
+      font-weight: bold;
+      color: #4ade80;
+      margin-bottom: 50px;
+      text-align: center;
+      animation: fadeInDown 0.5s ease;
+    }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+    }
+
+    .tool-card {
+      background: #0f1419;
+      border: 3px solid #1f2937;
+      border-radius: 20px;
+      padding: 40px;
+      transition: all 0.3s;
+      animation: popIn 0.5s ease;
+    }
+
+    .tool-card:nth-child(1) { 
+      animation-delay: 0.1s;
+      border-color: #5865F2;
+    }
+
+    .tool-card:nth-child(2) { 
+      animation-delay: 0.2s;
+      border-color: #0F9D58;
+    }
+
+    .tool-card:nth-child(3) { 
+      animation-delay: 0.3s;
+      border-color: #22d3ee;
+    }
+
+    .tool-card:nth-child(4) { 
+      animation-delay: 0.4s;
+      border-color: #fbbf24;
+    }
+
+    .tool-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 40px rgba(74, 222, 128, 0.2);
+    }
+
+    .tool-icon {
+      font-size: 60px;
+      margin-bottom: 20px;
+    }
+
+    .tool-name {
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 10px;
+    }
+
+    .tool-desc {
+      font-size: 18px;
+      font-weight: normal;
+      color: #9ca3af;
+      line-height: 1.7;
+    }
+
+    /* Workflow Scene */
+    .workflow {
+      width: 100%;
+      max-width: 1600px;
+    }
+
+    .workflow-header {
+      font-size: 40px;
+      font-weight: bold;
+      color: #4ade80;
+      margin-bottom: 50px;
+      text-align: center;
+      animation: fadeInDown 0.5s ease;
+    }
+
+    .workflow-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .workflow-step {
+      background: #0f1419;
+      border: 3px solid #4ade80;
+      border-radius: 16px;
+      padding: 30px;
+      text-align: center;
+      animation: popIn 0.5s ease;
+      position: relative;
+    }
+
+    .workflow-step:nth-child(1) { animation-delay: 0.1s; }
+    .workflow-step:nth-child(2) { animation-delay: 0.3s; }
+    .workflow-step:nth-child(3) { animation-delay: 0.5s; }
+    .workflow-step:nth-child(4) { animation-delay: 0.7s; }
+
+    .workflow-step::after {
+      content: '→';
+      position: absolute;
+      right: -30px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 40px;
+      color: #22d3ee;
+      animation: pulse 2s infinite;
+    }
+
+    .workflow-step:last-child::after {
+      display: none;
+    }
+
+    .workflow-step-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+
+    .workflow-step-num {
+      font-size: 18px;
+      font-weight: 700;
+      color: #9ca3af;
+      margin-bottom: 10px;
+    }
+
+    .workflow-step-name {
+      font-size: 20px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 8px;
+    }
+
+    .workflow-step-tool {
+      font-size: 14px;
+      font-weight: 600;
+      color: #4ade80;
+    }
+
+    /* Output Barbie Scene */
+    .output-barbie {
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .barbie-card {
+      background: linear-gradient(135deg, #ec4899 0%, #f472b6 50%, #fbbf24 100%);
+      border: 5px solid #ec4899;
+      border-radius: 30px;
+      padding: 60px;
+      text-align: center;
+      animation: scaleIn 0.8s ease;
+      box-shadow: 0 20px 80px rgba(236, 72, 153, 0.6);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .barbie-card::before {
+      content: '✨';
+      position: absolute;
+      font-size: 80px;
+      top: 30px;
+      left: 40px;
+      opacity: 0.2;
+      animation: floatSparkle 3s ease-in-out infinite;
+    }
+
+    .barbie-card::after {
+      content: '💖';
+      position: absolute;
+      font-size: 60px;
+      right: 40px;
+      bottom: 40px;
+      opacity: 0.3;
+      animation: float 2s ease-in-out infinite;
+    }
+
+    .barbie-card-title {
+      font-family: 'Pacifico', cursive;
+      font-size: 56px;
+      font-weight: normal;
+      color: white;
+      text-shadow: 4px 4px 0 rgba(0,0,0,0.3),
+                   0 0 20px rgba(255,255,255,0.5);
+      margin-bottom: 20px;
+      animation: fadeInDown 0.5s ease;
+      letter-spacing: 2px;
+    }
+
+    .barbie-card-subtitle {
+      font-family: 'Pacifico', cursive;
+      font-size: 36px;
+      font-weight: normal;
+      color: #fef3c7;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.2),
+                   0 0 15px rgba(254, 243, 199, 0.4);
+      margin-bottom: 40px;
+      animation: fadeInDown 0.6s ease;
+      letter-spacing: 1px;
+    }
+
+    .barbie-card-info {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 40px;
+      margin: 20px 0;
+      animation: fadeInUp 0.7s ease;
+    }
+
+    .barbie-card-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 15px 0;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .barbie-card-label {
+      color: #a855f7;
+    }
+
+    .barbie-card-value {
+      color: #ec4899;
+    }
+
+    .barbie-card-footer {
+      font-family: 'Pacifico', cursive;
+      font-size: 32px;
+      font-weight: normal;
+      color: white;
+      margin-top: 30px;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.2),
+                   0 0 15px rgba(255,255,255,0.4);
+      animation: fadeInUp 0.8s ease;
+      letter-spacing: 1px;
+    }
+
+    /* Features Scene - COPY DO /ABOUT */
+    .features {
+      width: 100%;
+      max-width: 1400px;
+    }
+
+    .features-header {
+      font-size: 40px;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 50px;
+      text-align: center;
+      animation: fadeInDown 0.5s ease;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+
+    .feature-card {
+      background: #0f1419;
+      border: 1px solid #1f2937;
+      border-radius: 16px;
+      padding: 32px;
+      transition: all 0.3s;
+      animation: popIn 0.5s ease;
+    }
+
+    .feature-card:nth-child(1) { 
+      animation-delay: 0.1s;
+    }
+
+    .feature-card:nth-child(1):hover {
+      border-color: rgba(74, 222, 128, 0.5);
+    }
+
+    .feature-card:nth-child(2) { 
+      animation-delay: 0.3s;
+    }
+
+    .feature-card:nth-child(2):hover {
+      border-color: rgba(34, 211, 238, 0.5);
+    }
+
+    .feature-card:nth-child(3) { 
+      animation-delay: 0.5s;
+    }
+
+    .feature-card:nth-child(3):hover {
+      border-color: rgba(168, 85, 247, 0.5);
+    }
+
+    .feature-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .feature-icon-box.green {
+      background: rgba(74, 222, 128, 0.2);
+    }
+
+    .feature-icon-box.cyan {
+      background: rgba(34, 211, 238, 0.2);
+    }
+
+    .feature-icon-box.purple {
+      background: rgba(168, 85, 247, 0.2);
+    }
+
+    .feature-icon {
+      font-size: 28px;
+    }
+
+    .feature-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 12px;
+    }
+
+    .feature-desc {
+      font-size: 18px;
+      font-weight: normal;
+      color: #9ca3af;
+      line-height: 1.7;
+    }
+
+    /* Outro Scene */
+    .outro {
+      text-align: center;
+    }
+
+    .outro-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 30px;
+      animation: fadeInUp 0.8s ease;
+    }
+
+    .outro-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+      animation: pulse 2s infinite;
+    }
+
+    .outro h1 {
+      font-size: 56px;
+      font-weight: bold;
+      color: white;
+    }
+
+    .outro .tagline {
+      font-size: 28px;
+      color: #d1d5db;
+      margin-top: 20px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.5;
+      animation: fadeInUp 0.8s ease 0.3s backwards;
+    }
+
+    .outro .tagline .highlight {
+      color: #4ade80;
+      font-weight: 700;
+    }
+
+    .outro-tech {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 50px;
+      animation: fadeInUp 0.8s ease 0.6s backwards;
+    }
+
+    .tech-badge {
+      background: #0f1419;
+      border: 2px solid #4ade80;
+      border-radius: 12px;
+      padding: 15px 30px;
+      font-size: 24px;
+      font-weight: 700;
+      color: #4ade80;
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    @keyframes floatSparkle {
+      0%, 100% { 
+        transform: translate(0, 0) rotate(0deg);
+      }
+      50% { 
+        transform: translate(20px, -20px) rotate(180deg);
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.1); }
+    }
+
+    @keyframes fadeInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes glowPulse {
+      0%, 100% {
+        box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 40px rgba(74, 222, 128, 0.6);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Scene 1: PATHOS - Problema Relatable (0-4s) -->
+  <div class="scene intro" id="scene-intro">
+    <div class="intro-logo">
+      <div class="intro-dot"></div>
+      <h1>Workflowz</h1>
+    </div>
+    <p>
+      Descreva o que você quer.<br>
+      <span class="highlight-green">A IA cria</span>, 
+      <span class="highlight-cyan">você executa</span>.
+    </p>
+  </div>
+
+  <!-- Scene 2: PATHOS - Exemplo Emocional (4-7s) -->
+  <div class="scene editor" id="scene-prompt">
+    <div class="editor-header">💭 Sua Ideia</div>
+    <div class="prompt-box">
+      <div class="prompt-text">
+        <span id="typed-text"></span><span class="typing-cursor"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 3: LOGOS - IA Trabalhando (7-10s) -->
+  <div class="scene ai-generating" id="scene-ai">
+    <div class="ai-icon">✨</div>
+    <div class="ai-text">IA Gerando Código</div>
+    <div class="ai-subtext">
+      Criando step completo automaticamente
+    </div>
+  </div>
+
+  <!-- Scene 4: LOGOS - Código Real (10-14s) -->
+  <div class="scene code-generated" id="scene-code">
+    <div class="code-header">✅ Código Gerado</div>
+    <div class="code-box">
+      <div class="code-line">
+        <span class="comment">// Gerar com IA</span>
+      </div>
+      <div class="code-line">
+        <span class="keyword">const</span> <span class="constant">dados</span> <span class="punctuation">=</span> <span class="keyword">await</span> <span class="function">ctx</span><span class="punctuation">.</span><span class="property">env</span><span class="punctuation">[</span><span class="string">'@deco/ai'</span><span class="punctuation">].</span><span class="function">GENERATE_OBJECT</span><span class="punctuation">({</span>
+      </div>
+      <div class="code-line">
+        <span class="punctuation">&nbsp;&nbsp;</span><span class="property">prompt</span><span class="punctuation">:</span> <span class="string">"Convite Barbie"</span><span class="punctuation">,</span> <span class="property">schema</span>
+      </div>
+      <div class="code-line">
+        <span class="punctuation">});</span>
+      </div>
+      <div class="code-line">&nbsp;</div>
+      <div class="code-line">
+        <span class="comment">// Salvar no banco</span>
+      </div>
+      <div class="code-line">
+        <span class="keyword">await</span> <span class="function">ctx</span><span class="punctuation">.</span><span class="property">env</span><span class="punctuation">[</span><span class="string">'@workspace'</span><span class="punctuation">].</span><span class="function">RUN_SQL</span><span class="punctuation">(</span><span class="string">"INSERT..."</span><span class="punctuation">);</span>
+      </div>
+      <div class="code-line">&nbsp;</div>
+      <div class="code-line">
+        <span class="comment">// Notificar Discord</span>
+      </div>
+      <div class="code-line">
+        <span class="keyword">await</span> <span class="function">ctx</span><span class="punctuation">.</span><span class="property">env</span><span class="punctuation">[</span><span class="string">'@discord'</span><span class="punctuation">].</span><span class="function">SEND_MESSAGE</span><span class="punctuation">({</span> <span class="constant">dados</span> <span class="punctuation">});</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 5: LOGOS - Tools (14-18s) -->
+  <div class="scene tools-scene" id="scene-tools">
+    <div class="tools-header">🔌 Conecte Qualquer API</div>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-icon">💬</div>
+        <div class="tool-name">Discord</div>
+        <div class="tool-desc">Mensagens automáticas</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-icon">📊</div>
+        <div class="tool-name">Google Sheets</div>
+        <div class="tool-desc">Automatize planilhas</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-icon">🔍</div>
+        <div class="tool-name">Perplexity</div>
+        <div class="tool-desc">Pesquisa inteligente</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-icon">🎨</div>
+        <div class="tool-name">IA Images</div>
+        <div class="tool-desc">Gere visuais</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 6: LOGOS - Workflow (18-22s) -->
+  <div class="scene workflow" id="scene-workflow">
+    <div class="workflow-header">🔄 Encadeie Múltiplos Steps</div>
+    <div class="workflow-steps">
+      <div class="workflow-step">
+        <div class="workflow-step-icon">✨</div>
+        <div class="workflow-step-num">1</div>
+        <div class="workflow-step-name">Gerar Dados</div>
+        <div class="workflow-step-tool">GENERATE_OBJECT</div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-icon">💾</div>
+        <div class="workflow-step-num">2</div>
+        <div class="workflow-step-name">Salvar DB</div>
+        <div class="workflow-step-tool">RUN_SQL</div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-icon">💬</div>
+        <div class="workflow-step-num">3</div>
+        <div class="workflow-step-name">Notificar</div>
+        <div class="workflow-step-tool">DISCORD</div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-icon">🎨</div>
+        <div class="workflow-step-num">4</div>
+        <div class="workflow-step-name">Criar Visual</div>
+        <div class="workflow-step-tool">IMAGE_GEN</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 7: Output Barbie (23-27s) -->
+  <div class="scene output-barbie" id="scene-output">
+    <div class="barbie-card">
+      <div class="barbie-card-title">💖 Você está convidada! 💖</div>
+      <div class="barbie-card-subtitle">Festa de Aniversário da Sofia</div>
+      
+      <div class="barbie-card-info">
+        <div class="barbie-card-row">
+          <span class="barbie-card-label">📅 Data:</span>
+          <span class="barbie-card-value">15 de Dezembro</span>
+        </div>
+        <div class="barbie-card-row">
+          <span class="barbie-card-label">🕐 Horário:</span>
+          <span class="barbie-card-value">14h às 18h</span>
+        </div>
+        <div class="barbie-card-row">
+          <span class="barbie-card-label">📍 Local:</span>
+          <span class="barbie-card-value">Buffet Estrela</span>
+        </div>
+        <div class="barbie-card-row">
+          <span class="barbie-card-label">🎂 Idade:</span>
+          <span class="barbie-card-value">7 aninhos</span>
+        </div>
+        <div class="barbie-card-row">
+          <span class="barbie-card-label">👗 Tema:</span>
+          <span class="barbie-card-value">Barbie Girl</span>
+        </div>
+      </div>
+      
+      <div class="barbie-card-footer">
+        Confirme sua presença! 🎉✨
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 8: ETHOS - Credibilidade (27-30s) -->
+  <div class="scene features" id="scene-features">
+    <div class="features-header">Simples. Poderoso. Seu.</div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon-box green">
+          <div class="feature-icon">✨</div>
+        </div>
+        <div class="feature-title">IA Gera Tudo</div>
+        <div class="feature-desc">
+          Do prompt ao código pronto.<br>Visualizações incluídas.
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon-box cyan">
+          <div class="feature-icon">💻</div>
+        </div>
+        <div class="feature-title">Editor Visual</div>
+        <div class="feature-desc">
+          Interface linda.<br>Inspirada no Notion e Spotify.
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon-box purple">
+          <div class="feature-icon">▶️</div>
+        </div>
+        <div class="feature-title">Execute & Veja</div>
+        <div class="feature-desc">
+          Monitore em tempo real.<br>Estilo player de música.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 9: ETHOS - Confiança (30-34s) -->
+  <div class="scene outro" id="scene-outro">
+    <div class="outro-logo">
+      <div class="outro-dot"></div>
+      <h1>Workflowz</h1>
+    </div>
+    <div class="tagline">
+      Descreva. <span class="highlight">IA cria</span>. Você executa.
+    </div>
+    <div class="outro-tech">
+      <div class="tech-badge">🔓 Open Source</div>
+      <div class="tech-badge">🔌 Protocolo MCP</div>
+    </div>
+  </div>
+
+  <script>
+    const scenes = [
+      { id: 'scene-intro', duration: 3500 },
+      { id: 'scene-prompt', duration: 3500 },
+      { id: 'scene-ai', duration: 2500 },
+      { id: 'scene-code', duration: 3500 },
+      { id: 'scene-tools', duration: 3500 },
+      { id: 'scene-workflow', duration: 3500 },
+      { id: 'scene-output', duration: 4000 },
+      { id: 'scene-features', duration: 3000 },
+      { id: 'scene-outro', duration: 3000 }
+    ];
+
+    let currentScene = 0;
+
+    function showScene(index) {
+      document.querySelectorAll('.scene').forEach(scene => {
+        scene.classList.remove('active');
+      });
+
+      const scene = document.getElementById(scenes[index].id);
+      scene.classList.add('active');
+
+      if (scenes[index].id === 'scene-prompt') {
+        typeText();
+      }
+    }
+
+    function typeText() {
+      const text = "Criar convite de aniversário da Sofia com tema Barbie";
+      const element = document.getElementById('typed-text');
+      element.textContent = ''; // Limpar antes de digitar
+      let i = 0;
+
+      function type() {
+        if (i < text.length) {
+          element.textContent += text.charAt(i);
+          i++;
+          setTimeout(type, 50);
+        }
+      }
+
+      type();
+    }
+
+    function nextScene() {
+      currentScene++;
+      if (currentScene < scenes.length) {
+        showScene(currentScene);
+        setTimeout(nextScene, scenes[currentScene].duration);
+      } else {
+        setTimeout(() => {
+          currentScene = 0;
+          showScene(0);
+          setTimeout(nextScene, scenes[0].duration);
+        }, 1000);
+      }
+    }
+
+    showScene(0);
+    setTimeout(nextScene, scenes[0].duration);
+  </script>
+
+</body>
+</html>

@@ -5,85 +5,83 @@
  * creation, updating, and management using the Resources 2.0 system.
  */
 
-export const WORKFLOW_CREATE_PROMPT = `Create a workflow with alternating code and tool_call steps.
+export const WORKFLOW_CREATE_PROMPT = `Create a workflow with sequential code steps.
 
 ## Execution Pattern
 
-Workflows follow a strict alternating pattern where **each step receives the previous step's output**:
+Workflows consist of sequential code steps where each step can reference previous step outputs using @ syntax:
 
 \`\`\`
-Input → Code → Tool Call → Code → Tool Call → Code (final) → Output
+Input → Step 1 → Step 2 → Step 3 → Output
 \`\`\`
 
 **Key Rules:**
-1. **Code steps transform data** for the next tool_call or final output
-2. **Tool calls receive** the previous step's output as their input
-3. **Final step must be code** that returns data matching the workflow's output schema
+1. **Each step has inputSchema, outputSchema, input, and execute code**
+2. **Use @ references** in the input object to reference previous step outputs or workflow input
+3. **@ References** are resolved before step execution
+4. **Final step output** must match the workflow's output schema
 
-## Code Step Execute Function
+## Step Structure
 
-Code steps must export a default async function. Available API:
+Each step must define:
+
+\`\`\`json
+{
+  "name": "send-notification",
+  "description": "Send a notification using the Slack API",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "channel": { "type": "string" },
+      "message": { "type": "string" }
+    },
+    "required": ["channel", "message"]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "success": { "type": "boolean" },
+      "timestamp": { "type": "string" }
+    }
+  },
+  "input": {
+    "channel": "@input.slackChannel",
+    "message": "@process-data.output.formattedMessage"
+  },
+  "execute": "export default async function(input, ctx) { ... }",
+  "dependencies": [{ "integrationId": "i:slack-123" }]
+}
+\`\`\`
+
+## @ Reference Syntax
+
+Use @ references to declaratively connect step inputs to outputs:
+
+- **Workflow input**: \`@input.propertyName\`
+- **Previous step output**: \`@<step-name>.output.propertyName\`
+- **Nested properties**: \`@step-1.output.data.user.name\`
+
+The system automatically resolves these references before executing each step.
+
+## Execute Function
+
+The execute function receives the **resolved input** (with @ references replaced by actual values):
 
 \`\`\`javascript
-export default async function(ctx) {
-  // Read workflow input (original input passed to workflow)
-  const workflowInput = await ctx.readWorkflowInput();
-  
-  // Read result from a previous step by name
-  const prevResult = await ctx.readStepResult('step-name');
+export default async function(input, ctx) {
+  // input already has @ references resolved
+  // No need for ctx.readWorkflowInput() or ctx.readStepResult()
   
   // Call integration tools (must declare in dependencies array)
   const result = await ctx.env['i:slack-123'].send_message({
-    channel: '#general',
-    text: 'Hello'
+    channel: input.channel,
+    text: input.message
   });
   
-  // Sleep utilities
-  await ctx.sleep('wait-name', 5000);  // milliseconds
-  await ctx.sleepUntil('wait-name', Date.now() + 5000);  // timestamp
-  
-  // Return data for next step (must match next tool's input schema)
-  return { field1: prevResult.data, field2: workflowInput.userId };
+  // Return data matching outputSchema
+  return { success: true, timestamp: new Date().toISOString() };
 }
 \`\`\`
-
-**Code Step Structure:**
-\`\`\`json
-{
-  "type": "code",
-  "def": {
-    "name": "transform-data",
-    "description": "Transform previous result for next tool",
-    "execute": "export default async function(ctx) { ... }",
-    "dependencies": [{ "integrationId": "i:slack-123" }]  // Optional, only if using ctx.env
-  }
-}
-\`\`\`
-
-## Tool Call Step Structure
-
-Tool calls execute external integrations with the previous step's output:
-
-\`\`\`json
-{
-  "type": "tool_call",
-  "def": {
-    "name": "call-external-api",
-    "description": "Execute external tool",
-    "tool_name": "send_message",
-    "integration": "i:slack",
-    "options": {
-      "retries": { "limit": 3, "delay": 1000 },
-      "timeout": 30000
-    }
-  }
-}
-\`\`\`
-
-**Integration IDs:**
-- Don't know the ID? Use a placeholder like \`i:slack\` or \`i:database\`
-- Validation will show available integrations if the ID doesn't exist
-- The system will guide you to the correct ID
 
 **HTTP Requests:**
 - \`fetch\` is NOT available in this environment
@@ -93,58 +91,57 @@ Tool calls execute external integrations with the previous step's output:
 
 ## Best Practices
 
-1. **Alternate code → tool_call → code → tool_call** - Code prepares data for tools
-2. **Each code step returns data** matching the next tool call's input schema
-3. **Use placeholders for integration IDs** - Validation errors will list available integrations
-4. **Final code step** aggregates results and returns output matching workflow's output schema
-5. **Keep transformations simple** - Each code step should do one thing
-6. **Use stopAfter parameter** to test steps incrementally`;
+1. **Define clear schemas** - inputSchema and outputSchema should be precise
+2. **Use @ references** - Declaratively wire data flow between steps
+3. **Keep steps focused** - Each step should do one thing well
+4. **Use placeholders for integration IDs** - Validation errors will list available integrations
+5. **Test incrementally** - Use stopAfter to test each step individually`;
 
-export const WORKFLOW_UPDATE_PROMPT = `Update a workflow while maintaining the alternating code → tool_call pattern.
+export const WORKFLOW_UPDATE_PROMPT = `Update a workflow with sequential code steps using @ references.
 
 ## Execution Pattern Reminder
 
 \`\`\`
-Input → Code → Tool Call → Code → Tool Call → Code (final) → Output
+Input → Step 1 → Step 2 → Step 3 → Output
 \`\`\`
 
 **Key Rules:**
-1. **Each step receives the previous step's output**
-2. **Code steps transform data** for the next tool_call
-3. **Final step must be code** returning data matching output schema
-
-## Code Step Execute API
-
-\`\`\`javascript
-export default async function(ctx) {
-  const workflowInput = await ctx.readWorkflowInput();
-  const prevResult = await ctx.readStepResult('step-name');
-  const toolResult = await ctx.env['i:integration'].tool_name({ args });
-  await ctx.sleep('name', 5000);
-  await ctx.sleepUntil('name', timestamp);
-  return { data: 'for next step' };
-}
-\`\`\`
+1. **Each step has inputSchema, outputSchema, input, and execute code**
+2. **Use @ references** to connect step inputs to previous outputs
+3. **@ References are resolved** before step execution
+4. **Final step output** must match workflow's output schema
 
 ## Update Guidelines
 
-1. **Maintain alternation** - code → tool_call → code → tool_call
-2. **Match schemas** - Each code step output must match next tool's input schema
-3. **Use placeholders for integration IDs** - Validation will show available integrations
-4. **Update dependencies** - Add \`{ integrationId }\` to code step's dependencies if using ctx.env
+1. **Define clear schemas** - Update inputSchema and outputSchema as needed
+2. **Use @ references** - Update the input object to wire data between steps
+3. **Update execute code** - Remember that input is already resolved (no ctx.readStepResult needed)
+4. **Update dependencies** - Add \`{ integrationId }\` if using ctx.env
 5. **Test incrementally** - Use stopAfter to test each updated step
 
-## Common Patterns
+## @ Reference Examples
 
-**Adding a tool call:**
-- Add code step before it to transform data
-- Add tool_call with placeholder ID (e.g., \`i:slack\`)
-- Add code step after to handle result
-- Validation will guide you to correct IDs
+\`\`\`json
+{
+  "input": {
+    "userId": "@input.userId",
+    "previousResult": "@step-1.output.data",
+    "nestedValue": "@step-2.output.user.email"
+  }
+}
+\`\`\`
 
-**Fixing integration IDs:**
-- Use placeholder IDs - validation errors list all available integrations
-- Copy the correct ID from the error message
+## Execute Function Signature
+
+\`\`\`javascript
+export default async function(input, ctx) {
+  // input already has @ references resolved
+  // ctx.env contains integration tools
+  
+  const result = await ctx.env['i:integration-id'].tool_name(input);
+  return { success: true, data: result };
+}
+\`\`\`
 
 **HTTP Requests:**
 - \`fetch\` is NOT available in this environment
@@ -168,7 +165,7 @@ export const WORKFLOW_READ_PROMPT = `Read a specific workflow by its Resources 2
 Returns the complete workflow definition including:
 - Workflow metadata (title, description, status, tags, etc.)
 - Workflow definition with input/output schemas
-- Step definitions (code and tool_call steps)
+- Step definitions with @ references for data flow
 - Execution statistics and timestamps`;
 
 export const WORKFLOW_DELETE_PROMPT = `Delete a workflow from the workspace.
@@ -180,7 +177,7 @@ export const WORKFLOWS_START_WITH_URI_PROMPT = `Execute a workflow by URI with o
 
 ## Overview
 
-This tool starts a workflow execution using a Resources 2.0 URI. Workflows are sequential automation processes that consist of alternating steps between tool calls (calling integration tools) and code steps (data transformation). Each workflow validates input against its schema and executes steps in order until completion or until stopped at a specified step.
+This tool starts a workflow execution using a Resources 2.0 URI. Workflows are sequential automation processes consisting of code steps that use @ references to declaratively wire data between steps. Each workflow validates input against its schema and executes steps in order until completion or until stopped at a specified step.
 
 ## Parameters
 
@@ -190,8 +187,8 @@ The Resources 2.0 URI of the workflow to execute (e.g., rsc://workflow/my-workfl
 ### input
 The input data passed to the workflow. This data:
 - Will be validated against the workflow's defined input schema
-- Is accessible to all steps via \`ctx.readWorkflowInput()\`
-- Should match the structure expected by the workflow's first step
+- Is accessible to steps via \`@input.propertyName\` references in their input objects
+- Should match the structure expected by the workflow's input schema
 
 ### stopAfter (Optional)
 The name of the step where execution should halt. When specified:
@@ -315,7 +312,7 @@ export const WORKFLOWS_START_PROMPT = `Execute a multi-step workflow with option
 
 ## Overview
 
-This tool starts a workflow execution. Workflows are sequential automation processes that consist of alternating steps between tool calls (calling integration tools) and code steps (data transformation). Each workflow validates input against its schema and executes steps in order until completion or until stopped at a specified step.
+This tool starts a workflow execution. Workflows are sequential automation processes consisting of code steps that use @ references to declaratively wire data between steps. Each workflow validates input against its schema and executes steps in order until completion or until stopped at a specified step.
 
 ## Parameters
 
@@ -325,8 +322,8 @@ The identifier of the workflow to execute. This must match an existing workflow 
 ### input
 The input data passed to the workflow. This data:
 - Will be validated against the workflow's defined input schema
-- Is accessible to all steps via \`ctx.readWorkflowInput()\`
-- Should match the structure expected by the workflow's first step
+- Is accessible to steps via \`@input.propertyName\` references in their input objects
+- Should match the structure expected by the workflow's input schema
 
 ### stopAfter (Optional)
 The name of the step where execution should halt. When specified:
@@ -356,10 +353,10 @@ Example:
 
 1. **Validation**: Input is validated against the workflow's input schema
 2. **State Injection**: Any provided state results are loaded into the workflow context
-3. **Step Execution**: Steps run sequentially, with each step having access to:
-   - Original workflow input via \`ctx.readWorkflowInput()\`
-   - Previous step results via \`ctx.readStepResult(stepName)\`
-   - Injected state results (treated as if those steps already completed)
+3. **Step Execution**: Steps run sequentially, with @ references resolved before each step:
+   - \`@input.property\` resolves to workflow input values
+   - \`@step-name.output.property\` resolves to previous step outputs
+   - Resolved input is passed to the execute function
 4. **Stopping**: If \`stopAfter\` is specified, execution halts after that step completes
 5. **Tracking**: Returns a \`runId\` for monitoring progress with \`WORKFLOWS_GET_STATUS\`
 

@@ -1,37 +1,117 @@
 import z from "zod";
 
-// Code step definition - transforms data between tool calls
-export const CodeStepDefinitionSchema = z.object({
-  name: z
-    .string()
-    .min(1)
-    .describe("The unique name of the code step within the workflow"),
-  description: z
-    .string()
-    .min(1)
-    .describe("A clear description of what this code step does"),
-  execute: z
-    .string()
-    .min(1)
-    .describe(
-      "ES module code that exports a default async function: (ctx: WellKnownOptions) => Promise<any>. Use ctx.readWorkflowInput() or ctx.readStepResult(stepName) to access data",
-    ),
-  dependencies: z
-    .array(
-      z.object({
-        integrationId: z
-          .string()
-          .min(1)
+// JSON Schema type
+export type JSONSchema = Record<string, unknown>;
+
+// Workflow step definition - each step can reference previous steps using @ references
+export const CodeStepDefinitionSchema = z
+  .object({
+    id: z
+      .string()
+      .min(1)
+      .optional()
+      .describe("The unique ID of the step within the workflow"),
+    name: z
+      .string()
+      .min(1)
+      .optional()
+      .describe("The unique name of the step within the workflow"),
+    description: z
+      .string()
+      .min(1)
+      .optional()
+      .describe("A clear description of what this step does"),
+    prompt: z
+      .string()
+      .optional()
+      .describe("The prompt used to generate the step"),
+    inputSchema: z
+      .object({})
+      .passthrough()
+      .optional()
+      .describe("JSON Schema defining the input structure for this step"),
+    outputSchema: z
+      .object({})
+      .passthrough()
+      .optional()
+      .describe("JSON Schema defining the output structure for this step"),
+    input: z
+      .record(z.unknown())
+      .optional()
+      .describe(
+        "Input object that complies with inputSchema. Values can reference previous steps using @<step_name>.output.property or workflow input using @input.property",
+      ),
+    output: z
+      .record(z.unknown())
+      .optional()
+      .describe("Current output of the step if it was executed"),
+    status: z
+      .enum(["pending", "active", "completed", "error"])
+      .default("pending")
+      .describe("Status of the step execution"),
+    execute: z
+      .string()
+      .min(1)
+      .optional()
+      .describe(
+        "ES module code that exports a default async function: (input: typeof inputSchema, ctx: { env: Record<string, any> }) => Promise<typeof outputSchema>. The input parameter contains the resolved input with all @ references replaced with actual values.",
+      ),
+    dependencies: z
+      .array(
+        z.object({
+          integrationId: z
+            .string()
+            .min(1)
+            .describe(
+              "The integration ID (format: i:<uuid> or a:<uuid>) that this step depends on",
+            ),
+        }),
+      )
+      .optional()
+      .describe(
+        "List of integrations this step calls via ctx.env['{INTEGRATION_ID}'].{TOOL_NAME}(). These integrations must be installed and available for the step to execute successfully.",
+      ),
+    options: z
+      .object({
+        retries: z
+          .object({
+            limit: z
+              .number()
+              .int()
+              .min(0)
+              .default(0)
+              .describe("Number of retry attempts for this step (default: 0)"),
+            delay: z
+              .number()
+              .int()
+              .min(0)
+              .default(0)
+              .describe(
+                "Delay in milliseconds between retry attempts (default: 0)",
+              ),
+            backoff: z
+              .enum(["constant", "linear", "exponential"])
+              .optional()
+              .describe(
+                "Backoff strategy for retry attempts (default: constant)",
+              ),
+          })
+          .optional(),
+        timeout: z
+          .number()
+          .positive()
+          .default(Infinity)
+          .optional()
           .describe(
-            "The integration ID (format: i:<uuid> or a:<uuid>) that this code step depends on",
+            "Maximum execution time in milliseconds (default: Infinity)",
           ),
-      }),
-    )
-    .optional()
-    .describe(
-      "List of integrations this code step calls via ctx.env['{INTEGRATION_ID}'].{TOOL_NAME}(). These integrations must be installed and available for the step to execute successfully. Use INTEGRATIONS_LIST to find available integration IDs.",
-    ),
-});
+      })
+      .optional()
+      .describe(
+        "Step configuration options including retry and timeout settings",
+      ),
+  })
+  .passthrough();
 
 export const RetriesSchema = z.object({
   limit: z
@@ -52,95 +132,113 @@ export const RetriesSchema = z.object({
     .describe("Backoff strategy for retry attempts (default: constant)"),
 });
 
-// Tool call step definition - executes a tool from an integration
-export const ToolCallStepDefinitionSchema = z.object({
-  name: z
-    .string()
-    .min(1)
-    .describe("The unique name of the tool call step within the workflow"),
-  description: z
-    .string()
-    .min(1)
-    .describe("A clear description of what this tool call step does"),
-  options: z
-    .object({
-      retries: RetriesSchema.optional(),
-      timeout: z
-        .number()
-        .positive()
-        .default(Infinity)
-        .optional()
-        .describe("Maximum execution time in milliseconds (default: Infinity)"),
-    })
-    .nullish()
-    .describe(
-      "Step configuration options. Extend this object with custom properties for business user configuration",
-    ),
-  tool_name: z.string().min(1).describe("The name of the tool to call"),
-  integration: z
-    .string()
-    .min(1)
-    .describe("The name of the integration that provides this tool"),
-});
+export const ToolCallStepDefinitionSchema = z
+  .object({
+    name: z
+      .string()
+      .min(1)
+      .optional()
+      .describe("The unique name of the tool call step within the workflow"),
+    description: z
+      .string()
+      .min(1)
+      .optional()
+      .describe("A clear description of what this tool call step does"),
+    options: z
+      .object({
+        retries: RetriesSchema.optional(),
+        timeout: z
+          .number()
+          .positive()
+          .default(Infinity)
+          .optional()
+          .describe(
+            "Maximum execution time in milliseconds (default: Infinity)",
+          ),
+      })
+      .nullish()
+      .describe(
+        "Step configuration options. Extend this object with custom properties for business user configuration",
+      ),
+    tool_name: z
+      .string()
+      .min(1)
+      .optional()
+      .describe("The name of the tool to call"),
+    integration: z
+      .string()
+      .min(1)
+      .optional()
+      .describe("The name of the integration that provides this tool"),
+  })
+  .passthrough();
 
-// Union of step types
-export const WorkflowStepDefinitionSchema = z.object({
-  type: z.enum(["code", "tool_call"]).describe("The type of step"),
-  def: z
-    .union([CodeStepDefinitionSchema, ToolCallStepDefinitionSchema])
-    .describe("The step definition based on the type"),
-});
+export const WorkflowStepDefinitionSchema = z
+  .object({
+    type: z.enum(["code", "tool_call"]).optional().describe("The type of step"),
+    def: z
+      .union([CodeStepDefinitionSchema, ToolCallStepDefinitionSchema])
+      .optional()
+      .describe("The step definition based on the type"),
+    output: z
+      .record(z.unknown())
+      .optional()
+      .describe("Execution output of the step (if it has been run)"),
+    customOutputView: z
+      .string()
+      .optional()
+      .describe(
+        "Custom HTML/JavaScript code for rendering the step output in a custom view",
+      ),
+  })
+  .passthrough();
 
-export const WorkflowDefinitionSchema = z.object({
-  name: z.string().min(1).describe("The unique name of the workflow"),
-  description: z
-    .string()
-    .describe("A comprehensive description of what this workflow accomplishes"),
-  inputSchema: z
-    .object({})
-    .passthrough()
-    .describe(
-      "JSON Schema defining the workflow's input parameters and data structure",
-    ),
-  outputSchema: z
-    .object({})
-    .passthrough()
-    .describe(
-      "JSON Schema defining the workflow's final output after all steps complete",
-    ),
-  steps: z
-    .array(WorkflowStepDefinitionSchema)
-    .min(1)
-    .describe(
-      "Array of workflow steps that execute sequentially. The last step should be a code step that returns the final output.",
-    ),
-});
+export const WorkflowDefinitionSchema = z
+  .object({
+    name: z.string().min(1).describe("The unique name of the workflow"),
+    description: z
+      .string()
+      .describe(
+        "A comprehensive description of what this workflow accomplishes",
+      ),
+    inputSchema: z
+      .object({})
+      .passthrough()
+      .optional()
+      .describe(
+        "JSON Schema defining the workflow's input parameters and data structure",
+      ),
+    outputSchema: z
+      .object({})
+      .passthrough()
+      .optional()
+      .describe(
+        "JSON Schema defining the workflow's final output after all steps complete",
+      ),
+    steps: z
+      .array(WorkflowStepDefinitionSchema)
+      .describe(
+        "Array of workflow steps that execute sequentially. Each step can reference previous step outputs using @<step_name>.output.property syntax.",
+      ),
+    authorization: z
+      .object({
+        token: z
+          .string()
+          .min(1)
+          .describe("The authorization token for the workflow"),
+      })
+      .optional(),
+  })
+  .passthrough();
 
 export type WorkflowDefinition = z.infer<typeof WorkflowDefinitionSchema>;
+export type WorkflowStepDefinition = z.infer<
+  typeof WorkflowStepDefinitionSchema
+>;
 
 // Additional types for compatibility with hooks
 export type Workflow = WorkflowDefinition;
-export type WorkflowStep = z.infer<typeof WorkflowStepDefinitionSchema>;
-
-// Tool reference type for workflow steps
-export interface ToolReference {
-  integrationId: string; // Clean ID without prefix
-  toolName: string;
-  inputSchema?: Record<string, unknown>;
-  outputSchema?: Record<string, unknown>;
-  description?: string;
-}
-
-// Step execution result
-export interface StepExecutionResult {
-  executedAt: string; // ISO date
-  value: unknown; // Result data
-  error?: string; // Error message if failed
-  duration?: number; // Execution time in ms
-}
-
-// JSON Schema type
-export type JSONSchema = Record<string, unknown>;
+export type WorkflowStep = WorkflowStepDefinition;
 
 // Workflow run data schema for Resources 2.0
 export const WorkflowRunDataSchema = z.object({
@@ -272,3 +370,11 @@ export const WorkflowRunDataSchema = z.object({
 });
 
 export type WorkflowRunData = z.infer<typeof WorkflowRunDataSchema>;
+
+export interface ToolReference {
+  integrationId: string; // Clean ID without prefix
+  toolName: string;
+  inputSchema?: Record<string, unknown>;
+  outputSchema?: Record<string, unknown>;
+  description?: string;
+}

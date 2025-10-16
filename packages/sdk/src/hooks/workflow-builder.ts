@@ -22,7 +22,7 @@ export function useWorkflowBuilder(workflow: Workflow) {
 
     // Convert each step to a node
     workflow.steps.forEach((step, index) => {
-      const nodeId = `${step.def.name}-${index}`;
+      const nodeId = `${step.def?.name}-${index}`;
 
       // Create node with properly typed data
       const node: Node = {
@@ -44,7 +44,7 @@ export function useWorkflowBuilder(workflow: Workflow) {
 
       // Create edges between consecutive steps
       if (index > 0) {
-        const prevNodeId = `${workflow.steps[index - 1].def.name}-${index - 1}`;
+        const prevNodeId = `${workflow.steps[index - 1].def?.name}-${index - 1}`;
         edges.push({
           id: `edge-${prevNodeId}-${nodeId}`,
           source: prevNodeId,
@@ -101,7 +101,10 @@ export function useWorkflowBuilder(workflow: Workflow) {
             (workflowToSave.inputSchema as Record<string, unknown>) || {},
           outputSchema:
             (workflowToSave.outputSchema as Record<string, unknown>) || {},
-          steps: workflowToSave.steps,
+          steps: workflowToSave.steps as Array<{
+            type: "code" | "tool_call";
+            def: Record<string, unknown>;
+          }>,
         });
         console.log("Workflow saved successfully:", workflowToSave.name);
         return true;
@@ -157,7 +160,7 @@ export function useWorkflowBuilder(workflow: Workflow) {
       const newWorkflow: Workflow = {
         ...workflow,
         steps: workflow.steps.map((step) =>
-          step.def.name === stepId ? { ...step, ...updates } : step,
+          step.def?.name === stepId ? { ...step, ...updates } : step,
         ),
       };
 
@@ -173,7 +176,7 @@ export function useWorkflowBuilder(workflow: Workflow) {
     (stepId: string) => {
       const newWorkflow: Workflow = {
         ...workflow,
-        steps: workflow.steps.filter((step) => step.def.name !== stepId),
+        steps: workflow.steps.filter((step) => step.def?.name !== stepId),
       };
 
       return newWorkflow;
