@@ -31,10 +31,7 @@ export function filterByWorkspaceOrLocator<TableName extends string>({
     return locatorCondition;
   }
 
-  return or(
-    eq(table.workspace, workspace.value),
-    locatorCondition,
-  );
+  return or(eq(table.workspace, workspace.value), locatorCondition);
 }
 
 /**

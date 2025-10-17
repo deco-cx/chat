@@ -715,9 +715,9 @@ async function migrateProject(c: DeconfigContext) {
 
   // Check if the project has already been migrated
   const markerPath = withPathPrefix(c, WELL_KNOWN_MIGRATED_MARKER);
-  const markerFile = await sourceBranchRpc.getFile(markerPath).catch(
-    () => null,
-  );
+  const markerFile = await sourceBranchRpc
+    .getFile(markerPath)
+    .catch(() => null);
 
   if (markerFile) {
     throw new Error(
