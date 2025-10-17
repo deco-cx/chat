@@ -44,6 +44,7 @@ import type { TabItem } from "./resource-header.tsx";
 import { DecopilotLayout } from "../layout/decopilot-layout.tsx";
 import { ResourceHeader } from "./resource-header.tsx";
 import { ResourceRouteProvider } from "./route-context.tsx";
+import { useThreadContext } from "../decopilot/thread-manager-context.tsx";
 
 // Base resource data schema that all resources extend
 const BaseResourceDataSchema = z.object({
@@ -1069,6 +1070,22 @@ export function ResourcesV2List({
       rules,
     };
   }, [integrationId, resourceName, tools]);
+
+  console.log("[ResourcesV2List] Thread context value prepared:", {
+    integrationId,
+    resourceName,
+    decopilotContextValue,
+    hasRules: !!decopilotContextValue?.rules,
+    rulesCount: decopilotContextValue?.rules?.length || 0,
+    hasTools: !!decopilotContextValue?.additionalTools,
+    toolsKeys: Object.keys(decopilotContextValue?.additionalTools || {}),
+  });
+
+  // Inject context into the current route's thread
+  useThreadContext({
+    rules: decopilotContextValue?.rules,
+    tools: decopilotContextValue?.additionalTools,
+  });
 
   return (
     <DecopilotLayout value={decopilotContextValue}>

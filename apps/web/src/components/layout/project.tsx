@@ -15,6 +15,11 @@ import {
 import { Button } from "@deco/ui/components/button.tsx";
 import { ButtonGroup } from "@deco/ui/components/button-group.tsx";
 import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@deco/ui/components/resizable.tsx";
+import {
   SidebarInset,
   SidebarLayout,
   SidebarProvider,
@@ -35,7 +40,10 @@ import { useWorkspaceLink } from "../../hooks/use-navigate-workspace.ts";
 import { useUser } from "../../hooks/use-user.ts";
 import { AgentAvatar } from "../common/avatar/agent.tsx";
 import RegisterActivity from "../common/register-activity.tsx";
+import { DecopilotProvider } from "../decopilot/context.tsx";
+import { DecopilotChat } from "../decopilot/index.tsx";
 import { DecopilotThreadProvider } from "../decopilot/thread-context.tsx";
+import { ThreadManagerProvider } from "../decopilot/thread-manager-context.tsx";
 import { ProfileModalProvider, useProfileModal } from "../profile-modal.tsx";
 import { ProjectSidebar } from "../sidebar/index.tsx";
 import { WithWorkspaceTheme } from "../theme.tsx";
@@ -68,6 +76,9 @@ export function ProjectLayout() {
       defaultValue: true,
     });
   const [sidebarOpen, setSidebarOpen] = useState(defaultSidebarOpen);
+  const { open: decopilotOpen } = useDecopilotOpen();
+  const location = useLocation();
+  const isAgentDetailPage = location.pathname.match(/\/agent\/[^\/]+\/[^\/]+$/);
 
   const { org, project } = useParams();
 
@@ -82,71 +93,88 @@ export function ProjectLayout() {
   return (
     <BaseRouteLayout>
       <WithWorkspaceTheme>
-        <DecopilotThreadProvider>
-          <ProfileModalProvider
-            profileOpen={profileOpen}
-            setProfileOpen={setProfileOpen}
-            openProfileModal={openProfileModal}
-            closeProfileModal={closeProfileModal}
-            handlePhoneSaved={handlePhoneSaved}
-          >
-            <SidebarProvider
-              open={sidebarOpen}
-              onOpenChange={(open) => {
-                setDefaultSidebarOpen(open);
-                setSidebarOpen(open);
-              }}
-            >
-              <div className="flex flex-col h-full">
-                <TopbarLayout
-                  breadcrumb={[
-                    {
-                      label: (
-                        <Suspense fallback={<BreadcrumbOrgSwitcher.Skeleton />}>
-                          <BreadcrumbOrgSwitcher />
-                        </Suspense>
-                      ),
-                    },
-                    {
-                      label: (
-                        <Suspense
-                          fallback={<BreadcrumbProjectSwitcher.Skeleton />}
-                        >
-                          <BreadcrumbProjectSwitcher />
-                        </Suspense>
-                      ),
-                      link: `/${org}/${project}`,
-                    },
-                  ]}
-                >
-                  <SidebarLayout
-                    className="h-full bg-sidebar"
-                    style={
+        <ThreadManagerProvider>
+          <DecopilotThreadProvider>
+            <DecopilotProvider>
+            <ProfileModalProvider
+                profileOpen={profileOpen}
+                setProfileOpen={setProfileOpen}
+                openProfileModal={openProfileModal}
+                closeProfileModal={closeProfileModal}
+                handlePhoneSaved={handlePhoneSaved}
+              >
+              <SidebarProvider
+                open={sidebarOpen}
+                onOpenChange={(open) => {
+                  setDefaultSidebarOpen(open);
+                  setSidebarOpen(open);
+                }}
+              >
+                <div className="flex flex-col h-full">
+                  <TopbarLayout
+                    breadcrumb={[
                       {
-                        "--sidebar-width": "13rem",
-                        "--sidebar-width-mobile": "11rem",
-                      } as Record<string, string>
-                    }
+                        label: (
+                          <Suspense fallback={<BreadcrumbOrgSwitcher.Skeleton />}>
+                            <BreadcrumbOrgSwitcher />
+                          </Suspense>
+                        ),
+                      },
+                      {
+                        label: (
+                          <Suspense
+                            fallback={<BreadcrumbProjectSwitcher.Skeleton />}
+                          >
+                            <BreadcrumbProjectSwitcher />
+                          </Suspense>
+                        ),
+                        link: `/${org}/${project}`,
+                      },
+                    ]}
                   >
-                    <ProjectSidebar />
-                    <SidebarInset className="h-[calc(100vh-48px)] flex-col bg-sidebar">
-                      <Suspense
-                        fallback={
-                          <div className="h-[calc(100vh-48px)] w-full grid place-items-center">
-                            <Spinner />
-                          </div>
-                        }
-                      >
-                        <Outlet />
-                      </Suspense>
-                    </SidebarInset>
-                  </SidebarLayout>
-                </TopbarLayout>
-                <RegisterActivity orgSlug={org} projectSlug={project} />
-              </div>
-            </SidebarProvider>
-          </ProfileModalProvider>
+                    <SidebarLayout
+                      className="h-full bg-sidebar"
+                      style={
+                        {
+                          "--sidebar-width": "13rem",
+                          "--sidebar-width-mobile": "11rem",
+                        } as Record<string, string>
+                      }
+                    >
+                      <ProjectSidebar />
+                      <SidebarInset className="h-[calc(100vh-48px)] flex-col bg-sidebar">
+                        <ResizablePanelGroup direction="horizontal">
+                          <ResizablePanel>
+                            <Suspense
+                              fallback={
+                                <div className="h-[calc(100vh-48px)] w-full grid place-items-center">
+                                  <Spinner />
+                                </div>
+                              }
+                            >
+                              <Outlet />
+                            </Suspense>
+                          </ResizablePanel>
+                          {/* Don't show DecopilotChat panel on agent detail pages - they handle chat mode switching internally */}
+                          {decopilotOpen && !isAgentDetailPage && (
+                            <>
+                              <ResizableHandle withHandle />
+                              <ResizablePanel defaultSize={30}>
+                                <DecopilotChat />
+                              </ResizablePanel>
+                            </>
+                          )}
+                        </ResizablePanelGroup>
+                      </SidebarInset>
+                    </SidebarLayout>
+                  </TopbarLayout>
+                  <RegisterActivity orgSlug={org} projectSlug={project} />
+                </div>
+              </SidebarProvider>
+            </ProfileModalProvider>
+          </DecopilotProvider>
         </DecopilotThreadProvider>
+      </ThreadManagerProvider>
       </WithWorkspaceTheme>
     </BaseRouteLayout>
   );

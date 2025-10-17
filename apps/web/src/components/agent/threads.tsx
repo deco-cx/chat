@@ -1,9 +1,10 @@
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
-import { useAgent } from "./provider.tsx";
+import { useAgenticChat } from "../chat/provider.tsx";
 import ThreadList from "../threads/index.tsx";
 
 function Threads() {
-  const { agentId } = useAgent();
+  const { metadata } = useAgenticChat();
+  const { agentId } = metadata;
 
   return (
     <ScrollArea className="h-full w-full">

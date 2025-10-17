@@ -1,7 +1,9 @@
 import { ChatMessages } from "../chat/chat-messages.tsx";
-import { AgentProvider } from "./provider.tsx";
+import { AgenticChatProvider } from "../chat/provider.tsx";
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
 import { ChatHeader } from "./chat-header.tsx";
+import { useAgentData, useAgentRoot, useThreadMessages } from "@deco/sdk";
+import { useUserPreferences } from "../../hooks/use-user-preferences.ts";
 
 interface Props {
   agentId?: string;
@@ -13,15 +15,46 @@ function ThreadView({ agentId, threadId }: Props) {
     throw new Error("Missing agentId or threadId");
   }
 
+  const { data: agent } = useAgentData(agentId);
+  const agentRoot = useAgentRoot(agentId);
+  const { preferences } = useUserPreferences();
+  const { data: { messages: threadMessages } = { messages: [] } } = useThreadMessages(
+    threadId,
+    { enabled: true }
+  );
+
+  if (!agent) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <AgentProvider agentId={agentId} threadId={threadId}>
+    <AgenticChatProvider
+      agentId={agentId}
+      threadId={threadId}
+      agent={agent}
+      agentRoot={agentRoot}
+      defaultModel={preferences.defaultModel}
+      useOpenRouter={preferences.useOpenRouter}
+      sendReasoning={preferences.sendReasoning}
+      smoothStream={preferences.smoothStream}
+      initialMessages={threadMessages}
+      readOnly={true}
+      uiOptions={{
+        showThreadTools: false,
+        showThreadMessages: true,
+        showModelSelector: false,
+        showAgentVisibility: false,
+        showEditAgent: false,
+        showContextResources: false,
+      }}
+    >
       <div className="flex items-center justify-between p-4">
         <ChatHeader />
       </div>
       <ScrollArea className="h-full w-full p-6 text-foreground">
         <ChatMessages />
       </ScrollArea>
-    </AgentProvider>
+    </AgenticChatProvider>
   );
 }
 

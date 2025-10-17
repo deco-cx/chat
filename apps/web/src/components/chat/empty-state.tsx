@@ -5,10 +5,10 @@ import { Suspense } from "react";
 import { ErrorBoundary } from "../../error-boundary.tsx";
 import { useFocusChat } from "../agents/hooks.ts";
 import { AgentAvatar } from "../common/avatar/agent.tsx";
-import { useAgent } from "../agent/provider.tsx";
+import { useAgenticChat } from "../chat/provider.tsx";
 
 export function EmptyState() {
-  const { agentId } = useAgent();
+  const { metadata: { agentId } } = useAgenticChat();
 
   if (agentId === WELL_KNOWN_AGENT_IDS.teamAgent) {
     return (
@@ -56,7 +56,7 @@ EmptyState.Skeleton = () => {
 };
 
 EmptyState.UI = () => {
-  const { agentId, agent, uiOptions } = useAgent();
+  const { metadata: { agentId }, agent, showEditAgent } = useAgenticChat();
   const editAgent = useFocusChat();
 
   return (
@@ -77,7 +77,7 @@ EmptyState.UI = () => {
             <p className="text-muted-foreground mx-6 text-center">
               {agent?.description ?? "The more you share, the better I get."}
             </p>
-            {uiOptions.showEditAgent && (
+            {showEditAgent && (
               <Button
                 variant="outline"
                 onClick={() => editAgent(agentId, crypto.randomUUID())}

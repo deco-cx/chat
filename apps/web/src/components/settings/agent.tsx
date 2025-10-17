@@ -30,7 +30,7 @@ import { Textarea } from "@deco/ui/components/textarea.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import { useRef, useState } from "react";
 import { getPublicChatLink } from "../agent/chats.tsx";
-import { useAgent } from "../agent/provider.tsx";
+import { useAgenticChat } from "../chat/provider.tsx";
 import { ModelSelector } from "../chat/model-selector.tsx";
 import { AgentAvatar } from "../common/avatar/agent.tsx";
 import { useCurrentTeam } from "../sidebar/team-selector.tsx";
@@ -87,7 +87,10 @@ export const useCurrentTeamRoles = () => {
 };
 
 function SettingsTab() {
-  const { form, agent, handleSubmit } = useAgent();
+  const { form, agent } = useAgenticChat();
+  const handleSubmit = form?.handleSubmit(async () => {
+    // Form submission handled by provider's saveAgent
+  });
   const roles = useCurrentTeamRoles();
 
   const writeFileMutation = useWriteFile();

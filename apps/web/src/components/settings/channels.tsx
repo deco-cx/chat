@@ -27,7 +27,7 @@ import { toast } from "@deco/ui/components/sonner.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import { useMemo, useState } from "react";
-import { useAgent } from "../agent/provider.tsx";
+import { useAgenticChat } from "../chat/provider.tsx";
 import { IntegrationIcon } from "../integrations/common.tsx";
 import { InstalledConnections } from "../integrations/installed-connections.tsx";
 import { Dialog } from "@deco/ui/components/dialog.tsx";
@@ -101,7 +101,7 @@ export function Channels({ className }: ChannelsProps) {
     channelId: string;
     channelName: string;
   } | null>(null);
-  const { agent } = useAgent();
+  const { agent } = useAgenticChat();
   const { mutate: createChannel, isPending: isCreating } = useCreateChannel();
   const joinChannelMutation = useJoinChannel();
   const leaveChannelMutation = useLeaveChannel();

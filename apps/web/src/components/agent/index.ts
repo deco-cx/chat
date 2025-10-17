@@ -1,4 +1,4 @@
-export { AgentProvider, useAgent } from "./provider.tsx";
+export { AgenticChatProvider, useAgenticChat } from "../chat/provider.tsx";
 export { default as AgentEdit } from "./edit.tsx";
 export { default as AgentChat } from "./chat.tsx";
 export { default as AgentPreview } from "./preview.tsx";
