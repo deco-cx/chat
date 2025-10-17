@@ -1,4 +1,4 @@
-import { and, eq, isNull, or, getTableColumns } from "drizzle-orm";
+import { and, eq, isNull, or, getTableColumns, desc } from "drizzle-orm";
 import { z } from "zod";
 import { userFromJWT } from "../../auth/user.ts";
 import {
@@ -22,14 +22,13 @@ import {
 import { createToolGroup } from "../context.ts";
 import { MCPClient } from "../index.ts";
 import { getIntegration } from "../integrations/api.ts";
-import {
-  buildWorkspaceOrProjectIdConditions,
-  getProjectIdFromContext,
-  workspaceOrProjectIdConditions,
-} from "../projects/util.ts";
+import { getProjectIdFromContext } from "../projects/util.ts";
 import { getRegistryApp } from "../registry/api.ts";
 import { apiKeys, organizations, projects } from "../schema.ts";
-import { filterByWorkspaceOrLocator } from "../ownership.ts";
+import {
+  filterByWorkspaceOrLocator,
+  filterByWorkspaceOrProjectId,
+} from "../ownership.ts";
 
 export const SELECT_API_KEY_QUERY = `
   id,
@@ -127,18 +126,21 @@ export const listApiKeys = createTool({
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
 
-    const query = c.db
-      .from("deco_chat_api_keys")
-      .select(SELECT_API_KEY_QUERY)
-      .or(await workspaceOrProjectIdConditions(c))
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false });
-
-    const { data, error } = await query;
-
-    if (error) {
-      throw new InternalServerError(error.message);
-    }
+    const data = await c.drizzle
+      .select(getTableColumns(apiKeys))
+      .from(apiKeys)
+      .leftJoin(projects, eq(apiKeys.project_id, projects.id))
+      .leftJoin(organizations, eq(projects.org_id, organizations.id))
+      .where(
+        and(
+          filterByWorkspaceOrLocator({
+            table: apiKeys,
+            ctx: c,
+          }),
+          isNull(apiKeys.deleted_at),
+        ),
+      )
+      .orderBy(desc(apiKeys.created_at));
 
     return {
       apiKeys: data.map(mapApiKey),
@@ -224,25 +226,22 @@ export const createApiKey = createTool({
       }
     }
 
-    const db = c.db;
-
     const projectId = await getProjectIdFromContext(c);
 
     // Insert the API key metadata
-    const { data: apiKey, error } = await db
-      .from("deco_chat_api_keys")
-      .insert({
+    const [apiKey] = await c.drizzle
+      .insert(apiKeys)
+      .values({
         name,
         workspace: projectId ? null : c.workspace?.value,
         project_id: projectId,
         enabled: true,
         policies: policies || [],
       })
-      .select(SELECT_API_KEY_QUERY)
-      .single();
+      .returning();
 
-    if (error) {
-      throw new InternalServerError(error.message);
+    if (!apiKey) {
+      throw new InternalServerError("Failed to create API key");
     }
 
     const issuer = await c.jwtIssuer();
@@ -274,11 +273,8 @@ export const reissueApiKey = createTool({
     assertHasLocator(c);
     await assertWorkspaceResourceAccess(c);
 
-    const projectId = await getProjectIdFromContext(c);
-    const workspace = c.workspace.value;
-
     const filters = [
-      filterByWorkspaceOrLocator({
+      await filterByWorkspaceOrProjectId({
         table: apiKeys,
         ctx: c,
       }),
@@ -294,8 +290,6 @@ export const reissueApiKey = createTool({
         workspace: apiKeys.workspace,
       })
       .from(apiKeys)
-      .leftJoin(projects, eq(apiKeys.project_id, projects.id))
-      .leftJoin(organizations, eq(projects.org_id, organizations.id))
       .where(and(...filters))
       .limit(1);
 
@@ -303,20 +297,14 @@ export const reissueApiKey = createTool({
       throw new NotFoundError("API key not found");
     }
 
-    const { error: updateError } = policies
-      ? await c.db
-          .from("deco_chat_api_keys")
-          .update({
-            policies,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", id)
-          .or(buildWorkspaceOrProjectIdConditions(workspace, projectId))
-          .is("deleted_at", null)
-      : { error: null };
-
-    if (updateError) {
-      throw new InternalServerError(updateError.message);
+    if (policies) {
+      await c.drizzle
+        .update(apiKeys)
+        .set({
+          policies,
+          updated_at: new Date().toISOString(),
+        })
+        .where(and(...filters));
     }
 
     // Generate new JWT token with the provided claims
@@ -348,17 +336,22 @@ export const getApiKey = createTool({
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
 
-    const { data: apiKey, error } = await c.db
-      .from("deco_chat_api_keys")
-      .select(SELECT_API_KEY_QUERY)
-      .eq("id", id)
-      .or(await workspaceOrProjectIdConditions(c))
-      .is("deleted_at", null)
-      .maybeSingle();
-
-    if (error) {
-      throw new InternalServerError(error.message);
-    }
+    const [apiKey] = await c.drizzle
+      .select(getTableColumns(apiKeys))
+      .from(apiKeys)
+      .leftJoin(projects, eq(apiKeys.project_id, projects.id))
+      .leftJoin(organizations, eq(projects.org_id, organizations.id))
+      .where(
+        and(
+          filterByWorkspaceOrLocator({
+            table: apiKeys,
+            ctx: c,
+          }),
+          eq(apiKeys.id, id),
+          isNull(apiKeys.deleted_at),
+        ),
+      )
+      .limit(1);
 
     if (!apiKey) {
       throw new NotFoundError("API key not found");
@@ -389,17 +382,19 @@ export const updateApiKey = createTool({
     if (policies !== undefined) updateData.policies = policies;
     updateData.updated_at = new Date().toISOString();
 
-    const { data: apiKey, error } = await c.db
-      .from("deco_chat_api_keys")
-      .update(updateData)
-      .eq("id", id)
-      .or(await workspaceOrProjectIdConditions(c))
-      .is("deleted_at", null)
-      .select(SELECT_API_KEY_QUERY)
-      .single();
+    const filter = await filterByWorkspaceOrProjectId({
+      table: apiKeys,
+      ctx: c,
+    });
 
-    if (error) {
-      throw new InternalServerError(error.message);
+    const [apiKey] = await c.drizzle
+      .update(apiKeys)
+      .set(updateData)
+      .where(and(eq(apiKeys.id, id), filter, isNull(apiKeys.deleted_at)))
+      .returning();
+
+    if (!apiKey) {
+      throw new NotFoundError("API key not found");
     }
 
     return mapApiKey(apiKey);
@@ -420,18 +415,20 @@ export const deleteApiKey = createTool({
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
 
-    // Soft delete by setting deleted_at timestamp
-    const { data: apiKey, error } = await c.db
-      .from("deco_chat_api_keys")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", id)
-      .or(await workspaceOrProjectIdConditions(c))
-      .is("deleted_at", null)
-      .select("id")
-      .single();
+    const filter = await filterByWorkspaceOrProjectId({
+      table: apiKeys,
+      ctx: c,
+    });
 
-    if (error) {
-      throw new InternalServerError(error.message);
+    // Soft delete by setting deleted_at timestamp
+    const [apiKey] = await c.drizzle
+      .update(apiKeys)
+      .set({ deleted_at: new Date().toISOString() })
+      .where(and(eq(apiKeys.id, id), filter, isNull(apiKeys.deleted_at)))
+      .returning();
+
+    if (!apiKey) {
+      throw new NotFoundError("API key not found");
     }
 
     return {
@@ -452,17 +449,19 @@ export const enableApiKey = createTool({
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
 
-    const { data: apiKey, error } = await c.db
-      .from("deco_chat_api_keys")
-      .update({ enabled: true, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .or(await workspaceOrProjectIdConditions(c))
-      .is("deleted_at", null)
-      .select(SELECT_API_KEY_QUERY)
-      .single();
+    const filter = await filterByWorkspaceOrProjectId({
+      table: apiKeys,
+      ctx: c,
+    });
 
-    if (error) {
-      throw new InternalServerError(error.message);
+    const [apiKey] = await c.drizzle
+      .update(apiKeys)
+      .set({ enabled: true, updated_at: new Date().toISOString() })
+      .where(and(eq(apiKeys.id, id), filter, isNull(apiKeys.deleted_at)))
+      .returning();
+
+    if (!apiKey) {
+      throw new NotFoundError("API key not found");
     }
 
     return mapApiKey(apiKey);
@@ -480,17 +479,19 @@ export const disableApiKey = createTool({
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
 
-    const { data: apiKey, error } = await c.db
-      .from("deco_chat_api_keys")
-      .update({ enabled: false, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .or(await workspaceOrProjectIdConditions(c))
-      .is("deleted_at", null)
-      .select(SELECT_API_KEY_QUERY)
-      .single();
+    const filter = await filterByWorkspaceOrProjectId({
+      table: apiKeys,
+      ctx: c,
+    });
 
-    if (error) {
-      throw new InternalServerError(error.message);
+    const [apiKey] = await c.drizzle
+      .update(apiKeys)
+      .set({ enabled: false, updated_at: new Date().toISOString() })
+      .where(and(eq(apiKeys.id, id), filter, isNull(apiKeys.deleted_at)))
+      .returning();
+
+    if (!apiKey) {
+      throw new NotFoundError("API key not found");
     }
 
     return mapApiKey(apiKey);
@@ -563,16 +564,25 @@ export const validateApiKey = createTool({
     assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
 
-    const { data: apiKey, error } = await c.db
-      .from("deco_chat_api_keys")
-      .select(SELECT_API_KEY_QUERY)
-      .eq("id", id)
-      .or(await workspaceOrProjectIdConditions(c))
-      .eq("enabled", true)
-      .is("deleted_at", null)
-      .single();
+    const [apiKey] = await c.drizzle
+      .select(getTableColumns(apiKeys))
+      .from(apiKeys)
+      .leftJoin(projects, eq(apiKeys.project_id, projects.id))
+      .leftJoin(organizations, eq(projects.org_id, organizations.id))
+      .where(
+        and(
+          filterByWorkspaceOrLocator({
+            table: apiKeys,
+            ctx: c,
+          }),
+          eq(apiKeys.id, id),
+          eq(apiKeys.enabled, true),
+          isNull(apiKeys.deleted_at),
+        ),
+      )
+      .limit(1);
 
-    if (error || !apiKey) {
+    if (!apiKey) {
       throw new NotFoundError("API key not found or invalid");
     }
 

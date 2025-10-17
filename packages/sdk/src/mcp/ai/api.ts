@@ -11,6 +11,7 @@ import { DEFAULT_MODEL, WELL_KNOWN_MODELS } from "../../constants.ts";
 import type { PlanWithTeamMetadata } from "../../plan.ts";
 import {
   assertHasWorkspace,
+  assertHasLocator,
   assertWorkspaceResourceAccess,
 } from "../assertions.ts";
 import { type AppContext, createToolGroup } from "../context.ts";
@@ -22,7 +23,6 @@ import {
   WellKnownWallets,
 } from "../wallet/index.ts";
 import { getPlan } from "../wallet/plans.ts";
-import { getProjectIdFromContext } from "../projects/util.ts";
 import { MessageList } from "@mastra/core/agent";
 
 const createLLMUsageTransaction = (opts: {
@@ -108,18 +108,14 @@ const validateWalletBalance = async (c: AppContext) => {
 
 const setupLLMInstance = async (modelId: string, c: AppContext) => {
   assertHasWorkspace(c);
+  assertHasLocator(c);
   const wellKnownModel = WELL_KNOWN_MODELS.find(
     (model) => model.id === modelId,
   );
   const llmVault =
     wellKnownModel || !c.envVars.LLMS_ENCRYPTION_KEY
       ? undefined
-      : new SupabaseLLMVault(
-          c.db,
-          c.envVars.LLMS_ENCRYPTION_KEY,
-          c.workspace.value,
-          await getProjectIdFromContext(c),
-        );
+      : new SupabaseLLMVault(c);
   const llmConfig = await getLLMConfig({
     modelId,
     llmVault,

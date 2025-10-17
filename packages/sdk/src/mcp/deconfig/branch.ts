@@ -57,6 +57,8 @@ export interface FileMetadata {
   mtime: number;
   /** Change time - changes when content OR metadata changes */
   ctime: number;
+  /** Base64-encoded content of the file (only present if includeContent is true) */
+  content?: string;
 }
 
 /**

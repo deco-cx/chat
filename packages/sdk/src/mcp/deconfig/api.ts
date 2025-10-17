@@ -16,6 +16,7 @@ import { WellKnownMcpGroups } from "../../crud/groups.ts";
 import { doRetryable } from "../../do-commons.ts";
 import type { WithTool } from "../assertions.ts";
 import {
+  assertHasLocator,
   assertHasWorkspace,
   assertWorkspaceResourceAccess,
 } from "../assertions.ts";
@@ -49,14 +50,13 @@ export enum MergeStrategy {
   LAST_WRITE_WINS = "LAST_WRITE_WINS",
 }
 
-// Helper function to get workspace from context
 const projectFor = (c: AppContext): string => {
-  const workspace = c.workspace?.value;
-  if (!workspace) {
-    throw new Error("No project context available");
-  }
-  return workspace;
+  assertHasWorkspace(c);
+  return c.workspace.value;
 };
+
+// Well-known file path to mark that a project has been migrated
+export const WELL_KNOWN_MIGRATED_MARKER = "/.deco/migrated.json";
 
 // Helper function to get branch RPC (using branchName directly for performance)
 export const branchRpcFor = async (
@@ -694,6 +694,131 @@ export const listFiles = createDeconfigTool({
   },
 });
 
+async function migrateProject(c: DeconfigContext) {
+  assertHasWorkspace(c);
+  assertHasLocator(c);
+  await assertWorkspaceResourceAccess(c);
+
+  const sourceProjectId = c.workspace.value;
+  const destinationProjectId = c.locator.value;
+
+  if (!destinationProjectId) {
+    throw new Error("No locator value found for destination project");
+  }
+
+  if (sourceProjectId === destinationProjectId) {
+    throw new Error("Cannot migrate project to itself");
+  }
+
+  // Get source branch RPC (current project's main branch)
+  using sourceBranchRpc = await branchRpcFor(c, "main");
+
+  // Check if the project has already been migrated
+  const markerPath = withPathPrefix(c, WELL_KNOWN_MIGRATED_MARKER);
+  const markerFile = await sourceBranchRpc
+    .getFile(markerPath)
+    .catch(() => null);
+
+  if (markerFile) {
+    throw new Error(
+      `Project has already been migrated. Migration marker found at ${WELL_KNOWN_MIGRATED_MARKER}`,
+    );
+  }
+
+  // Get all files from source with content
+  const sourceFiles = await sourceBranchRpc.getFiles(undefined, true);
+
+  // Get destination branch RPC (different project)
+  const destBranchStub = c.branchDO.get(
+    c.branchDO.idFromName(BranchId.build("main", destinationProjectId)),
+  );
+
+  using destBranchRpc = await destBranchStub.new({
+    projectId: destinationProjectId,
+    branchName: "main",
+  });
+
+  // Prepare patches for batch write
+  const patches: Array<{
+    path: string;
+    content: ArrayBuffer;
+    metadata: Record<string, unknown>;
+  }> = [];
+
+  for (const [path, fileData] of Object.entries(sourceFiles)) {
+    const file = fileData;
+
+    if (!file.content) {
+      continue; // Skip files without content
+    }
+
+    // Convert base64 content to ArrayBuffer
+    const content = Uint8Array.from(atob(file.content), (c: string) =>
+      c.charCodeAt(0),
+    ).buffer;
+
+    patches.push({
+      path,
+      content,
+      metadata: file.metadata as Record<string, unknown>,
+    });
+  }
+
+  // Write all files in a single transactional operation
+  if (patches.length > 0) {
+    using _ = await destBranchRpc.transactionalWrite({
+      patches,
+    });
+  }
+
+  // Write the migrated marker file to the source branch to prevent re-migration
+  const markerContent = JSON.stringify({
+    migratedAt: new Date().toISOString(),
+    migratedBy: c.user && "id" in c.user ? c.user.id : undefined,
+    migratedFrom: sourceProjectId,
+    migratedTo: destinationProjectId,
+  });
+
+  const markerArrayBuffer = new TextEncoder().encode(markerContent)
+    .buffer as ArrayBuffer;
+
+  using _markerWrite = await sourceBranchRpc.transactionalWrite({
+    patches: [
+      {
+        path: markerPath,
+        content: markerArrayBuffer,
+        metadata: {
+          system: true,
+          type: "migration-marker",
+        } as Record<string, unknown>,
+      },
+    ],
+  });
+
+  return {
+    filesCopied: patches.length,
+    success: true,
+    sourceProject: sourceProjectId,
+    destinationProject: destinationProjectId,
+  };
+}
+
+export const migrateProjectTool = createDeconfigTool({
+  name: "MIGRATE_PROJECT",
+  description:
+    "Migrate all files from the main branch of the current workspace project to the locator project's main branch",
+  inputSchema: z.lazy(() => z.object({})),
+  outputSchema: z.lazy(() =>
+    z.object({
+      filesCopied: z.number(),
+      success: z.boolean(),
+      sourceProject: z.string(),
+      destinationProject: z.string(),
+    }),
+  ),
+  handler: (_, c) => migrateProject(c),
+});
+
 export const oauthStart = createTool({
   name: "DECO_CHAT_OAUTH_START",
   description: "Start the OAuth flow for the contract app.",
@@ -740,6 +865,9 @@ export const DECONFIG_TOOLS = [
   readFile,
   deleteFile,
   listFiles,
+
+  // Project operations
+  migrateProjectTool,
 ] as const;
 
 /**
