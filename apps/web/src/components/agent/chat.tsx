@@ -32,9 +32,7 @@ export const MainChatSkeleton = ({
   className,
 }: Pick<MainChatProps, "showInput" | "className"> = {}) => {
   return (
-    <div
-      className={`w-full flex flex-col ${className ?? "h-[calc(100vh-48px)]"}`}
-    >
+    <div className={`w-full flex flex-col h-full ${className ?? ""}`}>
       <ScrollArea className="flex-1 min-h-0">
         <div className="w-full min-w-0">
           {/* Empty state skeleton - centered */}
@@ -62,7 +60,7 @@ export const MainChatSkeleton = ({
         </div>
       </ScrollArea>
       {showInput && (
-        <div className="w-full mx-auto p-2">
+        <div className="flex-none w-full mx-auto p-2">
           <div className="relative rounded-md w-full mx-auto">
             <div className="relative flex flex-col">
               {/* Rich text area skeleton */}
@@ -94,9 +92,7 @@ export const MainChat = ({
   contentClassName,
 }: MainChatProps = {}) => {
   return (
-    <div
-      className={`w-full flex flex-col ${className ?? "h-[calc(100vh-48px)]"}`}
-    >
+    <div className={`w-full flex flex-col h-full ${className ?? ""}`}>
       <ScrollArea className="flex-1 min-h-0">
         <ChatMessages
           initialScrollBehavior={initialScrollBehavior}
@@ -104,7 +100,7 @@ export const MainChat = ({
         />
       </ScrollArea>
       {showInput && (
-        <div className="p-2">
+        <div className="flex-none p-2">
           <ChatInput />
         </div>
       )}

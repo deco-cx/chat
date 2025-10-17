@@ -28,7 +28,6 @@ import type { UploadedFile } from "../../hooks/use-file-upload.ts";
 import { useUserPreferences } from "../../hooks/use-user-preferences.ts";
 import { useAgent } from "../agent/provider.tsx";
 import { IntegrationIcon } from "../integrations/common.tsx";
-import { SelectConnectionDialog } from "../integrations/select-connection-dialog.tsx";
 import { formatToolName } from "./utils/format-tool-name.ts";
 // Rules now derived from the agent context
 
@@ -38,9 +37,7 @@ interface ContextResourcesProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   removeFile: (index: number) => void;
-  openFileDialog: () => void;
   enableFileUpload: boolean;
-  rightNode?: React.ReactNode;
 }
 
 export function ContextResources({
@@ -49,9 +46,7 @@ export function ContextResources({
   fileInputRef,
   handleFileChange,
   removeFile,
-  openFileDialog,
   enableFileUpload,
-  rightNode,
 }: ContextResourcesProps) {
   const { agent, rules, setRules } = useAgent();
   const { data: integrations = [] } = useIntegrations();
@@ -60,8 +55,7 @@ export function ContextResources({
     excludeDisabled: true,
   });
   const { preferences } = useUserPreferences();
-  const { disableAllTools, enableAllTools, setIntegrationTools } =
-    useAgentSettingsToolsSet();
+  const { disableAllTools, setIntegrationTools } = useAgentSettingsToolsSet();
 
   const selectedModel =
     models.find((m: Model) => m.id === preferences.defaultModel) ||
@@ -155,14 +149,6 @@ export function ContextResources({
     [agent, setIntegrationTools],
   );
 
-  const handleAddIntegration = useCallback(
-    (integration: Integration) => {
-      // Use the enableAllTools function from useAgentSettingsToolsSet
-      enableAllTools(integration.id);
-    },
-    [enableAllTools],
-  );
-
   // Convert rules to persistedRules format for display
   const persistedRules = useMemo(
     () =>
@@ -187,106 +173,105 @@ export function ContextResources({
   return (
     <div className="w-full mx-auto">
       <FileDropOverlay display={isDragging} />
-      <div className="flex justify-between items-end gap-2 mb-4 overflow-visible">
-        <div className="flex flex-wrap gap-2 overflow-visible">
-          {/* rules now rendered after add button below */}
-          {/* File Upload Button */}
-          {enableFileUpload && (
-            <>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                multiple
-                className="hidden"
-                accept={getAcceptedFileTypes()}
-              />
-              {(selectedModel.capabilities.includes("file-upload") ||
-                selectedModel.capabilities.includes("image-upload")) && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  title="Upload files"
-                  onClick={openFileDialog}
-                >
-                  <Icon name="file_upload" />
-                </Button>
-              )}
-            </>
-          )}
-          <SelectConnectionDialog
-            onSelect={handleAddIntegration}
-            trigger={
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                title="Add integrations"
-              >
-                <Icon name="add" />
-              </Button>
-            }
-          />
-
-          {persistedRules.map((rule) => (
-            <div key={rule.id} className="relative group">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    title="View rule"
-                  >
-                    <Icon name="rule" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs break-words">
-                  {rule.text.length > 160
-                    ? `${rule.text.slice(0, 160)}…`
-                    : rule.text}
-                </TooltipContent>
-              </Tooltip>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => removeRule(rule.id)}
-                className="absolute -top-1 -right-1 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity rounded-full shadow-sm bg-primary text-primary-foreground hover:bg-primary/50 hover:text-sidebar"
-                title="Remove rule"
-              >
-                <Icon name="close" size={10} />
-              </Button>
-            </div>
-          ))}
-
-          {/* Integration Items */}
-          {integrationsWithTotalTools.map(
-            ({ integration, enabledTools, integrationId, totalTools }) => (
-              <IntegrationResourceItemWrapper
-                key={integrationId}
-                integration={integration}
-                enabledTools={enabledTools}
-                totalTools={totalTools}
-                integrationId={integrationId}
-                onRemove={handleRemoveIntegration}
-                onToggleTool={handleToggleTool}
-              />
-            ),
-          )}
-
-          {/* File Preview Items */}
-          {uploadedFiles.map((uf, index) => (
-            <FilePreviewItem
-              key={uf.file.name + uf.file.size}
-              uploadedFile={uf}
-              removeFile={() => removeFile(index)}
+      <div className="flex flex-wrap gap-2 overflow-visible">
+        {/* File Upload Button */}
+        {enableFileUpload && (
+          <>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              multiple
+              className="hidden"
+              accept={getAcceptedFileTypes()}
             />
-          ))}
-        </div>
+          </>
+        )}
 
-        {rightNode}
+        {persistedRules.length > 0 && (
+          <div className="relative group">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Show prompts"
+                  className="flex items-center justify-center size-10 rounded-lg bg-muted"
+                >
+                  <Icon name="rule" size={20} className="text-foreground" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-md p-0" align="start">
+                <div className="max-h-[300px] overflow-y-auto">
+                  {persistedRules.map((rule, index) => (
+                    <div
+                      key={rule.id}
+                      className="group/rule p-3 text-sm border-b border-border/15 last:border-0 hover:bg-accent/10 transition-colors relative"
+                    >
+                      <div className="flex items-start gap-2 pr-6">
+                        <span className="text-xs text-muted-foreground font-medium flex-shrink-0 mt-0.5">
+                          {index + 1}.
+                        </span>
+                        <p className="text-xs leading-relaxed break-words flex-1 line-clamp-4">
+                          {rule.text}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeRule(rule.id);
+                        }}
+                        className="absolute top-2 right-2 h-5 w-5 opacity-0 group-hover/rule:opacity-100 transition-opacity rounded-full bg-background/10 text-background hover:bg-background/40 hover:text-background"
+                        title="Remove this prompt"
+                      >
+                        <Icon name="close" size={12} />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                // Remove all rules
+                setRules([]);
+              }}
+              className="absolute -top-1 -right-1 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity rounded-full shadow-sm bg-primary text-primary-foreground hover:bg-primary/50 hover:text-sidebar"
+              title="Remove all prompts"
+            >
+              <Icon name="close" size={10} />
+            </Button>
+          </div>
+        )}
+
+        {/* Integration Items */}
+        {integrationsWithTotalTools.map(
+          ({ integration, enabledTools, integrationId, totalTools }) => (
+            <IntegrationResourceItemWrapper
+              key={integrationId}
+              integration={integration}
+              enabledTools={enabledTools}
+              totalTools={totalTools}
+              integrationId={integrationId}
+              onRemove={handleRemoveIntegration}
+              onToggleTool={handleToggleTool}
+            />
+          ),
+        )}
+
+        {/* File Preview Items */}
+        {uploadedFiles.map((uf, index) => (
+          <FilePreviewItem
+            key={uf.file.name + uf.file.size}
+            uploadedFile={uf}
+            removeFile={() => removeFile(index)}
+          />
+        ))}
       </div>
     </div>
   );
@@ -352,22 +337,22 @@ const IntegrationResourceItem = memo(function IntegrationResourceItem({
   const [isRemoving, setIsRemoving] = useState(false);
 
   return (
-    <div className="relative group flex items-center gap-1.5 px-1.5 py-1 bg-muted/50 rounded-xl border border-border h-10">
+    <div className="relative group flex items-center gap-2 p-1 pr-2.5 bg-muted rounded-lg h-10">
       <Popover>
         <PopoverTrigger asChild>
-          <div className="flex items-center gap-1.5 cursor-pointer hover:bg-muted/50 rounded p-1 flex-1">
-            <div className="flex items-center justify-center size-6 rounded overflow-hidden bg-muted flex-shrink-0">
+          <div className="flex items-center gap-2.5 cursor-pointer rounded flex-1">
+            <div className="flex items-center justify-center size-8 rounded overflow-hidden flex-shrink-0">
               <IntegrationIcon
                 icon={integration.icon}
                 name={integration.name}
-                className="h-6 w-6"
+                className="size-full"
               />
             </div>
             <div className="flex flex-col min-w-0 flex-1">
-              <div className="text-xs font-medium truncate leading-tight">
+              <div className="text-xs font-normal truncate leading-4">
                 {integration.name}
               </div>
-              <div className="text-xs text-muted-foreground leading-tight">
+              <div className="text-xs text-muted-foreground leading-4">
                 {enabledTools.length}/{totalTools}
               </div>
             </div>
@@ -477,8 +462,8 @@ function FilePreviewItem({ uploadedFile, removeFile }: FilePreviewItemProps) {
   const { file, status, error, url } = uploadedFile;
 
   return (
-    <div className="relative group flex items-center gap-1.5 px-1.5 py-1 bg-muted/50 rounded-xl border border-border h-10">
-      <div className="flex items-center justify-center size-6 rounded overflow-hidden bg-muted flex-shrink-0">
+    <div className="relative group flex items-center gap-2 p-1 pr-2.5 bg-muted rounded-lg h-10">
+      <div className="flex items-center justify-center size-8 rounded overflow-hidden flex-shrink-0">
         {status === "uploading" ? (
           <Spinner size="xs" />
         ) : status === "error" ? (
@@ -502,10 +487,10 @@ function FilePreviewItem({ uploadedFile, removeFile }: FilePreviewItemProps) {
       </div>
 
       <div className="flex flex-col min-w-0 flex-1">
-        <div className="text-xs font-medium truncate leading-tight">
+        <div className="text-xs font-normal truncate leading-4">
           {file.name}
         </div>
-        <div className="text-xs text-muted-foreground leading-tight">
+        <div className="text-xs text-muted-foreground leading-4">
           {(file.size / 1024).toFixed(1)}KB
         </div>
       </div>

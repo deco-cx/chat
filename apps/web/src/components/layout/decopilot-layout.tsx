@@ -45,7 +45,7 @@ export function DecopilotLayout({
         {decopilotOpen && !isAgentDetailPage && (
           <>
             <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={30}>
+            <ResizablePanel defaultSize={30} minSize={15}>
               <DecopilotChat />
             </ResizablePanel>
           </>

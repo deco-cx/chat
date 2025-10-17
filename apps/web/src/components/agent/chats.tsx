@@ -21,7 +21,7 @@ const MainChat = () => {
       <ScrollArea className="flex-1 min-h-0">
         <ChatMessages />
       </ScrollArea>
-      <div className="p-2">
+      <div className="flex-none p-2">
         <ChatInput />
       </div>
     </div>

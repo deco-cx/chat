@@ -317,7 +317,13 @@ export function DecopilotChat() {
         );
       }
     }
-  }, [sortedThreads, activeTab, activeTabIndex, user?.id]);
+  }, [
+    sortedThreads,
+    activeTab?.threadId,
+    activeTab?.title,
+    activeTabIndex,
+    user?.id,
+  ]);
 
   function handleThreadSelect(selectedThreadId: string) {
     // Remove user prefix if present for consistency
@@ -392,7 +398,7 @@ export function DecopilotChat() {
       />
 
       {/* Header with agent info and controls */}
-      <div className="flex h-10 items-center justify-between gap-3 border-b border-border pl-3 flex-shrink-0">
+      <div className="flex min-h-10 shrink-0 items-center gap-2 border-b border-border px-2">
         <div className="flex items-center gap-2">
           <img
             src={WELL_KNOWN_AGENTS.decopilotAgent.avatar}
@@ -470,7 +476,7 @@ export function DecopilotChat() {
                   showEditAgent: false,
                 }}
               >
-                <MainChat className="h-[calc(100vh-88px)]" />
+                <MainChat className="h-full" />
               </AgentProvider>
             </Suspense>
           </div>

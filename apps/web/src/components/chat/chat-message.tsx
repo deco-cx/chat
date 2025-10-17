@@ -115,7 +115,7 @@ export const ChatMessage = memo(function ChatMessage({
 
         <div
           className={cn(
-            "w-full min-w-0 not-only:rounded-2xl text-base break-words overflow-wrap-anywhere",
+            "w-full min-w-0 not-only:rounded-2xl text-[0.9375rem] break-words overflow-wrap-anywhere",
             isUser ? "bg-muted p-3" : "bg-transparent",
           )}
         >

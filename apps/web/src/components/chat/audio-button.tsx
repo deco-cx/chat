@@ -1,18 +1,23 @@
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import { Button } from "@deco/ui/components/button.tsx";
 import type {
   SpeechRecognition,
   SpeechRecognitionError,
   SpeechRecognitionEvent,
 } from "../../types/speech.d.ts";
 import { Icon } from "@deco/ui/components/icon.tsx";
+import { Button } from "@deco/ui/components/button.tsx";
+import { cn } from "@deco/ui/lib/utils.ts";
 
 interface AudioButtonProps {
   onMessage: (message: string) => void;
+  className?: string;
 }
 
-export const AudioButton: React.FC<AudioButtonProps> = ({ onMessage }) => {
+export const AudioButton: React.FC<AudioButtonProps> = ({
+  onMessage,
+  className,
+}) => {
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(
     null,
@@ -81,18 +86,18 @@ export const AudioButton: React.FC<AudioButtonProps> = ({ onMessage }) => {
   }, [recognition, isListening]);
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="flex gap-4">
-        <Button
-          type="button"
-          variant={isListening ? "default" : "outline"}
-          size="icon"
-          onClick={toggleListening}
-          className="h-8 w-8"
-        >
-          <Icon filled name={isListening ? "stop" : "mic"} />
-        </Button>
-      </div>
-    </div>
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      onClick={toggleListening}
+      className={cn(
+        "size-8 rounded-full transition-colors text-muted-foreground",
+        className,
+      )}
+      title={isListening ? "Stop recording" : "Start voice input"}
+    >
+      <Icon name={isListening ? "stop" : "mic"} size={20} />
+    </Button>
   );
 };
