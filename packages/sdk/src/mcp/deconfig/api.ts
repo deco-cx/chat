@@ -55,6 +55,9 @@ const projectFor = (c: AppContext): string => {
   return c.locator.value;
 };
 
+// Well-known file path to mark that a project has been migrated
+export const WELL_KNOWN_MIGRATED_MARKER = "/.deco/migrated.json";
+
 // Helper function to get branch RPC (using branchName directly for performance)
 export const branchRpcFor = async (
   c: AppContext,
@@ -710,6 +713,18 @@ async function migrateProject(c: DeconfigContext) {
   // Get source branch RPC (current project's main branch)
   using sourceBranchRpc = await branchRpcFor(c, "main");
 
+  // Check if the project has already been migrated
+  const markerPath = withPathPrefix(c, WELL_KNOWN_MIGRATED_MARKER);
+  const markerFile = await sourceBranchRpc.getFile(markerPath).catch(
+    () => null,
+  );
+
+  if (markerFile) {
+    throw new Error(
+      `Project has already been migrated. Migration marker found at ${WELL_KNOWN_MIGRATED_MARKER}`,
+    );
+  }
+
   // Get all files from source with content
   const sourceFiles = await sourceBranchRpc.getFiles(undefined, true);
 
@@ -745,7 +760,7 @@ async function migrateProject(c: DeconfigContext) {
     patches.push({
       path,
       content,
-      metadata: file.metadata,
+      metadata: file.metadata as Record<string, unknown>,
     });
   }
 
@@ -755,6 +770,30 @@ async function migrateProject(c: DeconfigContext) {
       patches,
     });
   }
+
+  // Write the migrated marker file to the source branch to prevent re-migration
+  const markerContent = JSON.stringify({
+    migratedAt: new Date().toISOString(),
+    migratedBy: c.user && "id" in c.user ? c.user.id : undefined,
+    migratedFrom: sourceProjectId,
+    migratedTo: destinationProjectId,
+  });
+
+  const markerArrayBuffer = new TextEncoder().encode(markerContent)
+    .buffer as ArrayBuffer;
+
+  using _markerWrite = await sourceBranchRpc.transactionalWrite({
+    patches: [
+      {
+        path: markerPath,
+        content: markerArrayBuffer,
+        metadata: {
+          system: true,
+          type: "migration-marker",
+        } as Record<string, unknown>,
+      },
+    ],
+  });
 
   return {
     filesCopied: patches.length,
