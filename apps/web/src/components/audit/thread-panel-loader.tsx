@@ -1,9 +1,9 @@
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
-import { useThread, useThreadMessages, useUpdateThreadTitle } from "@deco/sdk";
+import { useThread, useThreadMessages, useUpdateThreadTitle, useAgentData, useAgentRoot } from "@deco/sdk";
 import type { UIMessage } from "@ai-sdk/react";
 import { ThreadDetailPanel } from "./thread-detail-panel.tsx";
-import { AgentProvider } from "../agent/provider.tsx";
+import { AgenticChatProvider } from "../chat/provider.tsx";
 import { MainChat } from "../agent/chat.tsx";
 
 export function ThreadConversation({
@@ -103,10 +103,24 @@ function ThreadMessages({ threadId }: { threadId: string }) {
     );
   }
 
+  const agentId = threadDetail.metadata?.agentId ?? threadDetail.id;
+  const { data: agent } = useAgentData(agentId);
+  const agentRoot = useAgentRoot(agentId);
+
+  if (!agent) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
   return (
-    <AgentProvider
-      agentId={threadDetail.metadata?.agentId ?? threadDetail.id}
+    <AgenticChatProvider
+      agentId={agentId}
       threadId={threadDetail.id}
+      agent={agent}
+      agentRoot={agentRoot}
       uiOptions={{
         showThreadTools: false,
         showModelSelector: false,
@@ -123,7 +137,7 @@ function ThreadMessages({ threadId }: { threadId: string }) {
         className="flex-1 min-w-0"
         contentClassName="flex flex-col min-w-0"
       />
-    </AgentProvider>
+    </AgenticChatProvider>
   );
 }
 

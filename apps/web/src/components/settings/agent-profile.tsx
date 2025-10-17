@@ -13,7 +13,7 @@ import { Skeleton } from "@deco/ui/components/skeleton.tsx";
 import { Textarea } from "@deco/ui/components/textarea.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import { useRef, useState } from "react";
-import { useAgent } from "../agent/provider.tsx";
+import { useAgenticChat } from "../chat/provider.tsx";
 import { ModelSelector } from "../chat/model-selector.tsx";
 import { AgentAvatar } from "../common/avatar/agent.tsx";
 import PromptInput from "../prompts/rich-text/index.tsx";
@@ -31,7 +31,11 @@ const useAvatarFilename = () => {
 };
 
 function PromptTab() {
-  const { form, agent, handleSubmit } = useAgent();
+  const { form, agent, saveAgent } = useAgenticChat();
+
+  const handleSubmit = form.handleSubmit(async () => {
+    await saveAgent();
+  });
 
   const writeFileMutation = useWriteFile();
   const fileInputRef = useRef<HTMLInputElement>(null);

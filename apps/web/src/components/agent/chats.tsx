@@ -1,4 +1,4 @@
-import { type ProjectLocator, SDKProvider, UnauthorizedError } from "@deco/sdk";
+import { type ProjectLocator, SDKProvider, UnauthorizedError, useAgentData, useAgentRoot, useThreadMessages } from "@deco/sdk";
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
 import {
   SidebarInset,
@@ -9,9 +9,10 @@ import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { Suspense, useMemo } from "react";
 import { useSearchParams } from "react-router";
 import { ErrorBoundary } from "../../error-boundary.tsx";
+import { useUserPreferences } from "../../hooks/use-user-preferences.ts";
 import { ChatInput } from "../chat/chat-input.tsx";
 import { ChatMessages } from "../chat/chat-messages.tsx";
-import { AgentProvider } from "./provider.tsx";
+import { AgenticChatProvider } from "../chat/provider.tsx";
 import { EmptyState } from "../common/empty-state.tsx";
 import { ChatHeader } from "./chat-header.tsx";
 
@@ -21,7 +22,7 @@ const MainChat = () => {
       <ScrollArea className="flex-1 min-h-0">
         <ChatMessages />
       </ScrollArea>
-      <div className="p-2">
+      <div className="flex-none p-2">
         <ChatInput />
       </div>
     </div>
@@ -72,7 +73,7 @@ function Page() {
         <EmptyState
           icon="robot_2"
           title="This agent is no longer available"
-          description="The agent you’re trying to access is no longer publicly available. Its visibility may have changed or it might have been removed."
+          description="The agent you're trying to access is no longer publicly available. Its visibility may have changed or it might have been removed."
           buttonProps={{
             variant: "outline",
             children: "Create your agent at deco CMS",
@@ -94,40 +95,68 @@ function Page() {
         }
       >
         <SDKProvider locator={workspace}>
-          <AgentProvider
-            agentId={agentId}
-            threadId={threadId}
-            toolsets={toolsets}
-            uiOptions={{
-              showThreadTools: false,
-              showModelSelector: false,
-              showThreadMessages: false,
-              showAgentVisibility: false,
-              showEditAgent: false,
-              showContextResources: false,
-            }}
-          >
-            <SidebarProvider>
-              <SidebarLayout
-                style={
-                  {
-                    "--sidebar-width": "13rem",
-                    "--sidebar-width-mobile": "11rem",
-                  } as Record<string, string>
-                }
-              >
-                <SidebarInset>
-                  <div className="w-full h-12 border border-b px-8">
-                    <ChatHeader />
-                  </div>
-                  <MainChat />
-                </SidebarInset>
-              </SidebarLayout>
-            </SidebarProvider>
-          </AgentProvider>
+          <ChatProviderWrapper agentId={agentId} threadId={threadId} />
         </SDKProvider>
       </Suspense>
     </ErrorBoundary>
+  );
+}
+
+function ChatProviderWrapper({ agentId, threadId }: { agentId: string; threadId: string }) {
+  const { data: agent } = useAgentData(agentId);
+  const agentRoot = useAgentRoot(agentId);
+  const { preferences } = useUserPreferences();
+  const { data: { messages: threadMessages } = { messages: [] } } = useThreadMessages(
+    threadId,
+    { enabled: false }
+  );
+
+  if (!agent) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
+  return (
+    <AgenticChatProvider
+      agentId={agentId}
+      threadId={threadId}
+      agent={agent}
+      agentRoot={agentRoot}
+      defaultModel={preferences.defaultModel}
+      useOpenRouter={preferences.useOpenRouter}
+      sendReasoning={preferences.sendReasoning}
+      smoothStream={preferences.smoothStream}
+      initialMessages={threadMessages}
+      uiOptions={{
+        showThreadTools: false,
+        showModelSelector: false,
+        showThreadMessages: false,
+        showAgentVisibility: false,
+        showEditAgent: false,
+        showContextResources: false,
+      }}
+    >
+      <SidebarProvider>
+        <SidebarLayout
+          style={
+            {
+              "--sidebar-width": "13rem",
+              "--sidebar-width-mobile": "11rem",
+            } as Record<string, string>
+          }
+        >
+          <SidebarInset>
+            <div className="w-full h-12 border border-b px-8">
+              <ChatHeader />
+            </div>
+            <MainChat />
+          </SidebarInset>
+        </SidebarLayout>
+      </SidebarProvider>
+    </AgenticChatProvider>
   );
 }
 

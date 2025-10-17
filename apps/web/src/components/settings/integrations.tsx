@@ -19,7 +19,7 @@ import {
   useAgentKnowledgeIntegration,
   useUploadAgentKnowledgeFiles,
 } from "../agent/hooks/use-agent-knowledge.ts";
-import { useAgent } from "../agent/provider.tsx";
+import { useAgenticChat } from "../chat/provider.tsx";
 import {
   AddFileToKnowledgeButton,
   KnowledgeBaseFileList,
@@ -163,7 +163,7 @@ function KnowledgeHeading() {
 }
 
 function _Knowledge() {
-  const { agent } = useAgent();
+  const { agent } = useAgenticChat();
   const { setIntegrationTools } = useAgentSettingsToolsSet();
   const [uploadingFiles, setUploadedFiles] = useState<UploadFile[]>([]);
   const { integration } = useAgentKnowledgeIntegration({ agent });
@@ -277,7 +277,7 @@ const agentConnectionFilter = (integration: Integration) =>
 
 function AddAgentConnectionButton() {
   const { setIntegrationTools } = useAgentSettingsToolsSet();
-  const { agent } = useAgent();
+  const { agent } = useAgenticChat();
 
   return (
     <SelectConnectionDialog
@@ -359,7 +359,11 @@ function MultiAgent() {
 }
 
 function ToolsAndKnowledgeTab() {
-  const { form, handleSubmit } = useAgent();
+  const { form, saveAgent } = useAgenticChat();
+
+  const handleSubmit = form.handleSubmit(async () => {
+    await saveAgent();
+  });
 
   return (
     <ScrollArea className="h-full w-full">

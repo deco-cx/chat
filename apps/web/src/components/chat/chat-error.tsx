@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { trackEvent } from "../../hooks/analytics.ts";
 import { useOrgLink } from "../../hooks/use-navigate-workspace.ts";
-import { useAgent } from "../agent/provider.tsx";
+import { useAgenticChat } from "../chat/provider.tsx";
 import { ExpandableDescription } from "../toolsets/description.tsx";
 
 function getErrorMessage(error: Error) {
@@ -26,7 +26,7 @@ const WELL_KNOWN_ERROR_MESSAGES = {
 
 export function ChatError() {
   const orgLink = useOrgLink();
-  const { chat, retry, correlationIdRef } = useAgent();
+  const { chat, retry, correlationIdRef } = useAgenticChat();
   const { error } = chat;
   const insufficientFunds = error?.message.includes(
     WELL_KNOWN_ERROR_MESSAGES.InsufficientFunds,

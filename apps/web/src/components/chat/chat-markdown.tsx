@@ -147,7 +147,7 @@ const rehypePluginsMemo = [rehypeRaw];
 // Memoize the components object to prevent re-creating it on every render
 const markdownComponents = {
   p: (props: React.HTMLAttributes<HTMLParagraphElement>) => (
-    <p {...props} className="leading-relaxed" />
+    <p {...props} className="leading-relaxed text-[0.9375rem]" />
   ),
   strong: (props: React.HTMLAttributes<HTMLElement>) => (
     <strong {...props} className="font-bold" />
@@ -170,7 +170,7 @@ const markdownComponents = {
     <ol {...props} className="list-decimal ml-6 my-4 space-y-2" />
   ),
   li: (props: React.HTMLAttributes<HTMLLIElement>) => (
-    <li {...props} className="leading-relaxed" />
+    <li {...props} className="leading-relaxed text-[0.9375rem]" />
   ),
   code: (props: React.HTMLAttributes<HTMLElement>) => (
     <code

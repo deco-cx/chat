@@ -1,10 +1,10 @@
+import type { UIMessage } from "@ai-sdk/react";
 import { useFile } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { toast } from "@deco/ui/components/sonner.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
-import type { UIMessage } from "@ai-sdk/react";
-import type { FileUIPart } from "ai";
+import type { FileUIPart, ToolUIPart } from "ai";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { MemoizedMarkdown } from "./chat-markdown.tsx";
 import { ReasoningPart } from "./reasoning-part.tsx";
@@ -21,19 +21,6 @@ interface MessageAttachment {
   name?: string;
 }
 
-interface ToolInvocation {
-  toolCallId: string;
-  toolName: string;
-  state:
-    | "input-streaming"
-    | "input-available"
-    | "output-available"
-    | "output-error";
-  input?: unknown;
-  output?: unknown;
-  errorText?: string;
-}
-
 interface ImagePart {
   type: "image";
   image: string;
@@ -45,9 +32,12 @@ interface ReasoningPart {
   state?: "streaming" | "done";
 }
 
+const isToolPart = (part: UIMessage["parts"][number]): part is ToolUIPart => {
+  return part.type.startsWith("tool-") && "toolCallId" in part;
+};
+
 export const ChatMessage = memo(function ChatMessage({
   message,
-  isLastMessage = false,
 }: ChatMessageProps) {
   const isUser = message.role === "user";
   const createdAt =
@@ -105,7 +95,7 @@ export const ChatMessage = memo(function ChatMessage({
     >
       <div
         className={cn(
-          "flex flex-col gap-1 min-w-0",
+          "flex flex-col gap-2 min-w-0",
           isUser ? "items-end max-w-[70%]" : "w-full items-start",
         )}
       >
@@ -115,12 +105,12 @@ export const ChatMessage = memo(function ChatMessage({
 
         <div
           className={cn(
-            "w-full min-w-0 not-only:rounded-2xl text-base break-words overflow-wrap-anywhere",
-            isUser ? "bg-muted p-3" : "bg-transparent",
+            "w-full min-w-0 not-only:rounded-2xl text-[0.9375rem] break-words overflow-wrap-anywhere",
+            isUser ? "bg-muted px-4 py-3" : "bg-transparent",
           )}
         >
           {message.parts ? (
-            <div className="space-y-2 w-full">
+            <div className="space-y-3 w-full">
               {message.parts.map((part, index) => {
                 if (part.type === "reasoning") {
                   return (
@@ -149,18 +139,9 @@ export const ChatMessage = memo(function ChatMessage({
                 } else if (part.type === "step-start") {
                   // Step start parts are typically not rendered visually
                   return null;
-                } else if (
-                  part.type.startsWith("tool-") &&
-                  "toolCallId" in part
-                ) {
+                } else if (isToolPart(part)) {
                   // Handle individual tool parts
-                  return (
-                    <ToolMessage
-                      key={index}
-                      part={part}
-                      isLastMessage={isLastMessage}
-                    />
-                  );
+                  return <ToolMessage key={index} part={part} />;
                 }
                 return null;
               })}

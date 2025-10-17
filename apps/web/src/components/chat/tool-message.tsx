@@ -5,27 +5,19 @@ import {
   CollapsibleTrigger,
 } from "@deco/ui/components/collapsible.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
-import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
+import { ToolUIPart } from "ai";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
-import { useAgent } from "../agent/provider.tsx";
-import { Picker } from "./chat-picker.tsx";
-import { AgentCard } from "./tools/agent-card.tsx";
+import { JsonViewer } from "./json-viewer.tsx";
 import {
   HostingAppDeploy,
   HostingAppToolLike,
 } from "./tools/hosting-app-deploy.tsx";
 import { Preview } from "./tools/render-preview.tsx";
-import { formatToolName } from "./utils/format-tool-name.ts";
 
-interface ConfirmOption {
-  value: string;
-  label: string;
-}
-
-// Map ToolInvocation state to ToolLike state for custom UI components
+// Map ToolUIPart state to ToolLike state for custom UI components
 const mapToToolLikeState = (
-  state: ToolInvocation["state"],
+  state: ToolUIPart["state"],
 ): "call" | "result" | "error" | "partial-call" => {
   switch (state) {
     case "input-streaming":
@@ -41,96 +33,91 @@ const mapToToolLikeState = (
 };
 
 interface ToolMessageProps {
-  part: {
-    type: string;
-    toolCallId: string;
-    state?: string;
-    input?: unknown;
-    output?: unknown;
-    errorText?: string;
-  };
-  isLastMessage?: boolean;
+  part: ToolUIPart;
 }
 
 // Tools that have custom UI rendering and shouldn't show in the timeline
-const CUSTOM_UI_TOOLS = [
+const CUSTOM_UI_TOOLS = new Set([
   "HOSTING_APP_DEPLOY",
   "RENDER",
-  "SHOW_PICKER",
-  "CONFIRM",
-  "CONFIGURE",
-  "AGENT_CREATE",
   "GENERATE_IMAGE",
-] as const;
-type CustomUITool = (typeof CUSTOM_UI_TOOLS)[number];
+]);
 
-interface ToolInvocation {
-  toolCallId: string;
-  toolName: string;
-  state:
-    | "input-streaming"
-    | "input-available"
-    | "output-available"
-    | "output-error";
-  input?: unknown;
-  output?: unknown;
-  errorText?: string;
+// Helper to extract toolName from ToolUIPart (handles both static and dynamic tools)
+function getToolName(part: ToolUIPart): string {
+  if ("toolName" in part && typeof part.toolName === "string") {
+    return part.toolName;
+  }
+  // Extract from type: "tool-TOOL_NAME" -> "TOOL_NAME"
+  if (part.type.startsWith("tool-")) {
+    return part.type.substring(5);
+  }
+  return "UNKNOWN_TOOL";
 }
 
-function isCustomUITool(toolName: string): toolName is CustomUITool {
-  return CUSTOM_UI_TOOLS.includes(toolName as CustomUITool);
+// Hook to memoize tool name extraction
+function useToolName(part: ToolUIPart): string {
+  const toolNameProp = "toolName" in part ? part.toolName : undefined;
+  return useMemo(() => getToolName(part), [part.type, toolNameProp]);
+}
+
+function isCustomUITool(toolName: string): boolean {
+  return CUSTOM_UI_TOOLS.has(toolName);
+}
+
+// Hook to memoize custom UI tool check
+function useIsCustomUITool(part: ToolUIPart): boolean {
+  const toolName = useToolName(part);
+  return useMemo(() => isCustomUITool(toolName), [toolName]);
 }
 
 const ToolStatus = memo(function ToolStatus({
-  tool,
+  part,
   isLast,
   isSingle,
 }: {
-  tool: ToolInvocation;
+  part: ToolUIPart;
   isLast: boolean;
   isSingle: boolean;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showCopyButton, setShowCopyButton] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const { state, input, output, errorText } = part;
 
-  const getIcon = useCallback((state: string) => {
+  const toolName = useToolName(part);
+  const isLoading = state === "input-streaming" || state === "input-available";
+  const hasOutput = state === "output-available";
+  const hasError = state === "output-error";
+
+  const statusConfig = useMemo(() => {
     switch (state) {
       case "input-streaming":
+        return {
+          icon: <Icon name="arrow_downward" className="text-muted-foreground" />,
+          iconBg: "bg-muted/30",
+        };
       case "input-available":
-        return <Spinner size="xs" variant="default" />;
+        return {
+          icon: <Icon name="arrow_upward" className="text-muted-foreground" />,
+          iconBg: "bg-muted/30",
+        };
       case "output-available":
-        return <Icon name="check" className="text-muted-foreground" />;
+        return {
+          icon: <Icon name="check" className="text-primary-dark" />,
+          iconBg: "bg-primary-light",
+        };
       case "output-error":
-        return <Icon name="close" className="text-muted-foreground" />;
+        return {
+          icon: <Icon name="close" className="text-destructive" />,
+          iconBg: "bg-destructive/10",
+        };
       default:
-        return "•";
+        return {
+          icon: "•",
+          iconBg: "bg-muted/30",
+        };
     }
-  }, []);
-
-  const toolName = useMemo(() => {
-    if (!tool.toolName) {
-      return "Unknown tool";
-    }
-    if (tool.toolName.startsWith("AGENT_GENERATE_")) {
-      return `Delegating to agent`;
-    }
-    return formatToolName(tool.toolName);
-  }, [tool.toolName]);
-
-  const toolJson = useMemo(() => {
-    return JSON.stringify(
-      {
-        toolName: tool.toolName,
-        state: tool.state,
-        input: tool.input,
-        output: tool.output,
-        errorText: tool.errorText,
-      },
-      null,
-      2,
-    ).replace(/"(\w+)":/g, '"$1":');
-  }, [tool.toolName, tool.state, tool.input, tool.output, tool.errorText]);
+  }, [state]);
 
   const onClick = useCallback(() => {
     setIsExpanded((prev) => {
@@ -149,44 +136,45 @@ const ToolStatus = memo(function ToolStatus({
     });
   }, []);
 
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(toolJson);
-  }, [toolJson]);
-
   return (
     <div
       className={cn(
         "flex flex-col relative",
-        isSingle && "p-4 hover:bg-accent rounded-2xl",
+        isSingle && "p-2.5 hover:bg-accent/25 rounded-2xl",
       )}
       onClick={isSingle ? onClick : undefined}
-      onMouseEnter={() => setShowCopyButton(true)}
-      onMouseLeave={() => setShowCopyButton(false)}
     >
       <div className="flex items-start gap-2">
         <button
           type="submit"
           onClick={isSingle ? undefined : onClick}
           className={cn(
-            "w-full flex items-start gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors",
+            "w-full flex items-start gap-2 py-2 px-1 text-sm text-muted-foreground hover:text-foreground transition-colors",
             !isSingle && "hover:bg-accent rounded-lg p-2",
           )}
         >
           <div className="relative flex flex-col items-center min-h-[20px]">
             <div
               className={cn(
-                "w-5 h-5 rounded-full border flex items-center justify-center bg-muted",
+                "size-5 rounded-full flex items-center justify-center",
+                statusConfig.iconBg,
               )}
             >
-              {getIcon(tool.state)}
+              {statusConfig.icon}
             </div>
             {!isLast && !isExpanded && (
               <div className="w-[1px] h-[150%] bg-muted absolute top-5 left-1/2 transform -translate-x-1/2" />
             )}
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <div className="font-medium truncate max-w-[60vw] md:max-w-full">
+              <div
+                className={cn(
+                  "font-medium truncate max-w-[60vw] md:max-w-full",
+                  isLoading &&
+                    "bg-gradient-to-r from-foreground via-foreground/50 to-foreground bg-[length:200%_100%] animate-shimmer bg-clip-text text-transparent",
+                )}
+              >
                 {toolName}
               </div>
               <Icon
@@ -194,43 +182,54 @@ const ToolStatus = memo(function ToolStatus({
                 name="chevron_right"
               />
             </div>
-
-            {isExpanded && (
-              <div
-                ref={contentRef}
-                className="text-left mt-2 rounded-lg bg-primary border border-border overflow-hidden w-full relative"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {showCopyButton && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCopy();
-                    }}
-                    className="absolute top-2 right-2 p-1 rounded-full hover:bg-muted transition-colors"
-                    title="Copy tool details"
-                  >
-                    <Icon
-                      name="content_copy"
-                      className="w-4 h-4 text-muted-foreground"
-                    />
-                  </Button>
-                )}
-                <pre
-                  className="p-4 text-xs whitespace-pre-wrap break-all overflow-y-auto max-h-[500px]"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <code className="text-primary-foreground select-text cursor-auto">
-                    {toolJson}
-                  </code>
-                </pre>
-              </div>
-            )}
           </div>
         </button>
       </div>
+
+      {isExpanded && (
+        <div
+          ref={contentRef}
+          className="text-left mt-2 space-y-3 w-full min-w-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Input Section */}
+          {input !== undefined && (
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground px-1 flex items-center gap-2">
+                <Icon name="arrow_downward" className="size-3" />
+                Input
+              </div>
+              <JsonViewer data={input} defaultView="tree" maxHeight="300px" />
+            </div>
+          )}
+
+          {/* Output Section */}
+          {hasOutput && output !== undefined && (
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground px-1 flex items-center gap-2">
+                <Icon name="arrow_upward" className="size-3" />
+                Output
+              </div>
+              <JsonViewer data={output} defaultView="tree" maxHeight="300px" />
+            </div>
+          )}
+
+          {/* Error Section */}
+          {hasError && (
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-destructive px-1 flex items-center gap-2">
+                <Icon name="error_outline" className="size-3" />
+                Error
+              </div>
+              {errorText && (
+                <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20 text-sm text-destructive">
+                  {errorText}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 });
@@ -287,45 +286,17 @@ function ImagePrompt({
 
 function GeneratingStatus() {
   return (
-    <>
-      <div className="flex items-center gap-3">
-        <div className="text-foreground relative overflow-hidden">
-          <span
-            className="relative inline-block font-medium"
-            style={{
-              background:
-                "linear-gradient(90deg, currentColor 0%, rgba(255,255,255,0.8) 50%, currentColor 100%)",
-              backgroundSize: "200% 100%",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              animation: "shimmer 3s ease-in-out infinite",
-            }}
-          >
-            Generating image...
-          </span>
-        </div>
-        <Spinner size="xs" variant="default" />
-      </div>
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-          @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-          }
-        `,
-        }}
-      />
-    </>
+    <span className="font-medium bg-gradient-to-r from-foreground via-foreground/50 to-foreground bg-[length:200%_100%] animate-shimmer bg-clip-text text-transparent">
+      Generating image...
+    </span>
   );
 }
 
-function GenerateImageToolUI({ tool }: { tool: ToolInvocation }) {
-  const state = tool.state;
+function GenerateImageToolUI({ part }: { part: ToolUIPart }) {
+  const state = part.state;
   const prompt =
-    typeof tool.input === "object" && tool.input && "prompt" in tool.input
-      ? tool.input.prompt
+    typeof part.input === "object" && part.input && "prompt" in part.input
+      ? part.input.prompt
       : null;
 
   if (!prompt || typeof prompt !== "string") {
@@ -338,14 +309,14 @@ function GenerateImageToolUI({ tool }: { tool: ToolInvocation }) {
 
   // Extract image URL from output.structuredContent.image
   const image =
-    tool.output &&
-    typeof tool.output === "object" &&
-    "structuredContent" in tool.output &&
-    tool.output.structuredContent &&
-    typeof tool.output.structuredContent === "object" &&
-    "image" in tool.output.structuredContent &&
-    typeof tool.output.structuredContent.image === "string"
-      ? tool.output.structuredContent.image
+    part.output &&
+    typeof part.output === "object" &&
+    "structuredContent" in part.output &&
+    part.output.structuredContent &&
+    typeof part.output.structuredContent === "object" &&
+    "image" in part.output.structuredContent &&
+    typeof part.output.structuredContent.image === "string"
+      ? part.output.structuredContent.image
       : null;
 
   const isGenerating =
@@ -397,68 +368,31 @@ function GenerateImageToolUI({ tool }: { tool: ToolInvocation }) {
   );
 }
 
-function CustomToolUI({
-  tool,
-  isLastMessage,
-}: {
-  tool: ToolInvocation;
-  isLastMessage?: boolean;
-}) {
-  const { select } = useAgent();
-  const result = (tool.output ?? {}) as Record<string, unknown>;
+function CustomToolUI({ part }: { part: ToolUIPart }) {
+  const result = (part.output ?? {}) as Record<string, unknown>;
+  const toolName = useToolName(part);
 
-  if (tool.toolName === "HOSTING_APP_DEPLOY") {
+  if (toolName === "HOSTING_APP_DEPLOY") {
     const toolLike: HostingAppToolLike = {
-      toolCallId: tool.toolCallId,
-      toolName: tool.toolName,
-      state: mapToToolLikeState(tool.state),
-      args: tool.input as HostingAppToolLike["args"],
+      toolCallId: part.toolCallId,
+      toolName: toolName,
+      state: mapToToolLikeState(part.state),
+      args: part.input as HostingAppToolLike["args"],
     };
     return <HostingAppDeploy tool={toolLike} />;
   }
 
-  if (tool.state !== "output-available" || !tool.output) return null;
+  if (part.state !== "output-available" || !part.output) return null;
 
-  switch (tool.toolName) {
+  switch (toolName) {
     case "GENERATE_IMAGE": {
-      return <GenerateImageToolUI tool={tool} />;
+      return <GenerateImageToolUI part={part} />;
     }
     case "RENDER": {
       return (
         <Preview
           content={result.content as "url" | "html"}
           title={result.title as string}
-        />
-      );
-    }
-
-    case "CONFIGURE":
-    case "AGENT_CREATE": {
-      return (
-        <div className="animate-in slide-in-from-bottom duration-300">
-          <AgentCard
-            id={result.id as string}
-            name={result.name as string}
-            description={result.description as string}
-            avatar={result.avatar as string}
-            displayLink={tool.toolName === "AGENT_CREATE"}
-          />
-        </div>
-      );
-    }
-    case "SHOW_PICKER":
-    case "CONFIRM": {
-      const options = (result.options as ConfirmOption[]).map((option) => ({
-        id: option.value,
-        ...option,
-      }));
-
-      return (
-        <Picker
-          question={result.question as string}
-          options={options}
-          onSelect={(value) => select(tool.toolCallId, value)}
-          disabled={!isLastMessage}
         />
       );
     }
@@ -470,80 +404,18 @@ function CustomToolUI({
 
 export const ToolMessage = memo(function ToolMessage({
   part,
-  isLastMessage,
 }: ToolMessageProps) {
-  // Extract tool name from part type and memoize tool invocations
-  const toolInvocations: ToolInvocation[] = useMemo(() => {
-    const toolName = part.type.startsWith("tool-")
-      ? part.type.substring(5)
-      : "UNKNOWN_TOOL";
-
-    return [
-      {
-        toolCallId: part.toolCallId,
-        toolName: toolName,
-        state: (part.state as ToolInvocation["state"]) || "input-available",
-        input: part.input,
-        output: part.output,
-        errorText: part.errorText,
-      },
-    ];
-  }, [
-    part.type,
-    part.toolCallId,
-    part.state,
-    part.input,
-    part.output,
-    part.errorText,
-  ]);
-
-  // Separate tools into timeline tools and custom UI tools using memoization
-  const { timelineTools, customUITools } = useMemo(() => {
-    const timeline: ToolInvocation[] = [];
-    const customUI: ToolInvocation[] = [];
-
-    toolInvocations.forEach((tool: ToolInvocation) => {
-      // Extract tool name from the tool object - it should have a toolName property
-      const toolName = tool.toolName || "Unknown tool";
-      if (isCustomUITool(toolName)) {
-        customUI.push(tool);
-      } else {
-        timeline.push(tool);
-      }
-    });
-
-    return { timelineTools: timeline, customUITools: customUI };
-  }, [toolInvocations]);
+  const isCustomUI = useIsCustomUITool(part);
 
   return (
     <div className="w-full space-y-4">
-      {/* Timeline tools */}
-      {timelineTools.length > 0 && (
-        <div
-          className={cn(
-            "flex flex-col gap-2 w-full border border-border rounded-2xl",
-            timelineTools.length > 1 && "p-2",
-          )}
-        >
-          {timelineTools.map((tool, index) => (
-            <ToolStatus
-              key={tool.toolCallId}
-              tool={tool}
-              isLast={index === timelineTools.length - 1}
-              isSingle={timelineTools.length === 1}
-            />
-          ))}
+      {isCustomUI ? (
+        <CustomToolUI part={part} />
+      ) : (
+        <div className="flex flex-col gap-2 w-full border border-border rounded-2xl">
+          <ToolStatus part={part} isLast={true} isSingle={true} />
         </div>
       )}
-
-      {/* Custom UI tools */}
-      {customUITools.map((tool) => (
-        <CustomToolUI
-          key={tool.toolCallId}
-          tool={tool}
-          isLastMessage={isLastMessage}
-        />
-      ))}
     </div>
   );
 });

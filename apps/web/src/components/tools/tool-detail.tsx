@@ -28,6 +28,7 @@ import { useParams } from "react-router";
 import { z } from "zod";
 import { EmptyState } from "../common/empty-state.tsx";
 import { ToolCallResultV2 } from "@deco/sdk/hooks";
+import { JsonViewer } from "../chat/json-viewer.tsx";
 
 const LazyHighlighter = lazy(() => import("../chat/lazy-highlighter.tsx"));
 
@@ -44,77 +45,6 @@ export interface DisplayTool extends ToolDefinition {
 
 interface ToolDisplayCanvasProps {
   resourceUri: string;
-}
-
-interface JsonViewerProps {
-  data: unknown;
-  title: string;
-}
-
-function JsonViewer({ data, title }: JsonViewerProps) {
-  const [copied, setCopied] = useState(false);
-
-  async function handleCopy() {
-    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-      globalThis.window.alert("Clipboard API unavailable");
-      return;
-    }
-
-    const payload = JSON.stringify(data, null, 2);
-    try {
-      await navigator.clipboard.writeText(payload);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
-    } catch (error) {
-      console.error("Failed to copy data", error);
-    }
-  }
-
-  if (data === null || data === undefined) {
-    return (
-      <div className="space-y-2">
-        <p className="font-mono text-sm text-muted-foreground uppercase">
-          {title}
-        </p>
-        <div className="text-xs text-muted-foreground italic p-2">
-          No {title.toLowerCase()}
-        </div>
-      </div>
-    );
-  }
-
-  const jsonString = JSON.stringify(data, null, 2);
-
-  return (
-    <div className="space-y-2 min-w-0 w-full">
-      <p className="font-mono text-sm text-muted-foreground uppercase">
-        {title}
-      </p>
-      <div className="relative bg-muted rounded-xl max-h-[400px] overflow-auto w-full">
-        <div className="absolute right-2 top-2 z-10 flex items-center gap-1 bg-background rounded-xl shadow-sm">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={handleCopy}
-            className="h-8 w-8"
-          >
-            <Icon name={copied ? "check" : "content_copy"} size={16} />
-          </Button>
-        </div>
-        <div className="overflow-x-auto w-full">
-          <Suspense
-            fallback={
-              <pre className="p-3 text-xs font-mono whitespace-pre-wrap break-all">
-                {jsonString}
-              </pre>
-            }
-          >
-            <LazyHighlighter language="json" content={jsonString} />
-          </Suspense>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 /**
@@ -452,7 +382,6 @@ export function ToolDetail({ resourceUri }: ToolDisplayCanvasProps) {
               {!executionResult.error && (
                 <JsonViewer
                   data={executionResult.result || executionResult}
-                  title="Output"
                 />
               )}
             </div>
