@@ -16,6 +16,7 @@ import { WellKnownMcpGroups } from "../../crud/groups.ts";
 import { doRetryable } from "../../do-commons.ts";
 import type { WithTool } from "../assertions.ts";
 import {
+  assertHasLocator,
   assertHasWorkspace,
   assertWorkspaceResourceAccess,
 } from "../assertions.ts";
@@ -49,13 +50,9 @@ export enum MergeStrategy {
   LAST_WRITE_WINS = "LAST_WRITE_WINS",
 }
 
-// Helper function to get workspace from context
 const projectFor = (c: AppContext): string => {
-  const workspace = c.workspace?.value;
-  if (!workspace) {
-    throw new Error("No project context available");
-  }
-  return workspace;
+  assertHasLocator(c);
+  return c.locator.value;
 };
 
 // Helper function to get branch RPC (using branchName directly for performance)
@@ -694,7 +691,80 @@ export const listFiles = createDeconfigTool({
   },
 });
 
-export const migrateProject = createDeconfigTool({
+async function migrateProject(c: DeconfigContext) {
+  assertHasWorkspace(c);
+  assertHasLocator(c);
+  await assertWorkspaceResourceAccess(c);
+
+  const sourceProjectId = c.workspace.value;
+  const destinationProjectId = c.locator.value;
+
+  if (!destinationProjectId) {
+    throw new Error("No locator value found for destination project");
+  }
+
+  if (sourceProjectId === destinationProjectId) {
+    throw new Error("Cannot migrate project to itself");
+  }
+
+  // Get source branch RPC (current project's main branch)
+  using sourceBranchRpc = await branchRpcFor(c, "main");
+
+  // Get all files from source with content
+  const sourceFiles = await sourceBranchRpc.getFiles(undefined, true);
+
+  // Get destination branch RPC (different project)
+  const destBranchStub = c.branchDO.get(
+    c.branchDO.idFromName(BranchId.build("main", destinationProjectId)),
+  );
+
+  using destBranchRpc = await destBranchStub.new({
+    projectId: destinationProjectId,
+    branchName: "main",
+  });
+
+  // Prepare patches for batch write
+  const patches: Array<{
+    path: string;
+    content: ArrayBuffer;
+    metadata: Record<string, unknown>;
+  }> = [];
+
+  for (const [path, fileData] of Object.entries(sourceFiles)) {
+    const file = fileData;
+
+    if (!file.content) {
+      continue; // Skip files without content
+    }
+
+    // Convert base64 content to ArrayBuffer
+    const content = Uint8Array.from(atob(file.content), (c: string) =>
+      c.charCodeAt(0),
+    ).buffer;
+
+    patches.push({
+      path,
+      content,
+      metadata: file.metadata,
+    });
+  }
+
+  // Write all files in a single transactional operation
+  if (patches.length > 0) {
+    using _ = await destBranchRpc.transactionalWrite({
+      patches,
+    });
+  }
+
+  return {
+    filesCopied: patches.length,
+    success: true,
+    sourceProject: sourceProjectId,
+    destinationProject: destinationProjectId,
+  };
+}
+
+export const migrateProjectTool = createDeconfigTool({
   name: "MIGRATE_PROJECT",
   description:
     "Migrate all files from the main branch of the current workspace project to the locator project's main branch",
@@ -707,83 +777,7 @@ export const migrateProject = createDeconfigTool({
       destinationProject: z.string(),
     }),
   ),
-  handler: async (_, c) => {
-    assertHasWorkspace(c);
-    await assertWorkspaceResourceAccess(c);
-
-    const sourceProjectId = projectFor(c);
-    const destinationProjectId = c.locator?.value;
-
-    if (!destinationProjectId) {
-      throw new Error("No locator value found for destination project");
-    }
-
-    if (sourceProjectId === destinationProjectId) {
-      throw new Error("Cannot migrate project to itself");
-    }
-
-    // Get source branch RPC (current project's main branch)
-    using sourceBranchRpc = await branchRpcFor(c, "main");
-
-    // Get all files from source with content
-    const sourceFiles = (await sourceBranchRpc.getFiles(
-      undefined,
-      true,
-    )) as any;
-
-    // Get destination branch RPC (different project)
-    const destBranchStub = c.branchDO.get(
-      c.branchDO.idFromName(BranchId.build("main", destinationProjectId)),
-    );
-
-    using destBranchRpc = await destBranchStub.new({
-      projectId: destinationProjectId,
-      branchName: "main",
-    });
-
-    // Prepare patches for batch write
-    const patches: Array<{
-      path: string;
-      content: ArrayBuffer;
-      metadata: Record<string, any>;
-    }> = [];
-
-    for (const [path, fileData] of Object.entries(sourceFiles)) {
-      const file = fileData as {
-        content?: string;
-        metadata: Record<string, any>;
-      };
-
-      if (!file.content) {
-        continue; // Skip files without content
-      }
-
-      // Convert base64 content to ArrayBuffer
-      const content = Uint8Array.from(atob(file.content), (c: string) =>
-        c.charCodeAt(0),
-      ).buffer;
-
-      patches.push({
-        path,
-        content,
-        metadata: file.metadata,
-      });
-    }
-
-    // Write all files in a single transactional operation
-    if (patches.length > 0) {
-      using _ = await destBranchRpc.transactionalWrite({
-        patches,
-      });
-    }
-
-    return {
-      filesCopied: patches.length,
-      success: true,
-      sourceProject: sourceProjectId,
-      destinationProject: destinationProjectId,
-    };
-  },
+  handler: (_, c) => migrateProject(c),
 });
 
 export const oauthStart = createTool({
@@ -834,7 +828,7 @@ export const DECONFIG_TOOLS = [
   listFiles,
 
   // Project operations
-  migrateProject,
+  migrateProjectTool,
 ] as const;
 
 /**

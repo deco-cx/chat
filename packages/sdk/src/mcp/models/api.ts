@@ -8,10 +8,13 @@ import {
 import { createToolGroup } from "../context.ts";
 import type { AppContext } from "../index.ts";
 import { SupabaseLLMVault } from "./llm-vault.ts";
+import { models, projects, organizations } from "../schema.ts";
 import {
-  getProjectIdFromContext,
-  workspaceOrProjectIdConditions,
-} from "../projects/util.ts";
+  filterByWorkspaceOrLocator,
+  filterByWorkspaceOrProjectId,
+} from "../ownership.ts";
+import { getProjectIdFromContext } from "../projects/util.ts";
+import { and, eq, getTableColumns } from "drizzle-orm";
 
 interface ModelRow {
   id: string;
@@ -80,11 +83,13 @@ export const createModel = createTool({
       isEnabled,
     } = props;
 
-    const { data, error } = await c.db
-      .from("models")
-      .insert({
-        workspace,
-        project_id: await getProjectIdFromContext(c),
+    const projectId = await getProjectIdFromContext(c);
+
+    const [data] = await c.drizzle
+      .insert(models)
+      .values({
+        workspace: projectId ? null : workspace,
+        project_id: projectId,
         name: modelName,
         model,
         api_key_hash: null,
@@ -92,10 +97,9 @@ export const createModel = createTool({
         by_deco: byDeco,
         description,
       })
-      .select()
-      .single();
+      .returning();
 
-    if (error) throw error;
+    if (!data) throw new Error("Failed to create model");
 
     if (apiKey) {
       const llmVault = new SupabaseLLMVault(c);
@@ -159,6 +163,11 @@ export const updateModel = createTool({
       }
     }
 
+    const filter = await filterByWorkspaceOrProjectId({
+      table: models,
+      ctx: c,
+    });
+
     // User is re-enabling a managed model, so we can just remove the db entry
     if (updateData.by_deco && updateData.is_enabled) {
       const wellKnownModel = WELL_KNOWN_MODELS.find(
@@ -169,34 +178,18 @@ export const updateModel = createTool({
         throw new Error(`Model ${updateData.model} not found`);
       }
 
-      await c.db
-        .from("models")
-        .delete()
-        .eq("id", id)
-        .or(await workspaceOrProjectIdConditions(c));
+      await c.drizzle.delete(models).where(and(eq(models.id, id), filter));
 
       return wellKnownModel;
     }
 
-    const { data, error } = await c.db
-      .from("models")
-      .update(updateData)
-      .eq("id", id)
-      .or(await workspaceOrProjectIdConditions(c))
-      .select(`
-        id,
-        name,
-        model,
-        is_enabled,
-        api_key_hash,
-        created_at,
-        updated_at,
-        by_deco,
-        description
-      `)
-      .single();
+    const [data] = await c.drizzle
+      .update(models)
+      .set(updateData)
+      .where(and(eq(models.id, id), filter))
+      .returning();
 
-    if (error) throw error;
+    if (!data) throw new Error("Model not found");
 
     return formatModelRow(data);
   },
@@ -215,15 +208,15 @@ export const deleteModel = createTool({
   handler: async (props, c) => {
     const { id } = props;
 
+    assertHasWorkspace(c);
     await assertWorkspaceResourceAccess(c);
 
-    const { error } = await c.db
-      .from("models")
-      .delete()
-      .eq("id", id)
-      .or(await workspaceOrProjectIdConditions(c));
+    const filter = await filterByWorkspaceOrProjectId({
+      table: models,
+      ctx: c,
+    });
 
-    if (error) throw error;
+    await c.drizzle.delete(models).where(and(eq(models.id, id), filter));
 
     return { success: true };
   },
@@ -245,23 +238,14 @@ export const listModelsForWorkspace = async ({
     excludeDisabled?: boolean;
   };
 }) => {
-  const { data, error } = await c.db
-    .from("models")
-    .select(`
-        id,
-        model,
-        is_enabled,
-        created_at,
-        updated_at,
-        by_deco,
-        name,
-        description
-      `)
-    .or(await workspaceOrProjectIdConditions(c));
+  const data = await c.drizzle
+    .select(getTableColumns(models))
+    .from(models)
+    .leftJoin(projects, eq(models.project_id, projects.id))
+    .leftJoin(organizations, eq(projects.org_id, organizations.id))
+    .where(filterByWorkspaceOrLocator({ table: models, ctx: c }));
 
-  if (error) throw error;
-
-  const models = WELL_KNOWN_MODELS.map((model) => {
+  const modelsData = WELL_KNOWN_MODELS.map((model) => {
     const override = data.find((m) => m.model === model.model && m.by_deco);
 
     return {
@@ -278,7 +262,7 @@ export const listModelsForWorkspace = async ({
 
   const dbModels = data.filter((m) => !m.by_deco);
 
-  const allModels = [...models, ...dbModels]
+  const allModels = [...modelsData, ...dbModels]
     .map((m) => formatModelRow(m))
     .filter((m) => !options?.excludeDisabled || m.isEnabled);
 
@@ -338,24 +322,20 @@ export const getModel = createTool({
       return defaultModel;
     }
 
-    const { data, error } = await c.db
-      .from("models")
-      .select(`
-        id,
-        name,
-        model,
-        is_enabled,
-        api_key_hash,
-        created_at,
-        updated_at,
-        by_deco,
-        description
-      `)
-      .eq("id", id)
-      .or(await workspaceOrProjectIdConditions(c))
-      .single();
+    const [data] = await c.drizzle
+      .select(getTableColumns(models))
+      .from(models)
+      .leftJoin(projects, eq(models.project_id, projects.id))
+      .leftJoin(organizations, eq(projects.org_id, organizations.id))
+      .where(
+        and(
+          filterByWorkspaceOrLocator({ table: models, ctx: c }),
+          eq(models.id, id),
+        ),
+      )
+      .limit(1);
 
-    if (error) throw error;
+    if (!data) throw new Error("Model not found");
 
     return formatModelRow(data);
   },

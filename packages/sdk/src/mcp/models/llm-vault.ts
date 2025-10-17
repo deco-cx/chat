@@ -3,9 +3,12 @@ import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Buffer } from "node:buffer";
 import crypto from "node:crypto";
 import { AppContext } from "../context";
-import { filterByWorkspaceOrLocator } from "../ownership";
+import {
+  filterByWorkspaceOrLocator,
+  filterByWorkspaceOrProjectId,
+} from "../ownership";
 import { relations } from "../relations";
-import { models } from "../schema";
+import { models, projects, organizations } from "../schema";
 
 export interface LLMVault {
   readApiKey(modelId: string): Promise<{ model: string; apiKey: string }>;
@@ -15,11 +18,11 @@ export interface LLMVault {
 export class SupabaseLLMVault implements LLMVault {
   private encryptionKey: Buffer;
   private ivLength = 16; // AES block size
-  private ownershipFilter: ReturnType<typeof filterByWorkspaceOrLocator>;
   private drizzle: PostgresJsDatabase<
     Record<string, unknown>,
     typeof relations
   >;
+  private ctx: AppContext;
 
   constructor(c: AppContext) {
     const encryptionKey = c.envVars.LLMS_ENCRYPTION_KEY;
@@ -27,11 +30,8 @@ export class SupabaseLLMVault implements LLMVault {
       throw new Error("Encryption key must be 32 characters long for AES-256");
     }
     this.encryptionKey = Buffer.from(encryptionKey);
-    this.ownershipFilter = filterByWorkspaceOrLocator({
-      table: models,
-      ctx: c,
-    });
     this.drizzle = c.drizzle;
+    this.ctx = c;
   }
 
   private encrypt(text: string): string {
@@ -51,7 +51,17 @@ export class SupabaseLLMVault implements LLMVault {
         apiKeyHash: models.api_key_hash,
       })
       .from(models)
-      .where(and(eq(models.id, modelId), this.ownershipFilter))
+      .leftJoin(projects, eq(models.project_id, projects.id))
+      .leftJoin(organizations, eq(projects.org_id, organizations.id))
+      .where(
+        and(
+          eq(models.id, modelId),
+          filterByWorkspaceOrLocator({
+            table: models,
+            ctx: this.ctx,
+          }),
+        ),
+      )
       .limit(1);
 
     if (!data) {
@@ -83,10 +93,14 @@ export class SupabaseLLMVault implements LLMVault {
 
   async updateApiKey(modelId: string, apiKey: string | null): Promise<void> {
     const encryptedKey = apiKey ? this.encrypt(apiKey) : null;
+    const filter = await filterByWorkspaceOrProjectId({
+      table: models,
+      ctx: this.ctx,
+    });
 
     await this.drizzle
       .update(models)
       .set({ api_key_hash: encryptedKey })
-      .where(and(eq(models.id, modelId), this.ownershipFilter));
+      .where(and(eq(models.id, modelId), filter));
   }
 }
