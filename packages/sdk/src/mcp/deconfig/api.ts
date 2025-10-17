@@ -694,6 +694,98 @@ export const listFiles = createDeconfigTool({
   },
 });
 
+export const migrateProject = createDeconfigTool({
+  name: "MIGRATE_PROJECT",
+  description:
+    "Migrate all files from the main branch of the current workspace project to the locator project's main branch",
+  inputSchema: z.lazy(() => z.object({})),
+  outputSchema: z.lazy(() =>
+    z.object({
+      filesCopied: z.number(),
+      success: z.boolean(),
+      sourceProject: z.string(),
+      destinationProject: z.string(),
+    }),
+  ),
+  handler: async (_, c) => {
+    assertHasWorkspace(c);
+    await assertWorkspaceResourceAccess(c);
+
+    const sourceProjectId = projectFor(c);
+    const destinationProjectId = c.locator?.value;
+
+    if (!destinationProjectId) {
+      throw new Error("No locator value found for destination project");
+    }
+
+    if (sourceProjectId === destinationProjectId) {
+      throw new Error("Cannot migrate project to itself");
+    }
+
+    // Get source branch RPC (current project's main branch)
+    using sourceBranchRpc = await branchRpcFor(c, "main");
+
+    // Get all files from source with content
+    const sourceFiles = (await sourceBranchRpc.getFiles(
+      undefined,
+      true,
+    )) as any;
+
+    // Get destination branch RPC (different project)
+    const destBranchStub = c.branchDO.get(
+      c.branchDO.idFromName(BranchId.build("main", destinationProjectId)),
+    );
+
+    using destBranchRpc = await destBranchStub.new({
+      projectId: destinationProjectId,
+      branchName: "main",
+    });
+
+    // Prepare patches for batch write
+    const patches: Array<{
+      path: string;
+      content: ArrayBuffer;
+      metadata: Record<string, any>;
+    }> = [];
+
+    for (const [path, fileData] of Object.entries(sourceFiles)) {
+      const file = fileData as {
+        content?: string;
+        metadata: Record<string, any>;
+      };
+
+      if (!file.content) {
+        continue; // Skip files without content
+      }
+
+      // Convert base64 content to ArrayBuffer
+      const content = Uint8Array.from(atob(file.content), (c: string) =>
+        c.charCodeAt(0),
+      ).buffer;
+
+      patches.push({
+        path,
+        content,
+        metadata: file.metadata,
+      });
+    }
+
+    // Write all files in a single transactional operation
+    if (patches.length > 0) {
+      using _ = await destBranchRpc.transactionalWrite({
+        patches,
+      });
+    }
+
+    return {
+      filesCopied: patches.length,
+      success: true,
+      sourceProject: sourceProjectId,
+      destinationProject: destinationProjectId,
+    };
+  },
+});
+
 export const oauthStart = createTool({
   name: "DECO_CHAT_OAUTH_START",
   description: "Start the OAuth flow for the contract app.",
@@ -740,6 +832,9 @@ export const DECONFIG_TOOLS = [
   readFile,
   deleteFile,
   listFiles,
+
+  // Project operations
+  migrateProject,
 ] as const;
 
 /**
