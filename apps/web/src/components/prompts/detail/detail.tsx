@@ -2,6 +2,7 @@ import {
   type Prompt,
   PromptValidationSchema,
   useAgentData,
+  useAgentRoot,
   usePrompt,
   useUpdatePrompt,
   WELL_KNOWN_AGENT_IDS,
@@ -11,7 +12,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useBlocker, useParams } from "react-router";
 import { trackEvent } from "../../../hooks/analytics.ts";
-import { AgentProvider } from "../../agent/provider.tsx";
+import { AgenticChatProvider } from "../../chat/provider.tsx";
 import { Context } from "./context.ts";
 import { PromptDetail } from "./form.tsx";
 import { type DecopilotContextValue } from "../../decopilot/context.tsx";
@@ -112,6 +113,8 @@ export default function Page() {
   // via AgentProvider in the new architecture. The prompt ID context should be
   // passed via chat overrides instead of modifying cached agent data.
 
+  const agentRoot = useAgentRoot(agentId);
+
   const decopilotContextValue: DecopilotContextValue = {
     additionalTools: {
       "i:prompt-management": ["PROMPTS_GET", "PROMPTS_UPDATE"],
@@ -124,12 +127,20 @@ export default function Page() {
     },
   };
 
+  if (!_agent) {
+    return null;
+  }
+
   return (
     <DecopilotLayout value={decopilotContextValue}>
-      <AgentProvider
+      <AgenticChatProvider
         agentId={agentId}
         threadId={threadId}
-        uiOptions={{ showEditAgent: false }}
+        agent={_agent}
+        agentRoot={agentRoot}
+        uiOptions={{
+          showEditAgent: false,
+        }}
       >
         <Context.Provider
           value={{
@@ -147,7 +158,7 @@ export default function Page() {
         >
           <PromptDetail />
         </Context.Provider>
-      </AgentProvider>
+      </AgenticChatProvider>
     </DecopilotLayout>
   );
 }

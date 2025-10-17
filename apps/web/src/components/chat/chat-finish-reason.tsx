@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { LanguageModelV2FinishReason } from "@ai-sdk/provider";
 import { Button } from "@deco/ui/components/button.tsx";
 import { Icon } from "@deco/ui/components/icon.tsx";
-import { useAgent } from "../agent/provider.tsx";
+import { useAgenticChat } from "../chat/provider.tsx";
 
 const REPORTS_BY_FINISH_REASON = {
   "tool-calls": {
@@ -30,8 +30,8 @@ function getFinishReasonKey(
 }
 
 export function ChatFinishReason() {
-  const { chat } = useAgent();
-  const { sendMessage, status, finishReason } = chat;
+  const { chat, finishReason, sendMessage } = useAgenticChat();
+  const { status } = chat;
   const lastLoggedReasonRef = useRef<LanguageModelV2FinishReason | "__NONE__">(
     "__NONE__",
   );

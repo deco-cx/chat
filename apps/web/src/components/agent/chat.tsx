@@ -1,15 +1,17 @@
-import { useAgentData, useFile, WELL_KNOWN_AGENT_IDS } from "@deco/sdk";
+import { useAgentData, useAgentRoot, useFile, useThreadMessages, WELL_KNOWN_AGENT_IDS } from "@deco/sdk";
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
 import { Skeleton } from "@deco/ui/components/skeleton.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { Suspense, useMemo } from "react";
-import { useParams } from "react-router";
+import { useParams, useLocation } from "react-router";
 import { useDocumentMetadata } from "../../hooks/use-document-metadata.ts";
+import { useUserPreferences } from "../../hooks/use-user-preferences.ts";
 import { isFilePath } from "../../utils/path.ts";
 import { ChatInput } from "../chat/chat-input.tsx";
 import { ChatMessages } from "../chat/chat-messages.tsx";
 import { DecopilotLayout } from "../layout/decopilot-layout.tsx";
-import { AgentProvider, useAgent } from "./provider.tsx";
+import { AgenticChatProvider, useAgenticChat } from "../chat/provider.tsx";
+import { DecopilotChat } from "../decopilot/index.tsx";
 
 export type WellKnownAgents =
   (typeof WELL_KNOWN_AGENT_IDS)[keyof typeof WELL_KNOWN_AGENT_IDS];
@@ -32,9 +34,7 @@ export const MainChatSkeleton = ({
   className,
 }: Pick<MainChatProps, "showInput" | "className"> = {}) => {
   return (
-    <div
-      className={`w-full flex flex-col ${className ?? "h-[calc(100vh-48px)]"}`}
-    >
+    <div className={`w-full flex flex-col h-full ${className ?? ""}`}>
       <ScrollArea className="flex-1 min-h-0">
         <div className="w-full min-w-0">
           {/* Empty state skeleton - centered */}
@@ -62,7 +62,7 @@ export const MainChatSkeleton = ({
         </div>
       </ScrollArea>
       {showInput && (
-        <div className="w-full mx-auto p-2">
+        <div className="flex-none w-full mx-auto p-2">
           <div className="relative rounded-md w-full mx-auto">
             <div className="relative flex flex-col">
               {/* Rich text area skeleton */}
@@ -94,9 +94,7 @@ export const MainChat = ({
   contentClassName,
 }: MainChatProps = {}) => {
   return (
-    <div
-      className={`w-full flex flex-col ${className ?? "h-[calc(100vh-48px)]"}`}
-    >
+    <div className={`w-full flex flex-col h-full ${className ?? ""}`}>
       <ScrollArea className="flex-1 min-h-0">
         <ChatMessages
           initialScrollBehavior={initialScrollBehavior}
@@ -104,7 +102,7 @@ export const MainChat = ({
         />
       </ScrollArea>
       {showInput && (
-        <div className="p-2">
+        <div className="flex-none p-2">
           <ChatInput />
         </div>
       )}
@@ -113,7 +111,7 @@ export const MainChat = ({
 };
 
 function AgentMetadataUpdater() {
-  const { agent } = useAgent();
+  const { agent } = useAgenticChat();
   const { data: resolvedAvatar } = useFile(
     agent?.avatar && isFilePath(agent.avatar) ? agent.avatar : "",
   );
@@ -135,6 +133,10 @@ function AgentMetadataUpdater() {
 
 function Page(props: Props) {
   const params = useParams();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const chatMode = (searchParams.get("chat") as "agent" | "decopilot") || "agent";
+
   const agentId = useMemo(
     () => props.agentId || params.id,
     [props.agentId, params.id],
@@ -152,11 +154,19 @@ function Page(props: Props) {
 
   const chatKey = useMemo(() => `${agentId}-${threadId}`, [agentId, threadId]);
 
-  // Use AgentProvider for all agents (including team agent)
+  // Use AgenticChatProvider for all agents (including team agent)
   const isTeamAgent = agentId === WELL_KNOWN_AGENT_IDS.teamAgent;
 
   // Get agent data for decopilot context
   const { data: agent } = useAgentData(agentId);
+  const agentRoot = useAgentRoot(agentId);
+  const { preferences } = useUserPreferences();
+  const { data: { messages: threadMessages } = { messages: [] } } = useThreadMessages(
+    threadId,
+    {
+      enabled: props.showThreadMessages ?? true,
+    }
+  );
 
   // Prepare decopilot context value for agent chat
   const decopilotContextValue = useMemo(() => {
@@ -172,6 +182,24 @@ function Page(props: Props) {
     };
   }, [agent]);
 
+  if (!agent) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
+  // If chat mode is "decopilot", show the DecopilotChat instead
+  if (chatMode === "decopilot") {
+    return (
+      <DecopilotLayout value={decopilotContextValue}>
+        <DecopilotChat />
+      </DecopilotLayout>
+    );
+  }
+
+  // Otherwise show the agent's own chat
   return (
     <Suspense
       // This make the react render fallback when changin agent+threadid, instead of hang the whole navigation while the subtree isn't changed
@@ -183,17 +211,28 @@ function Page(props: Props) {
       }
     >
       <DecopilotLayout value={decopilotContextValue}>
-        <AgentProvider
+        <AgenticChatProvider
           agentId={agentId}
           threadId={threadId}
+          agent={agent}
+          agentRoot={agentRoot}
+          defaultModel={preferences.defaultModel}
+          useOpenRouter={preferences.useOpenRouter}
+          sendReasoning={preferences.sendReasoning}
+          smoothStream={preferences.smoothStream}
+          initialMessages={threadMessages}
           uiOptions={{
             showThreadTools: isTeamAgent,
             showThreadMessages: props.showThreadMessages ?? true,
+            showModelSelector: true,
+            showAgentVisibility: false,
+            showEditAgent: false,
+            showContextResources: true,
           }}
         >
           <AgentMetadataUpdater />
           <MainChat />
-        </AgentProvider>
+        </AgenticChatProvider>
       </DecopilotLayout>
     </Suspense>
   );

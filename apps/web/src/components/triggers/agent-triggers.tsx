@@ -5,13 +5,13 @@ import { Input } from "@deco/ui/components/input.tsx";
 import { ScrollArea } from "@deco/ui/components/scroll-area.tsx";
 import { Skeleton } from "@deco/ui/components/skeleton.tsx";
 import { useState } from "react";
-import { useAgent } from "../agent/provider.tsx";
+import { useAgenticChat } from "../chat/provider.tsx";
 import { TriggerCard } from "./trigger-card.tsx";
 import { TriggerDetails } from "./trigger-details.tsx";
 import { TriggerModal as TriggerModalButton } from "./trigger-dialog.tsx";
 
 export function AgentTriggers() {
-  const { agentId } = useAgent();
+  const { metadata: { agentId } } = useAgenticChat();
   const { data, isLoading } = useListTriggers();
   const [selectedTrigger, setSelectedTrigger] = useState<
     ListTriggersOutput["triggers"][number] | null
@@ -103,7 +103,7 @@ export function ListTriggersLoading() {
 }
 
 export function ListTriggersEmpty() {
-  const { agentId } = useAgent();
+  const { metadata: { agentId } } = useAgenticChat();
   return (
     <div className="mx-2 p-4 mt-4 m-4 border border-dashed rounded-lg flex flex-col items-center justify-center text-center">
       <div className="bg-muted rounded-full p-3 mb-4 h-10">

@@ -505,10 +505,6 @@ function WorkflowDetail() {
     };
   }, [instanceId]);
 
-  // 🔍 DEBUG: API Response Structure
-  console.log("🚀 WORKFLOW API DATA:", data);
-  console.log("📋 WORKFLOW API RAW (copy me):", JSON.stringify(data, null, 2));
-
   const snapshot = data?.snapshot;
   const status =
     typeof snapshot === "string" ? snapshot : snapshot?.status || "unknown";

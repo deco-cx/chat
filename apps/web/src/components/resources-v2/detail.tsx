@@ -10,6 +10,7 @@ import { type DecopilotContextValue } from "../decopilot/context.tsx";
 import { DecopilotLayout } from "../layout/decopilot-layout.tsx";
 import { ReactViewRenderer } from "../views/react-view-registry.tsx";
 import { ResourceRouteProvider } from "./route-context.tsx";
+import { useDecopilotChatContextEffect } from "../chat/use-decopilot-chat-context.ts";
 
 // Base resource data schema that all resources extend
 const BaseResourceDataSchema = z.object({
@@ -197,6 +198,9 @@ function ResourcesV2Detail() {
     viewResponse,
     decodedUri,
   ]);
+
+  // Inject context into the Decopilot chat
+  useDecopilotChatContextEffect(decopilotContextValue);
 
   // Always render the layout to keep chat panel visible
   return (

@@ -1,8 +1,8 @@
-import { useAgent } from "./provider.tsx";
+import { useAgenticChat } from "../chat/provider.tsx";
 import { AgentAvatar } from "../common/avatar/agent.tsx";
 
 export function ChatHeader() {
-  const { agent, chat } = useAgent();
+  const { agent, chat } = useAgenticChat();
 
   if (chat.messages.length === 0) {
     return null;

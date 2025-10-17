@@ -8,9 +8,10 @@ import { Icon } from "@deco/ui/components/icon.tsx";
 import { Spinner } from "@deco/ui/components/spinner.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
-import { useAgent } from "../agent/provider.tsx";
+import { useAgenticChat } from "../chat/provider.tsx";
 import { Picker } from "./chat-picker.tsx";
 import { AgentCard } from "./tools/agent-card.tsx";
+import { JsonViewer } from "./json-viewer.tsx";
 import {
   HostingAppDeploy,
   HostingAppToolLike,
@@ -91,18 +92,24 @@ const ToolStatus = memo(function ToolStatus({
   isSingle: boolean;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showCopyButton, setShowCopyButton] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  const isLoading =
+    tool.state === "input-streaming" || tool.state === "input-available";
 
   const getIcon = useCallback((state: string) => {
     switch (state) {
       case "input-streaming":
       case "input-available":
-        return <Spinner size="xs" variant="default" />;
+        return (
+          <div className="[&>div>svg]:!animate-[spin_0.7s_linear_infinite]">
+            <Spinner size="xs" variant="default" />
+          </div>
+        );
       case "output-available":
-        return <Icon name="check" className="text-muted-foreground" />;
+        return <Icon name="check" className="text-primary-dark" />;
       case "output-error":
-        return <Icon name="close" className="text-muted-foreground" />;
+        return <Icon name="close" className="text-destructive" />;
       default:
         return "•";
     }
@@ -118,19 +125,24 @@ const ToolStatus = memo(function ToolStatus({
     return formatToolName(tool.toolName);
   }, [tool.toolName]);
 
-  const toolJson = useMemo(() => {
-    return JSON.stringify(
-      {
-        toolName: tool.toolName,
-        state: tool.state,
-        input: tool.input,
-        output: tool.output,
-        errorText: tool.errorText,
-      },
-      null,
-      2,
-    ).replace(/"(\w+)":/g, '"$1":');
-  }, [tool.toolName, tool.state, tool.input, tool.output, tool.errorText]);
+  // Only compute expensive data when expanded to avoid lag during streaming
+  const toolData = useMemo(() => {
+    if (!isExpanded) return null;
+    return {
+      toolName: tool.toolName,
+      state: tool.state,
+      input: tool.input,
+      output: tool.output,
+      errorText: tool.errorText,
+    };
+  }, [
+    isExpanded,
+    tool.toolName,
+    tool.state,
+    tool.input,
+    tool.output,
+    tool.errorText,
+  ]);
 
   const onClick = useCallback(() => {
     setIsExpanded((prev) => {
@@ -149,33 +161,27 @@ const ToolStatus = memo(function ToolStatus({
     });
   }, []);
 
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(toolJson);
-  }, [toolJson]);
-
   return (
     <div
       className={cn(
         "flex flex-col relative",
-        isSingle && "p-4 hover:bg-accent rounded-2xl",
+        isSingle && "p-2.5 hover:bg-accent/25 rounded-2xl",
       )}
       onClick={isSingle ? onClick : undefined}
-      onMouseEnter={() => setShowCopyButton(true)}
-      onMouseLeave={() => setShowCopyButton(false)}
     >
       <div className="flex items-start gap-2">
         <button
           type="submit"
           onClick={isSingle ? undefined : onClick}
           className={cn(
-            "w-full flex items-start gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors",
+            "w-full flex items-start gap-2 py-2 px-1 text-sm text-muted-foreground hover:text-foreground transition-colors",
             !isSingle && "hover:bg-accent rounded-lg p-2",
           )}
         >
           <div className="relative flex flex-col items-center min-h-[20px]">
             <div
               className={cn(
-                "w-5 h-5 rounded-full border flex items-center justify-center bg-muted",
+                "size-5 rounded-full flex items-center justify-center bg-primary-light",
               )}
             >
               {getIcon(tool.state)}
@@ -184,9 +190,15 @@ const ToolStatus = memo(function ToolStatus({
               <div className="w-[1px] h-[150%] bg-muted absolute top-5 left-1/2 transform -translate-x-1/2" />
             )}
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <div className="font-medium truncate max-w-[60vw] md:max-w-full">
+              <div
+                className={cn(
+                  "font-medium truncate max-w-[60vw] md:max-w-full",
+                  isLoading &&
+                    "bg-gradient-to-r from-foreground via-foreground/50 to-foreground bg-[length:200%_100%] animate-shimmer bg-clip-text text-transparent",
+                )}
+              >
                 {toolName}
               </div>
               <Icon
@@ -194,43 +206,19 @@ const ToolStatus = memo(function ToolStatus({
                 name="chevron_right"
               />
             </div>
-
-            {isExpanded && (
-              <div
-                ref={contentRef}
-                className="text-left mt-2 rounded-lg bg-primary border border-border overflow-hidden w-full relative"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {showCopyButton && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCopy();
-                    }}
-                    className="absolute top-2 right-2 p-1 rounded-full hover:bg-muted transition-colors"
-                    title="Copy tool details"
-                  >
-                    <Icon
-                      name="content_copy"
-                      className="w-4 h-4 text-muted-foreground"
-                    />
-                  </Button>
-                )}
-                <pre
-                  className="p-4 text-xs whitespace-pre-wrap break-all overflow-y-auto max-h-[500px]"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <code className="text-primary-foreground select-text cursor-auto">
-                    {toolJson}
-                  </code>
-                </pre>
-              </div>
-            )}
           </div>
         </button>
       </div>
+
+      {isExpanded && toolData && (
+        <div
+          ref={contentRef}
+          className="text-left mt-2 rounded-lg overflow-hidden w-full min-w-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <JsonViewer data={toolData} />
+        </div>
+      )}
     </div>
   );
 });
@@ -287,37 +275,12 @@ function ImagePrompt({
 
 function GeneratingStatus() {
   return (
-    <>
-      <div className="flex items-center gap-3">
-        <div className="text-foreground relative overflow-hidden">
-          <span
-            className="relative inline-block font-medium"
-            style={{
-              background:
-                "linear-gradient(90deg, currentColor 0%, rgba(255,255,255,0.8) 50%, currentColor 100%)",
-              backgroundSize: "200% 100%",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              animation: "shimmer 3s ease-in-out infinite",
-            }}
-          >
-            Generating image...
-          </span>
-        </div>
-        <Spinner size="xs" variant="default" />
-      </div>
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-          @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-          }
-        `,
-        }}
-      />
-    </>
+    <div className="flex items-center gap-3">
+      <span className="font-medium bg-gradient-to-r from-foreground via-foreground/50 to-foreground bg-[length:200%_100%] animate-shimmer bg-clip-text text-transparent">
+        Generating image...
+      </span>
+      <Spinner size="xs" variant="default" />
+    </div>
   );
 }
 
@@ -404,7 +367,10 @@ function CustomToolUI({
   tool: ToolInvocation;
   isLastMessage?: boolean;
 }) {
-  const { select } = useAgent();
+  // TODO: Implement select functionality for interactive tool responses
+  const select = (_toolCallId: string, _value: string) => {
+    console.warn("Tool selection not yet implemented in new chat provider");
+  };
   const result = (tool.output ?? {}) as Record<string, unknown>;
 
   if (tool.toolName === "HOSTING_APP_DEPLOY") {

@@ -1,11 +1,11 @@
 import { Icon } from "@deco/ui/components/icon.tsx";
 import { cn } from "@deco/ui/lib/utils.ts";
-import { useCallback, useLayoutEffect, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef, useState, useEffect } from "react";
 import { ChatError } from "./chat-error.tsx";
 import { ChatFinishReason } from "./chat-finish-reason.tsx";
 import { ChatMessage } from "./chat-message.tsx";
 
-import { useAgent } from "../agent/provider.tsx";
+import { useAgenticChat } from "../chat/provider.tsx";
 import { EmptyState } from "./empty-state.tsx";
 
 interface ChatMessagesProps {
@@ -14,7 +14,7 @@ interface ChatMessagesProps {
 }
 
 function Dots() {
-  const { chat } = useAgent();
+  const { chat } = useAgenticChat();
   const { status } = chat;
 
   if (status !== "streaming" && status !== "submitted") {
@@ -36,35 +36,119 @@ export function ChatMessages({
   initialScrollBehavior = "bottom",
   className,
 }: ChatMessagesProps = {}) {
-  const { scrollRef, chat, isAutoScrollEnabled, setAutoScroll } = useAgent();
+  const { scrollRef, chat } = useAgenticChat();
 
   const hasInitializedScrollRef = useRef(false);
   const isInitialRenderRef = useRef(true);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const scrollViewportRef = useRef<HTMLElement | null>(null);
 
-  const { messages } = chat;
+  const { messages, status } = chat;
+  const isStreaming = status === "streaming" || status === "submitted";
 
-  const scrollToBottom = useCallback(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  // Check if user is at the bottom of the scroll container
+  const checkIfAtBottom = useCallback(() => {
+    const viewport = scrollViewportRef.current;
+    if (!viewport) return true;
+
+    const threshold = 100; // pixels from bottom to be considered "at bottom"
+    const isBottom =
+      viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight <
+      threshold;
+    
+    return isBottom;
   }, []);
 
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const viewport = scrollViewportRef.current;
+    if (!viewport) return;
+
+    viewport.scrollTo({
+      top: viewport.scrollHeight,
+      behavior,
+    });
+    setIsAtBottom(true);
+    setShowScrollButton(false);
+  }, []);
+
+  // Handle scroll events to detect position
+  useEffect(() => {
+    const viewport = scrollRef.current?.closest(
+      '[data-slot="scroll-area-viewport"]',
+    ) as HTMLElement | null;
+
+    scrollViewportRef.current = viewport;
+
+    if (!viewport) return;
+
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const handleScroll = () => {
+      // Debounce scroll checks for better performance
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+
+      // Use longer delay during streaming to prevent flickering
+      const delay = isStreaming ? 300 : 20;
+
+      timeoutId = setTimeout(() => {
+        const atBottom = checkIfAtBottom();
+        setIsAtBottom(atBottom);
+        // Don't show button if we're streaming and at bottom
+        if (isStreaming && atBottom) {
+          setShowScrollButton(false);
+        } else {
+          setShowScrollButton(!atBottom);
+        }
+      }, delay);
+    };
+
+    viewport.addEventListener("scroll", handleScroll, { passive: true });
+    
+    // Initial check - delayed to ensure layout is ready
+    const initialCheckTimeout = setTimeout(() => {
+      const atBottom = checkIfAtBottom();
+      setIsAtBottom(atBottom);
+      // Don't show button during streaming if at bottom
+      if (isStreaming && atBottom) {
+        setShowScrollButton(false);
+      } else {
+        setShowScrollButton(!atBottom);
+      }
+    }, 50);
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      clearTimeout(initialCheckTimeout);
+      viewport.removeEventListener("scroll", handleScroll);
+    };
+  }, [checkIfAtBottom, scrollRef, messages, isStreaming]);
+
+  // Initial scroll behavior
   useLayoutEffect(() => {
     if (hasInitializedScrollRef.current) {
       return;
     }
 
+    const viewport = scrollViewportRef.current;
+    if (!viewport) return;
+
     if (initialScrollBehavior === "bottom") {
-      scrollToBottom();
+      scrollToBottom("auto");
     } else if (initialScrollBehavior === "top") {
-      const viewport = scrollRef.current?.closest(
-        '[data-slot="scroll-area-viewport"]',
-      );
-      viewport?.scrollTo({ top: 0, behavior: "auto" });
-      setAutoScroll(scrollRef.current, false);
+      viewport.scrollTo({ top: 0, behavior: "auto" });
+      setIsAtBottom(false);
+      setShowScrollButton(true);
     }
 
     hasInitializedScrollRef.current = true;
-  }, [initialScrollBehavior, scrollToBottom, setAutoScroll]);
+  }, [initialScrollBehavior, scrollToBottom]);
 
+  // Auto-scroll on new messages if at bottom
   useLayoutEffect(() => {
     if (isInitialRenderRef.current) {
       isInitialRenderRef.current = false;
@@ -78,46 +162,23 @@ export function ChatMessages({
       return;
     }
 
-    if (isAutoScrollEnabled(scrollRef.current)) {
-      scrollToBottom();
+    if (isAtBottom) {
+      scrollToBottom("smooth");
+      // Keep button hidden during auto-scroll
+      if (isStreaming) {
+        setShowScrollButton(false);
+      }
     }
-  }, [initialScrollBehavior, isAutoScrollEnabled, messages, scrollToBottom]);
-
-  useLayoutEffect(() => {
-    let cancel = false;
-
-    const root = scrollRef.current?.closest(
-      '[data-slot="scroll-area-viewport"]',
-    );
-
-    if (!scrollRef.current || !root) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (cancel) return;
-
-        const autoScroll = entries.some((e) => e.isIntersecting);
-        setAutoScroll(scrollRef.current, autoScroll);
-      },
-      { root: root, rootMargin: "100px", threshold: 0 },
-    );
-
-    observer.observe(scrollRef.current);
-
-    return () => {
-      cancel = true;
-      observer.disconnect();
-    };
-  }, [messages, setAutoScroll]);
+  }, [initialScrollBehavior, isAtBottom, messages, scrollToBottom, isStreaming]);
 
   const isEmpty = messages.length === 0;
 
   return (
-    <div className={cn("w-full min-w-0", className)}>
+    <div className={cn("w-full min-w-0 relative", className)}>
       {isEmpty ? (
         <EmptyState />
       ) : (
-        <div className="flex flex-col gap-4 min-w-0">
+        <div className="flex flex-col gap-6 min-w-0">
           {messages.map((message, index) => (
             <ChatMessage
               key={message.id}
@@ -133,23 +194,33 @@ export function ChatMessages({
         </div>
       )}
 
-      <div ref={scrollRef}>
-        {messages.length > 0 && (
-          <div
+      {/* Scroll to bottom button - sticky at bottom of scroll area */}
+      {messages.length > 0 && showScrollButton && !(isStreaming && isAtBottom) && (
+        <div className="sticky bottom-0 left-0 right-0 flex justify-center pointer-events-none pb-4 z-[100]">
+          <button
+            type="button"
             className={cn(
-              "absolute bottom-36 sm:bottom-6 md:bottom-0 md:-translate-y-1/2 left-1/2 transform -translate-x-1/2",
-              "w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center",
-              "cursor-pointer hover:bg-sidebar transition-colors z-50 border border-border",
-              `[[data-disable-auto-scroll="false"]_&]:opacity-0 opacity-100 transition-opacity`,
-              `[[data-disable-auto-scroll="false"]_&]:pointer-events-none`,
+              "w-10 h-10 rounded-full pointer-events-auto",
+              "bg-background dark:bg-accent shadow-xl",
+              "border border-border/50",
+              "flex items-center justify-center",
+              "cursor-pointer hover:scale-110 hover:shadow-2xl",
+              "transition-all duration-200 ease-out",
+              "animate-in fade-in slide-in-from-bottom-4 duration-150",
+              "group",
             )}
-            onClick={() => scrollToBottom()}
+            onClick={() => scrollToBottom("smooth")}
             aria-label="Scroll to bottom"
           >
-            <Icon name="arrow_downward" />
-          </div>
-        )}
-      </div>
+            <Icon 
+              name="arrow_downward" 
+              className="text-foreground group-hover:text-primary transition-colors" 
+            />
+          </button>
+        </div>
+      )}
+      
+      <div ref={scrollRef} />
     </div>
   );
 }

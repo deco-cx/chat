@@ -241,8 +241,21 @@ export function createUnifiedMentions(options: UnifiedMentionsOptions) {
 
       return {
         onStart: (props) => {
+          // Clean up existing instances before creating new ones
+          if (popup?.[0]) {
+            popup[0].destroy();
+            popup = null;
+          }
+          
           if (component) {
             component.destroy();
+            component = null;
+          }
+          
+          // Clear any pending timers
+          if (debounceTimer) {
+            clearTimeout(debounceTimer);
+            debounceTimer = undefined;
           }
 
           // Create a simplified command function that MentionDropdown expects
@@ -315,8 +328,31 @@ export function createUnifiedMentions(options: UnifiedMentionsOptions) {
         },
 
         onExit() {
-          popup?.[0]?.destroy?.();
-          component?.destroy?.();
+          // Clear any pending timers
+          if (debounceTimer) {
+            clearTimeout(debounceTimer);
+            debounceTimer = undefined;
+          }
+          
+          // Safely destroy popup instance
+          if (popup?.[0]) {
+            try {
+              popup[0].destroy();
+            } catch (e) {
+              // Ignore errors if already destroyed
+            }
+            popup = null;
+          }
+          
+          // Safely destroy component instance
+          if (component) {
+            try {
+              component.destroy();
+            } catch (e) {
+              // Ignore errors if already destroyed
+            }
+            component = null;
+          }
         },
       };
     },
