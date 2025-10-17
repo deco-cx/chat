@@ -51,8 +51,8 @@ export enum MergeStrategy {
 }
 
 const projectFor = (c: AppContext): string => {
-  assertHasLocator(c);
-  return c.locator.value;
+  assertHasWorkspace(c);
+  return c.workspace.value;
 };
 
 // Well-known file path to mark that a project has been migrated
