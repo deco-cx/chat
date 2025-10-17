@@ -1,4 +1,9 @@
-import { WELL_KNOWN_AGENTS, useAgentData, useAgentRoot, useThreadMessages } from "@deco/sdk";
+import {
+  WELL_KNOWN_AGENTS,
+  useAgentData,
+  useAgentRoot,
+  useThreadMessages,
+} from "@deco/sdk";
 import { Suspense } from "react";
 import { useLocation } from "react-router";
 import { useUserPreferences } from "../../hooks/use-user-preferences.ts";
@@ -10,27 +15,25 @@ import { useThreadManager } from "./thread-manager-context.tsx";
 
 export const NO_DROP_TARGET = "no-drop-target";
 
+const agentId = WELL_KNOWN_AGENTS.decopilotAgent.id;
+
 export function DecopilotChat() {
   const { threadState, clearThreadState } = useDecopilotThread();
-  const { getThreadForRoute, getActiveThread } = useThreadManager();
-  const location = useLocation();
+  const { getThreadForRoute } = useThreadManager();
+  const { pathname } = useLocation();
   const { onToolCall } = useDecopilotContext();
 
-  const agentId = WELL_KNOWN_AGENTS.decopilotAgent.id;
-
   // Get the thread for the current route
-  const currentThread = getThreadForRoute(location.pathname);
-  
+  const currentThread = getThreadForRoute(pathname);
+
   // Fetch required data
   const { data: agent } = useAgentData(agentId);
   const agentRoot = useAgentRoot(agentId);
   const { preferences } = useUserPreferences();
-  const { data: { messages: threadMessages } = { messages: [] } } = useThreadMessages(
-    currentThread?.id || "",
-    {
-      enabled: !!currentThread?.id,
-    }
-  );
+  const { data } = useThreadMessages(currentThread?.id || "", {
+    enabled: !!currentThread?.id,
+  });
+  const threadMessages = data?.messages ?? [];
 
   // If no thread yet or agent not loaded, show a loading state
   if (!currentThread || !agent) {
@@ -70,10 +73,9 @@ export function DecopilotChat() {
             threadId={currentThread.id}
             agent={agent}
             agentRoot={agentRoot}
-            defaultModel={preferences.defaultModel}
+            model={preferences.defaultModel}
             useOpenRouter={preferences.useOpenRouter}
             sendReasoning={preferences.sendReasoning}
-            smoothStream={preferences.smoothStream}
             initialMessages={threadMessages}
             initialInput={threadState.initialMessage || undefined}
             autoSend={threadState.autoSend}

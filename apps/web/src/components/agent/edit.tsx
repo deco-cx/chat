@@ -56,7 +56,7 @@ import AdvancedTab from "../settings/advanced.tsx";
 import AgentProfileTab from "../settings/agent-profile.tsx";
 import ToolsAndKnowledgeTab from "../settings/integrations.tsx";
 import { AgentTriggers } from "../triggers/agent-triggers.tsx";
-import { AgenticChatProvider, useAgenticChat } from "../chat/provider.tsx";
+import { AgenticChatProvider, useAgenticChat, useAgenticChatForm } from "../chat/provider.tsx";
 import Threads from "./threads.tsx";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -173,11 +173,11 @@ function UnifiedChat() {
 
 function ActionButtons() {
   const {
-    form,
     isDirty: hasChanges,
     saveAgent,
     agent,
   } = useAgenticChat();
+  const form = useAgenticChatForm();
 
   const handleSubmit = form.handleSubmit(async () => {
     await saveAgent();
@@ -402,10 +402,9 @@ function ChatWithProvider({
               threadId={threadId}
               agent={serverAgent}
               agentRoot={agentRoot}
-              defaultModel={preferences.defaultModel}
+              model={preferences.defaultModel}
               useOpenRouter={preferences.useOpenRouter}
               sendReasoning={preferences.sendReasoning}
-              smoothStream={preferences.smoothStream}
               initialMessages={agentThreadMessages}
               onSave={handleSaveAgent}
               uiOptions={{
@@ -432,10 +431,9 @@ function ChatWithProvider({
               threadId={effectiveDecopilotThreadId}
               agent={decopilotAgent}
               agentRoot={decopilotRoot}
-              defaultModel={preferences.defaultModel}
+              model={preferences.defaultModel}
               useOpenRouter={preferences.useOpenRouter}
               sendReasoning={preferences.sendReasoning}
-              smoothStream={preferences.smoothStream}
               initialMessages={decopilotThreadMessages}
               initialInput={
                 shouldUseInitialInput
@@ -627,10 +625,9 @@ function FormProvider(props: Props & { agentId: string; threadId: string }) {
           threadId={threadId}
           agent={agent}
           agentRoot={agentRoot}
-          defaultModel={preferences.defaultModel}
+          model={preferences.defaultModel}
           useOpenRouter={preferences.useOpenRouter}
           sendReasoning={preferences.sendReasoning}
-          smoothStream={preferences.smoothStream}
           initialMessages={threadMessages}
           onSave={handleSaveAgent}
           uiOptions={{

@@ -180,11 +180,6 @@ export interface StreamOptions extends GenerateOptions {
   sendReasoning?: boolean;
   /** Title for the thread */
   threadTitle?: string;
-  /** Smooth streaming configuration */
-  smoothStream?: {
-    delayInMs?: number;
-    chunking?: "word" | "line";
-  };
   /**
    * Additional context messages that are sent to the LLM but not persisted to the thread.
    * Useful for providing temporary context like rules or instructions that shouldn't be part of the conversation history.

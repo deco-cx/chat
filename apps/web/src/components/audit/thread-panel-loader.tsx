@@ -128,8 +128,8 @@ function ThreadMessages({ threadId }: { threadId: string }) {
         showAgentVisibility: false,
         showEditAgent: false,
         showContextResources: false,
+        readOnly: true,
       }}
-      readOnly
     >
       <MainChat
         showInput={false}

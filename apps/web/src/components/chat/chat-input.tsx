@@ -45,8 +45,7 @@ export function ChatInput({
     sendMessage,
     addContextItem,
     isLoading,
-    showModelSelector,
-    showContextResources,
+    uiOptions,
   } = useAgenticChat();
   const { stop } = chat;
   const { preferences, setPreferences } = useUserPreferences();
@@ -247,7 +246,7 @@ export function ChatInput({
           <div className="relative rounded-xl border border-border bg-background w-full mx-auto">
             <div className="relative flex flex-col gap-2 p-2.5">
               {/* Context Resources */}
-              {showContextResources && hasContextResources && (
+              {uiOptions.showContextResources && hasContextResources && (
                 <ContextResources
                   uploadedFiles={uploadedFiles}
                   isDragging={isDragging}
@@ -309,7 +308,7 @@ export function ChatInput({
                 </div>
                 <div className="flex items-center gap-1">
                   {rightNode}
-                  {showModelSelector && (
+                  {uiOptions.showModelSelector && (
                     <ModelSelector
                       model={model}
                       onModelChange={handleModelChange}

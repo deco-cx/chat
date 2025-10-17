@@ -98,7 +98,6 @@ function UserPreferencesModal({
     defaultValues: {
       defaultModel: preferences.defaultModel,
       useOpenRouter: preferences.useOpenRouter,
-      smoothStream: preferences.smoothStream,
       sendReasoning: preferences.sendReasoning,
       pdfSummarization: preferences.pdfSummarization,
     },

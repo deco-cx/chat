@@ -44,7 +44,7 @@ import type { TabItem } from "./resource-header.tsx";
 import { DecopilotLayout } from "../layout/decopilot-layout.tsx";
 import { ResourceHeader } from "./resource-header.tsx";
 import { ResourceRouteProvider } from "./route-context.tsx";
-import { useThreadContext } from "../decopilot/thread-manager-context.tsx";
+import { useThreadContextEffect } from "../decopilot/thread-manager-context.tsx";
 
 // Base resource data schema that all resources extend
 const BaseResourceDataSchema = z.object({
@@ -406,7 +406,7 @@ function ResourcesV2ListTab({
 
   return (
     <div className="h-full p-0 overflow-y-auto">
-      <div className="py-4 px-4 md:py-8 md:px-8 lg:py-16 lg:px-16 space-y-4 md:space-y-6 lg:space-y-8">
+      <div className="max-w-[1600px] px-4 lg:px-6 xl:px-10 w-full mx-auto pt-12 space-y-4 md:space-y-6 lg:space-y-8">
         <div className="max-w-[1500px] mx-auto w-full space-y-4 md:space-y-6 lg:space-y-8">
           {headerSlot}
           <ResourceHeader
@@ -1071,18 +1071,8 @@ export function ResourcesV2List({
     };
   }, [integrationId, resourceName, tools]);
 
-  console.log("[ResourcesV2List] Thread context value prepared:", {
-    integrationId,
-    resourceName,
-    decopilotContextValue,
-    hasRules: !!decopilotContextValue?.rules,
-    rulesCount: decopilotContextValue?.rules?.length || 0,
-    hasTools: !!decopilotContextValue?.additionalTools,
-    toolsKeys: Object.keys(decopilotContextValue?.additionalTools || {}),
-  });
-
   // Inject context into the current route's thread
-  useThreadContext({
+  useThreadContextEffect({
     rules: decopilotContextValue?.rules,
     tools: decopilotContextValue?.additionalTools,
   });

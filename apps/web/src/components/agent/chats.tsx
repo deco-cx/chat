@@ -125,10 +125,9 @@ function ChatProviderWrapper({ agentId, threadId }: { agentId: string; threadId:
       threadId={threadId}
       agent={agent}
       agentRoot={agentRoot}
-      defaultModel={preferences.defaultModel}
+      model={preferences.defaultModel}
       useOpenRouter={preferences.useOpenRouter}
       sendReasoning={preferences.sendReasoning}
-      smoothStream={preferences.smoothStream}
       initialMessages={threadMessages}
       uiOptions={{
         showThreadTools: false,

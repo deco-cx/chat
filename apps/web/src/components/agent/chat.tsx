@@ -216,10 +216,9 @@ function Page(props: Props) {
           threadId={threadId}
           agent={agent}
           agentRoot={agentRoot}
-          defaultModel={preferences.defaultModel}
+          model={preferences.defaultModel}
           useOpenRouter={preferences.useOpenRouter}
           sendReasoning={preferences.sendReasoning}
-          smoothStream={preferences.smoothStream}
           initialMessages={threadMessages}
           uiOptions={{
             showThreadTools: isTeamAgent,

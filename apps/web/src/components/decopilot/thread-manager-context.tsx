@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useLocation } from "react-router";
 import { emitThreadContextUpdate } from "./thread-events.ts";
 
@@ -18,7 +26,9 @@ interface ThreadManagerContextValue {
   getActiveThread: () => ThreadData | null;
 }
 
-const ThreadManagerContext = createContext<ThreadManagerContextValue | null>(null);
+const ThreadManagerContext = createContext<ThreadManagerContextValue | null>(
+  null,
+);
 
 interface ThreadManagerProviderProps {
   children: ReactNode;
@@ -26,9 +36,11 @@ interface ThreadManagerProviderProps {
 
 const STORAGE_KEY = "decopilot-thread-routes";
 
-export function ThreadManagerProvider({ children }: ThreadManagerProviderProps) {
+export function ThreadManagerProvider({
+  children,
+}: ThreadManagerProviderProps) {
   const location = useLocation();
-  
+
   // Load threads from localStorage
   const [threads, setThreads] = useState<Map<string, ThreadData>>(() => {
     try {
@@ -56,14 +68,17 @@ export function ThreadManagerProvider({ children }: ThreadManagerProviderProps) 
   }, [threads]);
 
   // Get thread for a route
-  const getThreadForRoute = useCallback((route: string): ThreadData | null => {
-    for (const thread of threads.values()) {
-      if (thread.route === route) {
-        return thread;
+  const getThreadForRoute = useCallback(
+    (route: string): ThreadData | null => {
+      for (const thread of threads.values()) {
+        if (thread.route === route) {
+          return thread;
+        }
       }
-    }
-    return null;
-  }, [threads]);
+      return null;
+    },
+    [threads],
+  );
 
   // Get active thread
   const getActiveThread = useCallback((): ThreadData | null => {
@@ -74,10 +89,10 @@ export function ThreadManagerProvider({ children }: ThreadManagerProviderProps) 
   // Auto-create/activate thread for current route
   useEffect(() => {
     const currentRoute = location.pathname;
-    
+
     // Find existing thread for this route
     const existingThread = getThreadForRoute(currentRoute);
-    
+
     if (existingThread) {
       // Activate if not already active
       if (activeThreadId !== existingThread.id) {
@@ -86,14 +101,14 @@ export function ThreadManagerProvider({ children }: ThreadManagerProviderProps) 
     } else {
       // Create new thread for this route
       const newId = crypto.randomUUID();
-      
+
       const newThread: ThreadData = {
         id: newId,
         route: currentRoute,
         createdAt: Date.now(),
       };
 
-      setThreads(prev => new Map(prev).set(newId, newThread));
+      setThreads((prev) => new Map(prev).set(newId, newThread));
       setActiveThreadId(newId);
     }
   }, [location.pathname, getThreadForRoute, activeThreadId]);
@@ -115,7 +130,9 @@ export function ThreadManagerProvider({ children }: ThreadManagerProviderProps) 
 export function useThreadManager(): ThreadManagerContextValue {
   const context = useContext(ThreadManagerContext);
   if (!context) {
-    throw new Error("useThreadManager must be used within ThreadManagerProvider");
+    throw new Error(
+      "useThreadManager must be used within ThreadManagerProvider",
+    );
   }
   return context;
 }
@@ -123,40 +140,37 @@ export function useThreadManager(): ThreadManagerContextValue {
 /**
  * Hook for resource pages to emit context updates for the current route's thread
  */
-export function useThreadContext(context?: {
+export function useThreadContextEffect(context?: {
   rules?: string[];
   tools?: Record<string, string[]>;
 }) {
-  const location = useLocation();
   const { getThreadForRoute } = useThreadManager();
-  const prevContextRef = useRef<string>('');
+  const prevContextRef = useRef<string>("");
+  const { pathname } = useLocation();
+
+  const { rules = [], tools = {} } = context ?? {};
 
   useEffect(() => {
-    if (!context) return;
-
-    const currentRoute = location.pathname;
-    const thread = getThreadForRoute(currentRoute);
+    const thread = getThreadForRoute(pathname);
 
     if (!thread) {
       return;
     }
 
     // Only emit if context actually changed (deep comparison via JSON)
-    const contextStr = JSON.stringify(context);
+    const contextStr = JSON.stringify({ rules, tools });
     if (prevContextRef.current === contextStr) {
       return;
     }
     prevContextRef.current = contextStr;
 
-    // Delay emission to ensure listeners are subscribed
-    const timer = setTimeout(() => {
-      emitThreadContextUpdate({
-        threadId: thread.id,
-        rules: context.rules,
-        tools: context.tools,
-      });
-    }, 100);
+    console.log("Emitting context for thread:", { rules, tools });
 
-    return () => clearTimeout(timer);
-  }, [context, location.pathname, getThreadForRoute]);
+    // Delay emission to ensure listeners are subscribed
+    emitThreadContextUpdate({
+      threadId: thread.id,
+      rules,
+      tools,
+    });
+  }, [rules, tools, pathname, getThreadForRoute]);
 }

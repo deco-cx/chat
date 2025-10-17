@@ -4,7 +4,6 @@ import { useChat } from "@ai-sdk/react";
 import {
   AgentSchema,
   DECO_CMS_API_URL,
-  DEFAULT_MODEL,
   dispatchMessages,
   getTraceDebugId,
   type Agent,
@@ -49,6 +48,7 @@ interface UiOptions {
   showAgentVisibility: boolean;
   showEditAgent: boolean;
   showContextResources: boolean;
+  readOnly: boolean;
 }
 
 export interface AgenticChatProviderProps {
@@ -70,14 +70,12 @@ export interface AgenticChatProviderProps {
   onToolCall?: (toolCall: { toolName: string }) => void;
 
   // User preferences
-  defaultModel?: string;
+  model?: string;
   useOpenRouter?: boolean;
   sendReasoning?: boolean;
-  smoothStream?: boolean;
 
   // UI options
   uiOptions?: Partial<UiOptions>;
-  readOnly?: boolean;
 
   children: React.ReactNode;
 }
@@ -89,7 +87,6 @@ export interface AgenticChatContextValue {
   updateAgent: (updates: Partial<Agent>) => void;
   saveAgent: () => Promise<void>;
   resetAgent: () => void;
-  form: UseFormReturn<Agent, any, any>;
 
   // Chat state
   chat: ReturnType<typeof useChat>;
@@ -109,12 +106,7 @@ export interface AgenticChatContextValue {
   updateContextItem: (id: string, updates: Partial<ContextItem>) => void;
 
   // UI options
-  showThreadTools: boolean;
-  showModelSelector: boolean;
-  showThreadMessages: boolean;
-  showAgentVisibility: boolean;
-  showEditAgent: boolean;
-  showContextResources: boolean;
+  uiOptions: UiOptions;
 
   // Metadata
   metadata: {
@@ -135,32 +127,66 @@ const DEFAULT_UI_OPTIONS: UiOptions = {
   showAgentVisibility: true,
   showEditAgent: true,
   showContextResources: true,
+  readOnly: false,
 };
 
-// Context items reducer
-type ContextItemsAction =
-  | { type: "ADD_ITEM"; item: Omit<ContextItem, "id">; id: string }
-  | { type: "REMOVE_ITEM"; id: string }
-  | { type: "UPDATE_ITEM"; id: string; updates: Partial<ContextItem> }
-  | { type: "SET_ITEMS"; items: ContextItem[] };
+// Unified chat state
+interface ChatState {
+  finishReason: LanguageModelV2FinishReason | null;
+  isLoading: boolean;
+  contextItems: ContextItem[];
+  input: string;
+}
 
-function contextItemsReducer(
-  state: ContextItem[],
-  action: ContextItemsAction,
-): ContextItem[] {
+type ChatStateAction =
+  | {
+      type: "SET_FINISH_REASON";
+      finishReason: LanguageModelV2FinishReason | null;
+    }
+  | { type: "SET_IS_LOADING"; isLoading: boolean }
+  | { type: "SET_INPUT"; input: string }
+  | { type: "ADD_CONTEXT_ITEM"; item: Omit<ContextItem, "id">; id: string }
+  | { type: "REMOVE_CONTEXT_ITEM"; id: string }
+  | { type: "UPDATE_CONTEXT_ITEM"; id: string; updates: Partial<ContextItem> }
+  | { type: "SET_CONTEXT_ITEMS"; items: ContextItem[] };
+
+function chatStateReducer(
+  state: ChatState,
+  action: ChatStateAction,
+): ChatState {
   switch (action.type) {
-    case "ADD_ITEM":
-      return [...state, { ...action.item, id: action.id } as ContextItem];
-    case "REMOVE_ITEM":
-      return state.filter((item) => item.id !== action.id);
-    case "UPDATE_ITEM":
-      return state.map((item) =>
-        item.id === action.id
-          ? ({ ...item, ...action.updates } as ContextItem)
-          : item,
-      );
-    case "SET_ITEMS":
-      return action.items;
+    case "SET_FINISH_REASON":
+      return { ...state, finishReason: action.finishReason };
+    case "SET_IS_LOADING":
+      return { ...state, isLoading: action.isLoading };
+    case "SET_INPUT":
+      return { ...state, input: action.input };
+    case "ADD_CONTEXT_ITEM":
+      return {
+        ...state,
+        contextItems: [
+          ...state.contextItems,
+          { ...action.item, id: action.id } as ContextItem,
+        ],
+      };
+    case "REMOVE_CONTEXT_ITEM":
+      return {
+        ...state,
+        contextItems: state.contextItems.filter(
+          (item) => item.id !== action.id,
+        ),
+      };
+    case "UPDATE_CONTEXT_ITEM":
+      return {
+        ...state,
+        contextItems: state.contextItems.map((item) =>
+          item.id === action.id
+            ? ({ ...item, ...action.updates } as ContextItem)
+            : item,
+        ),
+      };
+    case "SET_CONTEXT_ITEMS":
+      return { ...state, contextItems: action.items };
     default:
       return state;
   }
@@ -182,24 +208,38 @@ export function AgenticChatProvider({
   onAutoSendComplete,
   initialContext = [],
   onToolCall: _onToolCall,
-  defaultModel,
+  model: defaultModel,
   useOpenRouter,
   sendReasoning,
-  smoothStream,
   uiOptions,
-  readOnly = false,
   children,
 }: PropsWithChildren<AgenticChatProviderProps>) {
-  const [finishReason, setFinishReason] =
-    useState<LanguageModelV2FinishReason | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [state, dispatch] = useReducer(chatStateReducer, {
+    finishReason: null,
+    isLoading: false,
+    contextItems: initialContext || [],
+    input: initialInput || "",
+  });
+
+  const { finishReason, isLoading, contextItems, input } = state;
+
+  const setIsLoading = useCallback((value: boolean) => {
+    dispatch({ type: "SET_IS_LOADING", isLoading: value });
+  }, []);
+
+  const setFinishReason = useCallback(
+    (value: LanguageModelV2FinishReason | null) => {
+      dispatch({ type: "SET_FINISH_REASON", finishReason: value });
+    },
+    [],
+  );
+
+  const setInput = useCallback((value: string) => {
+    dispatch({ type: "SET_INPUT", input: value });
+  }, []);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const correlationIdRef = useRef<string | null>(null);
-  const [contextItems, dispatchContextItems] = useReducer(
-    contextItemsReducer,
-    initialContext || [],
-  );
-  const [input, setInput] = useState(initialInput || "");
 
   const mergedUiOptions = { ...DEFAULT_UI_OPTIONS, ...uiOptions };
 
@@ -273,7 +313,7 @@ export function AgenticChatProvider({
     transport,
     onFinish: (result) => {
       setIsLoading(false);
-      
+
       const metadata = result?.message?.metadata as
         | { finishReason: LanguageModelV2FinishReason }
         | undefined;
@@ -360,7 +400,7 @@ export function AgenticChatProvider({
   const wrappedSendMessage = useCallback(
     (message?: UIMessage) => {
       // Early return if readOnly
-      if (readOnly) {
+      if (mergedUiOptions.readOnly) {
         return Promise.resolve();
       }
 
@@ -420,10 +460,6 @@ export function AgenticChatProvider({
         // User preferences
         bypassOpenRouter: !useOpenRouter,
         sendReasoning: sendReasoning ?? true,
-        smoothStream:
-          smoothStream !== false
-            ? { delayInMs: 25, chunking: "word" }
-            : undefined,
 
         // Context messages (additional context not persisted to thread)
         context: context,
@@ -440,13 +476,12 @@ export function AgenticChatProvider({
       return chat.sendMessage?.(message, { metadata }) ?? Promise.resolve();
     },
     [
-      readOnly,
-      contextItems,
+      mergedUiOptions.readOnly,
       mergedUiOptions.showModelSelector,
+      contextItems,
       defaultModel,
       useOpenRouter,
       sendReasoning,
-      smoothStream,
       agent.model,
       agent.instructions,
       agent.tools_set,
@@ -457,6 +492,7 @@ export function AgenticChatProvider({
       chat.sendMessage,
       threadId,
       agentId,
+      setIsLoading,
     ],
   );
 
@@ -496,19 +532,19 @@ export function AgenticChatProvider({
   const addContextItem = useCallback(
     (item: Omit<ContextItem, "id">): string => {
       const id = crypto.randomUUID();
-      dispatchContextItems({ type: "ADD_ITEM", item, id });
+      dispatch({ type: "ADD_CONTEXT_ITEM", item, id });
       return id;
     },
     [],
   );
 
   const removeContextItem = useCallback((id: string) => {
-    dispatchContextItems({ type: "REMOVE_ITEM", id });
+    dispatch({ type: "REMOVE_CONTEXT_ITEM", id });
   }, []);
 
   const updateContextItem = useCallback(
     (id: string, updates: Partial<ContextItem>) => {
-      dispatchContextItems({ type: "UPDATE_ITEM", id, updates });
+      dispatch({ type: "UPDATE_CONTEXT_ITEM", id, updates });
     },
     [],
   );
@@ -538,7 +574,6 @@ export function AgenticChatProvider({
     updateAgent,
     saveAgent,
     resetAgent,
-    form: form as any,
 
     // Chat state
     chat,
@@ -558,12 +593,7 @@ export function AgenticChatProvider({
     updateContextItem,
 
     // UI options
-    showThreadTools: mergedUiOptions.showThreadTools,
-    showModelSelector: mergedUiOptions.showModelSelector,
-    showThreadMessages: mergedUiOptions.showThreadMessages,
-    showAgentVisibility: mergedUiOptions.showAgentVisibility,
-    showEditAgent: mergedUiOptions.showEditAgent,
-    showContextResources: mergedUiOptions.showContextResources,
+    uiOptions: mergedUiOptions,
 
     // Metadata
     metadata: {
@@ -611,7 +641,9 @@ export function AgenticChatProvider({
       </AlertDialog>
 
       <AgenticChatContext.Provider value={contextValue}>
-        {children}
+        <AgenticChatFormContext.Provider value={form}>
+          {children}
+        </AgenticChatFormContext.Provider>
       </AgenticChatContext.Provider>
     </>
   );
@@ -622,6 +654,20 @@ export function useAgenticChat() {
   const context = useContext(AgenticChatContext);
   if (!context) {
     throw new Error("useAgenticChat must be used within AgenticChatProvider");
+  }
+  return context;
+}
+
+// Internal context for form access (used by settings components)
+// biome-ignore lint: any is required here for form compatibility
+const AgenticChatFormContext = createContext<UseFormReturn<any, any, any> | null>(null);
+
+// Internal hook for accessing the form (used by settings components only)
+// @internal - This is for internal use by settings components that need React Hook Form integration
+export function useAgenticChatForm() {
+  const context = useContext(AgenticChatFormContext);
+  if (!context) {
+    throw new Error("useAgenticChatForm must be used within AgenticChatProvider");
   }
   return context;
 }

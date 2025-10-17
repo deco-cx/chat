@@ -1,10 +1,11 @@
 import { listTools, useIntegrations } from "@deco/sdk";
 import { useCallback } from "react";
-import { useAgenticChat } from "../components/chat/provider.tsx";
+import { useAgenticChat, useAgenticChatForm } from "../components/chat/provider.tsx";
 import { useRefetchIntegrationsOnNotification } from "../components/integrations/apps.ts";
 
 export function useAgentSettingsToolsSet() {
-  const { form, agent } = useAgenticChat();
+  const { agent } = useAgenticChat();
+  const form = useAgenticChatForm();
   const { data: _installedIntegrations } = useIntegrations();
   const installedIntegrations = _installedIntegrations.filter(
     (i) => !i.id.includes(agent.id),

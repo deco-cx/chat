@@ -56,7 +56,7 @@ EmptyState.Skeleton = () => {
 };
 
 EmptyState.UI = () => {
-  const { metadata: { agentId }, agent, showEditAgent } = useAgenticChat();
+  const { metadata: { agentId }, agent, uiOptions } = useAgenticChat();
   const editAgent = useFocusChat();
 
   return (
@@ -77,7 +77,7 @@ EmptyState.UI = () => {
             <p className="text-muted-foreground mx-6 text-center">
               {agent?.description ?? "The more you share, the better I get."}
             </p>
-            {showEditAgent && (
+            {uiOptions.showEditAgent && (
               <Button
                 variant="outline"
                 onClick={() => editAgent(agentId, crypto.randomUUID())}

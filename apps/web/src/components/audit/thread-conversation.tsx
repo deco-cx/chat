@@ -129,8 +129,8 @@ function CachedThreadMessages({
           showAgentVisibility: false,
           showEditAgent: false,
           showContextResources: false,
+          readOnly: true,
         }}
-        readOnly
         initialMessages={cachedData.messages.messages}
       >
         <MainChat
@@ -234,8 +234,8 @@ function ThreadMessages({ threadId }: { threadId: string }) {
           showAgentVisibility: false,
           showEditAgent: false,
           showContextResources: false,
+          readOnly: true,
         }}
-        readOnly
         initialMessages={messages.messages}
       >
         <MainChat

@@ -33,15 +33,14 @@ function ThreadView({ agentId, threadId }: Props) {
       threadId={threadId}
       agent={agent}
       agentRoot={agentRoot}
-      defaultModel={preferences.defaultModel}
+      model={preferences.defaultModel}
       useOpenRouter={preferences.useOpenRouter}
       sendReasoning={preferences.sendReasoning}
-      smoothStream={preferences.smoothStream}
       initialMessages={threadMessages}
-      readOnly={true}
       uiOptions={{
         showThreadTools: false,
         showThreadMessages: true,
+        readOnly: true,
         showModelSelector: false,
         showAgentVisibility: false,
         showEditAgent: false,
