@@ -1,34 +1,37 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { and, eq } from "drizzle-orm";
+import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Buffer } from "node:buffer";
 import crypto from "node:crypto";
-import { buildWorkspaceOrProjectIdConditions } from "../projects/util";
+import { AppContext } from "../context";
+import { filterByWorkspaceOrLocator } from "../ownership";
+import { relations } from "../relations";
+import { models } from "../schema";
 
 export interface LLMVault {
   readApiKey(modelId: string): Promise<{ model: string; apiKey: string }>;
-  storeApiKey(modelId: string, apiKey: string): Promise<void>;
-  updateApiKey(modelId: string, apiKey: string | null): Promise<void>;
-  removeApiKey(modelId: string): Promise<void>;
+  updateApiKey(modelId: string, apiKey: string): Promise<void>;
 }
 
 export class SupabaseLLMVault implements LLMVault {
   private encryptionKey: Buffer;
   private ivLength = 16; // AES block size
-  private projectSupaConditions: string;
+  private ownershipFilter: ReturnType<typeof filterByWorkspaceOrLocator>;
+  private drizzle: PostgresJsDatabase<
+    Record<string, unknown>,
+    typeof relations
+  >;
 
-  constructor(
-    private db: SupabaseClient,
-    encryptionKey: string,
-    workspace: string,
-    projectId: string | null,
-  ) {
+  constructor(c: AppContext) {
+    const encryptionKey = c.envVars.LLMS_ENCRYPTION_KEY;
     if (encryptionKey.length !== 32) {
       throw new Error("Encryption key must be 32 characters long for AES-256");
     }
     this.encryptionKey = Buffer.from(encryptionKey);
-    this.projectSupaConditions = buildWorkspaceOrProjectIdConditions(
-      workspace,
-      projectId,
-    );
+    this.ownershipFilter = filterByWorkspaceOrLocator({
+      table: models,
+      ctx: c,
+    });
+    this.drizzle = c.drizzle;
   }
 
   private encrypt(text: string): string {
@@ -42,18 +45,26 @@ export class SupabaseLLMVault implements LLMVault {
   async readApiKey(
     modelId: string,
   ): Promise<{ model: string; apiKey: string }> {
-    const { data, error } = await this.db
-      .from("models")
-      .select("model, api_key_hash")
-      .eq("id", modelId)
-      .or(this.projectSupaConditions)
-      .single();
+    const [data] = await this.drizzle
+      .select({
+        model: models.model,
+        apiKeyHash: models.api_key_hash,
+      })
+      .from(models)
+      .where(and(eq(models.id, modelId), this.ownershipFilter))
+      .limit(1);
 
-    if (error) throw error;
+    if (!data) {
+      throw new Error(`Model ${modelId} not found`);
+    }
+
+    if (!data.apiKeyHash) {
+      throw new Error(`Model ${modelId} does not have an API key`);
+    }
 
     return {
       model: data.model,
-      apiKey: this.decrypt(data.api_key_hash),
+      apiKey: this.decrypt(data.apiKeyHash),
     };
   }
 
@@ -70,37 +81,12 @@ export class SupabaseLLMVault implements LLMVault {
     return decrypted;
   }
 
-  async storeApiKey(modelId: string, apiKey: string): Promise<void> {
-    const encryptedKey = this.encrypt(apiKey);
-
-    const { error } = await this.db
-      .from("models")
-      .update({ api_key_hash: encryptedKey })
-      .eq("id", modelId)
-      .or(this.projectSupaConditions);
-
-    if (error) throw error;
-  }
-
   async updateApiKey(modelId: string, apiKey: string | null): Promise<void> {
     const encryptedKey = apiKey ? this.encrypt(apiKey) : null;
 
-    const { error } = await this.db
-      .from("models")
-      .update({ api_key_hash: encryptedKey })
-      .eq("id", modelId)
-      .or(this.projectSupaConditions);
-
-    if (error) throw error;
-  }
-
-  async removeApiKey(modelId: string): Promise<void> {
-    const { error } = await this.db
-      .from("models")
-      .update({ api_key_hash: null })
-      .eq("id", modelId)
-      .or(this.projectSupaConditions);
-
-    if (error) throw error;
+    await this.drizzle
+      .update(models)
+      .set({ api_key_hash: encryptedKey })
+      .where(and(eq(models.id, modelId), this.ownershipFilter));
   }
 }

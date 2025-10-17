@@ -15,7 +15,7 @@ export function filterByWorkspaceOrLocator<TableName extends string>({
     // deno-lint-ignore no-explicit-any
     columns: any;
   }>;
-  ctx: AppContext;
+  ctx: Pick<AppContext, "workspace" | "locator">;
 }) {
   assertHasWorkspace(ctx);
   assertHasLocator(ctx);
@@ -33,6 +33,6 @@ export function filterByWorkspaceOrLocator<TableName extends string>({
     and(
       eq(projects.slug, locator.project),
       eq(organizations.slug, locator.org),
-    )
+    ),
   );
 }

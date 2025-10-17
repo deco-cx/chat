@@ -2,6 +2,7 @@ import { z } from "zod";
 import { type Model, WELL_KNOWN_MODELS } from "../../constants.ts";
 import {
   assertHasWorkspace,
+  assertHasLocator,
   assertWorkspaceResourceAccess,
 } from "../assertions.ts";
 import { createToolGroup } from "../context.ts";
@@ -65,6 +66,7 @@ export const createModel = createTool({
   inputSchema: z.lazy(() => createModelSchema),
   handler: async (props, c) => {
     assertHasWorkspace(c);
+    assertHasLocator(c);
     const workspace = c.workspace.value;
 
     await assertWorkspaceResourceAccess(c);
@@ -96,13 +98,8 @@ export const createModel = createTool({
     if (error) throw error;
 
     if (apiKey) {
-      const llmVault = new SupabaseLLMVault(
-        c.db,
-        c.envVars.LLMS_ENCRYPTION_KEY,
-        workspace,
-        await getProjectIdFromContext(c),
-      );
-      await llmVault.storeApiKey(data.id, apiKey);
+      const llmVault = new SupabaseLLMVault(c);
+      await llmVault.updateApiKey(data.id, apiKey);
     }
 
     return formatModelRow(data);
@@ -138,7 +135,7 @@ export const updateModel = createTool({
   inputSchema: z.lazy(() => updateModelSchema),
   handler: async (props, c) => {
     assertHasWorkspace(c);
-    const workspace = c.workspace.value;
+    assertHasLocator(c);
 
     await assertWorkspaceResourceAccess(c);
 
@@ -148,12 +145,7 @@ export const updateModel = createTool({
     for await (const [key, value] of Object.entries(modelData)) {
       if (key === "apiKey") {
         if (typeof value === "string" || value === null) {
-          const llmVault = new SupabaseLLMVault(
-            c.db,
-            c.envVars.LLMS_ENCRYPTION_KEY,
-            workspace,
-            await getProjectIdFromContext(c),
-          );
+          const llmVault = new SupabaseLLMVault(c);
 
           await llmVault.updateApiKey(id, value);
         }

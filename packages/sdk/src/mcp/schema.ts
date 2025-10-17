@@ -671,3 +671,39 @@ export const customers = pgTable("deco_chat_customer", {
     () => organizations.id,
   ),
 });
+
+/**
+ * create table public.models (
+  id uuid not null default gen_random_uuid (),
+  workspace text null,
+  name text not null,
+  model text not null,
+  api_key_hash text null,
+  is_enabled boolean not null default true,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  by_deco boolean not null default false,
+  description text null,
+  project_id uuid null,
+  constraint models_pkey primary key (id),
+  constraint fk_models_project_id foreign KEY (project_id) references deco_chat_projects (id) on delete set null
+) TABLESPACE pg_default;
+ */
+
+export const models = pgTable("models", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspace: text("workspace"),
+  name: text("name").notNull(),
+  model: text("model").notNull(),
+  api_key_hash: text("api_key_hash"),
+  is_enabled: boolean("is_enabled").notNull().default(true),
+  created_at: timestamp("created_at", { mode: "string" })
+    .defaultNow()
+    .notNull(),
+  updated_at: timestamp("updated_at", { mode: "string" })
+    .defaultNow()
+    .notNull(),
+  by_deco: boolean("by_deco").notNull().default(false),
+  description: text("description"),
+  project_id: uuid("project_id").references(() => projects.id),
+});

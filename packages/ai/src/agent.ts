@@ -214,13 +214,7 @@ export class AIAgent extends BaseActor<AgentMetadata> implements IIAgent {
 
   private get llmVault() {
     return this.env.LLMS_ENCRYPTION_KEY
-      ? new SupabaseLLMVault(
-          this.context.db,
-          this.env.LLMS_ENCRYPTION_KEY,
-          this.workspace,
-          // TODO(@viktormarinho): figure out what to do here
-          null,
-        )
+      ? new SupabaseLLMVault(this._createAppContext(this.metadata))
       : undefined;
   }
 
