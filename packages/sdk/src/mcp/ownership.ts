@@ -22,19 +22,18 @@ export function filterByWorkspaceOrLocator<TableName extends string>({
   assertHasLocator(ctx);
   const { workspace, locator } = ctx;
 
+  const locatorCondition = and(
+    eq(projects.slug, locator.project),
+    eq(organizations.slug, locator.org),
+  );
+
   if (locator.project !== "default" && locator.project !== "personal") {
-    return and(
-      eq(projects.slug, locator.project),
-      eq(organizations.slug, locator.org),
-    );
+    return locatorCondition;
   }
 
   return or(
     eq(table.workspace, workspace.value),
-    and(
-      eq(projects.slug, locator.project),
-      eq(organizations.slug, locator.org),
-    ),
+    locatorCondition,
   );
 }
 
