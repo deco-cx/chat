@@ -5,36 +5,51 @@
  * creation, updating, and management using the Resources 2.0 system.
  */
 
-export const WORKFLOW_CREATE_PROMPT = `Create a workflow with sequential code steps that can call integration tools.
+export const WORKFLOW_CREATE_PROMPT = `Create a workflow when requested by the user.
 
 ## Execution Pattern
 
-Workflows execute code steps sequentially where **each step receives the previous step's output as input**:
-
-\`\`\`
-Input → Step 1 (code) → Step 2 (code) → Step 3 (code) → Output
-\`\`\`
+Workflows execute tool calls sequentially in steps, where **each step can call tools and reference previous steps results (with @refs resolved)**:
 
 **Key Rules:**
-1. **All steps are code steps** - Each step is an ES module exporting an async function
+1. **All steps are Tool Calls** - Each step is an ES module exporting an async function
 2. **Each step receives resolved input** - The input parameter contains values with @refs already resolved
 3. **Steps call tools via ctx.env** - Use bracket notation to access integration tools
-4. **Return data for next step** - Each step's return value becomes the next step's input
+4. **Output reusability** - The output of each step can be used by other steps in the workflow by referencing it with @refs. Example: step 1 returns { poem: 'Generated poem' }, step 2 can use { input: { poem: '@step-1.poem' } }
 
-## Code Step Execute Function
+## Input Schema
 
-Code steps export a default async function with signature \`(input, ctx)\`:
+The input schema is the schema of the input object that will be passed to the step. JSON Schema format.
+
+**Example:**
+\`\`\`json
+{
+  "cityName": { "type": "string", "description": "Name of the city" }
+}
+\`\`\`
+
+## Output Schema
+
+The output schema is the schema of the output object that will be returned by the step. JSON Schema format.
+
+**Example:**
+\`\`\`json
+{ "poem": { "type": "string", "description": "Generated poem" } }
+\`\`\`
+## Execute Function
+
+Steps (same as tool calls) export a default async function with signature \`(input, ctx)\`:
 
 \`\`\`javascript
 export default async function(input, ctx) {
-  // input: Object with all @refs already resolved to actual values
+  // input: Object with all @refs already resolved to actual values (example: input.poem)
   // ctx.env: Object to access integration tools
   
   const cityName = input.cityName; // Could be from @ref to previous step
   
   // ALWAYS wrap tool calls in try/catch
   try {
-    const result = await ctx.env['i:workspace-management'].AI_GENERATE_OBJECT({
+    const result = await ctx.env['i:ai-generation'].AI_GENERATE_OBJECT({
       model: 'anthropic:claude-sonnet-4-5',
       messages: [{ role: 'user', content: \`Generate poem about \${cityName}\` }],
       schema: { type: 'object', properties: { poem: { type: 'string' } } },
@@ -45,13 +60,11 @@ export default async function(input, ctx) {
     // Check actual tool response structure - don't assume property names!
     return { 
       poem: result.object?.poem || '', 
-      city: cityName 
     };
   } catch (error) {
     // On error, return ALL outputSchema properties with safe defaults
     return { 
       poem: '', 
-      city: cityName,
       error: String(error)
     };
   }
@@ -87,7 +100,7 @@ Each step has this structure:
         "poem": { "type": "string" }
       }
     },
-    "dependencies": [{ "integrationId": "i:workspace-management" }]
+    "dependencies": [{ "integrationId": "i:ai-generation", "toolNames": ["AI_GENERATE_OBJECT"] }]
   },
   "input": {
     "cityName": "@previous-step.cityName"
@@ -97,13 +110,12 @@ Each step has this structure:
 
 ## @Reference Resolution
 
-Use @refs in the \`input\` field to reference previous steps or workflow input:
+Use @refs in the \`input\` field to reference previous steps results
 
 **@refs are resolved BEFORE your function executes:**
-- \`@input.fieldName\` - Reference workflow input field
-- \`@stepId.fieldName\` or \`@stepId.output.fieldName\` - Reference previous step output
+- \`@stepId.fieldName\` - Reference previous step output field (example: \`@step-1.poem\`)
 - By the time your function runs, all @refs are replaced with actual values
-- You access these resolved values directly from the \`input\` parameter
+- You access these resolved values directly from the \`input\` parameter (example: \`input.poem\`)
 
 **Example:**
 \`\`\`json
@@ -159,9 +171,7 @@ return {
 ## Integration Tool Calls
 
 **Built-in Tools:**
-- Use \`ctx.env['i:workspace-management']\` for built-in workspace tools
-- Available tools: \`AI_GENERATE_OBJECT\`, \`DATABASES_RUN_SQL\`, \`KNOWLEDGE_BASE_SEARCH\`
-- Always add to dependencies: \`[{ "integrationId": "i:workspace-management" }]\`
+- Use \`ctx.env['i:ai-generation']\` for built-in AI generation tools
 
 **HTTP Requests:**
 - \`fetch\` is NOT available in this environment
@@ -170,7 +180,7 @@ return {
 - Remember to add \`{ integrationId: 'i:http' }\` to dependencies
 
 **Integration IDs:**
-- Use exact integration IDs like \`i:workspace-management\`, \`i:http\`
+- Use exact integration IDs like \`i:ai-generation\`, \`i:http\`
 - Validation errors will show available integrations if an ID doesn't exist
 - Always use bracket notation: \`ctx.env['integration-id']\`
 
@@ -184,46 +194,34 @@ return {
 6. **CRITICAL: Return value MUST match outputSchema exactly** - Include ALL properties defined in outputSchema, even if null/empty
 7. **Wrap tool calls in try/catch** - Always return an object with ALL outputSchema properties, use defaults on error`;
 
-export const WORKFLOW_UPDATE_PROMPT = `Update a workflow while maintaining sequential code step execution.
+export const WORKFLOW_UPDATE_PROMPT = `Update a workflow while maintaining sequential tool call execution.
+Only use this tool if you are updating multiple steps at once or properties of the workflow itself.
 
 ## Execution Pattern Reminder
 
-\`\`\`
-Input → Step 1 (code) → Step 2 (code) → Step 3 (code) → Output
-\`\`\`
-
 **Key Rules:**
-1. **All steps are code steps** - Each step exports async function with \`(input, ctx)\` signature
-2. **Each step receives previous step's output as input** - @refs are resolved before execution
-3. **Steps call tools via ctx.env** - Integration tools accessed with bracket notation
-4. **Return data matching outputSchema** - Each step's return becomes next step's input
+1. **Each step receives previous step's output as input** - @refs are resolved before execution - just declare how each step input should access a previous step's output (example: \`@stepId.fieldName.subfield\`)
+2. **Steps call tools via ctx.env** - Integration tools accessed with bracket notation (example: \`ctx.env['i:ai-generation'].AI_GENERATE_OBJECT({ model: 'anthropic:claude-sonnet-4-5', messages: [{ role: 'user', content: 'Generate poem' }], schema: { type: 'object', properties: { poem: { type: 'string' } } }, temperature: 0.7 })\`)
+3. **Return data matching outputSchema** - Each step's return becomes next step's input (example: \`return { poem: 'Generated poem' }\`) - next step could use { input: { poem: '@poem-generation-step.poem' } }
+4. **Update dependencies** - Add \`{ integrationId }\` to dependencies array alongside used tool names if using ctx.env (example: \`[{ "integrationId": "i:ai-generation", "toolNames": ["AI_GENERATE_OBJECT"] }]\`)
+5. **Always use try/catch** - Return safe defaults for all properties on error (example: \`return { poem: '', error: String(error) }\`)
+6. **Test incrementally** - Use stopAfter to test each updated step (example: \`stopAfter: 'poem-generation-step'\`)
 
-## Code Step Execute API
+## Step Execute API
 
 \`\`\`javascript
 export default async function(input, ctx) {
-  // input: Already has @refs resolved - access fields directly
-  const cityName = input.cityName;
+  // input: Object matching step inputSchema
+  // ctx.env: Object to access integration tools
   
-  // ALWAYS wrap tool calls in try/catch
+  const poem = input.poem;
+  
   try {
-    const toolResult = await ctx.env['i:workspace-management'].AI_GENERATE_OBJECT({
-      model: 'anthropic:claude-sonnet-4-5',
-      messages: [{ role: 'user', content: 'Generate poem' }],
-      schema: { type: 'object', properties: { poem: { type: 'string' } } },
-      temperature: 0.7
-    });
-    
-    // CRITICAL: Return ALL properties from outputSchema
-    return { 
-      poem: toolResult.object?.poem || '',
-      city: cityName 
-    };
+    const result = await ctx.env['i:ai-generation'].AI_GENERATE_OBJECT({
   } catch (error) {
     // On error, return ALL outputSchema properties with safe defaults
     return { 
       poem: '', 
-      city: cityName,
       error: String(error)
     };
   }
@@ -240,30 +238,12 @@ export default async function(input, ctx) {
 
 1. **Use correct function signature** - \`async function(input, ctx)\` with input as first parameter
 2. **CRITICAL: Return ALL outputSchema properties** - Every property in outputSchema must be in the return statement
-3. **Match schemas** - Each step's outputSchema should match next step's inputSchema (or use @refs)
-4. **Update @refs in step.input** - Use \`@stepId.fieldName\` or \`@input.fieldName\` format
-5. **Update dependencies** - Add \`{ integrationId }\` to dependencies array if using ctx.env
+3. **Match schemas** - Each step's outputSchema should match next step's inputSchema (or use @refs) - this is important for the workflow to be able to execute
+4. **Update @refs in step.input** - Use \`@stepId.fieldName\` format. This is the input that will be passed to the step.
+5. **Update dependencies** - Add \`{ integrationId, toolNames }\` to dependencies array if using ctx.env
 6. **Always use try/catch** - Return safe defaults for all properties on error
 7. **Test incrementally** - Use stopAfter to test each updated step
-
-## Common Patterns
-
-**Adding a new step:**
-- Define \`def.execute\` with \`async function(input, ctx)\` signature
-- Define \`def.inputSchema\` and \`def.outputSchema\`
-- Set \`input\` field with @refs to previous step: \`{ "field": "@prevStepId.fieldName" }\`
-- Add dependencies if calling tools: \`[{ "integrationId": "i:workspace-management" }]\`
-
-**Updating existing step:**
-- Keep function signature as \`(input, ctx)\`
-- Update @refs in step.input field (not in execute code)
-- Update dependencies array if adding new tool calls
-
-**HTTP Requests:**
-- \`fetch\` is NOT available in this environment
-- Use the \`i:http\` integration with the \`HTTP_FETCH\` tool
-- Example: \`await ctx.env['i:http'].HTTP_FETCH({ url: '...', method: 'GET' })\`
-- Remember to add \`{ integrationId: 'i:http' }\` to dependencies`;
+`;
 
 export const WORKFLOW_SEARCH_PROMPT = `Search workflows in the workspace. 
 
@@ -303,8 +283,8 @@ The Resources 2.0 URI of the workflow to execute (e.g., rsc://workflow/my-workfl
 ### input
 The input data passed to the workflow. This data:
 - Will be validated against the workflow's defined input schema
-- Is accessible to steps via @refs: \`@input.fieldName\` in step.input fields
-- Becomes the input to the first step (or is used by steps that reference it with @refs)
+- Is accessible to steps via @refs: \`@stepId.fieldName\` in step.input fields
+- Becomes the input to the first step of the workflow
 
 ### stopAfter (Optional)
 The name of the step where execution should halt. When specified:

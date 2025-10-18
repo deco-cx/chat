@@ -8,6 +8,8 @@ export interface ToolMention {
   tool_id: string;
   tool_name: string;
   integration_id: string;
+  input_schema?: Record<string, unknown>;
+  output_schema?: Record<string, unknown>;
 }
 
 export interface ResourceMention {
@@ -64,10 +66,33 @@ export function parseMentions(content: string): ParsedMention[] {
           spanHtml,
           "data-integration-id",
         );
+        const input_schema_str = extractAttribute(
+          spanHtml,
+          "data-input-schema",
+        );
+        const output_schema_str = extractAttribute(
+          spanHtml,
+          "data-output-schema",
+        );
 
         if (!tool_id || !tool_name || !integration_id) {
           console.warn("Tool mention missing required attributes:", spanHtml);
           continue;
+        }
+
+        // Parse JSON schemas if present
+        let input_schema: Record<string, unknown> | undefined;
+        let output_schema: Record<string, unknown> | undefined;
+
+        try {
+          if (input_schema_str) {
+            input_schema = JSON.parse(input_schema_str);
+          }
+          if (output_schema_str) {
+            output_schema = JSON.parse(output_schema_str);
+          }
+        } catch (error) {
+          console.warn("Failed to parse tool schemas:", error);
         }
 
         mentions.push({
@@ -75,6 +100,8 @@ export function parseMentions(content: string): ParsedMention[] {
           tool_id,
           tool_name,
           integration_id,
+          input_schema,
+          output_schema,
         });
       } else if (mentionType === "resource") {
         const integration_id = extractAttribute(
@@ -114,7 +141,25 @@ export function parseMentions(content: string): ParsedMention[] {
  */
 export function serializeMention(mention: ParsedMention): string {
   if (mention.type === "tool") {
-    return `<span data-type="mention" data-mention-type="tool" data-tool-id="${mention.tool_id}" data-tool-name="${mention.tool_name}" data-integration-id="${mention.integration_id}">@${mention.tool_name}</span>`;
+    const attrs: string[] = [
+      'data-type="mention"',
+      'data-mention-type="tool"',
+      `data-tool-id="${mention.tool_id}"`,
+      `data-tool-name="${mention.tool_name}"`,
+      `data-integration-id="${mention.integration_id}"`,
+    ];
+
+    // Add schemas as JSON strings if present
+    if (mention.input_schema) {
+      attrs.push(`data-input-schema='${JSON.stringify(mention.input_schema)}'`);
+    }
+    if (mention.output_schema) {
+      attrs.push(
+        `data-output-schema='${JSON.stringify(mention.output_schema)}'`,
+      );
+    }
+
+    return `<span ${attrs.join(" ")}>@${mention.tool_name}</span>`;
   } else {
     // For resources, we use the resource name or a truncated URI for display
     const displayName =

@@ -69,6 +69,12 @@ export function createUnifiedMentions(options: UnifiedMentionsOptions) {
         attrs.integrationId = item.tool.integration.id;
         attrs.integrationName = item.tool.integration.name;
         attrs.integrationIcon = item.tool.integration.icon || "";
+        if (item.tool.inputSchema) {
+          attrs.inputSchema = JSON.stringify(item.tool.inputSchema);
+        }
+        if (item.tool.outputSchema) {
+          attrs.outputSchema = JSON.stringify(item.tool.outputSchema);
+        }
       } else if (item.type === "resource" && item.resource) {
         attrs.mentionType = "resource";
         attrs.resourceName = item.resource.name;
@@ -333,6 +339,8 @@ export function createUnifiedMentions(options: UnifiedMentionsOptions) {
         // Tool attributes
         toolId: { default: "" },
         toolName: { default: "" },
+        inputSchema: { default: "" },
+        outputSchema: { default: "" },
         // Resource attributes
         resourceName: { default: "" },
         resourceUri: { default: "" },
@@ -365,6 +373,8 @@ export function createUnifiedMentions(options: UnifiedMentionsOptions) {
                 integrationName: tool?.integration.name,
                 integrationIcon: tool?.integration.icon,
                 label: tool?.name || node.textContent?.replace("@", ""),
+                inputSchema: node.getAttribute("data-input-schema") || "",
+                outputSchema: node.getAttribute("data-output-schema") || "",
               };
             } else if (mentionType === "resource") {
               return {
@@ -392,6 +402,12 @@ export function createUnifiedMentions(options: UnifiedMentionsOptions) {
         attrs["data-tool-id"] = node.attrs.toolId;
         attrs["data-tool-name"] = node.attrs.toolName;
         attrs["data-integration-id"] = node.attrs.integrationId;
+        if (node.attrs.inputSchema) {
+          attrs["data-input-schema"] = node.attrs.inputSchema;
+        }
+        if (node.attrs.outputSchema) {
+          attrs["data-output-schema"] = node.attrs.outputSchema;
+        }
       } else if (node.attrs.mentionType === "resource") {
         attrs["data-integration-id"] = node.attrs.integrationId;
         attrs["data-resource-name"] = node.attrs.resourceName;

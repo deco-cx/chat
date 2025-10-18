@@ -40,6 +40,8 @@ export function MentionNode({ node, IntegrationAvatar }: MentionNodeProps) {
       data-tool-id={node.attrs.toolId}
       data-tool-name={node.attrs.toolName}
       data-integration-id={node.attrs.integrationId}
+      data-input-schema={node.attrs.inputSchema}
+      data-output-schema={node.attrs.outputSchema}
       data-resource-name={node.attrs.resourceName}
       data-resource-uri={node.attrs.resourceUri}
       data-resource-type={node.attrs.resourceType}

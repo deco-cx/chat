@@ -34,14 +34,14 @@ export const CodeStepDefinitionSchema = z.object({
           .string()
           .min(1)
           .describe(
-            "The integration ID (format: i:<uuid> or a:<uuid>) that this step depends on",
+            "<IMPORTANT>The integration ID (format: i:<uuid> or a:<uuid>) that this step depends on.</IMPORTANT>",
           ),
         toolNames: z
           .array(z.string().min(1))
           .min(1)
           .optional()
           .describe(
-            "List of tool names from this integration that will be used by this code step. If undefined, all tools from the integration are available.",
+            "<IMPORTANT>List of tool names from this integration that will be used by this code step. This is mandatory if the step uses tools.</IMPORTANT>",
           ),
       }),
     )

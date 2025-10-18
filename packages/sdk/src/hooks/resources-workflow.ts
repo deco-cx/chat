@@ -32,6 +32,9 @@ const RESOURCE_WORKFLOW = {
 // Workflow execution tools
 const WORKFLOW_TOOLS = {
   START: "DECO_WORKFLOW_START" as const,
+  RUN_STEP: "DECO_WORKFLOW_RUN_STEP" as const,
+  CREATE_STEP: "DECO_WORKFLOW_CREATE_STEP" as const,
+  EDIT_STEP: "DECO_WORKFLOW_EDIT_STEP" as const,
 };
 
 // Helper functions
@@ -129,6 +132,11 @@ export interface WorkflowStartParamsV2 {
   state?: Record<string, unknown>;
 }
 
+export interface WorkflowRunStepParams {
+  stepName: string;
+  input: Record<string, unknown>;
+}
+
 export function startWorkflow(
   locator: ProjectLocator,
   params: WorkflowStartParamsV2,
@@ -140,6 +148,16 @@ export function startWorkflow(
   return client[WORKFLOW_TOOLS.START](params as any, { signal });
 }
 
+export function runStep(
+  locator: ProjectLocator,
+  params: WorkflowRunStepParams,
+  signal?: AbortSignal,
+) {
+  // deno-lint-ignore no-explicit-any
+  const client = workspaceResourceClient(locator) as any;
+  // deno-lint-ignore no-explicit-any
+  return client[WORKFLOW_TOOLS.RUN_STEP](params as any, { signal });
+}
 export const useWorkflow = (workflowUri: string) => {
   const { locator } = useSDK();
   const queryClient = useQueryClient();
@@ -150,6 +168,7 @@ export const useWorkflow = (workflowUri: string) => {
     retry: (failureCount, error) =>
       error instanceof InternalServerError && failureCount < 2,
     staleTime: 5 * 60 * 1000,
+    enabled: Boolean(workflowUri),
   });
 
   // Listen for resource updates and auto-invalidate

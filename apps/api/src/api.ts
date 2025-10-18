@@ -657,9 +657,18 @@ const createContextBasedTools = (ctx: Context) => {
         async () => await resourcesClient.DECO_RESOURCE_WORKFLOW_READ({ uri }),
       )) as WorkflowBindingImplOptions["resourceWorkflowRead"];
 
+  const resourceWorkflowUpdate: WorkflowBindingImplOptions["resourceWorkflowUpdate"] =
+    ((uri, data) =>
+      State.run(
+        appCtx,
+        async () =>
+          await resourcesClient.DECO_RESOURCE_WORKFLOW_UPDATE({ uri, data }),
+      )) as WorkflowBindingImplOptions["resourceWorkflowUpdate"];
+
   // Create workflow execution tools using createWorkflowBindingImpl
   const workflowBinding = createWorkflowBindingImpl({
     resourceWorkflowRead,
+    resourceWorkflowUpdate,
   });
 
   // Create Views 2.0 implementation for workflow views
