@@ -1,57 +1,92 @@
 ---
-title: Default Project Structure
-description: Understand how a Deco App is organized with server and view components
+title: Project Structure
+description: Understand the full-stack architecture of deco applications
 icon: Folder
 ---
 
 import Callout from "../../components/ui/Callout.astro";
 
+deco applications are organized as **full-stack TypeScript monorepos**. Your backend (MCP server) and frontend (React app) live in the same codebase, share types, and deploy together—no integration code required.
+
+<Callout type="info">
+  **Key advantage**: Changes to backend tools automatically flow to your frontend through typed RPC. No REST APIs, no OpenAPI specs, no integration layer—just TypeScript.
+</Callout>
+
+## Directory Structure
+
 ```
-my-mcp-project/
+my-ai-app/
 ├── package.json          # Root workspace scripts (dev, gen, deploy)
-├── tsconfig.json         # TypeScript configuration
-├── server/               # MCP Server (Cloudflare Worker)
-│   ├── main.ts          # Server entry point - imports tools/workflows/views
-│   ├── tools/           # Tool definitions organized by domain
+├── tsconfig.json         # Shared TypeScript configuration
+│
+├── server/               # Backend: MCP Server (Cloudflare Worker)
+│   ├── main.ts          # Server entry point
+│   ├── deco.gen.ts      # Auto-generated types (never edit)
+│   │
+│   ├── tools/           # Tool definitions by domain
 │   │   ├── index.ts     # Central export for all tools
-│   │   ├── todos.ts     # Todo-related tools
-│   │   └── user.ts      # User-related tools
-│   ├── workflows/       # Workflow definitions organized by domain
+│   │   ├── todos.ts     # Example: Todo CRUD tools
+│   │   └── user.ts      # Example: User management tools
+│   │
+│   ├── workflows/       # Workflow orchestrations
 │   │   └── index.ts     # Central export for all workflows
-│   ├── views.ts         # View configurations
-│   ├── schema.ts        # Database schema (Drizzle ORM)
+│   │
+│   ├── schema.ts        # Database schema (Drizzle ORM + SQLite)
 │   ├── db.ts            # Database connection helper
 │   ├── drizzle.config.ts # Drizzle configuration
-│   ├── deco.gen.ts      # Generated types for integrations
-│   ├── drizzle/         # Migration files
-│   └── package.json     # Server dependencies
-└── view/                # React App (Vite + TanStack Router)
+│   ├── drizzle/         # Database migration files
+│   └── wrangler.toml    # Cloudflare Workers config
+│
+└── view/                # Frontend: React App (Vite + TanStack Router)
     ├── src/
-    │   ├── main.tsx     # App entry point with router setup
-    │   ├── routes/      # Page components
-    │   │   └── home.tsx # Homepage route
+    │   ├── main.tsx     # App entry point with router
+    │   │
+    │   ├── routes/      # Page components (TanStack Router)
+    │   │   └── home.tsx # Example: Homepage route
+    │   │
     │   ├── components/  # Reusable UI components
-    │   │   ├── ui/      # shadcn/ui components
-    │   │   ├── error-boundary.tsx
-    │   │   ├── user-button.tsx
-    │   │   └── logged-provider.tsx
+    │   │   ├── ui/      # shadcn/ui design system
+    │   │   └── ...      # Custom components
+    │   │
     │   ├── hooks/       # Custom React hooks
-    │   │   └── useToolCalls.ts
-    │   ├── lib/         # RPC client and utilities
-    │   │   ├── rpc.ts   # Standard RPC client
-    │   │   ├── rpc-logged.ts # Logged RPC client
-    │   │   ├── hooks.ts # Utility hooks
+    │   │   └── useToolCalls.ts # Example: Tool call wrapper
+    │   │
+    │   ├── lib/         # Core utilities
+    │   │   ├── rpc.ts   # Typed RPC client (calls backend)
     │   │   └── utils.ts # General utilities
+    │   │
     │   └── styles.css   # Tailwind CSS styles
-    ├── public/          # Static assets
-    ├── vite.config.ts   # Vite configuration
+    │
+    ├── public/          # Static assets (images, fonts)
+    ├── vite.config.ts   # Vite bundler configuration
     ├── components.json  # shadcn/ui configuration
     └── package.json     # Frontend dependencies
 ```
 
-## Server (`/server`)
+<Callout type="success">
+  **One codebase, one deployment**: `npm run deploy` bundles and deploys both backend and frontend together. No Vercel + Railway split, no CORS headaches, no version mismatches.
+</Callout>
 
-Your MCP server runs as a Cloudflare Worker and exposes tools and workflows.
+## The Full-Stack Flow
+
+Here's how the pieces connect:
+
+1. **Define a tool** in `server/tools/` (e.g., `SEND_EMAIL`)
+2. **Run `npm run gen:self`** to regenerate `deco.gen.ts` with types
+3. **Import `client` in your React component** and call `client.tools.SEND_EMAIL(...)`
+4. **TypeScript enforces correctness** at compile time—no runtime surprises
+
+This eliminates the traditional backend/frontend split. Your UI and agent logic share the same tools, the same database, the same auth—everything is unified.
+
+## Backend: Server (`/server`)
+
+Your backend is a **Cloudflare Worker** that serves three purposes:
+
+1. **MCP Server** – Exposes tools/workflows to AI agents at `/mcp`
+2. **RPC Endpoint** – Lets your React UI call tools/workflows via typed RPC
+3. **Static Asset Host** – Serves your built React app at `/`
+
+All three share the same runtime, the same environment, the same context.
 
 ### `main.ts` - Core Server Logic
 
@@ -140,7 +175,7 @@ export { userTools } from "./user.ts";
 
 #### `tools/todos.ts` - Todo Domain Tools
 ```typescript
-import { createTool } from "@deco/workers-runtime/mastra";
+import { createTool } from "@deco/workers-runtime";
 
 export const createListTodosTool = (env: Env) =>
   createTool({
@@ -192,7 +227,7 @@ export const workflows = [
 When you add workflows, create domain files like `workflows/todos.ts`:
 
 ```typescript
-import { createWorkflow, createStepFromTool } from "@deco/workers-runtime/mastra";
+import { createWorkflow, createStepFromTool } from "@deco/workers-runtime";
 
 const createMyWorkflow = (env: Env) => {
   const step = createStepFromTool(createMyTool(env));
@@ -290,37 +325,38 @@ class_name = "Workflow"
   Integrations added via `deco add` automatically update this file.
 </Callout>
 
-## View (`/view`)
+## Frontend: View (`/view`)
 
-The view directory contains a React app built with Vite and TanStack Router.
+Your frontend is a **React application** built with modern tooling. Unlike traditional setups where you build REST APIs to connect frontend and backend, deco uses **typed RPC**—your React components call backend tools directly, with full type safety.
+
+<Callout type="success">
+  **No API layer**: Call backend tools from React like local functions. TypeScript ensures you pass correct arguments and handle correct return types—at compile time.
+</Callout>
 
 ### App Structure
 
 ```
 view/src/
 ├── main.tsx            # App entry point with router setup
-├── routes/             # Page components
+├── routes/             # Page components (TanStack Router)
 │   └── home.tsx       # Homepage route
 ├── components/         # Reusable UI components
-│   ├── ui/            # shadcn/ui components
-│   ├── error-boundary.tsx
-│   ├── user-button.tsx
-│   └── logged-provider.tsx
+│   ├── ui/            # shadcn/ui design system components
+│   └── ...            # Your custom components
 ├── hooks/             # Custom React hooks
-│   └── useToolCalls.ts
-├── lib/               # RPC client and utilities
-│   ├── rpc.ts         # Standard RPC client
-│   ├── rpc-logged.ts  # Logged RPC client
-│   ├── hooks.ts       # Utility hooks
+│   └── useToolCalls.ts # Example: Tool call wrapper
+├── lib/               # Core utilities
+│   ├── rpc.ts         # Typed RPC client (your main interface)
 │   └── utils.ts       # General utilities
 └── styles.css         # Tailwind CSS styles
 ```
 
-### RPC Client
+### Typed RPC Client
 
-The view provides multiple RPC clients for different use cases:
+The RPC client is your gateway to the backend. It's **auto-generated from your tools and workflows**, so changes to the backend automatically flow to the frontend.
 
 #### Standard RPC Client
+
 ```typescript
 // view/src/lib/rpc.ts
 import { createClient } from "@deco/workers-runtime/client";
@@ -330,8 +366,36 @@ type SelfMCP = Env["SELF"];
 export const client = createClient<SelfMCP>();
 ```
 
-#### Logged RPC Client
-For debugging and monitoring tool calls:
+#### How It Works
+
+1. **Backend defines a tool** (e.g., `SEND_EMAIL` in `server/tools/`)
+2. **Run `npm run gen:self`** to regenerate types
+3. **Frontend gets typed method** (e.g., `client.tools.SEND_EMAIL(...)`)
+
+Example usage:
+
+```typescript
+import { client } from "../lib/rpc";
+
+// TypeScript knows the exact input/output types
+const result = await client.tools.SEND_EMAIL({
+  to: "user@example.com",  // ✅ Type-checked
+  subject: "Welcome!",      // ✅ Autocomplete works
+  body: "Thanks for signing up.",
+});
+
+// result.success is typed as boolean
+console.log(result.success);
+```
+
+<Callout type="info">
+  **Behind the scenes**: The RPC client makes HTTP requests to your Cloudflare Worker, which routes them to the appropriate tool/workflow. But from your perspective, it's just a function call.
+</Callout>
+
+#### Logged RPC Client (Debugging)
+
+For debugging, use the logged client that prints requests/responses:
+
 ```typescript
 // view/src/lib/rpc-logged.ts
 import { createLoggedClient } from "@deco/workers-runtime/client";
@@ -340,6 +404,8 @@ import type { Env } from "../../server/deco.gen.ts";
 type SelfMCP = Env["SELF"];
 export const loggedClient = createLoggedClient<SelfMCP>();
 ```
+
+Switch to `loggedClient` during development to see network calls in the console.
 
 ### Route Components
 

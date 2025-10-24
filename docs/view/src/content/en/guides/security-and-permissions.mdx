@@ -1,0 +1,471 @@
+---
+title: Security & Permissions
+description: Understanding authentication, authorization, and secure app development
+icon: Shield
+---
+
+import Callout from "../../../components/ui/Callout.astro";
+
+Security in deco is built around **OAuth-based authentication**, **role-based access control**, and **isolated app bindings**. Every tool, workflow, and view can require specific permissions, and users explicitly authorize apps to access their data.
+
+<Callout type="success">
+  **Security by design**: Apps never see API keys or credentials. They request permissions through bindings, and users connect their own authenticated services during installation.
+</Callout>
+
+## Authentication Flow
+
+### User Authentication
+
+All authenticated requests in deco use **OAuth 2.0**:
+
+1. User clicks "Sign in" in your app
+2. Redirected to `/oauth/start` with return URL
+3. User authenticates with their deco account
+4. OAuth token is issued with workspace scope
+5. User is redirected back to your app
+
+```tsx
+// view/src/hooks/useAuth.ts
+import { useEffect, useState } from "react";
+
+export function useAuth() {
+  const [user, setUser] = useState(null);
+
+  const login = () => {
+    const returnUrl = encodeURIComponent(window.location.href);
+    window.location.href = `/oauth/start?returnUrl=${returnUrl}`;
+  };
+
+  const logout = () => {
+    // Clear session
+    fetch("/oauth/logout", { method: "POST" });
+    setUser(null);
+  };
+
+  useEffect(() => {
+    // Check if user is authenticated
+    fetch("/api/me")
+      .then((res) => res.json())
+      .then(setUser)
+      .catch(() => setUser(null));
+  }, []);
+
+  return { user, login, logout };
+}
+```
+
+<Callout type="info">
+  **Required for bindings**: If your app uses bindings (AI Gateway, Database, external integrations), authentication is mandatory. The runtime needs to know which user's connected services to use.
+</Callout>
+
+### API Key Authentication
+
+For programmatic access, generate API keys:
+
+1. Go to your workspace settings
+2. Navigate to **API Keys**
+3. Click **Create API Key**
+4. Select permissions (tools the key can call)
+5. Copy the key (shown only once)
+
+Use the API key in requests:
+
+```bash
+curl https://your-app.deco.page/mcp/tools/call/SEND_EMAIL \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"to": "user@example.com", "subject": "Hello", "body": "Test"}'
+```
+
+<Callout type="warning">
+  **API keys are powerful**: They grant programmatic access to tools. Treat them like passwords—never commit them to git or share them publicly.
+</Callout>
+
+## App Bindings & Permissions
+
+Bindings allow your app to declare dependencies on other services **without managing credentials**.
+
+### Declaring Bindings
+
+In `wrangler.toml`:
+
+```toml
+[deco.bindings]
+  # Require AI capabilities
+  [[deco.bindings.ai_gateway]]
+    binding = "AI"
+    scopes = ["AI_GENERATE", "AI_GENERATE_OBJECT"]
+
+  # Require database access
+  [[deco.bindings.deco_database]]
+    binding = "DATABASE"
+    scopes = ["DATABASE_RUN_SQL", "DATABASE_PREPARE"]
+
+  # Require Gmail integration
+  [[deco.bindings.gmail]]
+    binding = "GMAIL"
+    scopes = ["GMAIL_SEND_EMAIL", "GMAIL_LIST_THREADS"]
+```
+
+### Installation Flow
+
+When a user installs your app:
+
+1. **Permission Request**: The system shows required bindings
+   - "This app needs access to: AI Gateway, Database, Gmail"
+2. **Service Selection**: User selects which configured service to use
+   - "Which AI Gateway do you want to use?"
+   - "Which Gmail account should this app use?"
+3. **Authorization**: User grants permissions
+   - OAuth flow for external services
+   - Scope validation for internal services
+4. **Token Issuance**: App receives a scoped token
+   - Token includes workspace and allowed operations
+   - Token is passed in requests via `Authorization` header
+
+<Callout type="success">
+  **Zero-credential management**: Your app never sees API keys, OAuth tokens, or database credentials. The deco runtime handles token exchange and scope validation.
+</Callout>
+
+### Using Bindings in Code
+
+Access bindings through the `env` parameter:
+
+```typescript
+// server/tools/email.ts
+import { createTool } from "@deco/workers-runtime";
+import { z } from "zod";
+import type { Env } from "../main.ts";
+
+export const createSendEmailTool = (env: Env) =>
+  createTool({
+    id: "SEND_EMAIL",
+    description: "Send an email via Gmail",
+    inputSchema: z.object({
+      to: z.string().email(),
+      subject: z.string(),
+      body: z.string(),
+    }),
+    outputSchema: z.object({ success: z.boolean() }),
+    execute: async ({ context }) => {
+      // ✅ env.GMAIL is typed and authenticated
+      const result = await env.GMAIL.sendEmail({
+        to: context.to,
+        subject: context.subject,
+        body: context.body,
+      });
+      return { success: result.sent };
+    },
+  });
+```
+
+## Role-Based Access Control (RBAC)
+
+### Workspace Roles
+
+Every workspace has three default roles:
+
+| Role | Permissions | Use Case |
+|------|-------------|----------|
+| **Owner** | Full access to workspace | Workspace creator |
+| **Admin** | Manage users, apps, settings | Team administrators |
+| **Member** | Use apps, view data | Regular team members |
+
+### Tool-Level Permissions
+
+Restrict tools to specific roles:
+
+```typescript
+export const createDeleteCustomerTool = (env: Env) =>
+  createTool({
+    id: "DELETE_CUSTOMER",
+    description: "Delete a customer (admin only)",
+    requiredRoles: ["owner", "admin"], // ✅ Only owners and admins
+    inputSchema: z.object({
+      customerId: z.string(),
+    }),
+    outputSchema: z.object({ success: z.boolean() }),
+    execute: async ({ context }) => {
+      // This code only runs if user has owner or admin role
+      await env.DATABASE.query(
+        "DELETE FROM customers WHERE id = ?",
+        [context.customerId]
+      );
+      return { success: true };
+    },
+  });
+```
+
+### Custom Roles
+
+Create custom roles for fine-grained control:
+
+```typescript
+// In your workspace settings
+const customRole = {
+  name: "Customer Support",
+  permissions: [
+    "CUSTOMER_LIST",
+    "CUSTOMER_GET",
+    "CUSTOMER_UPDATE",
+    // ❌ No CUSTOMER_DELETE permission
+  ],
+};
+```
+
+Then assign users to the role via the UI or API.
+
+## Security Best Practices
+
+### 1. Validate All Inputs
+
+Use Zod schemas to validate and sanitize inputs:
+
+```typescript
+const createSearchTool = (env: Env) =>
+  createTool({
+    id: "SEARCH",
+    inputSchema: z.object({
+      query: z.string().min(1).max(500), // ✅ Length limits
+      page: z.number().int().min(1).max(100), // ✅ Range validation
+      filters: z.object({
+        status: z.enum(["active", "inactive"]), // ✅ Enum validation
+      }).optional(),
+    }),
+    execute: async ({ context }) => {
+      // Input is guaranteed valid
+    },
+  });
+```
+
+<Callout type="warning">
+  **SQL Injection**: Never concatenate user input into SQL queries. Use parameterized queries or an ORM like Drizzle.
+</Callout>
+
+```typescript
+// ❌ Vulnerable to SQL injection
+const query = `SELECT * FROM users WHERE name = '${context.name}'`;
+
+// ✅ Safe with parameterized query
+const query = await db
+  .prepare("SELECT * FROM users WHERE name = ?")
+  .bind(context.name)
+  .first();
+```
+
+### 2. Principle of Least Privilege
+
+Only request the minimum scopes needed:
+
+```toml
+# ❌ Too broad
+[[deco.bindings.gmail]]
+  binding = "GMAIL"
+  scopes = ["*"]  # All permissions!
+
+# ✅ Specific scopes
+[[deco.bindings.gmail]]
+  binding = "GMAIL"
+  scopes = ["GMAIL_SEND_EMAIL"]  # Only sending
+```
+
+### 3. Audit Logging
+
+Log sensitive operations for compliance:
+
+```typescript
+const createDeleteTool = (env: Env) =>
+  createTool({
+    id: "DELETE_CUSTOMER",
+    execute: async ({ context, user }) => {
+      // Perform deletion
+      await env.DATABASE.query(
+        "DELETE FROM customers WHERE id = ?",
+        [context.customerId]
+      );
+
+      // ✅ Log the action
+      await env.DATABASE.query(
+        "INSERT INTO audit_log (user_id, action, resource_id, timestamp) VALUES (?, ?, ?, ?)",
+        [user.id, "DELETE_CUSTOMER", context.customerId, new Date().toISOString()]
+      );
+
+      return { success: true };
+    },
+  });
+```
+
+### 4. Rate Limiting
+
+Prevent abuse with rate limits:
+
+```typescript
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(10, "60 s"), // 10 requests per minute
+});
+
+const createExpensiveTool = (env: Env) =>
+  createTool({
+    id: "AI_ANALYSIS",
+    execute: async ({ context, user }) => {
+      // ✅ Check rate limit
+      const { success } = await ratelimit.limit(user.id);
+      if (!success) {
+        throw new Error("Rate limit exceeded. Try again later.");
+      }
+
+      // Proceed with expensive operation
+      const result = await env.AI.generate({...});
+      return result;
+    },
+  });
+```
+
+### 5. Secure Secrets Management
+
+Never hardcode secrets in your code:
+
+```typescript
+// ❌ Hardcoded secret
+const apiKey = "sk_live_abc123def456";
+
+// ✅ Use environment variables
+const apiKey = env.EXTERNAL_API_KEY;
+
+// ✅ Or use Cloudflare secrets (via wrangler)
+// wrangler secret put EXTERNAL_API_KEY
+```
+
+### 6. Data Isolation
+
+Ensure workspace isolation in all queries:
+
+```typescript
+const createListCustomersTool = (env: Env) =>
+  createTool({
+    id: "LIST_CUSTOMERS",
+    execute: async ({ context, workspace }) => {
+      // ✅ Always filter by workspace
+      const customers = await env.DATABASE.query(
+        "SELECT * FROM customers WHERE workspace = ?",
+        [workspace]
+      );
+      return { customers };
+    },
+  });
+```
+
+<Callout type="danger">
+  **Critical**: Always include workspace ID in database queries to prevent data leakage between workspaces.
+</Callout>
+
+## Testing Security
+
+### Local Testing
+
+Test authentication flows locally:
+
+```bash
+npm run dev
+# Navigate to http://localhost:8787
+# Click "Sign in" → redirected to OAuth flow
+# Complete authentication
+# Verify app works with authenticated user
+```
+
+### Testing Different Roles
+
+1. Create test users with different roles in your workspace
+2. Switch between users to test permission boundaries
+3. Verify that restricted tools return 403 Forbidden for unauthorized roles
+
+### Security Checklist
+
+Before deploying:
+
+- [ ] All user inputs validated with Zod schemas
+- [ ] No SQL injection vulnerabilities (use parameterized queries)
+- [ ] Minimum required scopes in bindings
+- [ ] Authentication required for sensitive operations
+- [ ] Workspace isolation in all database queries
+- [ ] Rate limiting on expensive operations
+- [ ] Audit logging for sensitive actions
+- [ ] No secrets hardcoded in source code
+- [ ] Role-based access control tested
+- [ ] Error messages don't leak sensitive information
+
+## Common Security Pitfalls
+
+### 1. Trusting Client Input
+
+```typescript
+// ❌ Dangerous: Client controls query
+const createSearchTool = (env: Env) =>
+  createTool({
+    id: "SEARCH",
+    execute: async ({ context }) => {
+      // User could pass malicious SQL in context.query
+      const results = await env.DATABASE.query(context.query);
+      return results;
+    },
+  });
+
+// ✅ Safe: Validate and parameterize
+const createSearchTool = (env: Env) =>
+  createTool({
+    id: "SEARCH",
+    inputSchema: z.object({
+      term: z.string().max(100),
+    }),
+    execute: async ({ context }) => {
+      const results = await env.DATABASE
+        .prepare("SELECT * FROM items WHERE name LIKE ?")
+        .bind(`%${context.term}%`)
+        .all();
+      return results;
+    },
+  });
+```
+
+### 2. Returning Sensitive Data
+
+```typescript
+// ❌ Exposes password hashes
+const getUser = await db.query("SELECT * FROM users WHERE id = ?", [userId]);
+return getUser; // Contains password_hash, email, etc.
+
+// ✅ Return only necessary fields
+const getUser = await db.query(
+  "SELECT id, name, avatar FROM users WHERE id = ?",
+  [userId]
+);
+return getUser;
+```
+
+### 3. Missing Workspace Checks
+
+```typescript
+// ❌ Any authenticated user can access any customer
+const customer = await db.query(
+  "SELECT * FROM customers WHERE id = ?",
+  [customerId]
+);
+
+// ✅ Verify customer belongs to user's workspace
+const customer = await db.query(
+  "SELECT * FROM customers WHERE id = ? AND workspace = ?",
+  [customerId, workspace]
+);
+```
+
+## Next Steps
+
+- **[Creating Tools](/en/guides/creating-tools)** – Build secure, validated tools
+- **[Building Workflows](/en/guides/building-workflows)** – Orchestrate operations safely
+- **[Integrations](/en/guides/integrations)** – Connect external services securely
+- **[Deployment](/en/guides/deployment)** – Deploy with production security settings
+

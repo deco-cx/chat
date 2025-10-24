@@ -1,20 +1,118 @@
 ---
 title: Integrations
-description: Learn how to connect external services and APIs in deco
+description: Connect external services through the Context Mesh
 icon: Link
 ---
 
-One of the most powerful aspects of deco is how easily you can connect to external services – this could be anything from a SaaS API to a database or file storage. Integrations allow your agent to do things like: send emails, query your company database, fetch documents from Google Drive, or incorporate knowledge from PDFs and websites.
+import Callout from "../../../components/ui/Callout.astro";
 
-## Connecting External APIs
+Integrations in deco are part of the **Context Mesh**—a governed layer that connects your tools, workflows, and UIs to external data sources, APIs, and models. Unlike traditional API integrations where each layer (backend, frontend, agents) requires separate configuration, Context Mesh provides **shared, governed access** to external services.
 
-Many common integrations are available out-of-the-box in deco's integration library (for example, Slack, Gmail, Notion, Stripe, etc.). These can be added via the deco UI (under the "Tools" or "Integrations" section). When you "Add Integration" and configure it (often OAuth or API keys), those integration's tools become available in your environment object `Env`. For instance, after adding Gmail and granting access, your Cloudflare Worker can call `env.GMAIL.sendEmail` as we saw earlier. The `deco.gen.ts` will have the types for `GMAIL.sendEmail` (and any other Gmail tools provided).
+<Callout type="success">
+  **Context Mesh advantage**: Add an integration once, use it everywhere—your tools, workflows, AI agents, and React UI all access the same Gmail, Slack, or Notion connection. No duplicate OAuth flows, no credential sprawl, built-in RBAC and audit trails.
+</Callout>
 
-If there isn't a built-in integration for what you need, you have two options:
+## What is the Context Mesh?
 
-- **Use HTTP directly in a custom tool**: Because Cloudflare Workers can fetch external URLs, you can write a tool that calls any REST API using `fetch`. You'd manually handle auth (store an API key as an environment variable or secret in `wrangler.toml`) and parse the response. This is straightforward for simple APIs.
+The Context Mesh is deco's **integration layer** that provides:
 
-- **Build a custom integration**: The deco platform allows publishing custom integrations that can be reused across tools, either for everyone to use or to the private team registry.
+- **Unified access**: Tools, workflows, agents, and UIs share the same connectors
+- **Built-in governance**: RBAC, audit trails, cost controls, and policy enforcement
+- **Typed interfaces**: Auto-generated TypeScript types for all integrations
+- **OAuth/API key management**: Secure credential storage and refresh logic
+- **Marketplace**: Install pre-built integrations with one click
+
+Think of it as your **API gateway** but with built-in governance and shared across your entire full-stack app.
+
+## How Integrations Work
+
+### 1. Add an Integration
+
+Install an integration from the marketplace or via CLI:
+
+```bash
+deco add
+```
+
+This opens an interactive prompt where you can browse and install integrations (Gmail, Slack, Notion, Stripe, etc.).
+
+### 2. Configure Credentials
+
+deco handles OAuth flows or prompts for API keys:
+- **OAuth**: Redirects to provider, stores tokens securely
+- **API keys**: Encrypted at rest, available at runtime
+
+### 3. Generate Types
+
+Run `npm run gen` to generate typed interfaces:
+
+```bash
+npm run gen
+```
+
+This updates `deco.gen.ts` with types for the integration.
+
+### 4. Use in Your Code
+
+Access the integration in tools, workflows, or directly from your UI:
+
+```typescript
+// In a tool (server/tools/email.ts)
+import { createTool } from "@deco/workers-runtime";
+
+export const createSendEmailTool = (env: Env) =>
+  createTool({
+    id: "SEND_EMAIL",
+    description: "Send an email via Gmail",
+    execute: async ({ context }) => {
+      // ✅ Gmail integration available in env
+      const response = await env.GMAIL.sendEmail({
+        to: context.to,
+        subject: context.subject,
+        body: context.body,
+      });
+      return { success: response.sent };
+    },
+  });
+```
+
+<Callout type="info">
+  **Behind the scenes**: deco injects integration clients into your `Env` object. They're fully typed, automatically authenticated, and share credentials across your full-stack app.
+</Callout>
+
+## Custom HTTP Integrations
+
+If there isn't a built-in integration, you can call any REST API directly:
+
+```typescript
+// server/tools/custom-api.ts
+import { createTool } from "@deco/workers-runtime";
+
+export const createCustomApiTool = (env: Env) =>
+  createTool({
+    id: "CALL_CUSTOM_API",
+    description: "Call a custom REST API",
+    execute: async ({ context }) => {
+      // ✅ Use fetch to call any API
+      const response = await fetch("https://api.example.com/endpoint", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${env.CUSTOM_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(context),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API call failed: ${response.statusText}`);
+      }
+
+      return await response.json();
+    },
+  });
+```
+
+Store API keys as environment variables in your workspace settings at [admin.decocms.com](https://admin.decocms.com).
 
 ## Built-in Integrations
 

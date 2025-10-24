@@ -1,0 +1,480 @@
+---
+title: Self-Hosting
+description: Deploy deco on your own infrastructure
+icon: Server
+---
+
+import Callout from "../../../components/ui/Callout.astro";
+
+deco is **fully open source** and designed to be self-hosted on your own infrastructure. This gives you complete control over your data, deployment, and costs—no vendor lock-in, no surprise bills.
+
+<Callout type="success">
+  **Zero lock-in**: deco runs on Cloudflare Workers, one of the most popular serverless platforms. Your code is portable, your data stays yours, and you can migrate or fork at any time.
+</Callout>
+
+## Why Self-Host?
+
+Self-hosting deco gives you:
+
+- **Complete data ownership**: Your data never leaves your infrastructure
+- **Cost control**: Pay only Cloudflare's infrastructure costs (often $0-5/month for small workloads)
+- **Custom compliance**: Meet strict security, privacy, or regulatory requirements
+- **No vendor lock-in**: Fork the codebase, customize as needed, deploy anywhere
+- **Private AI models**: Use your own LLM endpoints, keep prompts and responses internal
+- **Unlimited scaling**: Cloudflare's global edge scales automatically with your traffic
+
+## Architecture Overview
+
+deco applications are deployed as **Cloudflare Workers** with:
+
+- **Worker script**: Your MCP server (backend) and React app (frontend)
+- **Durable Objects**: For workflow execution state and long-running processes
+- **D1 (SQLite)**: Built-in database for each workspace
+- **R2 (Object Storage)**: For file uploads and static assets (optional)
+- **KV (Key-Value)**: For caching and session storage (optional)
+
+All of these services are part of Cloudflare's Workers platform and can be self-hosted with your Cloudflare account.
+
+## Prerequisites
+
+Before self-hosting, you'll need:
+
+1. **Cloudflare Account** ([sign up free](https://dash.cloudflare.com/sign-up))
+   - Workers Paid plan ($5/month) for production workloads
+   - Free plan works for development and small projects
+
+2. **Domain Name** (optional)
+   - Use `*.workers.dev` subdomain for free
+   - Or connect your own domain for custom branding
+
+3. **Node.js v22+** or **Bun v1.0+** ([download](https://nodejs.org) or [bun.sh](https://bun.sh))
+
+4. **deco CLI** installed globally:
+   ```bash
+   npm install -g deco-cli
+   # or with bun
+   bun install -g deco-cli
+   ```
+
+## Deployment Options
+
+### Option 1: Deploy with deco CLI (Recommended)
+
+The fastest way to self-host is using the deco CLI, which handles all Cloudflare configuration:
+
+```bash
+# 1. Log in to deco (for initial project setup)
+deco login
+
+# 2. Deploy to your Cloudflare account
+npm run deploy
+# or with bun
+bun run deploy
+```
+
+This will:
+- Build your frontend and backend
+- Create Cloudflare Workers, D1 database, Durable Objects
+- Deploy to `https://<your-app>.workers.dev`
+- Return your production URL
+
+<Callout type="info">
+  **First-time setup**: The CLI will prompt you to connect your Cloudflare account and select a workspace. After the first deployment, subsequent deploys are one command.
+</Callout>
+
+### Option 2: Manual Deployment with Wrangler
+
+For more control, deploy directly with Cloudflare's `wrangler` CLI:
+
+```bash
+# 1. Install wrangler
+npm install -g wrangler
+# or with bun
+bun install -g wrangler
+
+# 2. Authenticate with Cloudflare
+wrangler login
+
+# 3. Build the frontend
+cd view
+npm run build
+# or: bun run build
+
+# 4. Deploy the worker
+cd ../server
+wrangler deploy
+```
+
+This gives you full control over Cloudflare configuration via `wrangler.toml`.
+
+### Option 3: Deploy with GitHub Actions (CI/CD)
+
+Automate deployments on every push:
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to Cloudflare Workers
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Build frontend
+        run: npm run build --workspace=view
+      
+      - name: Deploy to Cloudflare
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: server
+```
+
+Add your Cloudflare API token to GitHub Secrets → `CLOUDFLARE_API_TOKEN`.
+
+## Configuration
+
+### Environment Variables
+
+deco applications use environment variables for configuration. Set these in your `wrangler.toml` or via the Cloudflare dashboard:
+
+```toml
+# server/wrangler.toml
+name = "my-ai-app"
+main = "main.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+DECO_APP_SLUG = "my-ai-app"
+DECO_WORKSPACE_ID = "workspace_abc123"
+OPENAI_API_KEY = "" # Add your LLM API keys
+
+[[durable_objects.bindings]]
+name = "WORKFLOW"
+class_name = "Workflow"
+script_name = "my-ai-app"
+
+[[d1_databases]]
+binding = "DECO_WORKSPACE_DB"
+database_name = "my-ai-app-db"
+database_id = "abc123"
+```
+
+### Custom Domains
+
+To use your own domain:
+
+1. Add domain to Cloudflare (free)
+2. Go to Workers & Pages → your worker → Settings → Triggers
+3. Add custom domain: `app.yourdomain.com`
+4. Cloudflare handles SSL certificates automatically
+
+Your app is now live at `https://app.yourdomain.com`.
+
+## Database Management
+
+### Migrations
+
+deco uses Drizzle ORM with Cloudflare D1 (SQLite). Run migrations:
+
+```bash
+# Generate migration
+cd server
+npm run db:generate
+# or: bun run db:generate
+
+# Apply migration
+npm run db:migrate
+# or: bun run db:migrate
+```
+
+Migrations are applied automatically on deployment.
+
+### Backups
+
+Cloudflare D1 provides automatic backups. To export manually:
+
+```bash
+wrangler d1 export <database-name> --output backup.sql
+```
+
+## Monitoring & Observability
+
+### Logs
+
+View real-time logs:
+
+```bash
+wrangler tail
+```
+
+Or view logs in the Cloudflare dashboard: Workers & Pages → your worker → Logs.
+
+### Analytics
+
+Cloudflare provides built-in analytics:
+- Request volume
+- Latency (p50, p95, p99)
+- Error rates
+- Geographic distribution
+
+Access via: Workers & Pages → your worker → Metrics.
+
+### Custom Telemetry
+
+deco includes OpenTelemetry support. Forward traces to your preferred backend:
+
+```typescript
+// server/main.ts
+import { withRuntime } from "@deco/workers-runtime";
+
+const runtime = withRuntime({
+  tools: [...],
+  workflows: [...],
+  telemetry: {
+    enabled: true,
+    serviceName: "my-ai-app",
+    endpoint: "https://your-otel-collector.com", // Optional
+  },
+});
+```
+
+## Security Best Practices
+
+### Secrets Management
+
+Store sensitive values as Cloudflare secrets (not in `wrangler.toml`):
+
+```bash
+# Add a secret
+wrangler secret put OPENAI_API_KEY
+
+# List secrets
+wrangler secret list
+```
+
+Secrets are encrypted and never exposed in logs.
+
+### Access Control
+
+Implement authentication and RBAC:
+
+```typescript
+// server/main.ts
+import { withRuntime } from "@deco/workers-runtime";
+
+const runtime = withRuntime({
+  auth: {
+    providers: ["google", "github"],
+    allowedDomains: ["yourdomain.com"], // Restrict signups
+  },
+  rbac: {
+    roles: ["admin", "user", "viewer"],
+  },
+  tools: [...],
+  workflows: [...],
+});
+```
+
+### Rate Limiting
+
+Cloudflare Workers includes built-in DDoS protection. Add custom rate limiting:
+
+```typescript
+// Use Cloudflare KV for rate limiting
+const rateLimiter = new Map<string, number>();
+
+export default {
+  async fetch(request: Request, env: Env) {
+    const ip = request.headers.get("CF-Connecting-IP");
+    const count = rateLimiter.get(ip) || 0;
+    
+    if (count > 100) {
+      return new Response("Rate limit exceeded", { status: 429 });
+    }
+    
+    rateLimiter.set(ip, count + 1);
+    // ... rest of your app
+  },
+};
+```
+
+## Cost Estimation
+
+Cloudflare Workers pricing (as of 2025):
+
+| Plan | Requests | CPU Time | D1 Reads | D1 Writes | Cost |
+|------|----------|----------|----------|-----------|------|
+| **Free** | 100K/day | 10ms/req | 5M/day | 100K/day | $0 |
+| **Paid** | Unlimited | 50ms/req | Unlimited | Unlimited | $5/month + usage |
+
+**Usage pricing** (Paid plan):
+- Requests: $0.50 per million
+- CPU time: $0.02 per million GB-seconds
+- D1 reads: $0.001 per million
+- D1 writes: $1.00 per million
+- Durable Objects: $0.15 per million requests
+
+**Example**: A small team app with 10K requests/day costs ~$5/month total.
+
+<Callout type="success">
+  **No surprises**: Cloudflare's pricing is transparent and scales linearly. Most deco apps run for $5-20/month even at production scale.
+</Callout>
+
+## Scaling Considerations
+
+Cloudflare Workers scale automatically, but consider:
+
+### Database Scaling
+
+- **D1 (SQLite)**: Great for <10GB datasets, ~100 writes/second
+- **Postgres**: Use [Neon](https://neon.tech) or [Supabase](https://supabase.com) for larger workloads
+- **Planetscale**: MySQL-compatible, unlimited scale
+
+### Storage Scaling
+
+- **R2 (Object Storage)**: Store large files, images, documents (S3-compatible)
+- **KV (Key-Value)**: Fast caching, session storage
+
+### Workflow Scaling
+
+- **Durable Objects**: Handle long-running workflows, up to 30 seconds per request
+- **Queue Workers**: For workflows that take >30 seconds, use Cloudflare Queues
+
+## Troubleshooting
+
+### Deployment Issues
+
+**Error: "Wrangler not authenticated"**
+```bash
+wrangler logout
+wrangler login
+```
+
+**Error: "D1 database not found"**
+```bash
+# Create the database first
+wrangler d1 create my-ai-app-db
+# Copy the database_id to wrangler.toml
+```
+
+**Error: "Durable Objects not enabled"**
+- Go to Cloudflare dashboard → Workers & Pages → your account → enable Durable Objects
+
+### Runtime Issues
+
+**Error: "Worker exceeded CPU time limit"**
+- Optimize database queries
+- Cache frequently accessed data
+- Move heavy computation to workflows (Durable Objects)
+
+**Error: "D1 database locked"**
+- D1 uses SQLite write locks; avoid concurrent writes to the same database
+- Use transactions for multi-step writes
+
+## Migration Guide
+
+### Migrating from Hosted deco
+
+To migrate from hosted deco (decocms.com) to self-hosted:
+
+1. **Export your data**:
+   ```bash
+   deco deconfig clone --branch main --path ./backup
+   ```
+
+2. **Set up self-hosted deployment** (follow steps above)
+
+3. **Import your data**:
+   ```bash
+   deco deconfig push --branch main --path ./backup
+   ```
+
+4. **Update integrations**: Re-configure OAuth apps to point to your self-hosted URL
+
+5. **Test thoroughly**: Run through key workflows before switching production traffic
+
+### Migrating from Other Platforms
+
+Migrating from Replit, Vercel, or other platforms:
+
+1. **Backend**: Port your tools and workflows to deco's `createTool` and `createWorkflow` APIs
+2. **Frontend**: Integrate your React app into `/view`, use typed RPC instead of REST APIs
+3. **Database**: Import data to Cloudflare D1 or connect an external database
+4. **Deployment**: Deploy as a single Cloudflare Worker
+
+## Support & Community
+
+Need help self-hosting? We're here:
+
+- **Documentation**: [docs.deco.page](https://docs.deco.page)
+- **GitHub**: [github.com/deco-cx/deco](https://github.com/deco-cx/deco)
+- **Discord**: [discord.gg/deco](https://discord.gg/deco)
+- **Email**: support@decocms.com
+
+## Advanced Topics
+
+<Callout type="info">
+  **Coming soon**: Detailed guides for multi-region deployment, custom Durable Objects, advanced RBAC, and enterprise federation.
+</Callout>
+
+### Multi-Region Deployment
+
+Deploy to specific Cloudflare regions for lower latency:
+
+```bash
+# Deploy to EU region
+wrangler deploy --region eu
+
+# Deploy to US region
+wrangler deploy --region us
+```
+
+### Custom Runtime
+
+Fork the deco runtime and customize:
+
+```bash
+git clone https://github.com/deco-cx/deco.git
+cd deco/packages/runtime
+# Make your changes
+npm run build
+npm link
+```
+
+Then use your custom runtime in your app:
+
+```json
+{
+  "dependencies": {
+    "@deco/workers-runtime": "file:../deco/packages/runtime"
+  }
+}
+```
+
+## Next Steps
+
+- **[Getting Started](/en/getting-started)** – Build your first deco app
+- **[Deployment](/en/guides/deployment)** – Deploy to production
+- **[CLI Commands](/en/guides/cli-commands)** – Master the deco CLI
+- **[Integrations](/en/guides/integrations)** – Connect external services
+
+---
+
+<Callout type="success">
+  **Ready to self-host?** Clone the [deco starter template](https://github.com/deco-cx/deco-starter), deploy to Cloudflare, and start building. Full control, zero lock-in.
+</Callout>
+

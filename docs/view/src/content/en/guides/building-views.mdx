@@ -1,14 +1,28 @@
 ---
 title: Building Views
-description: Learn how to build custom React frontends in deco
+description: Create custom React interfaces that share context with your backend
 icon: Globe
 ---
 
-If you want to provide a custom user interface for your agents (for example, a web dashboard or chat UI), deco's project structure supports a full **React + Tailwind** frontend that lives alongside the backend. Here's how the view layer works:
+import Callout from "../../../components/ui/Callout.astro";
+
+deco gives you a **full React frontend** that lives alongside your backend—same codebase, shared types, unified deployment. Unlike traditional setups where you build REST APIs to connect frontend and backend, deco uses **typed RPC**: your React components call backend tools directly, with full type safety.
+
+<Callout type="success">
+  **Key difference**: Your UI and agents share the same tools, the same database, the same context. No duplicate APIs, no integration hell, no CORS—just TypeScript.
+</Callout>
 
 ## Frontend Stack
 
-Deco's view is built with [React](https://react.dev/) (a popular UI library) and [Tailwind CSS](https://tailwindcss.com/) (a utility-first CSS framework for styling). The template uses Vite for bundling, and TanStack Router for routing (instead of React Router).
+The view layer is built with modern React tooling:
+
+- **[React 19](https://react.dev/)** – UI library with latest features (async components, server actions)
+- **[Vite](https://vitejs.dev/)** – Lightning-fast bundler with hot module reload
+- **[TanStack Router](https://tanstack.com/router)** – Type-safe routing (better than React Router)
+- **[Tailwind CSS](https://tailwindcss.com/)** – Utility-first styling
+- **[shadcn/ui](https://ui.shadcn.com/)** – Beautiful, accessible component library
+
+All tooling is pre-configured. Just start building your UI.
 
 ## Setting up the View
 
@@ -20,36 +34,162 @@ If you used a template with a view, the basics should already be configured:
 
 - State management: Not specifically included by deco by default, but since this is a React app, you can use React context or libraries like Zustand, etc., if needed. For simple apps, you might not need any global state beyond what React Query or the RPC calls provide.
 
-## RPC Calls from View to Server
+## Typed RPC: Frontend ↔ Backend
 
-The `src/lib/rpc.ts` file provides a client that is your gateway to call backend functions from the frontend. This is set up via the `@deco/workers-runtime/client` library and uses the types from your `deco.gen.ts`. In practice:
+The RPC client (`src/lib/rpc.ts`) is your gateway to the backend. It's **type-safe, auto-complete-enabled, and zero-boilerplate**—no REST endpoints to write, no OpenAPI specs to maintain.
 
-- To call a Tool from the UI, you do: `await client.TOOL_ID(input)`.
-- To call a Workflow, do: `await client.WORKFLOW_ID(input)`.
+### How It Works
 
-The client will make an HTTP request to your Worker's MCP endpoint under the hood, and return the JSON result as a promise. This is super convenient – no need to manually write fetch logic or API endpoints for your own tools. Just ensure your dev server is running (so the calls go through locally), or if deployed, the same client code will call the production endpoint.
+1. **Backend defines tools/workflows** in `server/tools/` and `server/workflows/`
+2. **Run `npm run gen:self`** to regenerate `deco.gen.ts` with types
+3. **Frontend imports `client`** and calls tools/workflows as methods
 
-For example, imagine you have a tool `HELLO_TOOL` as earlier. In a React component you might have:
+```typescript
+// view/src/lib/rpc.ts
+import { createClient } from "@deco/workers-runtime/client";
+import type { Env } from "../../server/deco.gen.ts";
+
+type SelfMCP = Env["SELF"];
+export const client = createClient<SelfMCP>();
+```
+
+### Calling Tools
 
 ```tsx
+// view/src/components/EmailButton.tsx
 import { client } from "../lib/rpc";
+import { Button } from "./ui/button";
+import { useState } from "react";
 
-function GreetingButton() {
-  const [message, setMessage] = useState("");
-  const sayHello = async () => {
-    const result = await client.HELLO_TOOL({ name: "Deco" });
-    setMessage(result.greeting);
+export function EmailButton() {
+  const [sending, setSending] = useState(false);
+
+  const sendEmail = async () => {
+    setSending(true);
+    try {
+      // ✅ Type-safe call: TypeScript knows input/output types
+      const result = await client.tools.SEND_EMAIL({
+        to: "user@example.com",
+        subject: "Hello!",
+        body: "Welcome to deco.",
+      });
+
+      if (result.success) {
+        alert("Email sent!");
+      }
+    } catch (error) {
+      alert("Failed to send email.");
+    } finally {
+      setSending(false);
+    }
   };
+
+  return (
+    <Button onClick={sendEmail} disabled={sending}>
+      {sending ? "Sending..." : "Send Email"}
+    </Button>
+  );
+}
+```
+
+<Callout type="info">
+  **Behind the scenes**: The RPC client makes HTTP requests to your Cloudflare Worker at `/mcp`. The Worker routes them to the appropriate tool/workflow. But from your perspective, it's just a function call.
+</Callout>
+
+### Calling Workflows
+
+Workflows run asynchronously in the background. Use `.start()` to begin execution, then `.waitForCompletion()` to poll for results:
+
+```tsx
+// view/src/components/CustomerRegistrationForm.tsx
+import { client } from "../lib/rpc";
+import { Button } from "./ui/button";
+import { useState } from "react";
+
+export function CustomerRegistrationForm() {
+  const [processing, setProcessing] = useState(false);
+  const [customerId, setCustomerId] = useState<number | null>(null);
+
+  const handleSubmit = async (data: {
+    name: string;
+    cpf: string;
+    cep: string;
+  }) => {
+    setProcessing(true);
+    try {
+      // ✅ Start workflow execution
+      const runId = await client.workflows.REGISTER_CUSTOMER.start(data);
+
+      // ✅ Wait for workflow to complete
+      const result = await client.workflows.REGISTER_CUSTOMER.waitForCompletion(runId);
+
+      setCustomerId(result.customerId);
+      alert(`Customer registered! ID: ${result.customerId}`);
+    } catch (error) {
+      alert("Registration failed.");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   return (
     <div>
-      <button onClick={sayHello}>Say Hello</button>
-      {message && <p>{message}</p>}
+      {/* Form fields here */}
+      <Button onClick={() => handleSubmit({...})} disabled={processing}>
+        {processing ? "Processing..." : "Register"}
+      </Button>
+      {customerId && <p>Success! Customer ID: {customerId}</p>}
     </div>
   );
 }
 ```
 
-Clicking the button will invoke the Cloudflare Worker's `HELLO_TOOL` and display the greeting. The RPC client handles routing the call to the correct endpoint.
+<Callout type="tip">
+  **Alternative**: For long-running workflows, use webhooks instead of polling. Set up a webhook endpoint to receive notifications when workflows complete.
+</Callout>
+
+### Error Handling
+
+Handle errors like any async function:
+
+```tsx
+try {
+  const result = await client.tools.SEND_EMAIL({...});
+  // Success path
+} catch (error) {
+  if (error instanceof Error) {
+    console.error("Tool call failed:", error.message);
+  }
+  // Error path
+}
+```
+
+### Type Safety
+
+TypeScript enforces correctness at compile time:
+
+```tsx
+// ✅ Correct: All required fields provided
+await client.tools.SEND_EMAIL({
+  to: "user@example.com",
+  subject: "Hello",
+  body: "Welcome",
+});
+
+// ❌ Error: Missing 'body' field
+await client.tools.SEND_EMAIL({
+  to: "user@example.com",
+  subject: "Hello",
+  // TypeScript error: Property 'body' is missing
+});
+
+// ❌ Error: Wrong type for 'to' field
+await client.tools.SEND_EMAIL({
+  to: 123,  // TypeScript error: Type 'number' is not assignable to type 'string'
+  subject: "Hello",
+  body: "Welcome",
+});
+```
 
 ## Routing and Navigation
 

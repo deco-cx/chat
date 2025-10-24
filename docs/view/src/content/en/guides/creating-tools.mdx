@@ -1,12 +1,62 @@
 ---
 title: Creating Tools
-description: Learn how to create tools in Deco
+description: Build tools that agents and UIs can call
 icon: Wrench
 ---
 
 import Callout from "../../../components/ui/Callout.astro";
 
-Tools are discrete functions that agents can call to perform specific actions like API calls, database queries, or computations. Each tool is essentially a function with a defined input and output.
+Tools are **atomic functions** that agents and UIs can call to perform specific actions—API calls, database queries, computations, or any business logic. In deco, tools are the foundation of your full-stack app: define them once in TypeScript, then use them from AI agents AND your React UI.
+
+<Callout type="success">
+  **Key advantage**: A tool defined in `server/tools/` is instantly available to both AI agents (via MCP) and your React UI (via typed RPC). No duplicate APIs, no integration code—just TypeScript.
+</Callout>
+
+## Creating Tools
+
+You can create tools in two ways:
+
+### 1. Through the UI (No-Code)
+
+Create tools directly in the [deco CMS](https://admin.decocms.com) interface using the **Tools Management** app:
+
+1. Every project comes with a native **SQLite database** accessible via the Database tab
+2. Ask the copilot to create a tool for you:
+   - Example: *"Create a tool that uses database run sql on the poems table and returns a list of poems with a limit passed in the input"*
+3. The copilot will:
+   - Read your database schema automatically
+   - Create the tool with proper SQL queries
+   - Handle validation and error cases
+4. If the tool fails, you can ask the copilot to fix it:
+   - Example: *"This tool is failing with this error: [paste error]. Fix it."*
+5. Test the tool directly in the interface by providing inputs and viewing outputs
+
+<Callout type="info">
+  **Database operations**: The copilot understands your database schema and can create tools that query, insert, update, or delete data. It will validate field types and constraints automatically.
+</Callout>
+
+#### Creating Views for Tools
+
+After creating a tool, you can create a **View** to display its data:
+
+1. Go to the **Views** tab
+2. Ask the copilot to create a view:
+   - Example: *"Create a new view. Use the list poems tool to display the poems and show a comparison chart of the most frequent themes."*
+3. The copilot will:
+   - Create a React-based UI
+   - Call your tool to fetch data
+   - Display it with charts, tables, or custom layouts
+4. Views can include:
+   - Data tables with sorting and filtering
+   - Charts and visualizations
+   - Forms for creating/editing data
+   - Custom styling and interactions
+
+<Callout type="success">
+  **Full CRUD apps**: Combine read tools with create/update/delete tools in a single view to build complete admin interfaces without writing code.
+</Callout>
+
+### 2. In Code (Full Control)
 
 ## Basic Tool Structure
 
@@ -138,34 +188,415 @@ const createCustomerInsertTool = (env: Env) =>
 
 ## Register Your Tools
 
-Add tools to your MCP server in `server/main.ts`:
+Add tools to your MCP server. By convention, tools are organized in `server/tools/` by domain:
+
+### Step 1: Organize Tools by Domain
 
 ```typescript
-import { withRuntime } from "@deco/workers-runtime";
+// server/tools/email.ts
+import { createTool } from "@deco/workers-runtime";
+import { z } from "zod";
+import type { Env } from "../main.ts";
 
-const { Workflow, ...runtime } = withRuntime<Env>({
-  tools: [
-    createCepSearchTool,
-    createSendEmailTool,
-    createCustomerInsertTool,
-  ],
-  workflows: [/* your workflows */],
+export const createSendEmailTool = (env: Env) =>
+  createTool({
+    id: "SEND_EMAIL",
+    description: "Send an email via Gmail integration",
+    inputSchema: z.object({
+      to: z.string().email(),
+      subject: z.string(),
+      body: z.string(),
+    }),
+    outputSchema: z.object({ success: z.boolean() }),
+    execute: async ({ context }) => {
+      const response = await env.GMAIL.sendEmail(context);
+      return { success: response.sent };
+    },
+  });
+
+export const emailTools = [createSendEmailTool];
+```
+
+### Step 2: Export from Central Index
+
+```typescript
+// server/tools/index.ts
+import { emailTools } from "./email.ts";
+import { customerTools } from "./customer.ts";
+
+export const tools = [
+  ...emailTools,
+  ...customerTools,
+];
+```
+
+### Step 3: Register in Runtime
+
+```typescript
+// server/main.ts
+import { withRuntime } from "@deco/workers-runtime";
+import { tools } from "./tools/index.ts";
+
+const runtime = withRuntime<Env>({
+  tools,  // ✅ All tools registered
+  workflows: [],
   fetch: fallbackToView("/"),
 });
 
-export { Workflow };
 export default runtime;
 ```
 
-## Test Your Tools
+<Callout type="info">
+  **Organization pattern**: Group related tools in separate files, export as arrays, then merge in `tools/index.ts`. This keeps your codebase maintainable as you add more tools.
+</Callout>
 
-1. Start your dev server: `npm run dev`
-2. Copy the preview URL
-3. Add as custom integration in deco CMS (URL + `/mcp`)
-4. Test tools in the interface
+## Using Tools in Your UI
+
+After defining and registering tools, use them in your React components:
+
+### Step 1: Generate Types
+
+```bash
+npm run gen:self
+```
+
+This updates `deco.gen.ts` with types for your tools.
+
+### Step 2: Call from React
+
+```tsx
+// view/src/components/EmailForm.tsx
+import { client } from "../lib/rpc";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { useState } from "react";
+
+export function EmailForm() {
+  const [to, setTo] = useState("");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const handleSend = async () => {
+    setSending(true);
+    try {
+      // ✅ Type-safe call to backend tool
+      const result = await client.tools.SEND_EMAIL({
+        to,
+        subject,
+        body,
+      });
+
+      if (result.success) {
+        alert("Email sent!");
+      }
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <Input 
+        placeholder="To" 
+        value={to} 
+        onChange={(e) => setTo(e.target.value)} 
+      />
+      <Input 
+        placeholder="Subject" 
+        value={subject} 
+        onChange={(e) => setSubject(e.target.value)} 
+      />
+      <textarea 
+        placeholder="Body" 
+        value={body} 
+        onChange={(e) => setBody(e.target.value)} 
+        className="w-full p-2 border rounded"
+      />
+      <Button onClick={handleSend} disabled={sending}>
+        {sending ? "Sending..." : "Send Email"}
+      </Button>
+    </div>
+  );
+}
+```
 
 <Callout type="success">
-  Tools appear automatically when you add the integration. No manual registration needed!
+  **Full-stack in action**: The same `SEND_EMAIL` tool is used by AI agents (via MCP) and your UI (via RPC). Define once, use everywhere.
+</Callout>
+
+## Creating Custom MCP Apps
+
+For more complex scenarios, you can create standalone MCP apps with your own tools:
+
+### Step 1: Create a New MCP Project
+
+```bash
+npm create deco@latest
+```
+
+This will:
+1. Prompt you to log in (opens browser)
+2. Ask for a project name (e.g., "cep-searcher")
+3. Let you select which workspace/team to use
+4. Ask if you want to initialize a git repository
+5. Optionally configure your IDE for MCP development
+
+### Step 2: Define Bindings (Dependencies)
+
+In `wrangler.toml`, declare dependencies your app needs:
+
+```toml
+[deco.bindings]
+  [[deco.bindings.ai_gateway]]
+    binding = "AI"
+    scopes = ["AI_GENERATE", "AI_GENERATE_OBJECT"]
+
+  [[deco.bindings.deco_database]]
+    binding = "DATABASE"
+    scopes = ["DATABASE_RUN_SQL"]
+```
+
+When users install your app, they'll be prompted to connect these dependencies.
+
+<Callout type="info">
+  **Bindings enable composability**: Your app can depend on other apps (Gmail, Slack, etc.) without managing API keys. Users connect their own accounts during installation.
+</Callout>
+
+### Step 3: Create Tools with AI
+
+Use your IDE's copilot to create tools:
+
+```
+Prompt: "Create a tool that searches for a CEP (Brazilian postal code) 
+using the Brasil API (brasilapi.com.br) and returns address details like 
+city, state, and street."
+```
+
+The copilot will:
+- Create the tool with proper schemas
+- Handle API calls and error cases
+- Use TypeScript types from your bindings
+
+### Step 4: Test Locally
+
+```bash
+npm run dev
+```
+
+This starts:
+- MCP server on `http://localhost:8787/mcp`
+- A tunnel with a public URL (e.g., `https://localhost-abc123.deco.host`)
+
+### Step 5: Test with deco CMS
+
+1. Go to [admin.decocms.com](https://admin.decocms.com)
+2. Navigate to **Apps** → **Create Custom App**
+3. Paste your tunnel URL + `/mcp`
+4. Test your tools in the interface
+5. The app will prompt you to connect required dependencies (AI Gateway, Database, etc.)
+
+### Step 6: Deploy to Production
+
+```bash
+npm run deploy
+```
+
+This:
+- Builds your app
+- Deploys to Cloudflare Workers
+- Creates a production URL
+- Registers the app in your workspace's private app store
+
+<Callout type="success">
+  **Private by default**: Deployed apps are only visible in your workspace's app store. You can publish them publicly later if desired.
+</Callout>
+
+### Step 7: Install and Use
+
+1. Go to **Apps** → **Store** in deco CMS
+2. Search for your app (e.g., "cep-searcher")
+3. Click **Connect**
+4. Provide required dependencies (AI Gateway, Database, etc.)
+5. Your tools are now available to agents, workflows, and views!
+
+## Test Your Tools
+
+### Option 1: Test in React UI
+
+1. Start dev server: `npm run dev`
+2. Open `http://localhost:8787`
+3. Use your components that call the tools
+
+### Option 2: Test with AI Agents
+
+1. Copy the preview URL from terminal
+2. Go to [admin.decocms.com](https://admin.decocms.com)
+3. Add as custom integration (URL + `/mcp`)
+4. Test tools in the AI chat interface
+
+<Callout type="info">
+  **Both paths use the same backend**. Whether called from your React UI or an AI agent, the tool executes the same code.
+</Callout>
+
+## Creating Custom Views in Code
+
+While you can create views through the UI, coding views in React gives you full control and access to any npm library.
+
+### Generate Type-Safe RPC Client
+
+Before creating views, generate types for your tools:
+
+```bash
+npm run dev  # Start the server
+# Copy the dev URL from terminal (e.g., https://localhost-abc123.deco.host)
+DECO_SELF_URL=https://localhost-abc123.deco.host/mcp npm run gen:self
+```
+
+This creates typed RPC interfaces in `view/src/rpc.ts`.
+
+### Create a React View
+
+```tsx
+// view/src/pages/index.tsx
+import { client } from "../lib/rpc";
+import { useState } from "react";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+
+export default function CepSearchPage() {
+  const [cep, setCep] = useState("");
+  const [result, setResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSearch = async () => {
+    setLoading(true);
+    try {
+      // ✅ Type-safe call to your tool
+      const data = await client.tools.SEARCH_CEP({ cep });
+      setResult(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="p-8 max-w-2xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">CEP Search</h1>
+      
+      <div className="flex gap-4 mb-6">
+        <Input
+          value={cep}
+          onChange={(e) => setCep(e.target.value)}
+          placeholder="Enter CEP (e.g., 01310-100)"
+        />
+        <Button onClick={handleSearch} disabled={loading}>
+          {loading ? "Searching..." : "Search"}
+        </Button>
+      </div>
+
+      {result && (
+        <div className="border rounded-lg p-6 space-y-2">
+          <p><strong>Street:</strong> {result.logradouro}</p>
+          <p><strong>Neighborhood:</strong> {result.bairro}</p>
+          <p><strong>City:</strong> {result.localidade}</p>
+          <p><strong>State:</strong> {result.uf}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Register View in Your MCP App
+
+```typescript
+// server/views.ts
+import { createView } from "@deco/workers-runtime";
+
+export const views = [
+  createView({
+    id: "cep-search",
+    title: "CEP Search",
+    description: "Search for Brazilian postal codes",
+    icon: "MapPin",
+    url: "/", // Points to your React app
+  }),
+];
+```
+
+```typescript
+// server/main.ts
+import { withRuntime } from "@deco/workers-runtime";
+import { views } from "./views.ts";
+
+const runtime = withRuntime<Env>({
+  tools: [...],
+  workflows: [...],
+  views, // ✅ Register views
+  fetch: fallbackToView("/"), // Serve React app
+});
+```
+
+<Callout type="success">
+  **Full-stack React app**: Your MCP server is also an HTTP server. Build complete web applications with React, Vite, and Tailwind CSS—all type-safe connected to your backend tools.
+</Callout>
+
+### Authentication for Views
+
+If your tools require authentication (use bindings), add login to your view:
+
+```tsx
+// view/src/App.tsx
+import { useAuth } from "./hooks/useAuth";
+import { Button } from "./components/ui/button";
+
+export function App() {
+  const { user, login, logout } = useAuth();
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Button onClick={login}>
+          Sign in to use this app
+        </Button>
+      </div>
+    );
+  }
+
+  return <CepSearchPage />;
+}
+```
+
+The OAuth flow happens automatically via the `/oauth/start` endpoint provided by the deco runtime.
+
+### Embedding in deco CMS
+
+Declare your view so it appears in the deco CMS sidebar:
+
+```typescript
+// server/views.ts
+export const views = [
+  createView({
+    id: "cep-search",
+    title: "CEP Search",
+    description: "Search for Brazilian postal codes",
+    icon: "MapPin",
+    url: "/",
+    // ✅ This makes it appear in the CMS sidebar
+    pinnable: true,
+  }),
+];
+```
+
+After deploying, users can:
+1. Install your app from the store
+2. Click the "Pin" button next to your view
+3. Access it from the sidebar
+4. Use it embedded in the CMS or open it in a new tab
+
+<Callout type="info">
+  **Views + Agents**: Views can have a chat panel on the right side. The AI agent has access to the same tools as your view, creating a powerful agentic UI pattern.
 </Callout>
 
 ## Best Practices

@@ -1,6 +1,6 @@
 ---
 title: Getting Started
-description: Create and deploy your first MCP server in minutes
+description: Build and deploy your first full-stack AI app in minutes
 icon: Play
 ---
 
@@ -8,67 +8,247 @@ import { StepGroup } from "../../components/ui/StepGroup";
 import { Step } from "../../components/ui/Step";
 import Callout from "../../components/ui/Callout.astro";
 
+This guide will walk you through creating your first full-stack AI application with deco. In under 10 minutes, you'll have a working app with tools, workflows, and a custom UI—all deployed to production.
+
 ## Prerequisites
 
-Before starting,  make sure you have:
+Before starting, make sure you have:
 
-- **Node.js** v22+ ([download here](https://nodejs.org))
+- **Node.js** v22+ ([download here](https://nodejs.org)) or **Bun** v1.0+ ([download here](https://bun.sh))
 - **Git** for version control
 - **Code editor** (we recommend [Cursor](https://cursor.com) for AI-powered development)
-- **Basic TypeScript knowledge** – The project is TypeScript-heavy, so familiarity with TS is important (if you’re new, see the official TypeScript docs for a primer).
+- **Basic TypeScript knowledge** – deco is TypeScript-first, so familiarity with TS is helpful
 
-## Creating a new App
+<Callout type="info">
+  New to TypeScript? Check out the [official TypeScript docs](https://www.typescriptlang.org/docs/) for a primer.
+</Callout>
+
+## Create Your First App
 
 <StepGroup>
-  <Step number={1} title="Init your app">
+  <Step number={1} title="Initialize your project">
     ```bash
     npm create deco@latest
+    # or with bun
+    bun create deco@latest
     ```
-    
-    This may open your browser to authenticate. You can create a 
-    new account if you don't have one.
-    
-    You will be prompted to link this app to a deco CMS project
-    that you're part of.
+
+    This will:
+    - Open your browser to authenticate (create an account if you don't have one)
+    - Prompt you to select or create a workspace
+    - Generate a new project from a template
+    - Link the project to your workspace
+
+    Choose a project name that describes your app (e.g., `customer-support-agent`).
   </Step>
 
-  <Step number={2} title="Start development">
+  <Step number={2} title="Install dependencies">
     ```bash
     cd <your-app-name>
     npm install
+    # or with bun
+    bun install
+    ```
+
+    This installs all dependencies for both the backend (MCP server) and frontend (React app).
+  </Step>
+
+  <Step number={3} title="Start development server">
+    ```bash
     npm run dev
+    # or with bun
+    bun dev
     ```
     
-    Your app's local server will start with hot reload enabled. 
-    Copy the preview URL from the terminal output.
-    The preview URL is accessible anywhere on the internet now.
+    Your app's local server will start with hot reload enabled. You'll see two URLs:
+    - **Local URL**: `http://localhost:8787` (your React UI)
+    - **Preview URL**: `https://localhost-abc123.deco.host` (publicly accessible)
     
-    <Callout type="info">
-      The local server can be accessed on port 8787 and serves 
-      both a MCP app at `/mcp`, and a React view front-end at `/`.
-    </Callout>
+    The server serves:
+    - **React app** at `/` (your custom UI)
+    - **MCP server** at `/mcp` (tools and workflows for AI agents)
   </Step>
 </StepGroup>
 
-## Test your MCP
-
-Test your MCP server:
-
-1. Go to your team on the [deco CMS](https://admin.decocms.com)
-2. Click **Add Integration** → **Custom Integration**
-3. Paste your preview URL + `/mcp` (e.g., `https://localhost-abc123.deco.host/mcp`)
-4. Save and test the default tools that come from the template
-
 <Callout type="success">
-  Your MCP server is now running locally and connected to deco! 🎉
+  Your full-stack AI app is now running locally! 🎉
 </Callout>
 
-## Deploy to production
+## Explore Your App
 
-When ready to share your MCP:
+Your generated project includes:
+
+### Backend (`/server`)
+- **`main.ts`** – Server entry point that defines your MCP server
+- **`tools/`** – Tool definitions (API calls, database queries, computations)
+- **`workflows/`** – Workflow orchestrations
+- **`schema.ts`** – Database schema (Drizzle ORM with SQLite)
+
+### Frontend (`/view`)
+- **`src/routes/`** – Page components (TanStack Router)
+- **`src/components/`** – Reusable UI components (shadcn/ui)
+- **`src/lib/rpc.ts`** – Typed RPC client to call backend tools/workflows
+
+<Callout type="info">
+  The frontend and backend share types through `deco.gen.ts`, giving you end-to-end type safety.
+</Callout>
+
+## Test Your App
+
+### Option 1: Test the React UI
+
+Open `http://localhost:8787` in your browser. The default template includes a simple UI that demonstrates calling backend tools.
+
+### Option 2: Test with AI Agents
+
+Connect your MCP server to the deco admin to test with AI agents:
+
+1. Go to [admin.decocms.com](https://admin.decocms.com)
+2. Navigate to your workspace
+3. Click **Integrations** → **Add Integration** → **Custom Integration**
+4. Paste your preview URL + `/mcp` (e.g., `https://localhost-abc123.deco.host/mcp`)
+5. Save and test the default tools in the AI chat interface
+
+<Callout type="info">
+  AI agents can now discover and call your tools. The UI and agents share the same backend—no duplicate APIs to build.
+</Callout>
+
+## Make Your First Changes
+
+Let's add a simple tool to see the full-stack development experience:
+
+### 1. Add a Tool
+
+Edit `server/tools/index.ts`:
+
+```typescript
+import { createTool } from "@deco/workers-runtime";
+import { z } from "zod";
+
+export const createGreetingTool = (env: Env) =>
+  createTool({
+    id: "GREETING",
+    description: "Generate a personalized greeting",
+    inputSchema: z.object({
+      name: z.string(),
+      language: z.enum(["en", "es", "pt"]),
+    }),
+    outputSchema: z.object({
+      greeting: z.string(),
+    }),
+    execute: async ({ context }) => {
+      const greetings = {
+        en: `Hello, ${context.name}!`,
+        es: `¡Hola, ${context.name}!`,
+        pt: `Olá, ${context.name}!`,
+      };
+      return { greeting: greetings[context.language] };
+    },
+  });
+
+export const tools = [
+  createGreetingTool,
+  // ... other tools
+];
+```
+
+### 2. Generate Types
+
+```bash
+npm run gen:self
+```
+
+This regenerates `deco.gen.ts` with your new tool's types.
+
+### 3. Use in Frontend
+
+Edit `view/src/routes/home.tsx`:
+
+```tsx
+import { client } from "../lib/rpc";
+import { Button } from "../components/ui/button";
+import { useState } from "react";
+
+function HomePage() {
+  const [greeting, setGreeting] = useState("");
+
+  const handleGreeting = async () => {
+    const result = await client.tools.GREETING({
+      name: "World",
+      language: "en",
+    });
+    setGreeting(result.greeting);
+  };
+
+  return (
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-4">My First AI App</h1>
+      <Button onClick={handleGreeting}>Say Hello</Button>
+      {greeting && <p className="mt-4">{greeting}</p>}
+    </div>
+  );
+}
+```
+
+### 4. See It Live
+
+Save your changes. The dev server will hot-reload. Open `http://localhost:8787` and click the button!
+
+<Callout type="success">
+  You just built a full-stack feature: backend tool + frontend UI. No REST APIs, no integration code—just TypeScript.
+</Callout>
+
+## Deploy to Production
+
+When you're ready to deploy:
 
 ```bash
 npm run deploy
 ```
 
-We deploy your app to Cloudflare Workers and becomes available on the private registry of your Team.
+This will:
+- Build your React app for production
+- Bundle your MCP server
+- Deploy everything to Cloudflare Workers
+- Make your app available at `https://<your-app>.deco.page`
+
+Your full-stack app is now live! Both the UI and MCP server are deployed together.
+
+<Callout type="info">
+  After deployment, your app appears in your workspace's private registry. Team members can install it instantly.
+</Callout>
+
+## Next Steps
+
+Now that you have a working app, explore the core capabilities:
+
+- **[Creating Tools](/en/guides/creating-tools)** – Build tools that agents and UIs can call
+- **[Building Workflows](/en/guides/building-workflows)** – Orchestrate multi-step automations
+- **[Building Views](/en/guides/building-views)** – Create custom React interfaces
+- **[Project Structure](/en/project-structure)** – Understand how the codebase is organized
+- **[Integrations](/en/guides/integrations)** – Connect to external APIs and services
+
+## Development Workflow
+
+As you develop, keep these commands handy:
+
+```bash
+# Start development server (hot reload)
+npm run dev
+
+# Regenerate types after adding integrations
+npm run gen
+
+# Regenerate types for your own tools/workflows
+npm run gen:self
+
+# Deploy to production
+npm run deploy
+
+# Add integrations (Gmail, Slack, etc.)
+deco add
+```
+
+<Callout type="tip">
+  Run `npm run gen:self` after adding tools or workflows to get updated types in your frontend.
+</Callout>

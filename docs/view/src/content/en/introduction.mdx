@@ -1,79 +1,148 @@
 ---
 title: Introduction
-description: Learn about deco - the open-source foundation for building AI-native software
+description: The open-source platform to ship full-stack AI apps
 icon: Rocket
 ---
 
 ![deco](https://assets.decocache.com/mcp/9a3facd8-1199-4635-becc-bdc3f5ee7ab1/deco-banner-capy.png)
 
-**Deco is an open-source foundation for building AI-native software.**
+# The open-source platform to ship full-stack AI apps
 
-Create MCP servers that expose tools and workflows to AI agents, with optional custom web interfaces, all deployed on Cloudflare's global edge network.
+**deco is the full-stack TypeScript platform for building production-ready AI applications.** Generate agents, workflows, and custom UIs in TypeScript. Deploy as one app. Govern everything. Production-safe by default.
+
+## Why deco?
+
+Most teams build AI agents in one tool, UIs in another, then waste weeks connecting them with custom code. Auth breaks across layers. Deployments happen separately. Observability is fragmented. Costs spiral. Prototypes stall or get buried under compliance.
+
+**deco solves this.** Build agents, workflows, AND custom React UIs in TypeScript—all in one codebase. Your agent logic and dashboard share the same context, deployment, auth, and observability. Deploy once, govern everything.
 
 ## Who is it for?
 
-- **Vibecoders** prototyping ideas
-- **Agentic engineers** deploying scalable, secure, and sustainable production
-  systems
+- **Web/TypeScript developers** building AI-powered apps and giving vibecoding power to business users—think Lovable, but with full developer control
+- **Teams graduating from no-code tools** who need production control
+- **Agencies and implementers** shipping AI solutions for clients
+- **Startups** building AI-first products without vendor sprawl
+- **Business users** who want to prototype AI workflows (specific business-user documentation coming soon)
 
-## Why Deco?
+## What You Can Build
 
-Our goal is simple: empower teams with Generative AI by giving builders
-the tools to create AI applications that scale beyond the initial demo and
-into the thousands of users, securely and cost-effectively.
+Build complete AI applications that combine reasoning, action, and custom interfaces:
 
-## Core capabilities
+- **Internal tools** – Custom admin dashboards with AI agents handling approvals, data processing, and automations
+- **Customer-facing apps** – AI-powered support, onboarding, or advisory tools with branded interfaces
+- **Domain-specific copilots** – Specialized assistants for coding, legal, finance, research, or creative work
+- **Workflow automations** – Multi-step processes that trigger, route, and complete complex tasks
+- **Decision-support tools** – Systems that analyze data and provide actionable recommendations
 
-- **Open-source Runtime** – Easily compose tools, workflows, and views within a
-  single codebase
-- **MCP Mesh (Model Context Protocol)** – Securely integrate models, data
-  sources, and APIs, with observability and cost control
-- **Unified TypeScript Stack** – Combine backend logic and custom React/Tailwind
-  frontends seamlessly using typed RPC
-- **Global, Modular Infrastructure** – Built on Cloudflare for low-latency,
-  infinitely scalable deployments. Self-host with your Cloudflare API Key
-- **Visual Workspace** – Build agents, connect tools, manage permissions, and
-  orchestrate everything built in code
+The key difference? **Your agent AND its interface ship together.** No integration hell, no vendor sprawl, full control.
+
+## Core Capabilities
+
+### Full-Stack TypeScript Platform
+Build agents, workflows, AND custom React UIs in one codebase—no integration hell between backend and frontend layers.
+
+### Context Mesh (MCP-Native)
+Connectors to data, tools, and models with built-in policy, auth, RBAC, audit, and spend caps—shared by agents AND UIs.
+
+### Unified Runtime
+Compose agents, workflows, and UIs in TypeScript; deploy once to Cloudflare's global edge; typed interfaces everywhere.
+
+### Production-Safe by Default
+Built-in governance (RBAC, audit trails, cost controls), observability (logs, traces, errors), and deployment infrastructure—no bolting on later.
+
+### Open Source & Self-Hostable
+Fully open source with zero lock-in. Self-host on your infrastructure with Cloudflare Workers or use our managed hosting. Your code, your data, your control.
+
+### Marketplace
+Install or publish full-stack modules (agents + workflows + UI components) with one click.
 
 ## Core Concepts
 
-Before diving in, let's quickly define a few core concepts:
+Before diving in, let's define the key primitives:
 
 ### Tools
-Functions that can be called by agents, workflows, views and other tools to perform 
-actions like API calls, database queries, or computations.
+Atomic functions that perform specific actions—API calls, database queries, computations. Tools are callable by agents, workflows, and views.
 
 ```typescript
-const createCepSearchTool = (env: Env) =>
+const createSendEmailTool = (env: Env) =>
   createTool({
-    id: "CEP_SEARCH",
-    description: "Search Brazilian postal codes",
-    inputSchema: z.object({ cep: z.string() }),
-    outputSchema: z.object({ city: z.string(), state: z.string() }),
-    execute: async ({ inputData }) => {
-      // Tool implementation
+    id: "SEND_EMAIL",
+    description: "Send an email via Gmail",
+    inputSchema: z.object({
+      to: z.string().email(),
+      subject: z.string(),
+      body: z.string(),
+    }),
+    outputSchema: z.object({ success: z.boolean() }),
+    execute: async ({ context }) => {
+      const response = await env.GMAIL.sendEmail(context);
+      return { success: response.sent };
     },
   });
 ```
 
 ### Workflows
-Deterministic sequences that orchestrate multiple steps, that frequently are tools, 
-for creating automations.
+Deterministic, multi-step processes that orchestrate tools. Use control flow patterns like `.then()`, `.branch()`, `.parallel()` to create complex automations.
 
 ```typescript
 const createCustomerWorkflow = (env: Env) =>
   createWorkflow({ id: "REGISTER_CUSTOMER" })
-    .then(validateInput)
-    .then(saveToDatabase) 
-    .then(sendWelcomeEmail)
+    .then(createStepFromTool(validateInput(env)))
+    .then(createStepFromTool(saveToDatabase(env)))
+    .then(createStepFromTool(sendWelcomeEmail(env)))
     .commit();
 ```
 
-### MCP (Model Context Protocol)
-The standard that connects AI models to your tools. Your Cloudflare Worker serves as an MCP server that agents can discover and use.
+### Views
+Custom React frontends built with Vite and TanStack Router. Share the same codebase and RPC with your agents and workflows—no REST APIs to write.
+
+```typescript
+// In your React component
+import { client } from "../lib/rpc";
+
+const result = await client.tools.SEND_EMAIL({
+  to: "user@example.com",
+  subject: "Welcome!",
+  body: "Thanks for signing up.",
+});
+```
+
+### Resources
+Structured data types that agents and tools can interact with—Pages, Documents, Files, Database Records. Resources provide standardized CRUD operations (create, read, update, delete, search) with URIs like `rsc://workspace/project/resource-id`.
+
+```typescript
+// Resources are automatically available to agents
+// They can search, read, create, update, and delete
+const pages = await client.resources.PAGES.search({ term: "documentation" });
+const page = await client.resources.PAGES.read({ uri: pages.items[0].uri });
+```
 
 ### Agents
-AI assistants configured with access to your tools. They understand natural language and decide when to call specific tools to help users.
+AI assistants that use LLMs and tools to solve open-ended tasks. Agents reason about goals, decide which tools to use, and iterate until complete.
 
-### Views
-Optional React frontends that provide custom interfaces for your tools and workflows.
+### MCP (Model Context Protocol)
+The standard protocol that connects AI models to your tools. Your Cloudflare Worker serves as an MCP server that agents can discover and use.
+
+### Apps
+Bundles of tools, workflows, agents, and views published to the marketplace. Install apps to extend your workspace with pre-built functionality.
+
+## What You DON'T Need to Build
+
+deco provides the complete infrastructure so you can focus on your application logic:
+
+- ✅ Custom React UIs (vibecode dashboards, admin panels, customer-facing apps)
+- ✅ Frontend ↔ Backend connection (typed RPC, no REST glue code)
+- ✅ Auth + RBAC (shared across UI and agents)
+- ✅ Resource management (standardized CRUD for structured data)
+- ✅ Separate deployments (one push deploys everything)
+- ✅ Cost tracking (per-run, per-user, per-workflow)
+- ✅ Observability (logs, traces, errors—full stack)
+- ✅ MCP connectors (marketplace, not custom code)
+- ✅ Deployment infrastructure (edge, cloud, self-host)
+- ✅ Governance (audit trails, approval workflows)
+
+## Get Started
+
+Ready to build your first full-stack AI app? Head to [Getting Started](/en/getting-started) to create your first project.
+
+**Want to self-host?** See our [Self-Hosting Guide](/en/guides/self-hosting) for deployment options.

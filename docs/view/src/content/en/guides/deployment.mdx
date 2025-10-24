@@ -1,59 +1,360 @@
 ---
 title: Deployment
-description: Learn how to deploy your deco applications to production
+description: Deploy your full-stack AI app to production
 icon: Rocket
 ---
 
-When you're ready to share your app with the world (or your team), you'll deploy it to Cloudflare Workers via the deco CLI. 
-Deployment in deco is remarkably simple compared to traditional apps – since your entire stack is serverless 
-and lives at Cloudflare's edge, going to production is often just one command.
+import Callout from "../../../components/ui/Callout.astro";
 
-On the default template, all it takes is to run `npm run deploy` at the root of your project.
+Deploying a deco app is **remarkably simple** compared to traditional setups. Your entire full-stack app—backend (MCP server), frontend (React UI), database, and assets—deploys together to Cloudflare's global edge network with a single command.
 
-## Build and Deploy Process
+<Callout type="success">
+  **One command, full deployment**: `npm run deploy` bundles and deploys your backend, frontend, and database together. No separate Vercel + Railway setup, no CORS configuration, no environment synchronization—just one unified deployment.
+</Callout>
 
-### 1. Build the frontend
+## Quick Deploy
 
-The `npm run deploy` script will typically run `npm run build` in the `/view` directory to produce optimized 
-static files (if you have a frontend). This yields an `dist/` or `build/` folder with your HTML, JS, CSS assets ready for production.
+Deploy your app in one command:
 
-### 2. Building the worker and uploading view assets
+```bash
+npm run deploy
+# or with bun
+bun run deploy
+```
 
-After building the view, the deploy script triggers the Cloudflare Workers build. Under the hood this
-will call `wrangler build` or use the deco CLI's deployment API directly with Typescript. It takes your `server/main.ts` 
-(and bundled dependencies) and uploads it to Cloudflare, along with the static assets (which get uploaded to Workers KV or 
-as an asset bundle). The `wrangler.toml` is used to identify your project and bindings configuration.
+That's it! Your full-stack app is now live at `https://<your-app>.deco.page`.
 
-This will require that you're locally authenticated (you can always run `npx deco-cli login`) on your own machine;
-But can also be done by passing in an API token with permission to access the `HOSTING_APP_DEPLOY` resource on your project, often
-useful for running automated CI/CD deployment.
+## What Gets Deployed
 
-> The api token can be specified on the `deco deploy -t` argument.
+When you run `npm run deploy`, the following happens:
 
-When `deco deploy` finishes, your app will be live at a URL, likely something like 
-`https://<app-name>.deco.page`. The CLI or output will show the deployed address.
+### 1. Frontend Build
 
-## Cloudflare Workers Runtime Notes
+Vite builds your React app for production:
+- Minifies JavaScript and CSS
+- Optimizes images and assets
+- Creates production-ready bundles in `view/dist/`
 
-- Your code runs on Cloudflare's global edge network. It means low latency access for users around the world and automatic scaling. 
+### 2. Backend Bundle
 
-- If your workflows or tools do heavy computation or wait on external APIs, that's okay – just be mindful to use asynchronous waits properly 
-(which you likely are, since most I/O is via `await` calls). Cloudflare will suspend the worker during fetch waits so it doesn't count against CPU time heavily.
+Your MCP server is bundled with all dependencies:
+- TypeScript is compiled to JavaScript
+- Tools and workflows are included
+- Database schema is bundled
+- External integrations are configured
+
+### 3. Upload to Cloudflare
+
+Everything is uploaded to Cloudflare Workers:
+- **Worker script**: Your MCP server code
+- **Static assets**: Your React app (HTML, JS, CSS, images)
+- **Durable Objects**: For workflow execution state
+- **SQLite database**: Isolated per workspace
+
+### 4. Public URL
+
+Your app is immediately live at:
+- **Production URL**: `https://<your-app>.deco.page`
+- **MCP endpoint**: `https://<your-app>.deco.page/mcp` (for AI agents)
+- **UI**: `https://<your-app>.deco.page/` (for users)
+
+<Callout type="info">
+  **Same runtime, same context**: Your deployed app serves both the UI (at `/`) and the MCP server (at `/mcp`) from the same Cloudflare Worker. This means zero network latency between frontend and backend—they're literally the same process.
+</Callout>
+
+## Deployment Options
+
+### Basic Deployment
+
+```bash
+npm run deploy
+```
+
+### Deploy to Specific Workspace
+
+```bash
+deco deploy -w <workspace-name>
+```
+
+### Deploy with Specific App Name
+
+```bash
+deco deploy -a <app-name>
+```
+
+### Skip Confirmation
+
+```bash
+deco deploy -y
+```
+
+### Publish to Marketplace
+
+Make your app public so others can install it:
+
+```bash
+deco deploy --public
+```
+
+<Callout type="tip">
+  Published apps appear in the deco marketplace. Other teams can install them with one click, including all tools, workflows, and UIs.
+</Callout>
+
+### Dry Run
+
+See what would be deployed without actually deploying:
+
+```bash
+deco deploy --dry-run
+```
+
+## Authentication
+
+Deployment requires authentication. Run `deco login` if you haven't already:
+
+```bash
+deco login
+```
+
+For CI/CD pipelines, use an API token:
+
+```bash
+deco deploy -t <your-api-token>
+```
+
+Generate API tokens in your workspace settings at [admin.decocms.com](https://admin.decocms.com).
+
+## Cloudflare Workers Runtime
+
+Your app runs on **Cloudflare's global edge network**, providing:
+
+### Automatic Scaling
+- Zero configuration—scales from 0 to millions of requests automatically
+- No provisioning, no capacity planning, no servers to manage
+
+### Global Performance
+- Low latency worldwide—your app runs at 300+ locations
+- Requests route to the nearest data center automatically
+
+### Cost Efficiency
+- Pay only for what you use (requests and compute time)
+- Free tier includes 100,000 requests/day
+
+### Isolation & Security
+- Each workspace gets an isolated environment
+- SQLite database is isolated per workspace
+- Environment variables are encrypted at rest
+
+<Callout type="info">
+  **Cloudflare Workers are V8 isolates**, not containers. They start in milliseconds (not seconds), use minimal memory, and scale instantly. Perfect for AI applications that need low latency and high throughput.
+</Callout>
+
+## Post-Deployment
+
+After deploying, verify your app works correctly:
+
+### 1. Test the UI
+
+Open your production URL and interact with the interface:
+
+```bash
+open https://<your-app>.deco.page
+```
+
+Verify:
+- UI loads correctly
+- Tools can be called from the UI
+- Workflows execute successfully
+
+### 2. Test the MCP Server
+
+Add your production MCP server to the deco admin:
+
+1. Go to [admin.decocms.com](https://admin.decocms.com)
+2. Navigate to your workspace
+3. Click **Integrations** → **Add Integration** → **Custom Integration**
+4. Enter `https://<your-app>.deco.page/mcp`
+5. Test tools in the AI chat interface
+
+### 3. Verify Integrations
+
+Check that external integrations (Gmail, Slack, etc.) work in production:
+- OAuth credentials are configured correctly
+- API keys are set in environment variables
+- Rate limits are respected
+
+<Callout type="warning">
+  **Environment-specific configs**: Some integrations may require different credentials for production. Update them in your workspace settings at admin.decocms.com.
+</Callout>
+
+## Monitoring & Observability
+
+deco provides built-in monitoring for your deployed apps:
+
+### Logs
+
+View real-time logs in the dashboard:
+1. Go to [admin.decocms.com](https://admin.decocms.com)
+2. Navigate to your app
+3. Click **Logs** to see request logs, errors, and traces
+
+### Analytics
+
+Track usage metrics:
+- Request count per tool/workflow
+- Execution time
+- Error rate
+- Cost per operation
+
+### Alerts
+
+Set up alerts for:
+- High error rates
+- Slow response times
+- Cost thresholds
+
+## Updating Your App
+
+Deploy updates as often as you like:
+
+```bash
+# Make changes to your code
+# ...
+
+# Deploy the update
+npm run deploy
+```
+
+Deployments are **zero-downtime**:
+- New version deploys alongside the old
+- Traffic switches over atomically
+- No service interruption
+
+## Rollbacks
+
+If something goes wrong, rollback to a previous version:
+
+### Option 1: Promote a Previous Deployment
+
+```bash
+deco hosting list  # View deployment history
+deco hosting promote -d <deployment-id>
+```
+
+### Option 2: Redeploy from Git
+
+```bash
+git checkout <previous-commit>
+npm run deploy
+```
+
+<Callout type="tip">
+  **Best practice**: Use Git tags for releases (e.g., `v1.0.0`). This makes rollbacks easier—just checkout the tag and redeploy.
+</Callout>
+
+## CI/CD Integration
+
+Automate deployments with GitHub Actions, GitLab CI, or other CI/CD tools:
+
+### Example: GitHub Actions
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Deploy
+        run: npm run deploy -- -y -t ${{ secrets.DECO_API_TOKEN }}
+        env:
+          DECO_API_TOKEN: ${{ secrets.DECO_API_TOKEN }}
+```
+
+<Callout type="info">
+  Generate API tokens in your workspace settings at [admin.decocms.com](https://admin.decocms.com). Store them as secrets in your CI/CD platform.
+</Callout>
 
 ## Custom Domains
 
-> Guide Coming Soon
+Add a custom domain to your app:
 
-## Post-Deploy Testing
+1. Go to your workspace at [admin.decocms.com](https://admin.decocms.com)
+2. Navigate to your app settings
+3. Click **Domains** → **Add Custom Domain**
+4. Follow the DNS configuration instructions
 
-Always test your deployed agent as a user would:
+Example:
+- Before: `https://my-app.deco.page`
+- After: `https://app.yourdomain.com`
 
-- Open the production URL, ensure the frontend loads.
-- Try interacting with the agent (the Worker should be live and responding).
-- Check that integrations (which might have different credentials in prod) work as expected.
+<Callout type="warning">
+  Custom domains require DNS configuration. Follow the instructions in the admin dashboard carefully.
+</Callout>
 
-## Rollbacks and Updates
+## Performance Best Practices
 
-If something goes wrong, you can update your code and deploy again. We doen't have a built-in version rollback via 
-CLI, but since deployments are fast, you can re-deploy an earlier stable version of your code. It's wise to use version 
-control (git) for your project so you can revert changes locally and redeploy.
+### Optimize Frontend
+- Use code splitting for large apps
+- Lazy load routes and components
+- Optimize images (WebP, proper sizing)
+- Enable compression (automatically handled by Cloudflare)
+
+### Optimize Backend
+- Cache frequently-used data
+- Batch database queries
+- Use parallel execution for independent operations
+- Set appropriate timeout limits
+
+### Database
+- Index frequently queried columns
+- Avoid N+1 queries
+- Use transactions for multi-step operations
+- Keep database queries simple and fast
+
+## Troubleshooting
+
+### Deployment fails
+
+Check:
+- You're logged in (`deco login`)
+- Workspace is configured (`deco configure`)
+- No TypeScript errors (`npm run check`)
+- Build succeeds locally (`npm run build`)
+
+### App doesn't load
+
+Check:
+- Deployment completed successfully
+- No runtime errors in logs
+- Environment variables are set correctly
+- Integrations are configured for production
+
+### Tools/workflows fail in production
+
+Check:
+- API keys are set in production environment
+- OAuth credentials are configured correctly
+- Database migrations are applied
+- External services are reachable from Cloudflare Workers
+
+## Next Steps
+
+- **[CLI Commands](/en/guides/cli-commands)** – Learn all CLI commands
+- **[Integrations](/en/guides/integrations)** – Connect external services
+- **[Project Structure](/en/project-structure)** – Understand the codebase

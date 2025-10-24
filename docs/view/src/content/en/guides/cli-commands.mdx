@@ -1,0 +1,548 @@
+---
+title: CLI Commands
+description: Developer workflows with the deco CLI
+icon: Terminal
+---
+
+import Callout from "../../../components/ui/Callout.astro";
+
+The `deco` CLI provides commands for managing your full-stack AI applications. This guide covers the essential commands for development, deployment, and code synchronization workflows.
+
+## Installation
+
+The CLI is installed globally:
+
+```bash
+npm install -g deco-cli
+# or with bun
+bun install -g deco-cli
+```
+
+Verify installation:
+
+```bash
+deco --version
+```
+
+## Authentication
+
+### Login
+
+Authenticate with deco:
+
+```bash
+deco login
+```
+
+This opens your browser to complete authentication. Once logged in, your session is stored locally.
+
+### Check Session
+
+View your current session:
+
+```bash
+deco whoami
+```
+
+### Logout
+
+Clear your local session:
+
+```bash
+deco logout
+```
+
+## Project Management
+
+### Create a New Project
+
+Initialize a new deco project:
+
+```bash
+deco create
+# or
+npm create deco@latest
+```
+
+This will:
+- Prompt you to authenticate (if not logged in)
+- Let you select or create a workspace
+- Generate a project from a template
+- Link the project to your workspace
+
+### Configure an Existing Project
+
+Link an existing project to a workspace:
+
+```bash
+deco configure
+```
+
+This saves workspace configuration locally so other commands know which workspace to use.
+
+## Development
+
+### Start Development Server
+
+Start the local development server with hot reload:
+
+```bash
+deco dev
+# or
+npm run dev
+```
+
+This starts:
+- **Backend** (MCP server) on port `8787`
+- **Frontend** (React app) at `/`
+- **Hot reload** for both backend and frontend changes
+
+The CLI also provides a **publicly accessible preview URL** (e.g., `https://localhost-abc123.deco.host`) so you can test from any device or share with team members.
+
+<Callout type="info">
+  The preview URL is tunneled through deco infrastructure and is automatically secured. It's perfect for testing integrations or sharing work-in-progress.
+</Callout>
+
+### Generate Types
+
+After adding integrations or tools, regenerate types:
+
+```bash
+# Generate types for external integrations
+deco gen
+# or
+npm run gen
+
+# Generate types for your own tools/workflows
+deco gen --self <your-preview-url>/mcp
+# or
+npm run gen:self
+```
+
+The `gen` command creates `deco.gen.ts` with typed interfaces for:
+- **External integrations** (Gmail, Slack, etc.) added via `deco add`
+- **Your own tools/workflows** (when using `--self`)
+
+<Callout type="tip">
+  Run `npm run gen:self` after adding or modifying tools/workflows to get updated types in your frontend.
+</Callout>
+
+## Deployment
+
+### Deploy to Production
+
+Deploy your full-stack app to Cloudflare Workers:
+
+```bash
+deco deploy
+# or
+npm run deploy
+```
+
+This will:
+- Build your React app for production
+- Bundle your MCP server
+- Deploy both to Cloudflare Workers
+- Make your app available at `https://<your-app>.deco.page`
+
+Options:
+
+```bash
+# Deploy to a specific workspace
+deco deploy -w <workspace>
+
+# Deploy a specific app
+deco deploy -a <app-name>
+
+# Skip confirmation
+deco deploy -y
+
+# Make app public in marketplace
+deco deploy --public
+
+# Dry run (show what would be deployed)
+deco deploy --dry-run
+```
+
+### List Apps
+
+View all apps in your workspace:
+
+```bash
+deco hosting list
+# or
+deco hosting list -w <workspace>
+```
+
+### Promote a Deployment
+
+Promote a specific deployment to a route:
+
+```bash
+deco hosting promote -d <deployment-id> -r <route-pattern>
+```
+
+## Integrations
+
+### Add Integrations
+
+Add external services to your project:
+
+```bash
+deco add
+```
+
+This opens an interactive prompt where you can browse and install integrations (Gmail, Slack, Notion, etc.). After installation:
+
+1. Run `npm run gen` to generate typed clients
+2. Use integrations in your tools via `env.<INTEGRATION_NAME>`
+
+<Callout type="success">
+  Integrations are automatically configured in your `wrangler.toml` with proper OAuth scopes and bindings.
+</Callout>
+
+## Code Synchronization (Deconfig)
+
+The `deco deconfig` commands let you sync code between your local machine and deco-hosted branches. This is useful for:
+
+- **Collaborative development** – Multiple developers working on the same codebase
+- **Code backup** – Store your code remotely
+- **Version control** – Manage multiple branches
+
+<Callout type="info">
+  **Deconfig** is deco's file synchronization system, similar to Git but optimized for the platform. It works alongside Git—use Git for version control, use Deconfig for deployment and collaboration within deco.
+</Callout>
+
+### Clone a Branch
+
+Clone a remote branch to your local machine:
+
+```bash
+deco deconfig clone -b <branch-name> --path <local-directory>
+```
+
+Example:
+
+```bash
+# Clone the 'main' branch to ./my-project
+deco deconfig clone -b main --path ./my-project
+```
+
+This downloads all files from the remote branch to your local directory.
+
+### Push Local Changes
+
+Push your local code to a remote branch:
+
+```bash
+deco deconfig push --path <local-directory> -b <branch-name>
+```
+
+Example:
+
+```bash
+# Push ./my-project to the 'main' branch
+deco deconfig push --path ./my-project -b main
+```
+
+This works like `rsync`:
+- Compares local files with remote files (via hashes)
+- Uploads only changed files (new or modified)
+- Respects `.deconfigignore` patterns (similar to `.gitignore`)
+
+Built-in ignore patterns:
+- `node_modules/`
+- `.git/`
+- `.deconfig/`
+- `.DS_Store`
+- `*.tmp`, `*.temp`
+- `.env.local`
+
+<Callout type="tip">
+  Create a `.deconfigignore` file to exclude additional files:
+  
+  ```
+  # .deconfigignore
+  *.log
+  /temp
+  build/
+  !important.txt
+  ```
+</Callout>
+
+#### Watch Mode
+
+Automatically push changes as you edit:
+
+```bash
+deco deconfig push --path ./my-project -b main --watch
+```
+
+This monitors your directory and pushes changes automatically (with 500ms debounce).
+
+#### Dry Run
+
+See what would be pushed without making changes:
+
+```bash
+deco deconfig push --path ./my-project -b main --dry-run
+```
+
+### Pull Remote Changes
+
+Pull changes from a remote branch to your local directory:
+
+```bash
+deco deconfig pull --path <local-directory> -b <branch-name>
+```
+
+Example:
+
+```bash
+# Pull 'main' branch to ./my-project
+deco deconfig pull --path ./my-project -b main
+```
+
+This downloads remote changes and overwrites local files. Use with caution if you have uncommitted work.
+
+#### Dry Run
+
+See what would be changed without applying:
+
+```bash
+deco deconfig pull --path ./my-project -b main --dry-run
+```
+
+### List Files in a Branch
+
+Browse files in a remote branch:
+
+```bash
+deco deconfig list -b <branch-name>
+```
+
+This opens an interactive file browser where you can:
+- Navigate directories
+- View file contents
+- Filter by path patterns
+
+### Watch a Branch for Changes
+
+Monitor a remote branch for changes:
+
+```bash
+deco deconfig watch -b <branch-name> --path <path-filter>
+```
+
+Example:
+
+```bash
+# Watch for changes to .ts files in server/
+deco deconfig watch -b main --path "server/**/*.ts"
+```
+
+This prints change events in real-time (useful for CI/CD pipelines).
+
+### Get a Single File
+
+Download a single file from a remote branch:
+
+```bash
+deco deconfig get <file-path> -b <branch-name> -o <output-file>
+```
+
+Example:
+
+```bash
+# Download server/main.ts to ./main.ts
+deco deconfig get server/main.ts -b main -o ./main.ts
+```
+
+### Put a Single File
+
+Upload a single file to a remote branch:
+
+```bash
+deco deconfig put <remote-path> -b <branch-name> -f <local-file>
+```
+
+Example:
+
+```bash
+# Upload ./main.ts to server/main.ts
+deco deconfig put server/main.ts -b main -f ./main.ts
+```
+
+### Delete a File
+
+Delete a file from a remote branch:
+
+```bash
+deco deconfig delete <file-path> -b <branch-name>
+```
+
+Example:
+
+```bash
+# Delete server/main.ts from main branch
+deco deconfig delete server/main.ts -b main
+```
+
+<Callout type="warning">
+  Deletion detection is not yet implemented for `push` command. Files deleted locally will remain on the remote branch until manually deleted with `deco deconfig delete`.
+</Callout>
+
+## Tool Execution
+
+### Call a Tool
+
+Execute a tool directly from the CLI:
+
+```bash
+deco call-tool <tool-name> -i <integration-id> -p '<json-payload>'
+```
+
+Example:
+
+```bash
+# Call SEND_EMAIL tool
+deco call-tool SEND_EMAIL -i my-app -p '{"to":"user@example.com","subject":"Hello","body":"World"}'
+```
+
+You can also use `--set` for individual fields:
+
+```bash
+deco call-tool SEND_EMAIL -i my-app --set to=user@example.com --set subject=Hello --set body=World
+```
+
+<Callout type="info">
+  This is useful for testing tools without opening the UI or writing test code.
+</Callout>
+
+## Link (Local Tunneling)
+
+Create a public tunnel to your local server:
+
+```bash
+deco link -p <port> [command]
+```
+
+Example:
+
+```bash
+# Tunnel existing server on port 3000
+deco link -p 3000
+
+# Start server and tunnel simultaneously
+deco link -p 8787 npm run dev
+```
+
+This creates a public URL that tunnels to your local port—perfect for testing webhooks or sharing local development with others.
+
+## Updating
+
+### Upgrade CLI
+
+Update the `deco-cli` package to the latest version:
+
+```bash
+deco upgrade
+```
+
+### Update Dependencies
+
+Update deco dependencies in your project:
+
+```bash
+deco update
+```
+
+This updates `@deco/*` packages to their latest versions.
+
+## Common Workflows
+
+### Initial Setup
+
+```bash
+# 1. Install CLI
+npm install -g deco-cli
+
+# 2. Login
+deco login
+
+# 3. Create project
+deco create my-app
+
+# 4. Start development
+cd my-app
+npm install
+npm run dev
+```
+
+### Development Loop
+
+```bash
+# 1. Start dev server
+npm run dev
+
+# 2. Make changes to tools/workflows
+# Edit server/tools/my-tool.ts
+
+# 3. Regenerate types
+npm run gen:self
+
+# 4. Use in frontend
+# Edit view/src/components/MyComponent.tsx
+```
+
+### Deployment Workflow
+
+```bash
+# 1. Test locally
+npm run dev
+
+# 2. Deploy to production
+npm run deploy
+
+# 3. Verify deployment
+deco hosting list
+```
+
+### Collaborative Development
+
+```bash
+# Developer A pushes changes
+deco deconfig push --path . -b main
+
+# Developer B pulls changes
+deco deconfig pull --path . -b main
+
+# Developer B makes changes and pushes
+deco deconfig push --path . -b main
+```
+
+## Troubleshooting
+
+### "Not logged in" error
+
+Run `deco login` to authenticate.
+
+### "Workspace not configured" error
+
+Run `deco configure` to link your project to a workspace.
+
+### Types are out of sync
+
+Run `npm run gen` after adding integrations, or `npm run gen:self` after changing tools/workflows.
+
+### Preview URL not working
+
+Ensure your dev server is running (`npm run dev`) and check firewall settings.
+
+## Next Steps
+
+- **[Creating Tools](/en/guides/creating-tools)** – Build backend functionality
+- **[Building Workflows](/en/guides/building-workflows)** – Orchestrate multi-step processes
+- **[Building Views](/en/guides/building-views)** – Create custom UIs
+- **[Deployment](/en/guides/deployment)** – Deploy to production
+

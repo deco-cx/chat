@@ -7,13 +7,31 @@ icon: HelpCircle
 import { AccordionGroup } from "../../../components/ui/AccordionGroup";
 import { Accordion } from "../../../components/ui/Accordion";
 
+## General Questions
+
 <AccordionGroup>
-  <Accordion title="Can I use OpenAI, Anthropic, or my own model?" icon="Bot" client:load>
-    Yes. Add the integration in the dashboard, regenerate types, and call it from a tool.
+  <Accordion title="What is deco?" icon="Info" client:load>
+    deco is the full-stack TypeScript platform for building production-ready AI applications. Build agents, workflows, and custom UIs in one codebase. Deploy as one app. Govern everything.
   </Accordion>
 
-  <Accordion title="Do I need a front-end?" icon="Monitor" client:load>
-    No. You can deploy server-only projects for API-first use cases.
+  <Accordion title="How is deco different from other AI platforms?" icon="Zap" client:load>
+    Most platforms force you to build agents in one tool, UIs in another, then spend weeks connecting them. deco lets you build the full stack—agents, workflows, AND custom React UIs—in TypeScript. Deploy once, govern everything. No integration hell.
+  </Accordion>
+
+  <Accordion title="Do I need a frontend?" icon="Monitor" client:load>
+    No, but you can. deco supports both:
+    - **MCP-only**: Deploy backend tools/workflows for AI agents
+    - **Full-stack**: Build custom React UIs that share the same backend
+
+    The choice is yours. Both deploy together if you include a frontend.
+  </Accordion>
+
+  <Accordion title="Can I use OpenAI, Anthropic, or my own model?" icon="Bot" client:load>
+    Yes. deco works with any LLM provider. Add integrations for OpenAI, Anthropic, Google Gemini, etc., or bring your own API endpoints. Models are configured via the Context Mesh.
+  </Accordion>
+
+  <Accordion title="Is deco open source?" icon="Code" client:load>
+    Yes. deco is fully open source. You can self-host with your Cloudflare account, use our managed hosting, or contribute to the codebase on GitHub. See our [Self-Hosting Guide](/en/guides/self-hosting) for more details.
   </Accordion>
 </AccordionGroup>
 
@@ -21,16 +39,45 @@ import { Accordion } from "../../../components/ui/Accordion";
 
 <AccordionGroup>
   <Accordion title="How do I add a new tool?" icon="Wrench" client:load>
-    1. Define the tool in `server/main.ts` using `createTool`
-    2. Add it to the `withRuntime` tools array
-    3. Run `npm run gen` to update types
-    4. Test it via the deco UI or RPC client
+    1. Create tool in `server/tools/` using `createTool()`
+    2. Export from `server/tools/index.ts`
+    3. Run `npm run gen:self` to update types
+    4. Use in React UI via `client.tools.TOOL_NAME()`
+    
+    See [Creating Tools](/en/guides/creating-tools) for details.
+  </Accordion>
+
+  <Accordion title="How do I call backend tools from my React UI?" icon="Monitor" client:load>
+    Import the RPC client and call tools directly:
+    ```tsx
+    import { client } from "../lib/rpc";
+    
+    const result = await client.tools.SEND_EMAIL({
+      to: "user@example.com",
+      subject: "Hello",
+      body: "World"
+    });
+    ```
+    TypeScript ensures correctness at compile time.
   </Accordion>
 
   <Accordion title="How do I connect to an external API?" icon="Globe" client:load>
-    1. Add the integration via the deco dashboard
-    2. Run `npm run gen` to get typed interfaces
-    3. Use `env.INTEGRATION_NAME.method()` in your tools
+    **Option 1 (Recommended)**: Use built-in integrations
+    - Run `deco add` to install from marketplace
+    - Run `npm run gen` to get typed interfaces
+    - Use `env.INTEGRATION_NAME.method()` in your tools
+    
+    **Option 2**: Call any HTTP API directly with `fetch()`
+    - Store API keys in environment variables
+    - Use `fetch()` in your tool's `execute()` function
+  </Accordion>
+
+  <Accordion title="How do I add a new page to my UI?" icon="Layout" client:load>
+    1. Create a new file in `view/src/routes/` (e.g., `my-page.tsx`)
+    2. Define the route with `createRoute()` from TanStack Router
+    3. Import and add to router in `view/src/main.tsx`
+    
+    Hot reload will pick up changes automatically.
   </Accordion>
 </AccordionGroup>
 
@@ -38,12 +85,34 @@ import { Accordion } from "../../../components/ui/Accordion";
 
 <AccordionGroup>
   <Accordion title="What's the difference between tools and workflows?" icon="Settings" client:load>
-    Tools are single functions that perform specific tasks. Workflows orchestrate multiple tools with logic, conditions, and loops.
+    **Tools** are atomic functions that perform specific tasks (API calls, database queries, computations). They're deterministic and reusable.
+    
+    **Workflows** orchestrate multiple tools into multi-step processes with control flow (`.then()`, `.branch()`, `.parallel()`). Use workflows for complex automations.
+    
+    **When to use each**: Use tools for building blocks. Use workflows when you need to chain multiple operations with control flow.
   </Accordion>
 
   <Accordion title="Can I use my own database?" icon="Database" client:load>
-    Yes. You can use Cloudflare D1, Workers KV, or connect to external databases like 
-    Supabase or Planetscale via HTTP APIs.
+    Yes. deco includes SQLite by default (via Cloudflare D1), but you can:
+    - Connect to external databases (PostgreSQL, MySQL, MongoDB) via HTTP APIs
+    - Use Supabase, Planetscale, or any hosted database
+    - Use Cloudflare Workers KV for key-value storage
+    
+    All accessible through the Context Mesh.
+  </Accordion>
+
+  <Accordion title="How does the full-stack deployment work?" icon="Rocket" client:load>
+    `npm run deploy` bundles and deploys both frontend and backend together:
+    - React app is built with Vite (optimized bundles)
+    - MCP server is bundled with tools/workflows
+    - Both deploy to Cloudflare Workers as one unit
+    - Same runtime serves UI (at `/`) and MCP server (at `/mcp`)
+    
+    Zero network latency between frontend and backend—they're the same process.
+  </Accordion>
+
+  <Accordion title="Can I deploy only the backend (no UI)?" icon="Server" client:load>
+    Yes. Simply remove the `view/` directory or don't include it in your deployment. The MCP server will deploy standalone and be accessible at `/mcp`.
   </Accordion>
 </AccordionGroup>
 
@@ -51,11 +120,29 @@ import { Accordion } from "../../../components/ui/Accordion";
 
 <AccordionGroup>
   <Accordion title="Which integrations are available?" icon="Link" client:load>
-    Many common services like Slack, Gmail, Notion, Stripe, and more. Check the deco dashboard for the full list.
+    Common services include:
+    - **Communication**: Gmail, Slack, Discord, Twilio
+    - **Productivity**: Notion, Google Drive, Airtable
+    - **Payments**: Stripe
+    - **AI**: OpenAI, Anthropic, Google Gemini
+    
+    Run `deco add` to browse the full marketplace, or check [admin.decocms.com](https://admin.decocms.com).
   </Accordion>
 
   <Accordion title="Can I create custom integrations?" icon="Code" client:load>
-    Yes, you can write custom tools that call any HTTP API using `fetch`.
+    Yes, in two ways:
+    1. **Quick**: Write a tool that calls any HTTP API using `fetch()`
+    2. **Publish**: Package your integration as an MCP server and publish to the marketplace
+    
+    See [Integrations](/en/guides/integrations) for details.
+  </Accordion>
+
+  <Accordion title="How do I manage API keys and secrets?" icon="Key" client:load>
+    Store secrets in your workspace settings at [admin.decocms.com](https://admin.decocms.com):
+    - Go to your workspace
+    - Click **Settings** → **Environment Variables**
+    - Add key-value pairs (encrypted at rest)
+    - Access via `env.YOUR_KEY` in tools
   </Accordion>
 </AccordionGroup>
 
@@ -63,15 +150,76 @@ import { Accordion } from "../../../components/ui/Accordion";
 
 <AccordionGroup>
   <Accordion title="My tool isn't working" icon="AlertCircle" client:load>
-    1. Check that it's registered in `withRuntime`
-    2. Verify your Zod schemas
-    3. Check the logs for errors
-    4. Ensure you ran `npm run gen` after changes
+    **Check these common issues:**
+    1. Tool is registered in `server/tools/index.ts`
+    2. Zod schemas are correct (input/output)
+    3. Ran `npm run gen:self` after changes
+    4. Server is running (`npm run dev`)
+    5. Check logs for errors in terminal
+    
+    **Debug steps:**
+    - Test the tool directly via CLI: `deco call-tool TOOL_NAME -i SELF`
+    - Check types in `deco.gen.ts`
+    - Verify environment variables are set
   </Accordion>
 
   <Accordion title="My workflow isn't executing" icon="AlertTriangle" client:load>
-    1. Make sure you called `.commit()` at the end
-    2. Check that all steps are properly chained
-    3. Verify your input/output schemas match
+    **Common workflow issues:**
+    1. Missing `.commit()` at the end of the workflow definition
+    2. Steps aren't properly chained (each `.then()` returns workflow)
+    3. Input/output schemas don't match between steps
+    4. Workflow isn't registered in `server/workflows/index.ts`
+    
+    **Debug steps:**
+    - Check workflow logs in admin dashboard
+    - Verify each step's schema matches the previous output
+    - Test individual tools separately first
+  </Accordion>
+
+  <Accordion title="Types are out of sync" icon="FileText" client:load>
+    **Fix type mismatches:**
+    - Run `npm run gen` after adding integrations
+    - Run `npm run gen:self` after changing tools/workflows
+    - Restart TypeScript server in your editor
+    - Check `deco.gen.ts` was updated
+    
+    **If still broken:**
+    - Delete `deco.gen.ts` and regenerate
+    - Clear editor cache and restart
+  </Accordion>
+
+  <Accordion title="Deployment fails" icon="XCircle" client:load>
+    **Pre-deployment checklist:**
+    1. Logged in: `deco login`
+    2. Workspace configured: `deco configure`
+    3. No TypeScript errors: `npm run check`
+    4. Build succeeds: `npm run build`
+    5. Environment variables set in admin dashboard
+    
+    **Common deployment errors:**
+    - Missing dependencies in package.json
+    - Build errors in frontend
+    - Invalid wrangler.toml configuration
+    - API token expired (re-run `deco login`)
+  </Accordion>
+
+  <Accordion title="Can't call tools from React UI" icon="Monitor" client:load>
+    **Troubleshoot RPC calls:**
+    1. Server is running (`npm run dev`)
+    2. Types are up-to-date (`npm run gen:self`)
+    3. RPC client is imported correctly: `import { client } from "../lib/rpc"`
+    4. Tool name matches exactly (case-sensitive)
+    
+    **Debug network calls:**
+    - Use `loggedClient` instead of `client` to see requests/responses
+    - Check browser console for errors
+    - Verify backend logs show requests
   </Accordion>
 </AccordionGroup>
+
+## Need More Help?
+
+- **Documentation**: Browse guides at [docs.deco.page](https://docs.deco.page)
+- **Discord**: Join our community for live support
+- **GitHub**: Report issues or contribute at [github.com/deco-cx/deco](https://github.com/deco-cx/deco)
+- **Admin Dashboard**: [admin.decocms.com](https://admin.decocms.com)

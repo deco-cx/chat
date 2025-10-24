@@ -1,12 +1,44 @@
 ---
 title: Building Workflows
-description: Orchestrate multiple tools into automated processes
+description: Orchestrate multi-step processes with powerful workflow patterns
 icon: GitBranch
 ---
 
 import Callout from "../../../components/ui/Callout.astro";
 
-Workflows orchestrate multiple tools in sequence to automate complex processes. Unlike AI agents that decide which tools to call, workflows follow deterministic steps. Workflows in deco use the Mastra framework under the hood, giving you a set of composable patterns for control flow.
+Workflows orchestrate multiple tools into **deterministic, multi-step processes**. Unlike AI agents that decide which tools to call, workflows follow explicit control flow patterns. deco's workflow engine provides composable patterns like `.then()`, `.branch()`, `.parallel()`, and `.foreach()`.
+
+<Callout type="success">
+  **When to use workflows**: Use workflows when you need predictable, repeatable execution. Use agents when you need adaptive, reasoning-based behavior. Often, you'll combine both—workflows orchestrate the structure, agents handle the unstructured parts.
+</Callout>
+
+## Creating Workflows
+
+You can create workflows in two ways:
+
+### 1. Through the UI (No-Code)
+
+Create workflows directly in the [deco CMS](https://admin.decocms.com) interface:
+
+1. Navigate to **Workflows** in the sidebar (below Agents)
+2. Ask the copilot to create a workflow for you:
+   - Example: *"Create a new workflow. The first step should accept a topic and search for it using Ask Perplexity. The second step should analyze the search result and generate a summary using ai generate object."*
+3. Select only the tools you need (to minimize token usage and improve focus)
+4. The copilot will create the workflow with the specified steps
+5. Test individual steps by clicking "Run Step"
+6. Or run the entire workflow at once
+7. Monitor execution in real-time as steps complete
+
+<Callout type="info">
+  **Pro tip**: When working with the copilot, mark only the tools you actually need. This reduces context and helps the AI focus on what you're asking for.
+</Callout>
+
+You can also ask the copilot to:
+- **Edit workflows**: *"Add a new step that generates an image based on the step 2 result"*
+- **Run workflows**: *"Run this workflow with the input 'capybara'"*
+- The copilot can monitor and report on workflow execution
+
+### 2. In Code (Full Control)
 
 ## Workflow Basics
 
@@ -148,30 +180,149 @@ Workflows appear as tools with three actions:
    - Execution time
    - Success/failure status
 
-## Hybrid Approach: LLMs in Workflows
+## Using Workflows in Your UI
 
-Use AI for specific steps within deterministic workflows:
+Like tools, workflows are available via typed RPC in your React components:
+
+### Step 1: Define the Workflow
 
 ```typescript
-const createDataProcessingWorkflow = (env: Env) => {
-  const extractStructuredData = createStepFromTool(createExtractDataTool(env));
-  const validateData = createStepFromTool(createValidateDataTool(env));
-  const saveData = createStepFromTool(createSaveDataTool(env));
+// server/workflows/customer-registration.ts
+import { createWorkflow, createStepFromTool } from "@deco/workers-runtime";
+import { z } from "zod";
+import type { Env } from "../main.ts";
+
+export const createCustomerRegistrationWorkflow = (env: Env) => {
+  const validateInput = createStepFromTool(createValidateInputTool(env));
+  const searchCep = createStepFromTool(createCepSearchTool(env));
+  const insertCustomer = createStepFromTool(createCustomerInsertTool(env));
+  const sendWelcomeEmail = createStepFromTool(createSendWelcomeEmailTool(env));
 
   return createWorkflow({
-    id: "PROCESS_CUSTOMER_MESSAGE",
+    id: "REGISTER_CUSTOMER",
     inputSchema: z.object({
-      message: z.string(), // Unstructured user message
+      name: z.string(),
+      cpf: z.string(),
+      cep: z.string(),
     }),
     outputSchema: z.object({
-      processed: z.boolean(),
+      customerId: z.number(),
+      emailSent: z.boolean(),
     }),
   })
-    .then(extractStructuredData) // AI extracts structured data
-    .then(validateData)          // Deterministic validation
-    .then(saveData)             // Deterministic save
+    .then(validateInput)
+    .then(searchCep)
+    .then(insertCustomer)
+    .then(sendWelcomeEmail)
     .commit();
 };
 ```
 
-This pattern handles unstructured input (user messages) but processes it deterministically.
+### Step 2: Register the Workflow
+
+```typescript
+// server/workflows/index.ts
+import { createCustomerRegistrationWorkflow } from "./customer-registration.ts";
+
+export const workflows = [
+  createCustomerRegistrationWorkflow,
+];
+```
+
+### Step 3: Call from React
+
+```tsx
+// view/src/components/CustomerRegistrationForm.tsx
+import { client } from "../lib/rpc";
+import { Button } from "./ui/button";
+import { useState } from "react";
+
+export function CustomerRegistrationForm() {
+  const [processing, setProcessing] = useState(false);
+  const [result, setResult] = useState<{ customerId: number } | null>(null);
+
+  const handleSubmit = async (data: {
+    name: string;
+    cpf: string;
+    cep: string;
+  }) => {
+    setProcessing(true);
+    try {
+      // ✅ Start workflow (runs async in background)
+      const runId = await client.workflows.REGISTER_CUSTOMER.start(data);
+
+      // ✅ Poll for completion (or use webhooks)
+      const finalResult = await client.workflows.REGISTER_CUSTOMER.waitForCompletion(runId);
+
+      setResult({ customerId: finalResult.customerId });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div>
+      {/* Form UI here */}
+      <Button onClick={() => handleSubmit({...})} disabled={processing}>
+        {processing ? "Processing..." : "Register Customer"}
+      </Button>
+      {result && <p>Customer registered! ID: {result.customerId}</p>}
+    </div>
+  );
+}
+```
+
+<Callout type="info">
+  **Workflows run asynchronously**: When you call `.start()`, the workflow begins executing in the background. Use `.waitForCompletion()` to poll for results, or set up webhooks for notifications.
+</Callout>
+
+## Hybrid Approach: Agents in Workflows
+
+The most powerful pattern: combine deterministic workflows with adaptive agents. Use workflows for structure, agents for unstructured tasks.
+
+### Example: Customer Support with Agent + Workflow
+
+```typescript
+const createCustomerSupportWorkflow = (env: Env) => {
+  // Step 1: AI agent analyzes the customer message
+  const analyzeMessage = createStepFromAgent(createSupportAgent(env));
+  
+  // Step 2: Deterministic routing based on analysis
+  const routeTicket = createStepFromTool(createRouteTicketTool(env));
+  
+  // Step 3: Deterministic notification
+  const notifyTeam = createStepFromTool(createNotifyTeamTool(env));
+
+  return createWorkflow({
+    id: "CUSTOMER_SUPPORT",
+    inputSchema: z.object({
+      message: z.string(),
+      customerId: z.string(),
+    }),
+    outputSchema: z.object({
+      ticketId: z.string(),
+      category: z.string(),
+    }),
+  })
+    .then(analyzeMessage)  // ✅ Agent: understands intent, extracts entities
+    .then(routeTicket)     // ✅ Deterministic: routes based on category
+    .then(notifyTeam)      // ✅ Deterministic: sends notifications
+    .commit();
+};
+```
+
+<Callout type="success">
+  **Best of both worlds**: Agents handle unstructured input (natural language, images, complex reasoning). Workflows ensure predictable execution (routing, notifications, data consistency).
+</Callout>
+
+### When to Use Each
+
+| Use Case | Use Workflow | Use Agent |
+|----------|--------------|-----------|
+| Predictable steps | ✅ | ❌ |
+| Unstructured input (text, images) | ❌ | ✅ |
+| Complex reasoning | ❌ | ✅ |
+| Data transformation | ✅ | ❌ |
+| API orchestration | ✅ | ❌ |
+| Open-ended problem solving | ❌ | ✅ |
+| Need audit trail of exact steps | ✅ | ❌ |

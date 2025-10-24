@@ -1,0 +1,426 @@
+---
+title: Resources
+description: Work with structured data through standardized CRUD operations
+icon: Database
+---
+
+import Callout from "../../../components/ui/Callout.astro";
+
+Resources are **structured data types** that provide standardized CRUD operations (create, read, update, delete, search) for working with Pages, Documents, Files, Database Records, and other content. In deco, resources use the MCP protocol to provide governed, type-safe access to your data.
+
+<Callout type="success">
+  **Key advantage**: Resources provide a standard interface for all structured data. Whether it's a Page, a Google Drive file, or a database record, the same CRUD operations work—no custom APIs needed.
+</Callout>
+
+## What Are Resources?
+
+Resources are entities with:
+
+- **URI-based identification**: `rsc://workspace/project/resource-id`
+- **Standard operations**: search, read, create, update, delete
+- **Type safety**: Zod schemas for validation
+- **MCP integration**: Available to AI agents automatically
+- **Typed RPC access**: Available to your React UI
+
+Think of resources as "smart database tables" that AI agents and UIs can interact with naturally.
+
+## Resource URI Format
+
+Every resource has a unique URI:
+
+```
+rsc://workspace-name/project-name/resource-type/resource-id
+```
+
+Examples:
+```
+rsc://my-workspace/docs-site/pages/introduction
+rsc://my-workspace/crm/customers/cust_123
+rsc://my-workspace/knowledge-base/documents/doc_456
+```
+
+## Creating a Resource Type
+
+Define a resource by specifying its schema and operations:
+
+```typescript
+// server/resources/pages.ts
+import { createResourceBindings } from "@deco/workers-runtime/bindings/resources";
+import { z } from "zod";
+
+// Define the data schema for your resource
+const PageDataSchema = z.object({
+  name: z.string().describe("Page slug/identifier"),
+  description: z.string().describe("Page description"),
+  title: z.string().describe("Page title"),
+  content: z.string().describe("Markdown content"),
+  author: z.string().optional(),
+  publishedAt: z.string().datetime().optional(),
+});
+
+// Create resource bindings (generates CRUD tools automatically)
+export const pageResourceBindings = createResourceBindings("page", PageDataSchema);
+```
+
+This automatically generates five tools:
+
+- `DECO_RESOURCE_PAGE_SEARCH` - Search pages
+- `DECO_RESOURCE_PAGE_READ` - Read a single page
+- `DECO_RESOURCE_PAGE_CREATE` - Create a new page
+- `DECO_RESOURCE_PAGE_UPDATE` - Update an existing page
+- `DECO_RESOURCE_PAGE_DELETE` - Delete a page
+
+## Resource Operations
+
+### Search
+
+Find resources by term, with pagination and filtering:
+
+```typescript
+// From React UI
+import { client } from "../lib/rpc";
+
+const results = await client.resources.PAGE.search({
+  term: "documentation",
+  page: 1,
+  pageSize: 20,
+  sortBy: "publishedAt",
+  sortOrder: "desc",
+});
+
+console.log(results.items); // Array of resources
+console.log(results.totalCount); // Total matching results
+console.log(results.nextCursor); // Pagination cursor
+```
+
+### Read
+
+Get a single resource by URI:
+
+```typescript
+const page = await client.resources.PAGE.read({
+  uri: "rsc://my-workspace/docs/pages/getting-started",
+});
+
+console.log(page.content); // Access resource data
+```
+
+### Create
+
+Add a new resource:
+
+```typescript
+const newPage = await client.resources.PAGE.create({
+  data: {
+    name: "new-guide",
+    description: "A new guide page",
+    title: "New Guide",
+    content: "# Welcome\n\nThis is a new guide.",
+    author: "alice@example.com",
+  },
+});
+
+console.log(newPage.uri); // rsc://my-workspace/docs/pages/new-guide
+```
+
+### Update
+
+Modify an existing resource:
+
+```typescript
+const updated = await client.resources.PAGE.update({
+  uri: "rsc://my-workspace/docs/pages/new-guide",
+  data: {
+    content: "# Welcome\n\nUpdated content here.",
+  },
+});
+```
+
+### Delete
+
+Remove a resource:
+
+```typescript
+await client.resources.PAGE.delete({
+  uri: "rsc://my-workspace/docs/pages/old-guide",
+});
+```
+
+## Using Resources in Your UI
+
+Resources are automatically available via typed RPC:
+
+```tsx
+// view/src/components/PageList.tsx
+import { client } from "../lib/rpc";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader } from "./ui/card";
+
+export function PageList() {
+  const [pages, setPages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPages = async () => {
+      const results = await client.resources.PAGE.search({
+        term: "",
+        page: 1,
+        pageSize: 50,
+      });
+      setPages(results.items);
+      setLoading(false);
+    };
+    fetchPages();
+  }, []);
+
+  if (loading) return <p>Loading...</p>;
+
+  return (
+    <div className="space-y-4">
+      {pages.map((page) => (
+        <Card key={page.uri}>
+          <CardHeader>
+            <h3>{page.title}</h3>
+          </CardHeader>
+          <CardContent>
+            <p>{page.description}</p>
+            <a href={`/pages/${page.name}`}>Read more →</a>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+```
+
+## Resources and AI Agents
+
+AI agents can discover and use resources automatically through MCP:
+
+```typescript
+// Agents can search, read, create, update, and delete resources
+// Without any additional configuration!
+
+// Example: An agent analyzing documentation coverage
+const agent = createAgent({
+  id: "DOCS_ANALYZER",
+  model: "gpt-4",
+  instructions: `You analyze documentation coverage.
+  Use the PAGE resources to:
+  - Search for existing pages
+  - Read their content
+  - Identify gaps in coverage
+  - Suggest new pages to create`,
+  tools: [], // Resources are automatically available!
+});
+```
+
+When the agent runs, it can:
+1. Search pages: `"Search for pages about authentication"`
+2. Read content: `"Read the authentication guide"`
+3. Analyze: `"This page is missing information about OAuth"`
+4. Suggest: `"We should create a page about OAuth 2.0 flows"`
+
+## Implementing Resource Storage
+
+Resources can be backed by different storage systems:
+
+### Deconfig-Backed Resources
+
+Store resources as files in the Deconfig system:
+
+```typescript
+import { createDeconfigResource } from "@deco/workers-runtime/bindings/deconfig/resources";
+
+export const createPageResource = (env: Env) => {
+  return createDeconfigResource({
+    resourceName: "page",
+    dataSchema: PageDataSchema,
+    env,
+  });
+};
+```
+
+### Database-Backed Resources
+
+Store resources in SQLite (via Cloudflare D1):
+
+```typescript
+export const createCustomerResource = (env: Env) => {
+  const db = env.DECO_WORKSPACE_DB;
+
+  return {
+    name: "customer",
+    icon: "Users",
+    title: "Customers",
+    description: "Customer records",
+    tools: {
+      search: async ({ term, page = 1, pageSize = 10 }) => {
+        const offset = (page - 1) * pageSize;
+        const results = await db
+          .prepare(
+            "SELECT * FROM customers WHERE name LIKE ? LIMIT ? OFFSET ?"
+          )
+          .bind(`%${term}%`, pageSize, offset)
+          .all();
+        return {
+          items: results.results,
+          totalCount: results.results.length,
+        };
+      },
+      read: async ({ uri }) => {
+        const id = uri.split("/").pop();
+        const result = await db
+          .prepare("SELECT * FROM customers WHERE id = ?")
+          .bind(id)
+          .first();
+        return result;
+      },
+      create: async ({ data }) => {
+        const result = await db
+          .prepare(
+            "INSERT INTO customers (name, email, phone) VALUES (?, ?, ?) RETURNING *"
+          )
+          .bind(data.name, data.email, data.phone)
+          .first();
+        return { uri: `rsc://workspace/crm/customers/${result.id}` };
+      },
+      // update, delete...
+    },
+  };
+};
+```
+
+### API-Backed Resources
+
+Proxy resources from external APIs (Google Drive, Notion, etc.):
+
+```typescript
+export const createGoogleDriveResource = (env: Env) => {
+  const drive = env.GOOGLE_DRIVE; // Integration
+
+  return {
+    name: "gdrive",
+    icon: "FileText",
+    title: "Google Drive Files",
+    description: "Files from Google Drive",
+    tools: {
+      search: async ({ term }) => {
+        const response = await drive.files.list({
+          q: `name contains '${term}'`,
+        });
+        return {
+          items: response.files.map((file) => ({
+            uri: `rsc://workspace/gdrive/files/${file.id}`,
+            name: file.name,
+            description: file.description || "",
+          })),
+        };
+      },
+      read: async ({ uri }) => {
+        const fileId = uri.split("/").pop();
+        const file = await drive.files.get({ fileId });
+        return file;
+      },
+    },
+  };
+};
+```
+
+## Registering Resources
+
+Add resources to your runtime:
+
+```typescript
+// server/main.ts
+import { withRuntime } from "@deco/workers-runtime";
+import { createPageResource } from "./resources/pages.ts";
+
+const { Workflow, ...runtime } = withRuntime<Env>({
+  resources: [createPageResource],
+  tools: [/* ... */],
+  workflows: [/* ... */],
+});
+
+export { Workflow };
+export default runtime;
+```
+
+## Best Practices
+
+### Schema Design
+
+- **Keep schemas simple**: Resources should represent one concept (Page, Customer, Document)
+- **Include descriptions**: Use `.describe()` for better AI agent understanding
+- **Use optional fields**: Not all fields are required for all operations
+
+### Naming Conventions
+
+- **Resource names**: lowercase, singular (e.g., "page", "customer", "document")
+- **Field names**: camelCase (e.g., "publishedAt", "createdBy")
+- **URIs**: kebab-case for readability (e.g., "getting-started", "api-reference")
+
+### Performance
+
+- **Pagination**: Always paginate search results (default: 10-20 items per page)
+- **Caching**: Cache frequently accessed resources
+- **Indexes**: Add database indexes for searchable fields
+
+### Security
+
+- **Validate URIs**: Ensure URIs match the expected format before operations
+- **Check permissions**: Implement RBAC checks in resource operations
+- **Sanitize input**: Validate all data with Zod schemas
+
+## Examples
+
+### Documentation Site
+
+```typescript
+// A resource for managing documentation pages
+const PageResourceSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  title: z.string(),
+  content: z.string(), // Markdown
+  section: z.enum(["guide", "reference", "api"]),
+  order: z.number().int(),
+});
+```
+
+### CRM System
+
+```typescript
+// A resource for managing customer records
+const CustomerResourceSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  email: z.string().email(),
+  phone: z.string().optional(),
+  company: z.string().optional(),
+  tags: z.array(z.string()).default([]),
+});
+```
+
+### Knowledge Base
+
+```typescript
+// A resource for managing knowledge base articles
+const ArticleResourceSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  title: z.string(),
+  content: z.string(),
+  category: z.string(),
+  tags: z.array(z.string()),
+  author: z.string(),
+  publishedAt: z.string().datetime(),
+});
+```
+
+## Next Steps
+
+- **[Creating Tools](/en/guides/creating-tools)** – Build tools that operate on resources
+- **[Building Workflows](/en/guides/building-workflows)** – Orchestrate resource operations
+- **[Integrations](/en/guides/integrations)** – Connect resources to external data sources
+
