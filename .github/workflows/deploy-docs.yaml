@@ -26,6 +26,18 @@ jobs:
           cd docs
           bun install
 
+      - name: Install rag-docs script dependencies
+        run: bun install @pinecone-database/pinecone fast-glob @langchain/textsplitters tsx
+
+      - name: Ingest docs to Pinecone
+        run: bunx tsx scripts/ingest-docs-pinecone.ts
+        env:
+          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+          PINECONE_INDEX_NAME: ${{ secrets.PINECONE_INDEX_NAME }}
+          NAMESPACE: docs
+          DOCS_DIR: docs/view/src/content/pt-br
+          DELETE_ALL: "true"
+
       - name: Deploy
         run: |
           cd docs
