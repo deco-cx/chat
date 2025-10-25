@@ -1,5 +1,5 @@
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import { defineConfig, type PluginOption } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import inspect from "vite-plugin-inspect";

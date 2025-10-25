@@ -160,7 +160,7 @@ const markdownComponents = {
       {...props}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-primary hover:underline break-all"
+      className="text-primary-dark hover:underline break-all font-medium"
     />
   ),
   ul: (props: React.HTMLAttributes<HTMLUListElement>) => (

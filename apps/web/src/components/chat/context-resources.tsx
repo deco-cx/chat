@@ -3,6 +3,7 @@ import {
   formatFileSize,
   useAgents,
   useIntegrations,
+  useTools,
   type Integration,
 } from "@deco/sdk";
 import { Button } from "@deco/ui/components/button.tsx";
@@ -494,6 +495,10 @@ const IntegrationToolsetDisplay = memo(function IntegrationToolsetDisplay({
   onToggleTool,
 }: IntegrationToolsetDisplayProps) {
   const [open, setOpen] = useState(false);
+  const { data: toolsData, isLoading } = useTools(integration.connection);
+
+  const tools = toolsData?.tools || [];
+  const actualTotalTools = tools.length || totalTools;
 
   return (
     <div className="relative group h-8">
@@ -511,7 +516,7 @@ const IntegrationToolsetDisplay = memo(function IntegrationToolsetDisplay({
             />
             <span className="text-xs">{integration.name}</span>
             <span className="text-xs text-muted-foreground">
-              {enabledTools.length}/{totalTools}
+              {enabledTools.length}/{actualTotalTools}
             </span>
           </Button>
         </PopoverTrigger>
@@ -527,47 +532,53 @@ const IntegrationToolsetDisplay = memo(function IntegrationToolsetDisplay({
                 <div>
                   <h4 className="font-medium text-xs">{integration.name}</h4>
                   <p className="text-xs text-muted-foreground">
-                    {enabledTools.length} of {totalTools} tools enabled
+                    {enabledTools.length} of {actualTotalTools} tools enabled
                   </p>
                 </div>
               </div>
             </div>
 
             <div className="border-t pt-3">
-              <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                {integration.tools?.map((tool) => {
-                  const isEnabled = enabledTools.includes(tool.name);
-                  return (
-                    <div
-                      key={tool.name}
-                      className="flex items-start gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors"
-                    >
-                      <Checkbox
-                        checked={isEnabled}
-                        onCheckedChange={() =>
-                          onToggleTool(
-                            integrationId,
-                            tool.name,
-                            isEnabled,
-                            contextItemId,
-                          )
-                        }
-                        className="mt-0.5"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium">
-                          {formatToolName(tool.name)}
-                        </p>
-                        {tool.description && (
-                          <p className="text-xs text-muted-foreground line-clamp-2">
-                            {tool.description}
+              {isLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Spinner size="sm" />
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                  {tools.map((tool) => {
+                    const isEnabled = enabledTools.includes(tool.name);
+                    return (
+                      <div
+                        key={tool.name}
+                        className="flex items-start gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors"
+                      >
+                        <Checkbox
+                          checked={isEnabled}
+                          onCheckedChange={() =>
+                            onToggleTool(
+                              integrationId,
+                              tool.name,
+                              isEnabled,
+                              contextItemId,
+                            )
+                          }
+                          className="mt-0.5"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium">
+                            {formatToolName(tool.name)}
                           </p>
-                        )}
+                          {tool.description && (
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {tool.description}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </PopoverContent>

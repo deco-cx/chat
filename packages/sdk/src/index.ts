@@ -15,6 +15,7 @@ export * from "./crud/prompts.ts";
 export * from "./crud/registry.ts";
 export * from "./crud/roles.ts";
 export * from "./crud/teams.ts";
+export * from "./crud/theme.ts";
 export * from "./crud/thread.ts";
 export * from "./crud/trigger.ts";
 export * from "./crud/user.ts";
@@ -58,6 +59,7 @@ export {
 } from "./hooks/views.ts";
 export * from "./hooks/store.tsx";
 export * from "./hooks/teams.ts";
+export * from "./hooks/theme.ts";
 export * from "./hooks/thread.ts";
 export * from "./hooks/tools.ts";
 export * from "./hooks/trigger.ts";

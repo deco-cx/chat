@@ -30,15 +30,27 @@ export async function getProjectIdFromContext(
 export async function getOrgIdFromContext(
   c: AppContext,
 ): Promise<number | null> {
+  console.log("[getOrgIdFromContext] c.locator:", JSON.stringify(c.locator));
+
   if (!c.locator?.org) {
+    console.log("[getOrgIdFromContext] No c.locator.org found");
     return null;
   }
+
+  console.log("[getOrgIdFromContext] Looking up org by slug:", c.locator.org);
+
   const org = await c.drizzle
     .select()
     .from(organizations)
-    .where(eq(organizations.slug, c.locator?.org))
+    .where(eq(organizations.slug, c.locator.org))
     .limit(1)
     .then((r) => r[0]);
+
+  console.log(
+    "[getOrgIdFromContext] Found org:",
+    org ? `id=${org.id}, slug=${org.slug}` : "null",
+  );
+
   return org?.id ?? null;
 }
 

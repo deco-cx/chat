@@ -26,6 +26,7 @@ import * as promptsAPI from "./prompts/api.ts";
 import * as registryAPI from "./registry/api.ts";
 import type { CreateStubHandlerOptions, MCPClientStub } from "./stub.ts";
 import * as teamsAPI from "./teams/api.ts";
+import * as themeAPI from "./theme/api.ts";
 import * as threadsAPI from "./threads/api.ts";
 import { runTool } from "./tools/api.ts";
 import * as triggersAPI from "./triggers/api.ts";
@@ -185,6 +186,9 @@ export const PROJECT_TOOLS = [
   fsAPI.readFileMetadata,
   fsAPI.writeFile,
   fsAPI.deleteFile,
+  // Theme tools (workspace-level)
+  themeAPI.getOrgTheme,
+  themeAPI.updateOrgTheme,
   modelsAPI.createModel,
   modelsAPI.deleteModel,
   modelsAPI.listModels,

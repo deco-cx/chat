@@ -31,7 +31,20 @@ export const useTheme = () => {
       localStorage.setItem(THEME_CACHE_KEY(locator), JSON.stringify(theme));
       setCachedTheme(theme);
     }
-  }, [theme]);
+  }, [theme, locator]);
+
+  // Listen for manual theme updates
+  useEffect(() => {
+    const handleThemeUpdate = () => {
+      clearThemeCache(locator);
+      setCachedTheme(null);
+    };
+
+    window.addEventListener("theme-updated", handleThemeUpdate);
+    return () => {
+      window.removeEventListener("theme-updated", handleThemeUpdate);
+    };
+  }, [locator]);
 
   return {
     data: cachedTheme || theme,
@@ -183,29 +196,23 @@ export function WithWorkspaceTheme({
     });
   }, [showSplash]);
 
-  const variables = {
-    ...theme?.variables,
-  };
+  // Use the object from the query directly so the reference is stable
+  const variables = theme?.variables;
+  const appliedVariablesJsonRef = useRef<string>("");
 
   // Apply theme variables to document root so portal content can access them
+  // Only re-apply when the theme actually changes to avoid fighting with the editor's live updates
   useEffect(() => {
     const root = document.documentElement;
+    const nextJson = JSON.stringify(variables ?? {});
+    if (appliedVariablesJsonRef.current === nextJson) return;
+    appliedVariablesJsonRef.current = nextJson;
+
     if (variables) {
       Object.entries(variables).forEach(([key, value]) => {
-        if (value) {
-          root.style.setProperty(key, value as string);
-        }
+        if (value) root.style.setProperty(key, value as string);
       });
     }
-
-    // Cleanup function to remove custom properties when component unmounts
-    return () => {
-      if (variables) {
-        Object.keys(variables).forEach((key) => {
-          root.style.removeProperty(key);
-        });
-      }
-    };
   }, [variables]);
 
   return (
@@ -246,9 +253,7 @@ export function WithWorkspaceTheme({
           </div>
         </div>
       )}
-      <div className="h-full w-full" style={variables as CSSProperties}>
-        {children}
-      </div>
+      <div className="h-full w-full">{children}</div>
     </>
   );
 }

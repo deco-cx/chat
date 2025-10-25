@@ -430,9 +430,9 @@ function TeamPlanAndBalance() {
         <PlanIcon />
         {plan.title} PLAN
       </div>
-      <div className="z-20 flex items-center justify-between px-2 h-9 rounded-xl w-full text-sm bg-sidebar-accent">
-        <span className="text-sidebar-foreground">Team Balance</span>
-        <span className="text-muted-foreground">{account.balance}</span>
+      <div className="z-20 flex items-center justify-between px-2 h-9 rounded-xl w-full text-sm bg-primary-foreground">
+        <span className="text-primary">Team Balance</span>
+        <span className="text-primary font-semibold">{account.balance}</span>
       </div>
     </Link>
   );

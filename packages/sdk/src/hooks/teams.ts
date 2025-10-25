@@ -207,17 +207,30 @@ export function useDeleteTeam() {
 
 export function useWorkspaceTheme() {
   const { locator } = useSDK();
-  const { org } = Locator.parse(locator);
+  const { org, project } = Locator.parse(locator);
 
   return useQuery({
     queryKey: KEYS.TEAM_THEME(org),
     queryFn: async () => {
-      const data = await getOrgTheme(org);
-      const theme = data?.theme ?? {};
-      return {
+      // Import MCPClient dynamically to avoid circular dependencies
+      const { MCPClient } = await import("../fetcher.ts");
+
+      // Get org theme as fallback
+      const orgData = await getOrgTheme(org);
+      const orgTheme = orgData?.theme ?? {};
+
+      // Project themes are disabled - only use org theme
+      // Merge: DEFAULT_THEME <- orgTheme
+      const mergedTheme = {
         ...DEFAULT_THEME,
-        ...theme,
+        ...orgTheme,
+        variables: {
+          ...DEFAULT_THEME.variables,
+          ...(orgTheme.variables || {}),
+        },
       };
+
+      return mergedTheme;
     },
   });
 }

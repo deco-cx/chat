@@ -657,7 +657,8 @@ export const createTeam = createTool({
 
 export const updateTeam = createTool({
   name: "TEAMS_UPDATE",
-  description: "Update an existing team including theme customization",
+  description:
+    "Update an existing team including theme customization. Note: For theme-only updates, prefer using THEME_UPDATE_ORG from the Theme Management MCP.",
   inputSchema: z.lazy(() =>
     z.object({
       id: z.number().describe("The id of the team to update"),

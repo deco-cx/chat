@@ -54,7 +54,6 @@ const createDbAndHeadersForRequest = (ctx: AppContext) => {
   return { headers, db };
 };
 
-// TODO: add LRU Cache
 export const getUser = async (
   ctx: AppContext,
 ): Promise<SupaUser | undefined> => {
@@ -66,6 +65,7 @@ export const getUser = async (
   } = ctx.env;
 
   const cookies = getCookies(ctx.req.raw.headers);
+
   const supabase = createSupabaseClient(SUPABASE_URL, SUPABASE_SERVER_TOKEN, {
     cookies: {
       getAll: () =>

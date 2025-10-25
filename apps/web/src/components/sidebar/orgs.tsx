@@ -90,6 +90,18 @@ function OrgViews() {
         <SidebarMenuButton
           className="cursor-pointer"
           onClick={() => {
+            navigateOrg("/theme-editor");
+          }}
+        >
+          <Icon name="palette" size={20} className="text-muted-foreground/75" />
+          <span className="truncate">Theme</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          className="cursor-pointer"
+          onClick={() => {
             navigateOrg("/settings");
           }}
         >

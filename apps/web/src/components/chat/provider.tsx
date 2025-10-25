@@ -6,6 +6,8 @@ import {
   DECO_CMS_API_URL,
   dispatchMessages,
   getTraceDebugId,
+  Locator,
+  useSDK,
   WELL_KNOWN_AGENTS,
   type Agent,
   type MessageMetadata,
@@ -21,6 +23,7 @@ import {
   AlertDialogTitle,
 } from "@deco/ui/components/alert-dialog.tsx";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
 import {
   createContext,
@@ -282,6 +285,8 @@ export function AgenticChatProvider({
 }: PropsWithChildren<AgenticChatProviderProps>) {
   const { contextItems: threadContextItems } = useThreadContext();
   const triggerToolCallListeners = useTriggerToolCallListeners();
+  const queryClient = useQueryClient();
+  const { locator } = useSDK();
 
   const [state, dispatch] = useReducer(chatStateReducer, {
     finishReason: null,
@@ -546,6 +551,25 @@ export function AgenticChatProvider({
             title || "",
           );
         }
+      }
+
+      // Handle theme updates - trigger UI reload immediately
+      if (toolCall.toolName === "THEME_UPDATE_ORG") {
+        const { org } = Locator.parse(locator);
+
+        // Invalidate all org-theme and team-theme queries
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            query.queryKey[0] === "org-theme" ||
+            (query.queryKey[0] === "team-theme" && query.queryKey[1] === org),
+        });
+
+        // Force refetch the team theme immediately
+        queryClient.refetchQueries({ queryKey: ["org-theme", org] });
+        queryClient.refetchQueries({ queryKey: ["team-theme", org] });
+
+        // Dispatch event for immediate UI update (same as save button)
+        window.dispatchEvent(new CustomEvent("theme-updated"));
       }
 
       // Broadcast resource updates for auto-refresh
